@@ -1,0 +1,9 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^\.travis\.yml$
+^\.git$
+^test$
+^Makefile$
+^COPYRIGHT$
+^LICENSE$
+^TODO.org$
