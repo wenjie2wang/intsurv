@@ -18,3 +18,6 @@
 vignettes/*.html
 vignettes/*.pdf
 
+reference
+simulation
+test/
