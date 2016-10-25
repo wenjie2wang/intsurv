@@ -15,10 +15,9 @@
 ##'
 ##' set.seed(1216)
 ##' dat <- simuWeibull(nSubject = 200, maxNum = 2, nRecordProb = c(0.8, 0.2),
-##'                    censorTime = 3.48, lambda = 1e-2, rho = 2, mixture = 0.5)
+##'                    censorTime = 10, lambda = 1e-2, rho = 2, mixture = 0.5)
 ##' dat$obsTime <- round(dat$obsTime, 2)
 ##' temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2, data = dat)
-
 
 
 ## implementation of EM algorithm to Cox model
@@ -71,15 +70,15 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
     control <- do.call("coxEmControl", control)
 
     ## start' values for 'nlm'
-    startList <- c(start, list(nBeta = nBeta, dat = incDat))
+    startList <- c(start, list(nBeta_ = nBeta, dat_ = incDat))
     start <- do.call("coxEmStart", startList)
     betaHat <- start$beta
 
     ## take care of possible ties
-    h0Dat <- aggregate(start$h0Vec, list(time = dat$time), FUN = sum)
+    h0Dat <- aggregate(start$h0Vec, list(time = incDat$time), FUN = sum)
     colnames(h0Dat)[2L] <- "h0Vec"
 
-    piVec <- start$piVec[orderInc]
+    piVec <- start$piVec
     iter <- tol <- lMin <- 1L
     logL <- rep(NA, control$iterlimEm)
     while (iter < control$iterlimEm && tol > control$tolEm) {
@@ -152,53 +151,51 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
 ## perform one step of EM algorithm
 oneEMstep <- function(betaHat, h0Dat, piVec, dat, xMat, control) {
 
+    ## update results involving beta estimates
     dat$betaX <- as.vector(xMat %*% betaHat)
     dat$xExp <- pmax(exp(dat$betaX), .Machine$double.eps)
-    ## the order is preserved
-    tmpDat <- merge(dat, h0Dat, by = "time", sort = FALSE)
 
-    ## update baseline hazard rate
-    tmpDat$h0Vec <- with(tmpDat, ifelse(eventInd, h0Vec, 0))
-    tmpDat$H0Vec <- cumsum(tmpDat$h0Vec)
-    tmpDat$hVec <- with(tmpDat, h0Vec * xExp)
-    tmpDat$HVec <- with(tmpDat, H0Vec * xExp)
-    tmpDat$sVec <- pmax(exp(- tmpDat$HVec), .Machine$double.eps)
-
-    ## compute p_jk for each subject
-    tmpDat$p_jk_numer <- with(tmpDat, ifelse(eventInd, piVec * hVec * sVec,
-                                             piVec * sVec))
-    tmpDat$p_jk_numer <- pmax(tmpDat$p_jk_numer, .Machine$double.eps)
-    p_jk_denom_dat <- aggregate(p_jk_numer ~ ID, data = tmpDat, FUN = sum)
-    colnames(p_jk_denom_dat)[2] <- "p_jk_denom"
-
-    ## record originally sorted order
-    tmpDat$idx <- seq_len(nrow(tmpDat))
-    outDat <- merge(tmpDat, p_jk_denom_dat, by = "ID", sort = FALSE)
-    outDat$p_jk <- with(outDat, p_jk_numer / p_jk_denom)
-    ## recover the order for piVec estimates
-    outDat <- outDat[order(outDat$idx), ]
-
-    ## update design matrix
-    parSeq <- seq_along(betaHat)
-    xMat <- as.matrix(outDat[, 3L + parSeq])
-
-    ## log-likelihood function under observed data
-    logL <- with(outDat, sum(log(p_jk_denom[! duplicated(ID)])))
+    ## update or initialize p_jk with piVec
+    dat$p_jk <- piVec
 
     ## update beta
-    betaEst <- stats::nlm(logLbeta, p = betaHat, dat = outDat, xMat = xMat,
+    betaEst <- stats::nlm(logLbeta, p = betaHat, dat = dat, xMat = xMat,
                           hessian = TRUE, check.analyticals = TRUE,
                           gradtol = control$gradtol, stepmax = control$stepmax,
                           steptol = control$steptol, iterlim = control$iterlim)
 
     ## compute with updated beta estimates
-    outDat$betaX <- as.vector(xMat %*% betaEst$estimate)
-    outDat$xExp <- pmax(exp(outDat$betaX), .Machine$double.eps)
+    dat$betaX <- as.vector(xMat %*% betaEst$estimate)
+    dat$xExp <- pmax(exp(dat$betaX), .Machine$double.eps)
+
+    ## update baseline hazard rate
+    h0Dat$H0Vec <- cumsum(h0Dat$h0Vec)
+    time_idx <- match(dat$time, h0Dat$time)
+    dat$h0Vec <- h0Dat$h0Vec[time_idx]
+    dat$h0Vec <- with(dat, ifelse(eventInd, h0Vec, 0))
+    dat$H0Vec <- h0Dat$H0Vec[time_idx]
+
+    dat$hVec <- with(dat, h0Vec * xExp)
+    dat$HVec <- with(dat, H0Vec * xExp)
+    dat$sVec <- pmax(exp(- dat$HVec), .Machine$double.eps)
+
+    ## compute p_jk for each subject
+    dat$p_jk_numer <- with(dat, ifelse(eventInd, piVec * hVec * sVec,
+                                       piVec * sVec))
+    dat$p_jk_numer <- pmax(dat$p_jk_numer, .Machine$double.eps)
+    p_jk_denom_dat <- aggregate(p_jk_numer ~ ID, data = dat, FUN = sum)
+    idx <- match(dat$ID, p_jk_denom_dat$ID)
+    dat$p_jk_denom <- p_jk_denom_dat[idx, "p_jk_numer"]
+    dat$p_jk <- with(dat, p_jk_numer / p_jk_denom)
+
+    ## log-likelihood function under observed data
+    logL <- with(dat, sum(log(p_jk_denom[! duplicated(ID)])))
+
     ## update h0_jk with previous (or initial) estimates of beta
-    h0Vec <- h0t(outDat)
+    h0Vec <- h0t(dat)
 
     ## return
-    list(betaEst = betaEst, h0Vec = h0Vec, pjkVec = outDat$p_jk, logL = logL)
+    list(betaEst = betaEst, h0Vec = h0Vec, pjkVec = dat$p_jk, logL = logL)
 }
 
 
@@ -299,20 +296,21 @@ d2Lbeta <- function(parSeq, k_0, k_1, k_2, delta_tildeN) {
     part2 - part1
 }
 
-coxEmStart <- function(beta, ..., nBeta, dat) {
+coxEmStart <- function(beta, h0 = 1e-3, censorRate = 0.8, ..., nBeta_, dat_) {
     ## baseline hazard function: h0Vec
     ## subDat <- base::subset(dat, event == 0L)
     ## tempFit <- survival::survreg(survival::Surv(time, event) ~ X1 + X2,
     ##                              data = subDat, scale = 1)
     ## constant baseline hazard function
     ## lambda <- exp(- coef(tempFit)[1])
-    lambda <- 1e-3
-    h0Vec <- rep(lambda, nrow(dat))
 
-    ## covariate coefficient: beta
+    ## initialize baseline hazard rate
+    h0Vec <- ifelse(dat_$eventInd, h0, 0)
+
+    ## initialize covariate coefficient: beta
     if (missing(beta)) {
-        beta <- rep(0, nBeta)
-    } else if (length(beta) != nBeta) {
+        beta <- rep(0, nBeta_)
+    } else if (length(beta) != nBeta_) {
         stop(paste("Number of starting values for coefficients of covariates",
                    "does not match with the specified formula."))
     } else {
@@ -320,8 +318,21 @@ coxEmStart <- function(beta, ..., nBeta, dat) {
     }
 
     ## mixture probability for each subject: piVec
-    numTab <- table(dat$ID)
-    piVec <- rep(1 / numTab, numTab)
+    numTab <- table(dat_$ID)
+    dat_$numRecord <- numTab[match(as.character(dat_$ID), names(numTab))]
+
+    ## subject ID with censoring records
+    cenID <- with(subset(dat_, ! eventInd), unique(ID))
+    cenIdx <- as.integer(dat_$ID %in% cenID)
+
+    ## for subjects with multiple records
+    idx1 <- with(dat_, numRecord > 1L & eventInd)
+    idx2 <- with(dat_, numRecord > 1L & (! eventInd))
+
+    piVec <- rep(1L, NROW(dat_))
+    piVec[idx1] <- (1 - censorRate * cenIdx[idx1]) /
+        (dat_[idx1, "numRecord"] - cenIdx[idx1])
+    piVec[idx2] <- censorRate
 
     ## return
     list(beta = beta, h0Vec = h0Vec, piVec = piVec)
