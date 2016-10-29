@@ -15,11 +15,14 @@
 ##'
 ##' set.seed(1216)
 ##' dat <- simuWeibull(nSubject = 200, maxNum = 2, nRecordProb = c(0.8, 0.2),
-##'                    censorTime = 10, lambda = 1e-2, rho = 2, mixture = 0.5)
+##'                    censorTime = 7, lambda = 1e-2, rho = 2, mixture = 0.5)
 ##' dat$obsTime <- round(dat$obsTime, 2)
 ##' temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2, data = dat)
+##' temp@estimates$beta
 
-## implementation of EM algorithm to Cox model
+
+
+## implementation of ECM algorithm to Cox model
 coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
                   start = list(), control = list(), ...) {
 
@@ -77,52 +80,66 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
     ## take care of possible ties
     h0Dat <- aggregate(start$h0Vec, list(time = incDat$time), FUN = sum)
     colnames(h0Dat)[2L] <- "h0Vec"
+    ## h0Dat0 <- h0Dat
 
+    ## trace the log-likelihood for observed data
     logL <- rep(NA, control$iterlimEm)
+    ## trace beta estimates from each iteration of ECM
+    betaMat <- matrix(NA, nrow = control$iterlimEm, ncol = nBeta)
+    betaMat[1L, ] <- betaHat
+
     for (iter in seq_len(control$iterlimEm)) {
-        oneFit <- oneEMstep(betaHat = betaHat, h0Dat = h0Dat,
-                            dat = incDat, xMat = xMat, control = control)
-        incDat$piVec <- oneFit$piVec
-        h0Dat$h0Vec <- oneFit$h0Vec
-        betaEst <- oneFit$betaEst
-        betaHatNew <- betaEst$estimate
+        oneFit <- oneECMstep(betaHat = betaMat[iter, ], h0Dat = h0Dat,
+                             dat = incDat, xMat = xMat, control = control)
         ## log likehood
         logL[iter] <- oneFit$logL
-        iter <- iter + 1L
-        tol <- sqrt(sum((betaHatNew - betaHat) ^ 2)) / sqrt(sum(betaHat ^ 2))
+        ## update p_jk
+        incDat$piVec <- oneFit$piVec
+        ## update baseline hazard rate h0
+        h0Dat$h0Vec <- oneFit$h0Vec
         ## update beta estimates
-        betaHat <- betaHatNew
+        betaEst <- oneFit$betaEst
+        betaMat[(iter <- iter + 1L), ] <- betaHat <- betaEst$estimate
+        tol <- max(abs((betaMat[iter, ] - betaMat[iter - 1L, ]) /
+                       (betaMat[iter, ] + betaMat[iter - 1L, ])))
         if (tol < control$tolEm) break
     }
 
-    ## observed log likelihood from each iteration
+    ## prepare for outputs
+    piEst <- incDat$piVec
+
+    ## clean-up NA's
     logL <- stats::na.omit(logL)
-    attr(logL, "na.action") <- attr(logL, "class") <- NULL
+    betaMat <- stats::na.omit(betaMat)
+    attr(logL, "na.action") <- attr(logL, "class") <-
+        attr(betaMat, "na.action") <- attr(betaMat, "class") <- NULL
 
     ## numerical approximation of I_oc fisher information matrix
     incDat$xExp <- oneFit$xExp
     I_oc <- approxIoc(dat = incDat, xMat = xMat, nIter = 100)
 
     ## DM matrix
-    dmMat <- dm(betaOld = start$beta, betaEst = betaHat, h0Dat = h0Dat,
-                dat = incDat, xMat = xMat, control = control)
+    ## incDat$piVec <- start$piVec
+    dmMat <- dmECM(betaMat = betaMat, betaEst = betaHat, h0Dat = h0Dat,
+                   dat = incDat, xMat = xMat, control = control)
 
-    ## variance-covariance matrix by SEM
+    ## variance-covariance matrix by SECM
     invI_oc <- solve(I_oc)
-    semVar <- invI_oc + invI_oc %*% dmMat %*% solve(diag(1, nBeta) - dmMat)
+    secmVar <- invI_oc + invI_oc %*% dmMat %*% solve(diag(1, nBeta) - dmMat)
+    ## secmVar <- solve((diag(1, nBeta) - dmMat) %*% I_oc)
 
     ## estimates for beta
     est_beta <- matrix(NA, nrow = nBeta, ncol = 6L)
     colnames(est_beta) <- c("coef", "exp(coef)", "se(coef)",
-                            "se_sem", "z", "Pr(>|z|)")
+                            "se_SEM", "z", "Pr(>|z|)")
     rownames(est_beta) <- covar_names
     se_vec <- sqrt(diag(solve(betaEst$hessian)))
-    est_beta[, 1] <- betaEst$estimate[seq_len(nBeta)]
+    est_beta[, 1] <- as.vector(betaHat)
     est_beta[, 2] <- exp(est_beta[, 1L])
-    est_beta[, 3] <- se_vec[seq_len(nBeta)]
-    est_beta[, 4] <- as.vector(sqrt(diag(semVar)))
+    est_beta[, 3] <- as.vector(se_vec)
+    est_beta[, 4] <- as.vector(sqrt(diag(secmVar)))
     est_beta[, 5] <- est_beta[, 1L] / est_beta[, 3L]
-    est_beta[, 6] <- 2 * stats::pnorm(- abs(est_beta[, 4L]))
+    est_beta[, 6] <- 2 * stats::pnorm(- abs(est_beta[, 5L]))
 
     ## output: na.action
     na.action <- if (is.null(attr(mf, "na.action"))) {
@@ -143,9 +160,8 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
                             data = dat,
                             nObs = nObs,
                             estimates = list(beta = est_beta,
-                                             piVec = incDat$piVec,
-                                             h0Dat = h0Dat,
-                                             semVar = semVar),
+                                             piEst = piEst,
+                                             h0Dat = h0Dat),
                             control = control,
                             start = start,
                             na.action = na.action,
@@ -165,30 +181,32 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
 oneRowDM <- function(ind, betaOld, betaEst, h0Dat, dat, xMat, control){
     betaOld_ind <- betaEst
     betaOld_ind[ind] <- betaOld[ind]
-    oneFit <- oneEMstep(betaOld_ind, h0Dat, dat, xMat, control)
+    oneFit <- oneECMstep(betaOld_ind, h0Dat, dat, xMat, control)
     betaNew_ind <- oneFit$betaEst$estimate
     denom <- betaOld[ind] - betaEst[ind]
     numer <- betaNew_ind - betaEst
     numer / denom
 }
 
-## DM matrix for SEM
-dm <- function(betaOld, betaEst, h0Dat, dat, xMat, control) {
+## DM matrix for ECM
+dmECM <- function(betaMat, betaEst, h0Dat, dat, xMat, control) {
     ## set up iteration
     nBeta <- length(betaEst)
     idx <- seq_len(nBeta)
     transDM <- transDM_old <- matrix(0, nBeta, nBeta)
     tolVec <- rep(1, nBeta)
-    browser()
-    for (iter in seq_len(control$iterlimSem)) {
-        ## betaOld: \theta^{(t)}
-        ## betaNew: \theta^{(t + 1)}
-        oneFit <- oneEMstep(betaOld, h0Dat, dat, xMat, control)
 
+    for (iter in seq_len(control$iterlimSem)) {
         ## transpose of DM matrix
-        transDM[, idx] <- sapply(idx, oneRowDM, betaOld = betaOld,
+        transDM[, idx] <- sapply(idx, oneRowDM, betaOld = betaMat[iter, ],
                                  betaEst = betaEst, h0Dat = h0Dat,
                                  dat = dat, xMat = xMat, control = control)
+
+        ## NaN produced when convergence of ECM
+        if (any(is.nan(transDM))) {
+            warning("DM matrix does not converge under given tolerance.")
+            return(transDM_old)
+        }
 
         ## determine convergence on each row of DM matrix (column of DM^T)
         dmArray <- array(c(transDM_old, transDM), dim = c(nBeta, nBeta, 2L))
@@ -197,18 +215,17 @@ dm <- function(betaOld, betaEst, h0Dat, dat, xMat, control) {
             oneDM_old <- vec2[, 1L]
             oneDM_new <- vec2[, 2L]
             vecDiff <- oneDM_new - oneDM_old
-            sum(vecDiff ^ 2) / sum(oneDM_old ^ 2)
+            ## vecSum <- oneDM_new + oneDM_old
+            ## max(abs(vecDiff / vecSum))
+            max(abs(vecDiff))
         })
-        if (all(tolVec < control$tolSem)) break
-
-        ## update for next iteration
-        betaOld <- oneFit$betaEst$estimate
-        idx <- idx[tolVec > control$tolSem]
+        if (iter > 1) {
+            if (all(tolVec < control$tolSem)) break
+            ## update for next iteration
+            idx <- idx[tolVec > control$tolSem]
+        }
         transDM_old <- transDM
-        dat$piVec <- oneFit$piVec
-        h0Dat$h0Vec <- oneFit$h0Vec
     }
-
     t(transDM)
 }
 
@@ -216,7 +233,10 @@ dm <- function(betaOld, betaEst, h0Dat, dat, xMat, control) {
 ## sample latent indicators based on estiamted posterior prob.
 rLatent <- function(dat) {
     tmpList <- aggregate(piVec ~ ID, data = dat, function(a) {
-        rmultinom(1L, size = 1L, prob = a)
+        if (sum(a))
+            return(rmultinom(1L, size = 1L, prob = a))
+        ## else return
+        0
     })
     unlist(tmpList$piVec)
 }
@@ -231,7 +251,8 @@ oneIoc <- function(parSeq, dat, xMat) {
     k_1 <- k1(parSeq, dat, xMat)
     k_2 <- k2(parSeq, dat, xMat)
     ## one fisher information matrix in vector
-    - as.vector(d2Lbeta(parSeq, k_0, k_1, k_2, delta_tildeN))
+    res <- - as.vector(d2Lbeta(parSeq, k_0, k_1, k_2, delta_tildeN))
+    return(res)
 }
 
 ## approximation of I_oc matrix
@@ -244,25 +265,16 @@ approxIoc <- function(dat, xMat, nIter = 1e3) {
 }
 
 ## perform one step of EM algorithm
-oneEMstep <- function(betaHat, h0Dat, dat, xMat, control) {
+oneECMstep <- function(betaHat, h0Dat, dat, xMat, control) {
 
     ## update results involving beta estimates
     dat$betaX <- as.vector(xMat %*% betaHat)
-    dat$xExp <- pmax(exp(dat$betaX), .Machine$double.eps)
+    dat$xExp <- exp(dat$betaX)
 
     ## update or initialize p_jk with piVec
-    dat$p_jk <- dat$piVec
+    ## dat$p_jk <- dat$piVec
 
-    ## update beta
-    betaEst <- stats::nlm(logLbeta, p = betaHat, dat = dat, xMat = xMat,
-                          hessian = TRUE, check.analyticals = TRUE,
-                          gradtol = control$gradtol, stepmax = control$stepmax,
-                          steptol = control$steptol, iterlim = control$iterlim)
-
-    ## compute with updated beta estimates
-    dat$betaX <- as.vector(xMat %*% betaEst$estimate)
-    dat$xExp <- pmax(exp(dat$betaX), .Machine$double.eps)
-
+    ## E-step ------------------------------------------------------------------
     ## update baseline hazard rate
     h0Dat$H0Vec <- cumsum(h0Dat$h0Vec)
     time_idx <- match(dat$time, h0Dat$time)
@@ -272,16 +284,29 @@ oneEMstep <- function(betaHat, h0Dat, dat, xMat, control) {
 
     dat$hVec <- with(dat, h0Vec * xExp)
     dat$HVec <- with(dat, H0Vec * xExp)
-    dat$sVec <- pmax(exp(- dat$HVec), .Machine$double.eps)
+    dat$sVec <- exp(- dat$HVec)
 
     ## compute p_jk for each subject
     dat$p_jk_numer <- with(dat, ifelse(eventInd, piVec * hVec * sVec,
                                        piVec * sVec))
-    dat$p_jk_numer <- pmax(dat$p_jk_numer, .Machine$double.eps)
+    ## dat$p_jk_numer <- pmax(dat$p_jk_numer, .Machine$double.eps)
+    ## if (any(dat$p_jk_numer < .Machine$double.eps))
+    ##     message("dat$p_jk_numer < .Machine$double.eps")
     p_jk_denom_dat <- aggregate(p_jk_numer ~ ID, data = dat, FUN = sum)
     idx <- match(dat$ID, p_jk_denom_dat$ID)
     dat$p_jk_denom <- p_jk_denom_dat[idx, "p_jk_numer"]
     dat$p_jk <- with(dat, p_jk_numer / p_jk_denom)
+
+    ## CM-steps ----------------------------------------------------------------
+    ## update beta
+    betaEst <- stats::nlm(logLbeta, p = betaHat, dat = dat, xMat = xMat,
+                          hessian = TRUE, check.analyticals = TRUE,
+                          gradtol = control$gradtol, stepmax = control$stepmax,
+                          steptol = control$steptol, iterlim = control$iterlim)
+
+    ## compute with updated beta estimates
+    dat$betaX <- as.vector(xMat %*% betaEst$estimate)
+    dat$xExp <- exp(dat$betaX)
 
     ## log-likelihood function under observed data
     logL <- with(dat, sum(log(p_jk_denom[! duplicated(ID)])))
@@ -298,7 +323,7 @@ logLbeta <- function(param, dat, xMat) {
 
     ## update retults depends on beta estimates, param
     dat$betaX <- as.vector(xMat %*% param)
-    dat$xExp <- pmax(exp(dat$betaX), .Machine$double.eps)
+    dat$xExp <- exp(dat$betaX)
 
     ## prepare intermediate results for later computation
     parSeq <- seq_along(param)
@@ -310,9 +335,10 @@ logLbeta <- function(param, dat, xMat) {
     k_2 <- k2(parSeq, dat, xMat)
 
     ## profile log-likelihood of beta in EM
-    pell <- sum(betaXdeltaN) - sum(log(k_0) * delta_tildeN)
+    pell <- sum(betaXdeltaN) - sum(ifelse(delta_tildeN > 0,
+                                          delta_tildeN * log(k_0), 0))
     ## penalty term to avoid solution with xExp being Inf
-    penal <- any(dat$xExp == Inf) * 1e20
+    penal <- any(is.infinite(dat$xExp)) * 1e20
     negLogL <- - pell + penal
 
     ## gradient
@@ -330,7 +356,7 @@ logLbeta <- function(param, dat, xMat) {
 h0t <- function(dat) {
     numer <- deltaTildeN(dat)
     denom <- k0(dat)
-    numer / denom
+    ifelse(numer > 0, numer / denom, 0)
 }
 
 ## building blocks that follows notation in manuscript
@@ -369,28 +395,30 @@ k2 <- function(parSeq, dat, xMat) {
 
 dLbeta <- function(xMatDeltaN, k_0, k_1, delta_tildeN) {
     sum_jk <- colSums(xMatDeltaN)
-    int_t <- colSums(k_1 / k_0 * delta_tildeN)
+    int_t <- colSums(na.omit(k_1 / k_0 * delta_tildeN))
     sum_jk - int_t
 }
 
 d2Lbeta <- function(parSeq, k_0, k_1, k_2, delta_tildeN) {
     ## part 1
     nPar <- length(parSeq)
-    mat1 <- k_2 / k_0 * delta_tildeN
+    mat1 <- na.omit(k_2 / k_0 * delta_tildeN)
     part1 <- matrix(colSums(mat1), nPar, nPar)
 
     ## part 2
     mat2 <- k_1 / k_0
+    mat2[k_0 == 0, ] <- rep(0, nPar)
     parGrid <- expand.grid(parSeq, parSeq)
     mat2plus <- mapply(function(ind1, ind2) {
         mat2[, ind1] * mat2[, ind2]
     }, parGrid[, 1L], parGrid[, 2L])
-    part2 <- matrix(colSums(mat2plus * delta_tildeN), nPar, nPar)
-
+    part2 <- matrix(colSums(mat2plus * delta_tildeN),
+                    nPar, nPar)
+    ## return
     part2 - part1
 }
 
-coxEmStart <- function(beta, h0 = 1e-3, censorRate = 0.8, ..., nBeta_, dat_) {
+coxEmStart <- function(beta, h0 = 1e-3, censorRate = 0.01, ..., nBeta_, dat_) {
     ## baseline hazard function: h0Vec
     ## subDat <- base::subset(dat, event == 0L)
     ## tempFit <- survival::survreg(survival::Surv(time, event) ~ X1 + X2,
@@ -433,10 +461,10 @@ coxEmStart <- function(beta, h0 = 1e-3, censorRate = 0.8, ..., nBeta_, dat_) {
 }
 
 
-coxEmControl <- function(gradtol = 1e-6, stepmax = 1e5,
-                         steptol = 1e-6, iterlim = 1e2,
-                         tolEm = 1e-6, iterlimEm = 1e3,
-                         tolSem = 1e-3, iterlimSem = 1e2, ...) {
+coxEmControl <- function(gradtol = 1e-8, stepmax = 1e5,
+                         steptol = 1e-8, iterlim = 1e3,
+                         tolEm = 1e-8, iterlimEm = 1e3,
+                         tolSem = 1e-4, iterlimSem = 1e2, ...) {
     ## controls for function stats::nlm
     if (!is.numeric(gradtol) || gradtol <= 0)
         stop("value of 'gradtol' must be > 0")
