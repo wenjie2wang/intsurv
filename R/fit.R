@@ -14,9 +14,9 @@
 ##' source("../simulation/simuData.R")
 ##'
 ##' set.seed(1216)
-##' dat <- simuWeibull(nSubject = 200, maxNum = 2, nRecordProb = c(0.8, 0.2),
-##'                    censorTime = 7, lambda = 1e-2, rho = 2, mixture = 0.5)
-##' dat$obsTime <- round(dat$obsTime, 2)
+##' dat <- simuWeibull(nSubject = 1000, maxNum = 2, nRecordProb = c(0.8, 0.2),
+##'                    censorMax = 7, lambda = 1e-2, rho = 2, mixture = 0.5)
+##' ## dat$obsTime <- round(dat$obsTime, 2)
 ##' temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2, data = dat)
 ##' temp@estimates$beta
 
@@ -195,8 +195,9 @@ dmECM <- function(betaMat, betaEst, h0Dat, dat, xMat, control) {
     idx <- seq_len(nBeta)
     transDM <- transDM_old <- matrix(0, nBeta, nBeta)
     tolVec <- rep(1, nBeta)
+    iterMax <- nrow(betaMat)
 
-    for (iter in seq_len(control$iterlimSem)) {
+    for (iter in min(iterMax, seq_len(control$iterlimSem))) {
         ## transpose of DM matrix
         transDM[, idx] <- sapply(idx, oneRowDM, betaOld = betaMat[iter, ],
                                  betaEst = betaEst, h0Dat = h0Dat,
@@ -205,7 +206,7 @@ dmECM <- function(betaMat, betaEst, h0Dat, dat, xMat, control) {
         ## NaN produced when convergence of ECM
         if (any(is.nan(transDM))) {
             warning("DM matrix does not converge under given tolerance.")
-            return(transDM_old)
+            return(t(transDM_old))
         }
 
         ## determine convergence on each row of DM matrix (column of DM^T)
