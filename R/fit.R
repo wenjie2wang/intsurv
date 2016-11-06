@@ -11,15 +11,26 @@
 ##' ## temp code for testing only
 ##'
 ##' source("class.R")
+##' source("fit.R")
 ##' source("../simulation/simuData.R")
+##' source("../simulation/simuFun.R")
 ##'
 ##' set.seed(1216)
-##' dat <- simuWeibull(nSubject = 1000, maxNum = 2, nRecordProb = c(0.8, 0.2),
-##'                    censorMax = 7, lambda = 1e-2, rho = 2, mixture = 0.5)
+##' dat <- simuWeibull(nSubject = 200, maxNum = 2, nRecordProb = c(0.8, 0.2),
+##'                    censorMax = 1000, censorMin = 900,
+##'                    lambda = 1, rho = 0.7, mixture = 0.5, eventOnly = TRUE)
 ##' ## dat$obsTime <- round(dat$obsTime, 2)
 ##' temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2, data = dat)
 ##' temp@estimates$beta
-
+##' tmpDat <- cbind(dat, piEst = round(temp@estimates$piEst, 5))
+##' xtabs(~ eventInd + piEst, tmpDat, latentInd != 1L)
+##' summar(list(temp))
+##'
+##' trueDat <- dat[! duplicated(dat$ID), ]
+##' library(survival)
+##' (fitbm <- coxph(Surv(obsTime, eventInd) ~ x1 + x2, data = trueDat))
+##' oracleWb(temp)
+##'
 
 
 ## implementation of ECM algorithm to Cox model
@@ -62,30 +73,30 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
     colnames(dat) <- c("ID", "time", "event", covar_names)
     nObs <- nrow(dat)
     nBeta <- ncol(dat) - 3L
-
-    ## define some variables for ease of computing
-    incDat <- dat[(orderInc <- with(dat, order(time, ID))), ]
-    xMat <- as.matrix(incDat[, - seq_len(3)])
-    incDat$eventInd <- incDat$event == 1L
+    dat$eventInd <- dat$event == 1L
 
     ## 'control' for 'nlm'
     control <- do.call("coxEmControl", control)
 
     ## start' values for 'nlm'
-    startList <- c(start, list(nBeta_ = nBeta, dat_ = incDat))
+    startList <- c(start, list(nBeta_ = nBeta, dat_ = dat))
     start <- do.call("coxEmStart", startList)
     betaHat <- start$beta
-    incDat$piVec <- start$piVec
+
+    ## define some variables for ease of computing
+    incDat <- dat[(orderInc <- with(dat, order(time, ID))), ]
+    xMat <- as.matrix(incDat[, 4L : (3L + nBeta)])
+    incDat$piVec <- start$piVec[orderInc]
 
     ## take care of possible ties
-    h0Dat <- aggregate(start$h0Vec, list(time = incDat$time), FUN = sum)
+    h0Dat <- aggregate(start$h0Vec[orderInc],
+                       list(time = incDat$time), FUN = sum)
     colnames(h0Dat)[2L] <- "h0Vec"
-    ## h0Dat0 <- h0Dat
 
     ## trace the log-likelihood for observed data
     logL <- rep(NA, control$iterlimEm)
     ## trace beta estimates from each iteration of ECM
-    betaMat <- matrix(NA, nrow = control$iterlimEm, ncol = nBeta)
+    betaMat <- matrix(NA, nrow = control$iterlimEm + 1L, ncol = nBeta)
     betaMat[1L, ] <- betaHat
 
     for (iter in seq_len(control$iterlimEm)) {
@@ -93,7 +104,7 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
                              dat = incDat, xMat = xMat, control = control)
         ## log likehood
         logL[iter] <- oneFit$logL
-        ## update p_jk
+        ## update p_jk or not? maybe yes
         incDat$piVec <- oneFit$piVec
         ## update baseline hazard rate h0
         h0Dat$h0Vec <- oneFit$h0Vec
@@ -106,7 +117,7 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
     }
 
     ## prepare for outputs
-    piEst <- incDat$piVec
+    piEst <- oneFit$piVec[(reOrderIdx <- order(orderInc))]
 
     ## clean-up NA's
     logL <- stats::na.omit(logL)
@@ -119,7 +130,6 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
     I_oc <- approxIoc(dat = incDat, xMat = xMat, nIter = 100)
 
     ## DM matrix
-    ## incDat$piVec <- start$piVec
     dmMat <- dmECM(betaMat = betaMat, betaEst = betaHat, h0Dat = h0Dat,
                    dat = incDat, xMat = xMat, control = control)
 
@@ -298,6 +308,9 @@ oneECMstep <- function(betaHat, h0Dat, dat, xMat, control) {
     dat$p_jk_denom <- p_jk_denom_dat[idx, "p_jk_numer"]
     dat$p_jk <- with(dat, p_jk_numer / p_jk_denom)
 
+    ## browser()
+    ## print(dat[order(dat$ID), c("ID", "time", "event", "p_jk")])
+
     ## CM-steps ----------------------------------------------------------------
     ## update beta
     betaEst <- stats::nlm(logLbeta, p = betaHat, dat = dat, xMat = xMat,
@@ -419,7 +432,8 @@ d2Lbeta <- function(parSeq, k_0, k_1, k_2, delta_tildeN) {
     part2 - part1
 }
 
-coxEmStart <- function(beta, h0 = 1e-3, censorRate = 0.01, ..., nBeta_, dat_) {
+coxEmStart <- function(beta, h0 = 0.01, censorRate = h0 ^ 2 * 1e-2, ...,
+                       nBeta_, dat_) {
     ## baseline hazard function: h0Vec
     ## subDat <- base::subset(dat, event == 0L)
     ## tempFit <- survival::survreg(survival::Surv(time, event) ~ X1 + X2,
@@ -462,10 +476,10 @@ coxEmStart <- function(beta, h0 = 1e-3, censorRate = 0.01, ..., nBeta_, dat_) {
 }
 
 
-coxEmControl <- function(gradtol = 1e-8, stepmax = 1e5,
-                         steptol = 1e-8, iterlim = 1e3,
-                         tolEm = 1e-8, iterlimEm = 1e3,
-                         tolSem = 1e-4, iterlimSem = 1e2, ...) {
+coxEmControl <- function(gradtol = 1e-6, stepmax = 1e3,
+                         steptol = 1e-6, iterlim = 1e2,
+                         tolEm = 1e-6, iterlimEm = 1e3,
+                         tolSem = 1e-3, iterlimSem = 1e2, ...) {
     ## controls for function stats::nlm
     if (!is.numeric(gradtol) || gradtol <= 0)
         stop("value of 'gradtol' must be > 0")
