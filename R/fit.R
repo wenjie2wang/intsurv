@@ -17,19 +17,20 @@
 ##'
 ##' set.seed(1216)
 ##' dat <- simuWeibull(nSubject = 200, maxNum = 2, nRecordProb = c(0.8, 0.2),
-##'                    censorMax = 1000, censorMin = 900,
-##'                    lambda = 1, rho = 0.7, mixture = 0.5, eventOnly = TRUE)
+##'                    censorMax = 100, censorMin = 0.5,
+##'                    lambda = 2, rho = 0.7,
+##'                    mixture = 0.5, eventOnly = TRUE)
 ##' ## dat$obsTime <- round(dat$obsTime, 2)
 ##' temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2, data = dat)
-##' temp@estimates$beta
+##' ## temp@estimates$beta
 ##' tmpDat <- cbind(dat, piEst = round(temp@estimates$piEst, 5))
-##' xtabs(~ eventInd + piEst, tmpDat, latentInd != 1L)
+##' ## xtabs(~ eventInd + piEst, tmpDat, latentInd != 1L)
 ##' summar(list(temp))
 ##'
 ##' trueDat <- dat[! duplicated(dat$ID), ]
 ##' library(survival)
 ##' (fitbm <- coxph(Surv(obsTime, eventInd) ~ x1 + x2, data = trueDat))
-##' oracleWb(temp)
+##' oracleWb(temp, rho0 = 0.7)
 ##'
 
 
@@ -281,9 +282,7 @@ oneECMstep <- function(betaHat, h0Dat, dat, xMat, control) {
     ## update results involving beta estimates
     dat$betaX <- as.vector(xMat %*% betaHat)
     dat$xExp <- exp(dat$betaX)
-
-    ## update or initialize p_jk with piVec
-    ## dat$p_jk <- dat$piVec
+    dat$xExp <- ifelse(is.infinite(dat$xExp), 1e50, dat$xExp)
 
     ## E-step ------------------------------------------------------------------
     ## update baseline hazard rate
@@ -338,6 +337,7 @@ logLbeta <- function(param, dat, xMat) {
     ## update retults depends on beta estimates, param
     dat$betaX <- as.vector(xMat %*% param)
     dat$xExp <- exp(dat$betaX)
+    dat$xExp <- ifelse(is.infinite(dat$xExp), 1e50, dat$xExp)
 
     ## prepare intermediate results for later computation
     parSeq <- seq_along(param)
@@ -432,7 +432,7 @@ d2Lbeta <- function(parSeq, k_0, k_1, k_2, delta_tildeN) {
     part2 - part1
 }
 
-coxEmStart <- function(beta, h0 = 0.01, censorRate = h0 ^ 2 * 1e-2, ...,
+coxEmStart <- function(beta, h0 = 0.01, censorRate = h0 ^ 3, ...,
                        nBeta_, dat_) {
     ## baseline hazard function: h0Vec
     ## subDat <- base::subset(dat, event == 0L)
@@ -476,7 +476,7 @@ coxEmStart <- function(beta, h0 = 0.01, censorRate = h0 ^ 2 * 1e-2, ...,
 }
 
 
-coxEmControl <- function(gradtol = 1e-6, stepmax = 1e3,
+coxEmControl <- function(gradtol = 1e-6, stepmax = 1e2,
                          steptol = 1e-6, iterlim = 1e2,
                          tolEm = 1e-6, iterlimEm = 1e3,
                          tolSem = 1e-3, iterlimSem = 1e2, ...) {
