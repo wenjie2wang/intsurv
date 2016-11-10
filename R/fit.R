@@ -17,13 +17,13 @@
 ##'
 ##' set.seed(1216)
 ##' dat <- simuWeibull(nSubject = 200, maxNum = 2, nRecordProb = c(0.8, 0.2),
-##'                    censorMax = 100, censorMin = 0.5,
-##'                    lambda = 2, rho = 0.7,
-##'                    mixture = 0.5, eventOnly = TRUE)
+##'                    censorMax = 7, censorMin = 0.5,
+##'                    lambda = 0.02, rho = 0.7,
+##'                    mixture = 0.5, eventOnly = FALSE)
 ##' ## dat$obsTime <- round(dat$obsTime, 2)
 ##' temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2, data = dat)
 ##' ## temp@estimates$beta
-##' tmpDat <- cbind(dat, piEst = round(temp@estimates$piEst, 5))
+##' tmpDat <- cbind(dat, piEst = round(temp@estimates$piEst, 4))
 ##' ## xtabs(~ eventInd + piEst, tmpDat, latentInd != 1L)
 ##' summar(list(temp))
 ##'
@@ -139,18 +139,24 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
     secmVar <- invI_oc + invI_oc %*% dmMat %*% solve(diag(1, nBeta) - dmMat)
     ## secmVar <- solve((diag(1, nBeta) - dmMat) %*% I_oc)
 
+    ## se estimatation by multiple imputation method
+    miVar <- imputeVar(incDat, xMat, nImpute = 30)
+
     ## estimates for beta
-    est_beta <- matrix(NA, nrow = nBeta, ncol = 6L)
-    colnames(est_beta) <- c("coef", "exp(coef)", "se(coef)",
-                            "se_SEM", "z", "Pr(>|z|)")
+    ## est_beta <- matrix(NA, nrow = nBeta, ncol = 6L)
+    est_beta <- matrix(NA, nrow = nBeta, ncol = 4L)
+    ## colnames(est_beta) <- c("coef", "exp(coef)", "se(coef)",
+    ##                         "se_SEM", "z", "Pr(>|z|)")
+    colnames(est_beta) <- c("coef", "se_comp", "se_SEM", "se_MI")
     rownames(est_beta) <- covar_names
     se_vec <- sqrt(diag(solve(betaEst$hessian)))
     est_beta[, 1] <- as.vector(betaHat)
-    est_beta[, 2] <- exp(est_beta[, 1L])
-    est_beta[, 3] <- as.vector(se_vec)
-    est_beta[, 4] <- as.vector(sqrt(diag(secmVar)))
-    est_beta[, 5] <- est_beta[, 1L] / est_beta[, 3L]
-    est_beta[, 6] <- 2 * stats::pnorm(- abs(est_beta[, 5L]))
+    ## est_beta[, 2] <- exp(est_beta[, 1L])
+    est_beta[, 2] <- as.vector(se_vec)
+    est_beta[, 3] <- as.vector(sqrt(diag(secmVar)))
+    est_beta[, 4] <- as.vector(sqrt(miVar))
+    ## est_beta[, 6] <- est_beta[, 1L] / est_beta[, 3L]
+    ## est_beta[, 7] <- 2 * stats::pnorm(- abs(est_beta[, 5L]))
 
     ## output: na.action
     na.action <- if (is.null(attr(mf, "na.action"))) {
@@ -253,6 +259,32 @@ rLatent <- function(dat) {
     unlist(tmpList$piVec)
 }
 
+
+## one imputation
+oneImpute <- function(dat, xMat) {
+    ## one latent sample
+    dat$latent <- rLatent(dat)
+    uniDat <- subset(dat, latent == 1L)
+    oneFit <- survival::coxph(survival::Surv(time, event) ~ xMat,
+                              data = dat, ties = "breslow")
+    est <- oneFit$coefficients
+    betaVar <- diag(oneFit$var)
+    c(est, betaVar)
+}
+
+
+## se estimates by multiple imputation
+imputeVar <- function(dat, xMat, nImpute) {
+    nBeta <- ncol(xMat)
+    idx <- seq_len(nBeta)
+    coefMat <- replicate(nImpute, oneImpute(dat, xMat))
+    eVar <- apply(coefMat[idx, ], 1, var)
+    adj <- 1 + 1 / nImpute
+    mVar <- rowMeans(coefMat[- idx, ])
+    mVar + adj * eVar
+}
+
+
 ## I_oc matrix from one latent sample
 oneIoc <- function(parSeq, dat, xMat) {
     ## one latent sample
@@ -263,8 +295,7 @@ oneIoc <- function(parSeq, dat, xMat) {
     k_1 <- k1(parSeq, dat, xMat)
     k_2 <- k2(parSeq, dat, xMat)
     ## one fisher information matrix in vector
-    res <- - as.vector(d2Lbeta(parSeq, k_0, k_1, k_2, delta_tildeN))
-    return(res)
+    - as.vector(d2Lbeta(parSeq, k_0, k_1, k_2, delta_tildeN))
 }
 
 ## approximation of I_oc matrix
@@ -296,16 +327,24 @@ oneECMstep <- function(betaHat, h0Dat, dat, xMat, control) {
     dat$HVec <- with(dat, H0Vec * xExp)
     dat$sVec <- exp(- dat$HVec)
 
+    ## for unique censoring case, let piS = 1
+    dat$piS <- with(dat, ifelse(! duplicated(ID), 1, piVec * sVec))
+    dat$piS <- with(dat, ifelse(eventInd, 0, piS))
+
     ## compute p_jk for each subject
-    dat$p_jk_numer <- with(dat, ifelse(eventInd, piVec * hVec * sVec,
-                                       piVec * sVec))
+    ## dat$p_jk_numer <- with(dat, ifelse(eventInd, piVec * hVec * sVec,
+    ##                                    piVec * sVec))
+    dat$p_jk_numer <- with(dat, ifelse(eventInd, piVec * hVec * sVec, 0))
     ## dat$p_jk_numer <- pmax(dat$p_jk_numer, .Machine$double.eps)
     ## if (any(dat$p_jk_numer < .Machine$double.eps))
     ##     message("dat$p_jk_numer < .Machine$double.eps")
     p_jk_denom_dat <- aggregate(p_jk_numer ~ ID, data = dat, FUN = sum)
+    p_jk_cen <- aggregate(piS ~ ID, data = dat, FUN = sum)
     idx <- match(dat$ID, p_jk_denom_dat$ID)
     dat$p_jk_denom <- p_jk_denom_dat[idx, "p_jk_numer"]
-    dat$p_jk <- with(dat, p_jk_numer / p_jk_denom)
+    dat$p_jk_cen <- p_jk_cen[idx, "piS"]
+    dat$p_jk <- with(dat, ifelse(eventInd,
+                                 p_jk_numer / p_jk_denom * (1 - piS), piS))
 
     ## browser()
     ## print(dat[order(dat$ID), c("ID", "time", "event", "p_jk")])
@@ -432,7 +471,7 @@ d2Lbeta <- function(parSeq, k_0, k_1, k_2, delta_tildeN) {
     part2 - part1
 }
 
-coxEmStart <- function(beta, h0 = 0.01, censorRate = h0 ^ 3, ...,
+coxEmStart <- function(beta, h0 = 0.01, censorRate, ...,
                        nBeta_, dat_) {
     ## baseline hazard function: h0Vec
     ## subDat <- base::subset(dat, event == 0L)
@@ -440,6 +479,13 @@ coxEmStart <- function(beta, h0 = 0.01, censorRate = h0 ^ 3, ...,
     ##                              data = subDat, scale = 1)
     ## constant baseline hazard function
     ## lambda <- exp(- coef(tempFit)[1])
+
+    ## set censorRate from sample truth data
+    ## if missing at random, the true censoring rate
+    ## can be estimated by true data of unique records
+    dupID <- unique(with(dat_, ID[duplicated(ID)]))
+    uniDat <- base::subset(dat_, ! ID %in% dupID)
+    censorRate <- 1 - mean(uniDat$event)
 
     ## initialize baseline hazard rate
     h0Vec <- ifelse(dat_$eventInd, h0, 0)
@@ -472,7 +518,7 @@ coxEmStart <- function(beta, h0 = 0.01, censorRate = h0 ^ 3, ...,
     piVec[idx2] <- censorRate
 
     ## return
-    list(beta = beta, h0Vec = h0Vec, piVec = piVec)
+    list(beta = beta, h0Vec = h0Vec, piVec = piVec, censorRate = censorRate)
 }
 
 
