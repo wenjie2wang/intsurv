@@ -480,12 +480,17 @@ coxEmStart <- function(beta, h0 = 0.01, censorRate, ...,
     ## constant baseline hazard function
     ## lambda <- exp(- coef(tempFit)[1])
 
-    ## set censorRate from sample truth data
-    ## if missing at random, the true censoring rate
-    ## can be estimated by true data of unique records
-    dupID <- unique(with(dat_, ID[duplicated(ID)]))
-    uniDat <- base::subset(dat_, ! ID %in% dupID)
-    censorRate <- 1 - mean(uniDat$event)
+    if (missing(censorRate)) {
+        ## set censorRate from sample truth data
+        ## if missing at random, the true censoring rate
+        ## can be estimated by true data of unique records
+        dupID <- unique(with(dat_, ID[duplicated(ID)]))
+        uniDat <- base::subset(dat_, ! ID %in% dupID)
+        censorRate <- 1 - mean(uniDat$event)
+    } else if (censorRate > 1 || censorRate < 0){
+        stop("Starting prob. of censor case being true should between 0 and 1.")
+    }
+
 
     ## initialize baseline hazard rate
     h0Vec <- ifelse(dat_$eventInd, h0, 0)
