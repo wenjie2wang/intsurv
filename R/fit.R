@@ -332,8 +332,11 @@ oneECMstep <- function(betaHat, h0Dat, dat, xMat, control) {
     dat$piS <- with(dat, ifelse(eventInd, 0, piS))
 
     ## compute p_jk for each subject
-    ## dat$p_jk_numer <- with(dat, ifelse(eventInd, piVec * hVec * sVec,
-    ##                                    piVec * sVec))
+    ## for observed log-likelihood function
+    p_jk_numer0 <- with(dat, ifelse(eventInd, piVec * hVec * sVec,
+                                    piVec * sVec))
+    p_jk_denom0 <- aggregate(p_jk_numer0, list(dat$ID), FUN = sum)
+
     dat$p_jk_numer <- with(dat, ifelse(eventInd, piVec * hVec * sVec, 0))
     ## dat$p_jk_numer <- pmax(dat$p_jk_numer, .Machine$double.eps)
     ## if (any(dat$p_jk_numer < .Machine$double.eps))
@@ -361,7 +364,7 @@ oneECMstep <- function(betaHat, h0Dat, dat, xMat, control) {
     dat$xExp <- exp(dat$betaX)
 
     ## log-likelihood function under observed data
-    logL <- with(dat, sum(log(p_jk_denom[! duplicated(ID)])))
+    logL <- sum(log(p_jk_denom0))
 
     ## update h0_jk with previous (or initial) estimates of beta
     h0Vec <- h0t(dat)
