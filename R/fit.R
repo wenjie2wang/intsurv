@@ -16,21 +16,24 @@
 ##' source("../simulation/simuFun.R")
 ##'
 ##' set.seed(1216)
-##' dat <- simuWeibull(nSubject = 200, maxNum = 2, nRecordProb = c(0.8, 0.2),
-##'                    censorMax = 7, censorMin = 0.5,
-##'                    lambda = 0.02, rho = 0.7,
+##' dat <- simuWeibull(nSubject = 200,
+##'                    maxNum = 3, nRecordProb = c(0.7, 0.2, 0.1),
+##'                    censorMax = 100, censorMin = 0.5,
+##'                    lambda = 0.02, rho = 2,
 ##'                    mixture = 0.5, eventOnly = FALSE)
 ##' ## dat$obsTime <- round(dat$obsTime, 2)
 ##' temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2, data = dat)
 ##' ## temp@estimates$beta
 ##' tmpDat <- cbind(dat, piEst = round(temp@estimates$piEst, 4))
+##' dupID <- with(tmpDat, unique(ID[duplicated(ID)]))
+##' subset(tmpDat, ID %in% dupID)
 ##' ## xtabs(~ eventInd + piEst, tmpDat, latentInd != 1L)
 ##' summar(list(temp))
 ##'
 ##' trueDat <- dat[! duplicated(dat$ID), ]
 ##' library(survival)
 ##' (fitbm <- coxph(Surv(obsTime, eventInd) ~ x1 + x2, data = trueDat))
-##' oracleWb(temp, rho0 = 0.7)
+##' oracleWb(temp, rho0 = 2)
 ##'
 
 
@@ -328,7 +331,8 @@ oneECMstep <- function(betaHat, h0Dat, dat, xMat, control) {
     dat$sVec <- exp(- dat$HVec)
 
     ## for unique censoring case, let piS = 1
-    dat$piS <- with(dat, ifelse(! duplicated(ID), 1, piVec * sVec))
+    dupID <- with(dat, unique(ID[duplicated(ID)]))
+    dat$piS <- with(dat, ifelse(ID %in% dupID, piVec * sVec, 1))
     dat$piS <- with(dat, ifelse(eventInd, 0, piS))
 
     ## compute p_jk for each subject
@@ -345,7 +349,7 @@ oneECMstep <- function(betaHat, h0Dat, dat, xMat, control) {
     p_jk_cen <- aggregate(piS ~ ID, data = dat, FUN = sum)
     idx <- match(dat$ID, p_jk_denom_dat$ID)
     dat$p_jk_denom <- p_jk_denom_dat[idx, "p_jk_numer"]
-    dat$p_jk_cen <- p_jk_cen[idx, "piS"]
+    dat$piS <- p_jk_cen[idx, "piS"]
     dat$p_jk <- with(dat, ifelse(eventInd,
                                  p_jk_numer / p_jk_denom * (1 - piS), piS))
 
@@ -386,6 +390,7 @@ logLbeta <- function(param, dat, xMat) {
     xMatDeltaN <- xMat[dat$eventInd, ] * dat[dat$eventInd, "p_jk"]
     betaXdeltaN <- with(subset(dat, eventInd), betaX * p_jk)
     delta_tildeN <- deltaTildeN(dat)
+
     k_0 <- k0(dat)
     k_1 <- k1(parSeq, dat, xMat)
     k_2 <- k2(parSeq, dat, xMat)
@@ -489,7 +494,7 @@ coxEmStart <- function(beta, h0 = 0.01, censorRate, ...,
         ## can be estimated by true data of unique records
         dupID <- unique(with(dat_, ID[duplicated(ID)]))
         uniDat <- base::subset(dat_, ! ID %in% dupID)
-        censorRate <- 1 - mean(uniDat$event)
+        censorRate <- min(0.95, 1 - mean(uniDat$event))
     } else if (censorRate > 1 || censorRate < 0){
         stop("Starting prob. of censor case being true should between 0 and 1.")
     }
