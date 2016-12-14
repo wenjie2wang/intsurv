@@ -17,10 +17,11 @@
 ##'
 ##' set.seed(1216)
 ##' dat <- simuWeibull(nSubject = 200,
-##'                    maxNum = 3, nRecordProb = c(0.7, 0.2, 0.1),
-##'                    censorMax = 100, censorMin = 0.5,
+##'                    maxNum = 2, nRecordProb = c(0.7, 0.3),
+##'                    matchCensor = 0.01, matchEvent = 0.1,
+##'                    censorMax = 10, censorMin = 0.5,
 ##'                    lambda = 0.02, rho = 2,
-##'                    mixture = 0.5, eventOnly = FALSE)
+##'                    mixture = 0.5, eventOnly = TRUE)
 ##' ## dat$obsTime <- round(dat$obsTime, 2)
 ##' temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2, data = dat)
 ##' ## temp@estimates$beta
@@ -331,27 +332,33 @@ oneECMstep <- function(betaHat, h0Dat, dat, xMat, control) {
     dat$sVec <- exp(- dat$HVec)
 
     ## for unique censoring case, let piS = 1
-    dupID <- with(dat, unique(ID[duplicated(ID)]))
-    dat$piS <- with(dat, ifelse(ID %in% dupID, piVec * sVec, 1))
-    dat$piS <- with(dat, ifelse(eventInd, 0, piS))
+    ## dupID <- with(dat, unique(ID[duplicated(ID)]))
+    ## dat$piS <- with(dat, ifelse(ID %in% dupID, piVec * sVec, 1))
+    ## dat$piS <- with(dat, ifelse(eventInd, 0, piS))
 
     ## compute p_jk for each subject
     ## for observed log-likelihood function
-    p_jk_numer0 <- with(dat, ifelse(eventInd, piVec * hVec * sVec,
-                                    piVec * sVec))
-    p_jk_denom0 <- aggregate(p_jk_numer0, list(dat$ID), FUN = sum)
+    ## p_jk_numer0 <- with(dat, ifelse(eventInd, piVec * hVec * sVec,
+    ##                                 piVec * sVec))
+    ## p_jk_denom0 <- aggregate(p_jk_numer0, list(dat$ID), FUN = sum)
 
-    dat$p_jk_numer <- with(dat, ifelse(eventInd, piVec * hVec * sVec, 0))
-    ## dat$p_jk_numer <- pmax(dat$p_jk_numer, .Machine$double.eps)
+    dat$p_jk_numer <- with(dat, ifelse(eventInd, piVec * hVec * sVec,
+                                       piVec * sVec))
     ## if (any(dat$p_jk_numer < .Machine$double.eps))
     ##     message("dat$p_jk_numer < .Machine$double.eps")
     p_jk_denom_dat <- aggregate(p_jk_numer ~ ID, data = dat, FUN = sum)
-    p_jk_cen <- aggregate(piS ~ ID, data = dat, FUN = sum)
+    ## p_jk_cen <- aggregate(piS ~ ID, data = dat, FUN = sum)
     idx <- match(dat$ID, p_jk_denom_dat$ID)
     dat$p_jk_denom <- p_jk_denom_dat[idx, "p_jk_numer"]
-    dat$piS <- p_jk_cen[idx, "piS"]
-    dat$p_jk <- with(dat, ifelse(eventInd,
-                                 p_jk_numer / p_jk_denom * (1 - piS), piS))
+    ## dat$piS <- p_jk_cen[idx, "piS"]
+    ## dat$p_jk <- with(dat, ifelse(eventInd,
+    ##                              p_jk_numer / p_jk_denom * (1 - piS), piS))
+
+    ## note that the dat has been sorted by time and ID
+    ## thus for each ID, censoring record is the last observation.
+    ## if unique, then there is only one censoring observation for that subject
+    dat$p_jk <- with(dat, ifelse(! duplicated(ID) | eventInd,
+                                 p_jk_numer / p_jk_denom, 0))
 
     ## browser()
     ## print(dat[order(dat$ID), c("ID", "time", "event", "p_jk")])
@@ -368,7 +375,7 @@ oneECMstep <- function(betaHat, h0Dat, dat, xMat, control) {
     dat$xExp <- exp(dat$betaX)
 
     ## log-likelihood function under observed data
-    logL <- sum(log(p_jk_denom0))
+    logL <- sum(log(dat$p_jk_denom))
 
     ## update h0_jk with previous (or initial) estimates of beta
     h0Vec <- h0t(dat)
