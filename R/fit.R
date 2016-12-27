@@ -74,7 +74,7 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
     covar_names <- colnames(mm)[- 1L]
 
     ## data
-    dat <- as.data.frame(cbind(mf[, 1L][, seq_len(3)], mm[, - 1L]))
+    dat <- as.data.frame(cbind(mf[, 1L][, seq_len(3L)], mm[, - 1L]))
     colnames(dat) <- c("ID", "time", "event", covar_names)
     nObs <- nrow(dat)
     nBeta <- ncol(dat) - 3L
@@ -154,13 +154,13 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
     colnames(est_beta) <- c("coef", "se_comp", "se_SEM", "se_MI")
     rownames(est_beta) <- covar_names
     se_vec <- sqrt(diag(solve(betaEst$hessian)))
-    est_beta[, 1] <- as.vector(betaHat)
-    ## est_beta[, 2] <- exp(est_beta[, 1L])
-    est_beta[, 2] <- as.vector(se_vec)
-    est_beta[, 3] <- as.vector(sqrt(diag(secmVar)))
-    est_beta[, 4] <- as.vector(sqrt(miVar))
-    ## est_beta[, 6] <- est_beta[, 1L] / est_beta[, 3L]
-    ## est_beta[, 7] <- 2 * stats::pnorm(- abs(est_beta[, 5L]))
+    est_beta[, 1L] <- as.vector(betaHat)
+    ## est_beta[, 2L] <- exp(est_beta[, 1L])
+    est_beta[, 2L] <- as.vector(se_vec)
+    est_beta[, 3L] <- as.vector(sqrt(diag(secmVar)))
+    est_beta[, 4L] <- as.vector(sqrt(miVar))
+    ## est_beta[, 6L] <- est_beta[, 1L] / est_beta[, 3L]
+    ## est_beta[, 7L] <- 2 * stats::pnorm(- abs(est_beta[, 5L]))
 
     ## output: na.action
     na.action <- if (is.null(attr(mf, "na.action"))) {
