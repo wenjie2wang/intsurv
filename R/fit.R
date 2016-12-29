@@ -20,9 +20,9 @@
 ##'                    maxNum = 2, nRecordProb = c(0.7, 0.3),
 ##'                    matchCensor = 0.1, matchEvent = 0.1,
 ##'                    censorMax = 12.5, censorMin = 0.5,
-##'                    lambda = 0.005, rho = 2,
-##'                    fakeLambda1 = 0.005 * exp(- 3),
-##'                    fakeLambda2 = 0.005 * exp(3),
+##'                    lambda = 0.05, rho = 2,
+##'                    fakeLambda1 = 0.05 * exp(- 3),
+##'                    fakeLambda2 = 0.05 * exp(3),
 ##'                    mixture = 0.5, eventOnly = FALSE)
 ##' ## dat$obsTime <- round(dat$obsTime, 2)
 ##' temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2, data = dat)
@@ -586,8 +586,8 @@ coxEmStart <- function(beta, h0 = 0.01, h0c = 0.01, censorRate, ...,
 
 coxEmControl <- function(gradtol = 1e-6, stepmax = 1e2,
                          steptol = 1e-6, iterlim = 1e2,
-                         tolEm = 1e-6, iterlimEm = 1e3,
-                         tolSem = 1e-3, iterlimSem = 1e2, ...) {
+                         tolEm = 1e-8, iterlimEm = 1e3,
+                         tolSem = 1e-4, iterlimSem = 1e2, ...) {
 
     ## controls for function stats::nlm
     if (!is.numeric(gradtol) || gradtol <= 0)
