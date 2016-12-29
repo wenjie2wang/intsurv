@@ -16,25 +16,31 @@
 ##' source("../simulation/simuFun.R")
 ##'
 ##' set.seed(1216)
-##' dat <- simuWeibull(nSubject = 200,
+##' dat <- simuWeibull(nSubject = 1000,
 ##'                    maxNum = 2, nRecordProb = c(0.7, 0.3),
 ##'                    matchCensor = 0.1, matchEvent = 0.1,
 ##'                    censorMax = 12.5, censorMin = 0.5,
-##'                    lambda = 0.01, rho = 0.7,
+##'                    lambda = 0.01, rho = 2,
+##'                    fakeLambda1 = 0.01 * exp(- 3),
+##'                    fakeLambda2 = 0.01 * exp(3),
 ##'                    mixture = 0.5, eventOnly = FALSE)
 ##' ## dat$obsTime <- round(dat$obsTime, 2)
 ##' temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2, data = dat)
+##'
+##' ## temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2, data = dat,
+##' ##               start = list(beta = c(1, 1)))
+##'
 ##' ## temp@estimates$beta
 ##' tmpDat <- cbind(dat, piEst = round(temp@estimates$piEst, 4))
 ##' dupID <- with(tmpDat, unique(ID[duplicated(ID)]))
 ##' subset(tmpDat, ID %in% dupID)
-##' ## xtabs(~ eventInd + piEst, tmpDat, latentInd != 1L)
-##' summar(list(temp))
+##' xtabs(~ eventInd + piEst, tmpDat, latentInd != 1L)
+##' xtabs(~ eventInd + piEst, tmpDat, latentInd == 1L)
 ##'
-##' trueDat <- dat[! duplicated(dat$ID), ]
-##' library(survival)
-##' (fitbm <- coxph(Surv(obsTime, eventInd) ~ x1 + x2, data = trueDat))
-##' oracleWb(temp, rho0 = 0.7)
+##' summar(list(temp))
+##' naiveCox(temp)
+##' oracleCox(temp)
+##' oracleWb(temp, rho0 = 2)
 ##'
 
 
@@ -105,6 +111,7 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
     ## trace beta estimates from each iteration of ECM
     betaMat <- matrix(NA, nrow = control$iterlimEm + 1L, ncol = nBeta)
     betaMat[1L, ] <- betaHat
+    tolPi <- sqrt(control$tolEm)
 
     for (iter in seq_len(control$iterlimEm)) {
         oneFit <- oneECMstep(betaHat = betaMat[iter, ], h0Dat = h0Dat,
@@ -113,7 +120,8 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
         ## log likehood
         logL[iter] <- oneFit$logL
         ## update p_jk or not? maybe yes
-        incDat$piVec <- oneFit$piVec
+        if (iter > 1 && tol < tolPi)
+            incDat$piVec <- oneFit$piVec
         ## update baseline hazard rate h0
         h0Dat$h0Vec <- oneFit$h0Vec
         ## update baseline hazard rate of censoring times
@@ -349,8 +357,12 @@ oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, control) {
 
     ## compute p_jk for each subject
     ## for observed log-likelihood function
-    dat$p_jk_numer <- with(dat, ifelse(eventInd, piVec * hVec * sVec * G_cVec,
+    dat$p_jk_numer <- with(dat, ifelse(eventInd,
+                                       piVec * hVec * sVec * G_cVec,
                                        piVec * sVec * h_cVec * G_cVec))
+    ## dat$p_jk_numer <- with(dat, ifelse(eventInd,
+    ##                                    hVec * sVec * G_cVec,
+    ##                                    sVec * h_cVec * G_cVec))
     ## if (any(dat$p_jk_numer < .Machine$double.eps))
     ##     message("dat$p_jk_numer < .Machine$double.eps")
     p_jk_denom_dat <- aggregate(p_jk_numer ~ ID, data = dat, FUN = sum)
@@ -522,14 +534,20 @@ coxEmStart <- function(beta, h0 = 0.01, h0c = 0.01, censorRate, ...,
         stop(paste("Starting prob. of censoring case being true",
                    "should between 0 and 1."))
 
-
     ## initialize baseline hazard rate
     h0Vec <- ifelse(dat_$eventInd, h0, 0)
     h_cVec <- ifelse(dat_$eventInd, 0, h0c)
 
     ## initialize covariate coefficient: beta
     if (missing(beta)) {
-        beta <- rep(0, nBeta_)
+        ## beta <- rep(0, nBeta_)
+        sID <- unique(dat_$ID[duplicated(dat_$ID)])
+        uniDat <- base::subset(dat_, ! ID %in% sID)
+        uniDat$eventInd <- NULL
+        tmp <- with(uniDat,
+                    survival::coxph(survival::Surv(time, event) ~
+                                        as.matrix(uniDat[, - seq_len(3L)])))
+        beta <- as.numeric(tmp$coefficients)
     } else if (length(beta) != nBeta_) {
         stop(paste("Number of starting values for coefficients of covariates",
                    "does not match with the specified formula."))
@@ -553,6 +571,7 @@ coxEmStart <- function(beta, h0 = 0.01, h0c = 0.01, censorRate, ...,
     piVec[idx1] <- (1 - censorRate * cenIdx[idx1]) /
         (dat_[idx1, "numRecord"] - cenIdx[idx1])
     piVec[idx2] <- censorRate
+    ## piVec[idx1 | idx2] <- 1 / dat_[idx1 | idx2, "numRecord"]
 
     ## return
     list(beta = beta, h0Vec = h0Vec, h_cVec = h_cVec,
@@ -564,6 +583,7 @@ coxEmControl <- function(gradtol = 1e-6, stepmax = 1e2,
                          steptol = 1e-6, iterlim = 1e2,
                          tolEm = 1e-6, iterlimEm = 1e3,
                          tolSem = 1e-3, iterlimSem = 1e2, ...) {
+
     ## controls for function stats::nlm
     if (!is.numeric(gradtol) || gradtol <= 0)
         stop("value of 'gradtol' must be > 0")
