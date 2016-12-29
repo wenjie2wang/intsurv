@@ -9,7 +9,7 @@
 ##'
 ##' @examples
 ##' ## temp code for testing only
-##'
+##' library(survival)
 ##' source("class.R")
 ##' source("fit.R")
 ##' source("../simulation/simuData.R")
@@ -20,9 +20,9 @@
 ##'                    maxNum = 2, nRecordProb = c(0.7, 0.3),
 ##'                    matchCensor = 0.1, matchEvent = 0.1,
 ##'                    censorMax = 12.5, censorMin = 0.5,
-##'                    lambda = 0.01, rho = 2,
-##'                    fakeLambda1 = 0.01 * exp(- 3),
-##'                    fakeLambda2 = 0.01 * exp(3),
+##'                    lambda = 0.005, rho = 2,
+##'                    fakeLambda1 = 0.005 * exp(- 3),
+##'                    fakeLambda2 = 0.005 * exp(3),
 ##'                    mixture = 0.5, eventOnly = FALSE)
 ##' ## dat$obsTime <- round(dat$obsTime, 2)
 ##' temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2, data = dat)
@@ -523,12 +523,13 @@ d2Lbeta <- function(parSeq, k_0, k_1, k_2, delta_tildeN) {
 coxEmStart <- function(beta, h0 = 0.01, h0c = 0.01, censorRate, ...,
                        nBeta_, dat_) {
 
+    dupID <- unique(with(dat_, ID[duplicated(ID)]))
+    uniDat <- base::subset(dat_, ! ID %in% dupID)
+
     if (missing(censorRate)) {
         ## set censorRate from sample truth data
         ## if missing at random, the true censoring rate
         ## can be estimated by true data of unique records
-        dupID <- unique(with(dat_, ID[duplicated(ID)]))
-        uniDat <- base::subset(dat_, ! ID %in% dupID)
         censorRate <- min(0.95, 1 - mean(uniDat$event))
     } else if (censorRate > 1 || censorRate < 0)
         stop(paste("Starting prob. of censoring case being true",
@@ -543,11 +544,15 @@ coxEmStart <- function(beta, h0 = 0.01, h0c = 0.01, censorRate, ...,
         ## beta <- rep(0, nBeta_)
         sID <- unique(dat_$ID[duplicated(dat_$ID)])
         uniDat <- base::subset(dat_, ! ID %in% sID)
-        uniDat$eventInd <- NULL
-        tmp <- with(uniDat,
-                    survival::coxph(survival::Surv(time, event) ~
-                                        as.matrix(uniDat[, - seq_len(3L)])))
-        beta <- as.numeric(tmp$coefficients)
+        if (mean(uniDat$event) < 0.01) {
+            beta <- rep(0, nBeta_)
+        } else {
+            uniDat$eventInd <- NULL
+            tmp <- with(uniDat,
+                        survival::coxph(survival::Surv(time, event) ~
+                                            as.matrix(uniDat[, - seq_len(3L)])))
+            beta <- as.numeric(tmp$coefficients)
+        }
     } else if (length(beta) != nBeta_) {
         stop(paste("Number of starting values for coefficients of covariates",
                    "does not match with the specified formula."))
