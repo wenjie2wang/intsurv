@@ -94,6 +94,9 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
     start <- do.call("coxEmStart", startList)
     betaHat <- start$beta
 
+    ## indicator for subjects having multiple record
+    dat$dupIdx <- with(dat, ID %in% unique(ID[duplicated(ID)]))
+
     ## define some variables for ease of computing
     incDat <- dat[(orderInc <- with(dat, order(time, ID))), ]
     xMat <- as.matrix(incDat[, 4L : (3L + nBeta)])
@@ -331,8 +334,8 @@ approxIoc <- function(dat, xMat, nIter = 1e3) {
 
 
 ## perform one step of EM algorithm
-oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, control) {
-
+oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, control)
+{
     ## update results involving beta estimates
     dat$betaX <- as.numeric(xMat %*% betaHat)
     dat$xExp <- exp(dat$betaX)
@@ -347,13 +350,19 @@ oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, control) {
 
     dat$hVec <- with(dat, h0Vec * xExp)
     dat$HVec <- with(dat, H0Vec * xExp)
-    dat$sVec <- exp(- dat$HVec)
+
+    ## scaling
+    foo <- sum(dat$HVec)
+    dat$sVec <- exp(- dat$HVec + log(foo)) / foo
 
     ## update baseline hazard rate of censoring times
     h_cDat$H_cVec <- cumsum(h_cDat$h_cVec)
     dat$h_cVec <- with(dat, ifelse(eventInd, 0, h_cDat$h_cVec[time_idx]))
     dat$H_cVec <- h_cDat$H_cVec[time_idx]
-    dat$G_cVec <- exp(- dat$H_cVec)
+
+    ## scaling
+    foo <- sum(dat$H_cVec)
+    dat$G_cVec <- exp(- dat$H_cVec + log(foo)) / foo
 
     ## compute p_jk for each subject
     ## for observed log-likelihood function
@@ -368,7 +377,9 @@ oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, control) {
     p_jk_denom_dat <- aggregate(p_jk_numer ~ ID, data = dat, FUN = sum)
     idx <- match(dat$ID, p_jk_denom_dat$ID)
     dat$p_jk_denom <- p_jk_denom_dat[idx, "p_jk_numer"]
-    dat$p_jk <- with(dat, p_jk_numer / p_jk_denom)
+    dat$p_jk <- with(dat, ifelse(dupIdx,
+                          ifelse(p_jk_denom == 0, piVec,
+                                 p_jk_numer / p_jk_denom), 1))
 
     ## browser()
     ## print(dat[order(dat$ID), c("ID", "time", "event", "p_jk")])
@@ -508,7 +519,7 @@ d2Lbeta <- function(parSeq, k_0, k_1, k_2, delta_tildeN) {
 
     ## part 2
     mat2 <- k_1 / k_0
-    mat2[k_0 == 0, ] <- rep(0, nPar)
+    mat2[k_0 == 0, ] <- 0
     parGrid <- expand.grid(parSeq, parSeq)
     mat2plus <- mapply(function(ind1, ind2) {
         mat2[, ind1] * mat2[, ind2]
