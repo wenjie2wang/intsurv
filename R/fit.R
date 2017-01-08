@@ -621,7 +621,7 @@ coxEmControl <- function(gradtol = 1e-6, stepmax = 1e2,
         stop("value of 'tolSem' must be > 0")
     if (!is.numeric(iterlimSem) || iterlimSem <= 0)
         stop("maximum number of iterations for SEM must be > 0")
-p
+
     ## return
     list(gradtol = gradtol, stepmax = stepmax,
          steptol = steptol, iterlim = iterlim,
