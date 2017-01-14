@@ -42,6 +42,7 @@
 ##' oracleCox(temp)
 ##' oracleWb(temp, rho0 = 2)
 ##'
+##' ## @import data.table? for faster aggregation?
 
 
 ## implementation of ECM algorithm to Cox model
@@ -531,7 +532,7 @@ d2Lbeta <- function(parSeq, k_0, k_1, k_2, delta_tildeN) {
 }
 
 
-coxEmStart <- function(beta, h0 = 0.001, h0c = 0.001, censorRate, ...,
+coxEmStart <- function(beta, h0, h0c, censorRate, ...,
                        nBeta_, dat_) {
 
     dupID <- unique(with(dat_, ID[duplicated(ID)]))
@@ -545,6 +546,12 @@ coxEmStart <- function(beta, h0 = 0.001, h0c = 0.001, censorRate, ...,
     } else if (censorRate > 1 || censorRate < 0)
         stop(paste("Starting prob. of censoring case being true",
                    "should between 0 and 1."))
+
+    nSub <- length(unique(dat_$ID))
+    if (missing(h0))
+        h0 <- 1 / nSub
+    if (missing(h0c))
+        h0c <- 1 / nSub
 
     ## initialize baseline hazard rate
     h0Vec <- ifelse(dat_$eventInd, h0, 0)
