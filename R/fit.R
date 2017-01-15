@@ -37,8 +37,9 @@
 ##' xtabs(~ eventInd + piEst, tmpDat, latentInd != 1L)
 ##' xtabs(~ eventInd + piEst, tmpDat, latentInd == 1L)
 ##'
-##' summar(list(temp))
+##' summar(list(temp), sem = TRUE)
 ##' naiveCox(temp)
+##' uniOnlyCox(temp)
 ##' oracleCox(temp)
 ##' oracleWb(temp, rho0 = 2)
 ##'
@@ -104,11 +105,12 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
     incDat$piVec <- start$piVec[orderInc]
 
     ## take care of possible ties
-    lastIdx <- ! duplicated(incDat$time, fromLast = TRUE)
-    h0Vec <- diff(c(0, cumsum(start$h0Vec[orderInc])[lastIdx]))
-    h_cVec <- diff(c(0, cumsum(start$h_cVec[orderInc])[lastIdx]))
-    h0Dat <- data.frame(time = incDat$time[lastIdx], h0Vec = h0Vec)
-    h_cDat <- data.frame(time = incDat$time[lastIdx], h_cVec = h_cVec)
+    h0Vec <- with(incDat, tapply(start$h0Vec[orderInc], time, FUN = sum))
+    h_cVec <- with(incDat, tapply(start$h_cVec[orderInc], time, FUN = sum))
+    h0Dat <- data.frame(time = unique(incDat$time),
+                        h0Vec = as.numeric(h0Vec))
+    h_cDat <- data.frame(time = unique(incDat$time),
+                         h_cVec = as.numeric(h_cVec))
 
     ## trace the log-likelihood for observed data
     logL <- rep(NA, control$iterlimEm)
@@ -162,21 +164,22 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
     ## secmVar <- solve((diag(1, nBeta) - dmMat) %*% I_oc)
 
     ## se estimatation by multiple imputation method
-    miVar <- imputeVar(incDat, xMat, nImpute = 30)
+    ## miVar <- imputeVar(incDat, xMat, nImpute = 30)
 
     ## estimates for beta
     ## est_beta <- matrix(NA, nrow = nBeta, ncol = 6L)
-    est_beta <- matrix(NA, nrow = nBeta, ncol = 4L)
+    est_beta <- matrix(NA, nrow = nBeta, ncol = 3L)
     ## colnames(est_beta) <- c("coef", "exp(coef)", "se(coef)",
     ##                         "se_SEM", "z", "Pr(>|z|)")
-    colnames(est_beta) <- c("coef", "se_comp", "se_SEM", "se_MI")
+    ## colnames(est_beta) <- c("coef", "se_comp", "se_SEM", "se_MI")
+    colnames(est_beta) <- c("coef", "se_comp", "se_SEM")
     rownames(est_beta) <- covar_names
     se_vec <- sqrt(diag(solve(betaEst$hessian)))
     est_beta[, 1L] <- as.vector(betaHat)
     ## est_beta[, 2L] <- exp(est_beta[, 1L])
     est_beta[, 2L] <- as.vector(se_vec)
     est_beta[, 3L] <- as.vector(sqrt(diag(secmVar)))
-    est_beta[, 4L] <- as.vector(sqrt(miVar))
+    ## est_beta[, 4L] <- as.vector(sqrt(miVar))
     ## est_beta[, 6L] <- est_beta[, 1L] / est_beta[, 3L]
     ## est_beta[, 7L] <- 2 * stats::pnorm(- abs(est_beta[, 5L]))
 
@@ -275,13 +278,13 @@ dmECM <- function(betaMat, betaEst, h0Dat, h_cDat, dat, xMat, control) {
 
 ## sample latent indicators based on estiamted posterior prob.
 rLatent <- function(dat) {
-    tmpList <- aggregate(piVec ~ ID, data = dat, function(a) {
+    tmpList <- with(dat, tapply(piVec, ID, function(a){
         if (sum(a))
             return(rmultinom(1L, size = 1L, prob = a))
         ## else return
         0
-    })
-    unlist(tmpList$piVec)
+    }))
+    unlist(tmpList)
 }
 
 
@@ -375,14 +378,14 @@ oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, control)
     ##                                    sVec * h_cVec * G_cVec))
     ## if (any(dat$p_jk_numer < .Machine$double.eps))
     ##     message("dat$p_jk_numer < .Machine$double.eps")
-    p_jk_denom_dat <- aggregate(p_jk_numer ~ ID, data = dat, FUN = sum)
-    idx <- match(dat$ID, p_jk_denom_dat$ID)
-    dat$p_jk_denom <- p_jk_denom_dat[idx, "p_jk_numer"]
+
+    s_p_jk_denom <- with(dat, tapply(p_jk_numer, ID, FUN = sum))
+    idx <- match(dat$ID, names(s_p_jk_denom))
+    dat$p_jk_denom <- s_p_jk_denom[idx]
     dat$p_jk <- with(dat, ifelse(dupIdx,
                           ifelse(p_jk_denom == 0, piVec,
                                  p_jk_numer / p_jk_denom), 1))
 
-    ## browser()
     ## print(dat[order(dat$ID), c("ID", "time", "event", "p_jk")])
 
     ## CM-steps ----------------------------------------------------------------
@@ -453,34 +456,32 @@ h0t <- function(dat) {
 
 ## building blocks that follows notation in manuscript
 deltaTildeN <- function(dat) {
-    tildeN_jk <- with(dat, eventInd * p_jk)
-    aggregate(tildeN_jk, by = list(time = dat$time), FUN = sum)[, "x"]
+    as.numeric(with(dat, tapply(eventInd * p_jk, time, FUN = sum)))
 }
 
 
 ## baseline hazard rate for censoring time
 h_c <- function(dat) {
     numer <- deltaC(dat)
-    uniDat <- aggregate(dat$p_jk, by = list(time = dat$time), FUN = sum)
+    tmp <- with(dat, tapply(p_jk, time, FUN = sum))
     ## vector of length # unique event time
-    denom <- rev(cumsum(rev(uniDat$x)))
+    denom <- rev(cumsum(rev(tmp)))
     ifelse(numer > 0, numer / denom, 0)
 }
 
 
 deltaC <- function(dat) {
-    C_jk <- with(dat, (! eventInd) * p_jk)
-    aggregate(C_jk, by = list(time = dat$time), FUN = sum)[, "x"]
+    as.numeric(with(dat, tapply((! eventInd) * p_jk, time, FUN = sum)))
 }
 
 
 k0 <- function(dat) {
     p_jk_xExp <- with(dat, p_jk * xExp)
-    ## note that aggregate convert time into factor
+    ## note that tapply converts time into factor
     ## so the output will be sorted increasingly automatically
-    uniDat <- aggregate(p_jk_xExp, by = list(time = dat$time), FUN = sum)
+    tmp <- with(dat, tapply(p_jk_xExp, time, FUN = sum))
     ## vector of length # unique event time
-    rev(cumsum(rev(uniDat$x)))
+    rev(cumsum(rev(tmp)))
 }
 
 
@@ -488,8 +489,8 @@ k1 <- function(parSeq, dat, xMat) {
     ## matrix of dimension # unique event time by # parameters
     sapply(parSeq, function(ind, dat, xMat) {
         p_jk_xExp_x <- with(dat, p_jk * xExp) * xMat[, ind]
-        uniDat <- aggregate(p_jk_xExp_x, by = list(time = dat$time), FUN = sum)
-        rev(cumsum(rev(uniDat$x)))
+        tmp <- with(dat, tapply(p_jk_xExp_x, time, FUN = sum))
+        rev(cumsum(rev(tmp)))
     }, dat = dat, xMat = xMat)
 }
 
@@ -499,8 +500,8 @@ k2 <- function(parSeq, dat, xMat) {
     ## matrix of dimension # unique event time by (# parameters) ^ 2
     mapply(function(ind1, ind2) {
         p_jk_xExp_x2 <- with(dat, p_jk * xExp) * xMat[, ind1] * xMat[, ind2]
-        uniDat <- aggregate(p_jk_xExp_x2, by = list(time = dat$time), FUN = sum)
-        rev(cumsum(rev(uniDat$x)))
+        tmp <- with(dat, tapply(p_jk_xExp_x2, time, FUN = sum))
+        rev(cumsum(rev(tmp)))
     }, ind_grid[, 1L], ind_grid[, 2L])
 }
 
