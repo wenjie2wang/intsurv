@@ -26,7 +26,8 @@
 ##'                    fakeLambda2 = 0.05 * exp(3),
 ##'                    mixture = 0.5, eventOnly = FALSE)
 ##' ## dat$obsTime <- round(dat$obsTime, 2)
-##' temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2, data = dat)
+##' temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2, data = dat,
+##'               control = list(alwaysUpdatePi = TRUE))
 ##'
 ##' ## temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2, data = dat,
 ##' ##               start = list(beta = c(1, 1)))
@@ -153,7 +154,7 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
         ## log likehood
         logL[iter] <- oneFit$logL
         ## update p_jk or not? maybe yes
-        if (iter > 1 && tol < tolPi)
+        if (control$alwaysUpdatePi || (iter > 1 && tol < tolPi))
             incDat$piVec <- oneFit$piVec
         ## update baseline hazard rate h0
         h0Dat$h0Vec <- oneFit$h0Vec
@@ -640,7 +641,8 @@ coxEmStart <- function(beta, h0, h0c, censorRate, ...,
 coxEmControl <- function(gradtol = 1e-6, stepmax = 1e2,
                          steptol = 1e-6, iterlim = 1e2,
                          tolEm = 1e-8, iterlimEm = 1e3,
-                         tolSem = 1e-4, iterlimSem = 1e2, ...) {
+                         tolSem = 1e-4, iterlimSem = 1e2,
+                         alwaysUpdatePi = FALSE, ...) {
 
     ## controls for function stats::nlm
     if (!is.numeric(gradtol) || gradtol <= 0)
@@ -668,5 +670,6 @@ coxEmControl <- function(gradtol = 1e-6, stepmax = 1e2,
     list(gradtol = gradtol, stepmax = stepmax,
          steptol = steptol, iterlim = iterlim,
          tolEm = tolEm, iterlimEm = iterlimEm,
-         tolSem = tolSem, iterlimSem = iterlimSem)
+         tolSem = tolSem, iterlimSem = iterlimSem,
+         alwaysUpdatePi = alwaysUpdatePi)
 }
