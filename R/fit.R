@@ -161,9 +161,9 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
         h_cDat$h_cVec <- oneFit$h_cVec
         ## update beta estimates
         betaEst <- oneFit$betaEst
-        betaMat[(iter <- iter + 1L), ] <- betaHat <- betaEst$estimate
-        tol <- max(abs((betaMat[iter, ] - betaMat[iter - 1L, ]) /
-                       (betaMat[iter, ] + betaMat[iter - 1L, ])))
+        betaMat[iter + 1L, ] <- betaHat <- betaEst$estimate
+        tol <- max(abs((betaMat[iter + 1L, ] - betaMat[iter, ]) /
+                       (betaMat[iter + 1L, ] + betaMat[iter, ])))
         if (tol < control$tolEm) break
     }
 
