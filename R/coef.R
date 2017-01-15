@@ -25,7 +25,7 @@ NULL
 #' @export
 setMethod(f = "coef", signature = "coxEm",
           definition = function(object, ...) {
-              object@estimates$beta[, 1]
+              object@estimates$beta
           })
 
 

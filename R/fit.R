@@ -11,6 +11,7 @@
 ##' ## temp code for testing only
 ##' library(survival)
 ##' source("class.R")
+##' source("coef.R")
 ##' source("fit.R")
 ##' source("../simulation/simuData.R")
 ##' source("../simulation/simuFun.R")
@@ -42,6 +43,22 @@
 ##' uniOnlyCox(temp)
 ##' oracleCox(temp)
 ##' oracleWb(temp, rho0 = 2)
+##'
+##' ## test on the true data of unique records
+##' trueDat <- dat[with(dat, ! duplicated(ID)), ]
+##' tmp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2, data = trueDat,
+##'              start = list(beta = c(0, 0)))
+##' tmp@estimates$beta
+##'
+##' ## test on tied event times
+##' test1 <- list(ID = seq_len(7),
+##'               time = c(4, 3, 1, 1, 2, 2, 3),
+##'               status = c(1, 1, 1, 0, 1, 1, 0),
+##'               x = c(0, 2, 1, 1, 1, 0, 0),
+##'               sex = c(0, 0, 0, 0, 1, 1, 1))
+##' coxph(Surv(time, status) ~ x + sex, test1, ties = "breslow")
+##' coef(coxEm(Surve(ID, time, status) ~ x + sex, test1,
+##'            start = list(beta = c(0, 0))))
 ##'
 ##' ## @import data.table? for faster aggregation?
 
@@ -101,16 +118,26 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
 
     ## define some variables for ease of computing
     incDat <- dat[(orderInc <- with(dat, order(time, ID))), ]
+    incDat$firstIdx <- ! duplicated(incDat$time)
     xMat <- as.matrix(incDat[, 4L : (3L + nBeta)])
     incDat$piVec <- start$piVec[orderInc]
 
+
     ## take care of possible ties
-    h0Vec <- with(incDat, tapply(start$h0Vec[orderInc], time, FUN = sum))
-    h_cVec <- with(incDat, tapply(start$h_cVec[orderInc], time, FUN = sum))
-    h0Dat <- data.frame(time = unique(incDat$time),
-                        h0Vec = as.numeric(h0Vec))
-    h_cDat <- data.frame(time = unique(incDat$time),
-                         h_cVec = as.numeric(h_cVec))
+    tied <- any(duplicated(dat$time))
+    if (tied) {
+        h0Vec <- with(incDat, tapply(start$h0Vec[orderInc], time, FUN = sum))
+        h_cVec <- with(incDat, tapply(start$h_cVec[orderInc], time, FUN = sum))
+        h0Dat <- data.frame(time = unique(incDat$time),
+                            h0Vec = as.numeric(h0Vec))
+        h_cDat <- data.frame(time = unique(incDat$time),
+                             h_cVec = as.numeric(h_cVec))
+    } else {
+        h0Dat <- data.frame(time = incDat$time,
+                            h0Vec = start$h0Vec[orderInc])
+        h_cDat <- data.frame(time = incDat$time,
+                             h_cVec = start$h_cVec[orderInc])
+    }
 
     ## trace the log-likelihood for observed data
     logL <- rep(NA, control$iterlimEm)
@@ -122,7 +149,7 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
     for (iter in seq_len(control$iterlimEm)) {
         oneFit <- oneECMstep(betaHat = betaMat[iter, ], h0Dat = h0Dat,
                              h_cDat = h_cDat, dat = incDat, xMat = xMat,
-                             control = control)
+                             tied = tied, control = control)
         ## log likehood
         logL[iter] <- oneFit$logL
         ## update p_jk or not? maybe yes
@@ -151,11 +178,11 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
 
     ## numerical approximation of I_oc fisher information matrix
     incDat$xExp <- oneFit$xExp
-    I_oc <- approxIoc(dat = incDat, xMat = xMat, nIter = 100)
+    I_oc <- approxIoc(dat = incDat, xMat = xMat, tied = tied, nIter = 100)
 
     ## DM matrix
     dmMat <- dmECM(betaMat = betaMat, betaEst = betaHat, h0Dat = h0Dat,
-                   h_cDat = h_cDat, dat = incDat, xMat = xMat,
+                   h_cDat = h_cDat, dat = incDat, xMat = xMat, tied = tied,
                    control = control)
 
     ## variance-covariance matrix by SECM
@@ -221,10 +248,10 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
 ### internal functions =========================================================
 ## one iteration for one row of DM matrix
 oneRowDM <- function(ind, betaOld, betaEst, h0Dat, h_cDat,
-                     dat, xMat, control) {
+                     dat, xMat, tied, control) {
     betaOld_ind <- betaEst
     betaOld_ind[ind] <- betaOld[ind]
-    oneFit <- oneECMstep(betaOld_ind, h0Dat, h_cDat, dat, xMat, control)
+    oneFit <- oneECMstep(betaOld_ind, h0Dat, h_cDat, dat, xMat, tied, control)
     betaNew_ind <- oneFit$betaEst$estimate
     denom <- betaOld[ind] - betaEst[ind]
     numer <- betaNew_ind - betaEst
@@ -233,7 +260,7 @@ oneRowDM <- function(ind, betaOld, betaEst, h0Dat, h_cDat,
 
 
 ## DM matrix for ECM
-dmECM <- function(betaMat, betaEst, h0Dat, h_cDat, dat, xMat, control) {
+dmECM <- function(betaMat, betaEst, h0Dat, h_cDat, dat, xMat, tied, control) {
     ## set up iteration
     nBeta <- length(betaEst)
     idx <- seq_len(nBeta)
@@ -246,7 +273,7 @@ dmECM <- function(betaMat, betaEst, h0Dat, h_cDat, dat, xMat, control) {
         transDM[, idx] <- sapply(idx, oneRowDM, betaOld = betaMat[iter, ],
                                  betaEst = betaEst, h0Dat = h0Dat,
                                  h_cDat = h_cDat, dat = dat, xMat = xMat,
-                                 control = control)
+                                 tied = tied, control = control)
 
         ## NaN produced when convergence of ECM
         if (any(is.nan(transDM))) {
@@ -314,31 +341,31 @@ imputeVar <- function(dat, xMat, nImpute) {
 
 
 ## I_oc matrix from one latent sample
-oneIoc <- function(parSeq, dat, xMat) {
+oneIoc <- function(parSeq, dat, xMat, tied) {
     ## one latent sample
     dat$p_jk <- rLatent(dat)
     ## prepare for fisher information matrix
-    delta_tildeN <- deltaTildeN(dat)
-    k_0 <- k0(dat)
-    k_1 <- k1(parSeq, dat, xMat)
-    k_2 <- k2(parSeq, dat, xMat)
+    delta_tildeN <- deltaTildeN(dat, tied)
+    k_0 <- k0(dat, tied)
+    k_1 <- k1(parSeq, dat, xMat, tied)
+    k_2 <- k2(parSeq, dat, xMat, tied)
     ## one fisher information matrix in vector
     - as.vector(d2Lbeta(parSeq, k_0, k_1, k_2, delta_tildeN))
 }
 
 
 ## approximation of I_oc matrix
-approxIoc <- function(dat, xMat, nIter = 1e3) {
+approxIoc <- function(dat, xMat, tied, nIter = 1e3) {
     nBeta <- ncol(xMat)
     parSeq <- seq_len(nBeta)
-    tmpMat <- replicate(nIter, oneIoc(parSeq, dat, xMat))
+    tmpMat <- replicate(nIter, oneIoc(parSeq, dat, xMat, tied))
     tmpVec <- rowMeans(tmpMat)
     matrix(tmpVec, ncol = nBeta)
 }
 
 
 ## perform one step of EM algorithm
-oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, control)
+oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, tied, control)
 {
     ## update results involving beta estimates
     dat$betaX <- as.numeric(xMat %*% betaHat)
@@ -348,9 +375,21 @@ oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, control)
     ## E-step ------------------------------------------------------------------
     ## update baseline hazard rate of event times
     h0Dat$H0Vec <- cumsum(h0Dat$h0Vec)
-    time_idx <- match(dat$time, h0Dat$time)
-    dat$h0Vec <- with(dat, ifelse(eventInd, h0Dat$h0Vec[time_idx], 0))
-    dat$H0Vec <- h0Dat$H0Vec[time_idx]
+    ## update baseline hazard rate of censoring times
+    h_cDat$H_cVec <- cumsum(h_cDat$h_cVec)
+
+    if (tied) {
+        time_idx <- match(dat$time, h0Dat$time)
+        dat$h0Vec <- with(dat, ifelse(eventInd, h0Dat$h0Vec[time_idx], 0))
+        dat$H0Vec <- h0Dat$H0Vec[time_idx]
+        dat$h_cVec <- with(dat, ifelse(eventInd, 0, h_cDat$h_cVec[time_idx]))
+        dat$H_cVec <- h_cDat$H_cVec[time_idx]
+    } else {
+        dat$h0Vec <- with(dat, ifelse(eventInd, h0Dat$h0Vec, 0))
+        dat$H0Vec <- h0Dat$H0Vec
+        dat$h_cVec <- with(dat, ifelse(eventInd, 0, h_cDat$h_cVec))
+        dat$H_cVec <- h_cDat$H_cVec
+    }
 
     dat$hVec <- with(dat, h0Vec * xExp)
     dat$HVec <- with(dat, H0Vec * xExp)
@@ -358,13 +397,6 @@ oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, control)
     ## scaling
     foo <- sum(dat$HVec)
     dat$sVec <- exp(- dat$HVec + log(foo)) / foo
-
-    ## update baseline hazard rate of censoring times
-    h_cDat$H_cVec <- cumsum(h_cDat$h_cVec)
-    dat$h_cVec <- with(dat, ifelse(eventInd, 0, h_cDat$h_cVec[time_idx]))
-    dat$H_cVec <- h_cDat$H_cVec[time_idx]
-
-    ## scaling
     foo <- sum(dat$H_cVec)
     dat$G_cVec <- exp(- dat$H_cVec + log(foo)) / foo
 
@@ -373,25 +405,18 @@ oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, control)
     dat$p_jk_numer <- with(dat, ifelse(eventInd,
                                        piVec * hVec * sVec * G_cVec,
                                        piVec * sVec * h_cVec * G_cVec))
-    ## dat$p_jk_numer <- with(dat, ifelse(eventInd,
-    ##                                    hVec * sVec * G_cVec,
-    ##                                    sVec * h_cVec * G_cVec))
-    ## if (any(dat$p_jk_numer < .Machine$double.eps))
-    ##     message("dat$p_jk_numer < .Machine$double.eps")
 
     s_p_jk_denom <- with(dat, tapply(p_jk_numer, ID, FUN = sum))
-    idx <- match(dat$ID, names(s_p_jk_denom))
+    idx <- match(as.character(dat$ID), names(s_p_jk_denom))
     dat$p_jk_denom <- s_p_jk_denom[idx]
     dat$p_jk <- with(dat, ifelse(dupIdx,
                           ifelse(p_jk_denom == 0, piVec,
                                  p_jk_numer / p_jk_denom), 1))
 
-    ## print(dat[order(dat$ID), c("ID", "time", "event", "p_jk")])
-
     ## CM-steps ----------------------------------------------------------------
     ## update beta
     betaEst <- stats::nlm(logLbeta, p = betaHat, dat = dat, xMat = xMat,
-                          hessian = TRUE, check.analyticals = TRUE,
+                          tied = tied, hessian = TRUE, check.analyticals = TRUE,
                           gradtol = control$gradtol, stepmax = control$stepmax,
                           steptol = control$steptol, iterlim = control$iterlim)
 
@@ -403,15 +428,15 @@ oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, control)
     logL <- sum(log(dat$p_jk_denom))
 
     ## update h0_jk and h_c_jk with previous (or initial) estimates of beta
-    h0Vec <- h0t(dat)
-    h_cVec <- h_c(dat)
+    h0Vec <- h0t(dat, tied)
+    h_cVec <- h_c(dat, tied)
     list(betaEst = betaEst, h0Vec = h0Vec, h_cVec = h_cVec,
          piVec = dat$p_jk, logL = logL, xExp = dat$xExp)
 }
 
 
 ## profile log-likelihood function of beta
-logLbeta <- function(param, dat, xMat) {
+logLbeta <- function(param, dat, xMat, tied) {
 
     ## update retults depends on beta estimates, param
     dat$betaX <- as.vector(xMat %*% param)
@@ -421,16 +446,17 @@ logLbeta <- function(param, dat, xMat) {
     ## prepare intermediate results for later computation
     parSeq <- seq_along(param)
     xMatDeltaN <- xMat[dat$eventInd, ] * dat[dat$eventInd, "p_jk"]
-    betaXdeltaN <- with(subset(dat, eventInd), betaX * p_jk)
-    delta_tildeN <- deltaTildeN(dat)
+    delta_tildeN <- deltaTildeN(dat, tied)
+    betaXdeltaN <- with(dat, eventInd * betaX * p_jk)
 
-    k_0 <- k0(dat)
-    k_1 <- k1(parSeq, dat, xMat)
-    k_2 <- k2(parSeq, dat, xMat)
+    k_0 <- k0(dat, tied)
+    k_1 <- k1(parSeq, dat, xMat, tied)
+    k_2 <- k2(parSeq, dat, xMat, tied)
 
     ## profile log-likelihood of beta in EM
     pell <- sum(betaXdeltaN) - sum(ifelse(delta_tildeN > 0,
                                           delta_tildeN * log(k_0), 0))
+
     ## penalty term to avoid solution with xExp being Inf
     penal <- any(is.infinite(dat$xExp)) * 1e20
     negLogL <- - pell + penal
@@ -447,62 +473,71 @@ logLbeta <- function(param, dat, xMat) {
 
 
 ## compute baseline hazard rate function
-h0t <- function(dat) {
-    numer <- deltaTildeN(dat)
-    denom <- k0(dat)
+h0t <- function(dat, tied) {
+    numer <- deltaTildeN(dat, tied)
+    denom <- k0(dat, tied)
     ifelse(numer > 0, numer / denom, 0)
 }
 
 
 ## building blocks that follows notation in manuscript
-deltaTildeN <- function(dat) {
-    as.numeric(with(dat, tapply(eventInd * p_jk, time, FUN = sum)))
+deltaTildeN <- function(dat, tied) {
+    out <- with(dat, eventInd * p_jk)
+    if (tied)
+        out <- tapply(out, dat$time, FUN = sum)
+    as.numeric(out)
 }
 
 
 ## baseline hazard rate for censoring time
-h_c <- function(dat) {
-    numer <- deltaC(dat)
-    tmp <- with(dat, tapply(p_jk, time, FUN = sum))
-    ## vector of length # unique event time
-    denom <- rev(cumsum(rev(tmp)))
+h_c <- function(dat, tied) {
+    numer <- deltaC(dat, tied)
+    denom <- rev(cumsum(rev(dat$p_jk)))
+    if (tied)
+        denom <- denom[dat$firstIdx]
     ifelse(numer > 0, numer / denom, 0)
 }
 
 
-deltaC <- function(dat) {
-    as.numeric(with(dat, tapply((! eventInd) * p_jk, time, FUN = sum)))
+deltaC <- function(dat, tied) {
+    out <- with(dat, (! eventInd) * p_jk)
+    if (tied)
+        out <- tapply(out, dat$time, FUN = sum)
+    as.numeric(out)
 }
 
 
-k0 <- function(dat) {
+k0 <- function(dat, tied) {
     p_jk_xExp <- with(dat, p_jk * xExp)
-    ## note that tapply converts time into factor
-    ## so the output will be sorted increasingly automatically
-    tmp <- with(dat, tapply(p_jk_xExp, time, FUN = sum))
-    ## vector of length # unique event time
-    rev(cumsum(rev(tmp)))
+    out <- rev(cumsum(rev(p_jk_xExp)))
+    if (tied)
+        out <- out[dat$firstIdx]
+    out
 }
 
 
-k1 <- function(parSeq, dat, xMat) {
+k1 <- function(parSeq, dat, xMat, tied) {
     ## matrix of dimension # unique event time by # parameters
-    sapply(parSeq, function(ind, dat, xMat) {
+    out <- sapply(parSeq, function(ind, dat, xMat) {
         p_jk_xExp_x <- with(dat, p_jk * xExp) * xMat[, ind]
-        tmp <- with(dat, tapply(p_jk_xExp_x, time, FUN = sum))
-        rev(cumsum(rev(tmp)))
+        rev(cumsum(rev(p_jk_xExp_x)))
     }, dat = dat, xMat = xMat)
+    if (tied)
+        out <- out[dat$firstIdx, ]
+    out
 }
 
 
-k2 <- function(parSeq, dat, xMat) {
+k2 <- function(parSeq, dat, xMat, tied) {
     ind_grid <- expand.grid(parSeq, parSeq)
     ## matrix of dimension # unique event time by (# parameters) ^ 2
-    mapply(function(ind1, ind2) {
+    out <- mapply(function(ind1, ind2) {
         p_jk_xExp_x2 <- with(dat, p_jk * xExp) * xMat[, ind1] * xMat[, ind2]
-        tmp <- with(dat, tapply(p_jk_xExp_x2, time, FUN = sum))
-        rev(cumsum(rev(tmp)))
+        rev(cumsum(rev(p_jk_xExp_x2)))
     }, ind_grid[, 1L], ind_grid[, 2L])
+    if (tied)
+        out <- out[dat$firstIdx, ]
+    out
 }
 
 
@@ -521,13 +556,12 @@ d2Lbeta <- function(parSeq, k_0, k_1, k_2, delta_tildeN) {
 
     ## part 2
     mat2 <- k_1 / k_0
-    mat2[k_0 == 0, ] <- 0
+    mat2[is.na(mat2)] <- 0
     parGrid <- expand.grid(parSeq, parSeq)
     mat2plus <- mapply(function(ind1, ind2) {
         mat2[, ind1] * mat2[, ind2]
     }, parGrid[, 1L], parGrid[, 2L])
-    part2 <- matrix(colSums(mat2plus * delta_tildeN),
-                    nPar, nPar)
+    part2 <- matrix(colSums(mat2plus * delta_tildeN), nPar, nPar)
     ## return
     part2 - part1
 }
