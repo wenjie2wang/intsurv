@@ -18,17 +18,23 @@
 ##'
 ##' set.seed(1216)
 ##' dat <- simuWeibull(nSubject = 1000,
-##'                    maxNum = 2, nRecordProb = c(0.7, 0.3),
+##'                    maxNum = 1, nRecordProb = 1,
 ##'                    matchCensor = 0.1, matchEvent = 0.1,
 ##'                    censorMax = 12.5, censorMin = 0.5,
-##'                    lambda = 0.05, rho = 2,
+##'                    lambda = 0.005, rho = 0.7,
 ##'                    fakeLambda1 = 0.05 * exp(- 3),
 ##'                    fakeLambda2 = 0.05 * exp(3),
 ##'                    mixture = 0.5, eventOnly = FALSE)
 ##' ## dat$obsTime <- round(dat$obsTime, 2)
 ##' temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2, data = dat,
-##'               control = list(alwaysUpdatePi = TRUE))
+##'               control = list(alwaysUpdatePi = FALSE))
+##' temp@logL
+##' summar(list(temp))
 ##'
+##' temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2, data = dat,
+##'               control = list(alwaysUpdatePi = TRUE))
+##' temp@logL
+##' summar(list(temp))
 ##' ## temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2, data = dat,
 ##' ##               start = list(beta = c(1, 1)))
 ##'
@@ -39,7 +45,7 @@
 ##' xtabs(~ eventInd + piEst, tmpDat, latentInd != 1L)
 ##' xtabs(~ eventInd + piEst, tmpDat, latentInd == 1L)
 ##'
-##' summar(list(temp), sem = TRUE)
+##' summar(list(temp))
 ##' naiveCox(temp)
 ##' uniOnlyCox(temp)
 ##' oracleCox(temp)
@@ -121,74 +127,99 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
     incDat <- dat[(orderInc <- with(dat, order(time, ID))), ]
     incDat$firstIdx <- ! duplicated(incDat$time)
     xMat <- as.matrix(incDat[, 4L : (3L + nBeta)])
-    incDat$piVec <- start$piVec[orderInc]
 
+    ## from different starting values of piVec
+    logL_max0 <- - Inf
+    for (oneStart in start$censorRate) {
 
-    ## take care of possible ties
-    tied <- any(duplicated(dat$time))
-    if (tied) {
-        h0Vec <- with(incDat, tapply(start$h0Vec[orderInc], time, FUN = sum))
-        h_cVec <- with(incDat, tapply(start$h_cVec[orderInc], time, FUN = sum))
-        h0Dat <- data.frame(time = unique(incDat$time),
-                            h0Vec = as.numeric(h0Vec))
-        h_cDat <- data.frame(time = unique(incDat$time),
-                             h_cVec = as.numeric(h_cVec))
-    } else {
-        h0Dat <- data.frame(time = incDat$time,
-                            h0Vec = start$h0Vec[orderInc])
-        h_cDat <- data.frame(time = incDat$time,
-                             h_cVec = start$h_cVec[orderInc])
+        ## determined by censorRate
+        incDat$piVec <- piVec <- initPi(oneStart, dat = incDat)
+
+        ## take care of possible ties
+        tied <- any(duplicated(dat$time))
+        if (tied) {
+            h0Vec <- with(incDat,
+                          tapply(start$h0Vec[orderInc], time, FUN = sum))
+            h_cVec <- with(incDat,
+                           tapply(start$h_cVec[orderInc], time, FUN = sum))
+            h0Dat <- data.frame(time = unique(incDat$time),
+                                h0Vec = as.numeric(h0Vec))
+            h_cDat <- data.frame(time = unique(incDat$time),
+                                 h_cVec = as.numeric(h_cVec))
+        } else {
+            h0Dat <- data.frame(time = incDat$time,
+                                h0Vec = start$h0Vec[orderInc])
+            h_cDat <- data.frame(time = incDat$time,
+                                 h_cVec = start$h_cVec[orderInc])
+        }
+
+        ## trace the log-likelihood for observed data
+        logL <- rep(NA, control$iterlimEm)
+        ## trace beta estimates from each iteration of ECM
+        betaMat <- matrix(NA, nrow = control$iterlimEm + 1L, ncol = nBeta)
+        betaMat[1L, ] <- betaHat
+        tolPi <- sqrt(control$tolEm)
+
+        for (iter in seq_len(control$iterlimEm)) {
+            oneFit <- oneECMstep(betaHat = betaMat[iter, ], h0Dat = h0Dat,
+                                 h_cDat = h_cDat, dat = incDat, xMat = xMat,
+                                 tied = tied, control = control)
+            ## log likehood
+            logL[iter] <- oneFit$logL
+            ## update p_jk or not? maybe yes
+            tol_piVec <- 1
+            if (control$alwaysUpdatePi || (iter > 1 && tol < tolPi))
+                incDat$piVec <- oneFit$piVec
+            ## ## update baseline hazard rate h0
+            ## h0Dat$h0Vec <- oneFit$h0Vec
+            ## ## update baseline hazard rate of censoring times
+            ## h_cDat$h_cVec <- oneFit$h_cVec
+            ## update beta estimates
+            betaEst <- oneFit$betaEst
+            betaMat[iter + 1L, ] <- betaHat <- betaEst$estimate
+            tol <- max(abs((betaMat[iter + 1L, ] - betaMat[iter, ]) /
+                           (betaMat[iter + 1L, ] + betaMat[iter, ])))
+            if (tol < control$tolEm) break
+        }
+
+        ## keep the one fit that maximizing log likelihood
+        logL <- stats::na.omit(logL)
+        logL_max <- logL[length(logL)]
+        if (logL_max > logL_max0) {
+            logL_max0 <- logL_max
+            logL0 <- logL
+            oneFit0 <- oneFit
+            betaMat0 <- betaMat
+            piVec0 <- piVec
+            censorRate0 <- oneStart
+        }
     }
-
-    ## trace the log-likelihood for observed data
-    logL <- rep(NA, control$iterlimEm)
-    ## trace beta estimates from each iteration of ECM
-    betaMat <- matrix(NA, nrow = control$iterlimEm + 1L, ncol = nBeta)
-    betaMat[1L, ] <- betaHat
-    tolPi <- sqrt(control$tolEm)
-
-    for (iter in seq_len(control$iterlimEm)) {
-        oneFit <- oneECMstep(betaHat = betaMat[iter, ], h0Dat = h0Dat,
-                             h_cDat = h_cDat, dat = incDat, xMat = xMat,
-                             tied = tied, control = control)
-        ## log likehood
-        logL[iter] <- oneFit$logL
-        ## update p_jk or not? maybe yes
-        if (control$alwaysUpdatePi || (iter > 1 && tol < tolPi))
-            incDat$piVec <- oneFit$piVec
-        ## update baseline hazard rate h0
-        h0Dat$h0Vec <- oneFit$h0Vec
-        ## update baseline hazard rate of censoring times
-        h_cDat$h_cVec <- oneFit$h_cVec
-        ## update beta estimates
-        betaEst <- oneFit$betaEst
-        betaMat[iter + 1L, ] <- betaHat <- betaEst$estimate
-        tol <- max(abs((betaMat[iter + 1L, ] - betaMat[iter, ]) /
-                       (betaMat[iter + 1L, ] + betaMat[iter, ])))
-        if (tol < control$tolEm) break
-    }
-
-    ## prepare for outputs
-    piEst <- oneFit$piVec[(reOrderIdx <- order(orderInc))]
 
     ## clean-up NA's
-    logL <- stats::na.omit(logL)
-    betaMat <- stats::na.omit(betaMat)
-    attr(logL, "na.action") <- attr(logL, "class") <-
-        attr(betaMat, "na.action") <- attr(betaMat, "class") <- NULL
+    betaMat0 <- stats::na.omit(betaMat0)
+    attr(logL0, "na.action") <- attr(logL0, "class") <-
+        attr(betaMat0, "na.action") <- attr(betaMat0, "class") <- NULL
+    ## prepare for outputs
+    piEst <- oneFit0$piVec[(reOrderIdx <- order(orderInc))]
+    start$piVec <- piVec0[reOrderIdx]
+    start$censorRate0 <- censorRate0
+    ## update baseline hazard rate h0
+    h0Dat$h0Vec <- oneFit0$h0Vec
+    ## update baseline hazard rate of censoring times
+    h_cDat$h_cVec <- oneFit0$h_cVec
 
-    ## numerical approximation of I_oc fisher information matrix
-    incDat$xExp <- oneFit$xExp
-    I_oc <- approxIoc(dat = incDat, xMat = xMat, tied = tied, nIter = 100)
+    ## ## numerical approximation of I_oc fisher information matrix
+    ## incDat$xExp <- oneFit$xExp
+    ## I_oc <- approxIoc(dat = incDat, xMat = xMat, tied = tied, nIter = 100)
 
-    ## DM matrix
-    dmMat <- dmECM(betaMat = betaMat, betaEst = betaHat, h0Dat = h0Dat,
-                   h_cDat = h_cDat, dat = incDat, xMat = xMat, tied = tied,
-                   control = control)
+    ## ## DM matrix
+    ## dmMat <- dmECM(betaMat = betaMat, betaEst = betaHat, h0Dat = h0Dat,
+    ##                h_cDat = h_cDat, dat = incDat, xMat = xMat, tied = tied,
+    ##                control = control)
 
-    ## variance-covariance matrix by SECM
-    invI_oc <- solve(I_oc)
-    secmVar <- invI_oc + invI_oc %*% dmMat %*% solve(diag(1, nBeta) - dmMat)
+    ## ## variance-covariance matrix by SECM
+    ## invI_oc <- solve(I_oc)
+    ## secmVar <- invI_oc + invI_oc %*% dmMat %*% solve(diag(1, nBeta) - dmMat)
     ## secmVar <- solve((diag(1, nBeta) - dmMat) %*% I_oc)
 
     ## se estimatation by multiple imputation method
@@ -196,17 +227,18 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
 
     ## estimates for beta
     ## est_beta <- matrix(NA, nrow = nBeta, ncol = 6L)
-    est_beta <- matrix(NA, nrow = nBeta, ncol = 3L)
+    est_beta <- matrix(NA, nrow = nBeta, ncol = 2L)
     ## colnames(est_beta) <- c("coef", "exp(coef)", "se(coef)",
     ##                         "se_SEM", "z", "Pr(>|z|)")
     ## colnames(est_beta) <- c("coef", "se_comp", "se_SEM", "se_MI")
-    colnames(est_beta) <- c("coef", "se_comp", "se_SEM")
+    colnames(est_beta) <- c("coef", "se_comp")
     rownames(est_beta) <- covar_names
+    betaEst <- oneFit0$betaEst
     se_vec <- sqrt(diag(solve(betaEst$hessian)))
-    est_beta[, 1L] <- as.vector(betaHat)
+    est_beta[, 1L] <- as.vector(betaEst$estimate)
     ## est_beta[, 2L] <- exp(est_beta[, 1L])
     est_beta[, 2L] <- as.vector(se_vec)
-    est_beta[, 3L] <- as.vector(sqrt(diag(secmVar)))
+    ## est_beta[, 3L] <- as.vector(sqrt(diag(secmVar)))
     ## est_beta[, 4L] <- as.vector(sqrt(miVar))
     ## est_beta[, 6L] <- est_beta[, 1L] / est_beta[, 3L]
     ## est_beta[, 7L] <- 2 * stats::pnorm(- abs(est_beta[, 5L]))
@@ -239,7 +271,7 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
                             contrasts = contrasts,
                             convergCode = betaEst$code,
                             partLogL = - betaEst$minimum,
-                            logL = logL,
+                            logL = logL0,
                             fisher = betaEst$hessian)
     ## return
     results
@@ -373,6 +405,11 @@ oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, tied, control)
     dat$xExp <- exp(dat$betaX)
     dat$xExp <- ifelse(is.infinite(dat$xExp), 1e50, dat$xExp)
 
+    ## use initial value of pi
+    dat$p_jk <- dat$piVec
+    h0Dat$h0Vec <- h0t(dat, tied = tied)
+    h_cDat$h_cVec <- h_c(dat, tied = tied)
+
     ## E-step ------------------------------------------------------------------
     ## update baseline hazard rate of event times
     h0Dat$H0Vec <- cumsum(h0Dat$h0Vec)
@@ -429,9 +466,9 @@ oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, tied, control)
     logL <- sum(log(dat$p_jk_denom))
 
     ## update h0_jk and h_c_jk with previous (or initial) estimates of beta
-    h0Vec <- h0t(dat, tied)
-    h_cVec <- h_c(dat, tied)
-    list(betaEst = betaEst, h0Vec = h0Vec, h_cVec = h_cVec,
+    ## h0Vec <- h0t(dat, tied)
+    ## h_cVec <- h_c(dat, tied)
+    list(betaEst = betaEst, h0Vec = h0Dat$h0Vec, h_cVec = h_cDat$h_cVec,
          piVec = dat$p_jk, logL = logL, xExp = dat$xExp)
 }
 
@@ -568,6 +605,29 @@ d2Lbeta <- function(parSeq, k_0, k_1, k_2, delta_tildeN) {
 }
 
 
+## determine initial piVec from given censorRate
+initPi <- function(censorRate, dat, ...) {
+    ## mixture probability for each subject: piVec
+    numTab <- table(dat$ID)
+    dat$numRecord <- numTab[match(as.character(dat$ID), names(numTab))]
+
+    ## subject ID with censoring records
+    cenID <- with(subset(dat, ! eventInd), unique(ID))
+    cenIdx <- as.integer(dat$ID %in% cenID)
+
+    ## for subjects with multiple records
+    idx1 <- with(dat, numRecord > 1L & eventInd)
+    idx2 <- with(dat, numRecord > 1L & (! eventInd))
+
+    piVec <- rep(1L, NROW(dat))
+    piVec[idx1] <- (1 - censorRate * cenIdx[idx1]) /
+        (dat[idx1, "numRecord"] - cenIdx[idx1])
+    piVec[idx2] <- censorRate
+    ## piVec[idx1 | idx2] <- 1 / dat_[idx1 | idx2, "numRecord"]
+    piVec
+}
+
+
 coxEmStart <- function(beta, h0, h0c, censorRate, ...,
                        nBeta_, dat_) {
 
@@ -578,7 +638,8 @@ coxEmStart <- function(beta, h0, h0c, censorRate, ...,
         ## set censorRate from sample truth data
         ## if missing at random, the true censoring rate
         ## can be estimated by true data of unique records
-        censorRate <- min(0.95, 1 - mean(uniDat$event))
+        censorRate <- unique(c(seq.int(0.05, 0.95, 0.05),
+                               min(0.95, 1 - mean(uniDat$event))))
     } else if (censorRate > 1 || censorRate < 0)
         stop(paste("Starting prob. of censoring case being true",
                    "should between 0 and 1."))
@@ -611,30 +672,11 @@ coxEmStart <- function(beta, h0, h0c, censorRate, ...,
         stop(paste("Number of starting values for coefficients of covariates",
                    "does not match with the specified formula."))
     } else {
-        beta <- as.vector(beta, mode = "numeric")
+        beta <- as.numeric(beta)
     }
 
-    ## mixture probability for each subject: piVec
-    numTab <- table(dat_$ID)
-    dat_$numRecord <- numTab[match(as.character(dat_$ID), names(numTab))]
-
-    ## subject ID with censoring records
-    cenID <- with(subset(dat_, ! eventInd), unique(ID))
-    cenIdx <- as.integer(dat_$ID %in% cenID)
-
-    ## for subjects with multiple records
-    idx1 <- with(dat_, numRecord > 1L & eventInd)
-    idx2 <- with(dat_, numRecord > 1L & (! eventInd))
-
-    piVec <- rep(1L, NROW(dat_))
-    piVec[idx1] <- (1 - censorRate * cenIdx[idx1]) /
-        (dat_[idx1, "numRecord"] - cenIdx[idx1])
-    piVec[idx2] <- censorRate
-    ## piVec[idx1 | idx2] <- 1 / dat_[idx1 | idx2, "numRecord"]
-
     ## return
-    list(beta = beta, h0Vec = h0Vec, h_cVec = h_cVec,
-         piVec = piVec, censorRate = censorRate)
+    list(beta = beta, h0Vec = h0Vec, h_cVec = h_cVec, censorRate = censorRate)
 }
 
 
