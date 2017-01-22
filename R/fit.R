@@ -19,7 +19,7 @@
 ##' set.seed(1216)
 ##' dat <- simuWeibull(nSubject = 1000,
 ##'                    maxNum = 1, nRecordProb = 1,
-##'                    matchCensor = 0.1, matchEvent = 0.1,
+##'                    matchCensor = 0.01, matchEvent = 0.01,
 ##'                    censorMax = 12.5, censorMin = 0.5,
 ##'                    lambda = 0.005, rho = 0.7,
 ##'                    fakeLambda1 = 0.005 * exp(- 3),
@@ -57,7 +57,7 @@
 ##' naiveCox(temp)
 ##' uniOnlyCox(temp)
 ##' oracleCox(temp)
-##' oracleWb(temp, rho0 = 2)
+##' oracleWb(temp, rho0 = 0.7)
 ##'
 ##' ## test on the true data of unique records
 ##' trueDat <- dat[with(dat, ! duplicated(ID)), ]
@@ -132,8 +132,10 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
 
     ## define some variables for ease of computing
     incDat <- dat[(orderInc <- with(dat, order(time, ID))), ]
-    incDat$firstIdx <- ! duplicated(incDat$time)
-    h0Dat <- h_cDat <- data.frame(time = unique(incDat$time))
+    dupVec <- duplicated(incDat$time)
+    tied <- any(dupVec)
+    incDat$firstIdx <- ! dupVec
+    h0Dat <- h_cDat <- data.frame(time = incDat$time[incDat$firstIdx])
     xMat <- as.matrix(incDat[, 4L : (3L + nBeta)])
 
     ## from different starting values of piVec
@@ -146,9 +148,6 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
         } else {
             incDat$piVec <- piVec <- start$piVec[orderInc]
         }
-
-        ## take care of possible ties
-        tied <- any(duplicated(dat$time))
 
         ## trace the log-likelihood for observed data
         logL <- rep(NA, control$iterlimEm)
@@ -170,13 +169,16 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
 
             ## update beta estimates
             betaEst <- oneFit$betaEst
-            betaMat[iter + 1L, ] <- betaHat <- betaEst$estimate
+            betaMat[iter + 1L, ] <- betaEst$estimate
             tol <- max(abs((betaMat[iter + 1L, ] - betaMat[iter, ]) /
                            (betaMat[iter + 1L, ] + betaMat[iter, ])))
-            if (tol < control$tolEm) break
+            if (tol < control$tolEm) {
+                betaHat <- betaEst$estimate
+                break
+            }
         }
 
-        ## keep the one fit that maximizing log likelihood
+        ## keep the one fit maximizing observed log likelihood
         logL <- stats::na.omit(logL)
         logL_max <- logL[length(logL)]
         if (logL_max > logL_max0) {
@@ -238,17 +240,17 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
     ## est_beta[, 7L] <- 2 * stats::pnorm(- abs(est_beta[, 5L]))
 
     ## output: na.action
-    na.action <- if (is.null(attr(mf, "na.action"))) {
-                     options("na.action")[[1]]
-                 } else {
+    na.action <- if (is.null(attr(mf, "na.action")))
+                     options("na.action")[[1L]]
+                 else
                      paste("na.", class(attr(mf, "na.action")))
-                 }
+
     ## output: contrasts
-    contrasts <- if (is.null(contrasts)) {
+    contrasts <- if (is.null(contrasts))
                      list(contrasts = NULL)
-                 } else {
+                 else
                      attr(mm, "contrasts")
-                 }
+
     ## results to return
     results <- methods::new("coxEm",
                             call = Call,
