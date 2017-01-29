@@ -18,17 +18,16 @@
 ##'
 ##' set.seed(1216)
 ##' dat <- simuWeibull(nSubject = 1000,
-##'                    maxNum = 1, nRecordProb = 1,
+##'                    maxNum = 2, nRecordProb = c(0.7, 0.3),
 ##'                    matchCensor = 0.01, matchEvent = 0.01,
 ##'                    censorMax = 12.5, censorMin = 0.5,
 ##'                    lambda = 0.005, rho = 0.7,
 ##'                    fakeLambda1 = 0.005 * exp(- 3),
 ##'                    fakeLambda2 = 0.005 * exp(3),
-##'                    mixture = 0, eventOnly = FALSE)
+##'                    mixture = 0.5, eventOnly = FALSE)
 ##' ## dat$obsTime <- round(dat$obsTime, 2)
 ##' temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2, data = dat,
-##'               control = list(alwaysUpdatePi = FALSE),
-##'               start = list(beta = c(0, 0)))
+##'               control = list(alwaysUpdatePi = FALSE))
 ##' temp@logL
 ##' temp@start$censorRate0
 ##' summar(list(temp))
@@ -334,7 +333,7 @@ dmECM <- function(betaMat, betaEst, h0Dat, h_cDat, dat, xMat, tied, control) {
 
 ## sample latent indicators based on estiamted posterior prob.
 rLatent <- function(dat) {
-    tmpList <- with(dat, tapply(piVec, ID, function(a){
+    tmpList <- with(dat, tapply(piVec, ID, function(a) {
         if (sum(a))
             return(rmultinom(1L, size = 1L, prob = a))
         ## else return
