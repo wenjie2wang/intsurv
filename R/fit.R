@@ -18,23 +18,26 @@
 ##'
 ##' set.seed(1216)
 ##' dat <- simuWeibull(nSubject = 1000,
-##'                    maxNum = 2, nRecordProb = c(0.7, 0.3),
-##'                    matchCensor = 0.01, matchEvent = 0.01,
+##'                    maxNum = 1, nRecordProb = c(0.7, 0.3),
+##'                    matchCensor = 4 / 15, matchEvent = 4 / 5,
 ##'                    censorMax = 12.5, censorMin = 0.5,
-##'                    lambda = 0.005, rho = 0.7,
-##'                    fakeLambda1 = 0.005 * exp(- 3),
-##'                    fakeLambda2 = 0.005 * exp(3),
+##'                    lambda = 0.045, rho = 0.7,
+##'                    fakeLambda1 = 0.045 * exp(- 3),
+##'                    fakeLambda2 = 0.045 * exp(3),
 ##'                    mixture = 0.5, eventOnly = FALSE)
 ##' ## dat$obsTime <- round(dat$obsTime, 2)
-##' temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2, data = dat,
-##'               control = list(alwaysUpdatePi = FALSE))
+##' temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2,
+##'               data = dat, control = list(alwaysUpdatePi = FALSE),
+##'               start = list(censorRate = seq.int(0, 1, 0.05)))
 ##' temp@logL
 ##' temp@start$censorRate0
 ##' summar(list(temp))
 ##'
 ##' temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2, data = dat,
-##'               control = list(alwaysUpdatePi = TRUE))
+##'               control = list(alwaysUpdatePi = TRUE),
+##'               start = list(censorRate = seq.int(0, 0.95, 0.01)))
 ##' temp@logL
+##' temp@start$censorRate0
 ##' summar(list(temp))
 ##'
 ##' piVec0 <- with(dat, as.integer(! duplicated(ID)))
@@ -89,7 +92,7 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
         stop("Argument 'formula' is required.")
     if (missing(data))
         data <- environment(formula)
-    if (! with(data, inherits(eval(Call[[2]][[2]]), "Surve")))
+    if (! with(data, inherits(eval(Call[[2L]][[2L]]), "Surve")))
         stop("Response in formula must be a 'surve' object.")
 
     ## Prepare data: ID, time, event ~ X(s)
@@ -158,7 +161,8 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
         for (iter in seq_len(control$iterlimEm)) {
             oneFit <- oneECMstep(betaHat = betaMat[iter, ], h0Dat = h0Dat,
                                  h_cDat = h_cDat, dat = incDat, xMat = xMat,
-                                 tied = tied, control = control)
+                                 tied = tied,
+                                 control = control, start = start)
             ## log likehood
             logL[iter] <- oneFit$logL
 
@@ -189,6 +193,7 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
             censorRate0 <- oneStart
         }
     }
+
 
     ## clean-up NA's
     betaMat0 <- stats::na.omit(betaMat0)
@@ -222,17 +227,18 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
 
     ## estimates for beta
     ## est_beta <- matrix(NA, nrow = nBeta, ncol = 6L)
-    est_beta <- matrix(NA, nrow = nBeta, ncol = 2L)
+    est_beta <- matrix(NA, nrow = nBeta, ncol = 3L)
     ## colnames(est_beta) <- c("coef", "exp(coef)", "se(coef)",
     ##                         "se_SEM", "z", "Pr(>|z|)")
     ## colnames(est_beta) <- c("coef", "se_comp", "se_SEM", "se_MI")
-    colnames(est_beta) <- c("coef", "se_comp")
+    colnames(est_beta) <- c("coef", "se_comp", "se_boot")
     rownames(est_beta) <- covar_names
     betaEst <- oneFit0$betaEst
     se_vec <- sqrt(diag(solve(betaEst$hessian)))
     est_beta[, 1L] <- as.vector(betaEst$estimate)
     ## est_beta[, 2L] <- exp(est_beta[, 1L])
     est_beta[, 2L] <- as.vector(se_vec)
+    est_beta[, 3L] <- NA
     ## est_beta[, 3L] <- as.vector(sqrt(diag(secmVar)))
     ## est_beta[, 4L] <- as.vector(sqrt(miVar))
     ## est_beta[, 6L] <- est_beta[, 1L] / est_beta[, 3L]
@@ -249,6 +255,9 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
                      list(contrasts = NULL)
                  else
                      attr(mm, "contrasts")
+
+    ## output: data
+    colnames(dat) <- c(as.character(formula[[2]])[- 1L], covar_names)
 
     ## results to return
     results <- methods::new("coxEm",
@@ -491,8 +500,8 @@ logLbeta <- function(param, dat, xMat, tied)
                                           delta_tildeN * log(k_0), 0))
 
     ## penalty term to avoid solution with xExp being Inf
-    penal <- any(is.infinite(dat$xExp)) * 1e20
-    negLogL <- - pell + penal
+    penal_inf <- any(is.infinite(dat$xExp)) * 1e20
+    negLogL <- - pell + penal_inf
 
     ## gradient
     gradLogL <- dLbeta(xMatDeltaN, k_0, k_1, delta_tildeN)
