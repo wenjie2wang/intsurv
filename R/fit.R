@@ -161,8 +161,7 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
         for (iter in seq_len(control$iterlimEm)) {
             oneFit <- oneECMstep(betaHat = betaMat[iter, ], h0Dat = h0Dat,
                                  h_cDat = h_cDat, dat = incDat, xMat = xMat,
-                                 tied = tied,
-                                 control = control, start = start)
+                                 tied = tied, control = control)
             ## log likehood
             logL[iter] <- oneFit$logL
 
@@ -173,8 +172,8 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
             ## update beta estimates
             betaEst <- oneFit$betaEst
             betaMat[iter + 1L, ] <- betaEst$estimate
-            tol <- max(abs((betaMat[iter + 1L, ] - betaMat[iter, ]) /
-                           (betaMat[iter + 1L, ] + betaMat[iter, ])))
+            tol <- sum((betaMat[iter + 1L, ] - betaMat[iter, ]) ^ 2) /
+                sum((betaMat[iter + 1L, ] + betaMat[iter, ]) ^ 2)
             if (tol < control$tolEm) {
                 betaHat <- betaEst$estimate
                 break
@@ -455,9 +454,9 @@ oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, tied, control)
                           ifelse(p_jk_denom == 0, piVec,
                                  p_jk_numer / p_jk_denom), 1))
 
-    ## help convergence?
-    ## dat$p_jk[dat$p_jk < .Machine$double.eps] <- 0
-    ## dat$p_jk[dat$p_jk > 1 - .Machine$double.eps] <- 1
+    ## help speed up convergence?
+    dat$p_jk[dat$p_jk < .Machine$double.eps] <- 0
+    dat$p_jk[dat$p_jk > 1 - .Machine$double.eps] <- 1
 
     ## CM-steps ----------------------------------------------------------------
     ## update beta
