@@ -212,7 +212,7 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
     I_oc <- betaEst$hessian
 
     ## dm matrix
-    incDat$piVec <- initPi(0, dat = incDat, equally = TRUE)
+    ## incDat$piVec <- initPi(censorRate0, dat = incDat, equally = FALSE)
     dmMat <- dmECM(betaEst = betaHat, h0Dat = h0Dat, h_cDat = h_cDat,
                    dat = incDat, xMat = xMat, tied = tied, control = control)
 
