@@ -18,48 +18,31 @@
 ##'
 ##' set.seed(1216)
 ##' dat <- simuWeibull(nSubject = 1000,
-##'                    maxNum = 1, nRecordProb = c(0.7, 0.3),
-##'                    matchCensor = 20 / 25, matchEvent = 20 / 75,
+##'                    maxNum = 2, nRecordProb = c(0.9, 0.1),
+##'                    matchCensor = 356 / 476, matchEvent = 400 / 524,
 ##'                    censorMax = 12.5, censorMin = 0.5,
-##'                    lambda = 0.042, rho = 0.7,
-##'                    fakeLambda1 = 0.042 * exp(- 3),
-##'                    fakeLambda2 = 0.042 * exp(3),
+##'                    lambda = 0.15, rho = 1,
+##'                    fakeLambda1 = 0.08 * exp(- 3),
+##'                    fakeLambda2 = 0.08 * exp(3),
 ##'                    mixture = 0.5, eventOnly = FALSE)
-##' ## dat$obsTime <- round(dat$obsTime, 2)
-##' temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2, data = dat,
-##'               control = list(alwaysUpdatePi = FALSE, tolEm = 1e-6),
-##'               start = list(censorRate = seq.int(0, 1, 0.1)))
+##'
+##' temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2 + x3 + x4, data = dat,
+##'               control = list(alwaysUpdatePi = NULL, tolEm = 1e-4))
+##' ##            start = list(censorRate = seq.int(0, 1, 0.05)))
 ##' temp@logL
 ##' temp@start$censorRate0
 ##' summar(list(temp), boxPlot = FALSE)
 ##'
-##' temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2, data = dat,
-##'               control = list(alwaysUpdatePi = TRUE),
-##'               start = list(censorRate = seq.int(0, 1, 0.01)))
-##' temp@logL
-##' temp@start$censorRate0
-##' summar(list(temp))
-##'
-##' piVec0 <- with(dat, as.integer(! duplicated(ID)))
-##' tmp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2, data = dat,
-##'              start = list(beta = c(0, 0), piVec = piVec0, censorRate = 1))
-##' summar(list(tmp))
-##' tmp@logL
-##' ## temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2, data = dat,
-##' ##               start = list(beta = c(1, 1)))
-##'
-##' ## temp@estimates$beta
 ##' tmpDat <- cbind(dat, piEst = round(temp@estimates$piEst, 3))
 ##' dupID <- with(tmpDat, unique(ID[duplicated(ID)]))
 ##' subset(tmpDat, ID %in% dupID)
 ##' xtabs(~ eventInd + piEst, tmpDat, latentInd != 1L)
 ##' xtabs(~ eventInd + piEst, tmpDat, latentInd == 1L)
 ##'
-##' summar(list(temp))
 ##' naiveCox(temp)
 ##' uniOnlyCox(temp)
 ##' oracleCox(temp)
-##' oracleWb(temp, rho0 = 0.7)
+##' oracleWb(temp, rho0 = 1)
 ##'
 ##' ## test on the true data of unique records
 ##' trueDat <- dat[with(dat, ! duplicated(ID)), ]
@@ -122,12 +105,13 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
     nBeta <- ncol(dat) - 3L
     dat$eventInd <- dat$event == 1L
 
-    ## 'control' for 'nlm'
-    control <- do.call("coxEmControl", control)
-
     ## start' values for 'nlm'
     startList <- c(start, list(nBeta_ = nBeta, dat_ = dat))
     start <- do.call("coxEmStart", startList)
+
+    ## 'control' for 'nlm'
+    control <- c(control, list(censorRate0_ = start$censorRate0))
+    control <- do.call("coxEmControl", control)
 
     ## indicator for subjects having multiple record
     dat$dupIdx <- with(dat, ID %in% unique(ID[duplicated(ID)]))
@@ -712,12 +696,12 @@ coxEmStart <- function(beta, censorRate, piVec, ..., nBeta_, dat_)
 {
     dupID <- with(dat_, unique(ID[duplicated(ID)]))
     uniDat <- base::subset(dat_, ! ID %in% dupID)
+    censorRate0 <- round(1 - mean(uniDat$event), 2)
     if (missing(censorRate)) {
         ## set censorRate from sample truth data
         ## if missing at random, the true censoring rate
         ## can be estimated by true data of unique records
-        censorRate <- unique(c(seq.int(0, 1, 0.05),
-                               1 - mean(uniDat$event)))
+        censorRate <- unique(c(seq.int(0, 1, 0.1), censorRate0))
     } else if (any(censorRate > 1 | censorRate < 0))
         stop(paste("Starting prob. of censoring case being true",
                    "should between 0 and 1."))
@@ -752,14 +736,16 @@ coxEmStart <- function(beta, censorRate, piVec, ..., nBeta_, dat_)
     }
 
     ## return
-    list(beta = beta, censorRate = censorRate, piVec = piVec)
+    list(beta = beta, censorRate = censorRate,
+         piVec = piVec, censorRate0 = censorRate0)
 }
 
 
 coxEmControl <- function(gradtol = 1e-6, stepmax = 1e2,
                          steptol = 1e-6, iterlim = 1e2,
                          tolEm = 1e-4, iterlimEm = 1e2,
-                         h = 1e-2, alwaysUpdatePi = FALSE, ...)
+                         h = 1e-2, alwaysUpdatePi = NULL, ...,
+                         censorRate0_)
 {
     ## controls for function stats::nlm
     if (! is.numeric(gradtol) || gradtol <= 0)
@@ -780,6 +766,10 @@ coxEmControl <- function(gradtol = 1e-6, stepmax = 1e2,
     ## determining the computation of DM matrix
     if (! is.numeric(h) || h < 0)
         stop("'h' has to be a positive number.")
+
+    ## automatically determine whether always update pi's
+    if (is.null(alwaysUpdatePi))
+        alwaysUpdatePi <- ifelse(censorRate0_ < 0.5, TRUE, FALSE)
 
     ## return
     list(gradtol = gradtol, stepmax = stepmax,
