@@ -13,17 +13,18 @@
 ##' source("class.R")
 ##' source("coef.R")
 ##' source("fit.R")
+##' source("bootSe.R")
 ##' source("../simulation/simuData.R")
 ##' source("../simulation/simuFun.R")
 ##'
 ##' set.seed(1216)
 ##' dat <- simuWeibull(nSubject = 1000,
 ##'                    maxNum = 2, nRecordProb = c(0.9, 0.1),
-##'                    matchCensor = 356 / 476, matchEvent = 400 / 524,
+##'                    matchCensor = 222 / 922, matchEvent = 18 / 78,
 ##'                    censorMax = 12.5, censorMin = 0.5,
-##'                    lambda = 0.15, rho = 1,
-##'                    fakeLambda1 = 0.08 * exp(- 3),
-##'                    fakeLambda2 = 0.08 * exp(3),
+##'                    lambda = 0.56, rho = 2,
+##'                    fakeLambda1 = 0.56 * exp(- 3),
+##'                    fakeLambda2 = 0.56 * exp(3),
 ##'                    mixture = 0.5, eventOnly = FALSE)
 ##'
 ##' temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2 + x3 + x4, data = dat,
@@ -42,7 +43,7 @@
 ##' naiveCox(temp)
 ##' uniOnlyCox(temp)
 ##' oracleCox(temp)
-##' oracleWb(temp, rho0 = 1)
+##' oracleWb(temp, rho0 = 2)
 ##'
 ##' ## test on the true data of unique records
 ##' trueDat <- dat[with(dat, ! duplicated(ID)), ]
