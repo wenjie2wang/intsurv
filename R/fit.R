@@ -20,7 +20,7 @@
 ##' set.seed(1216)
 ##' dat <- simuWeibull(nSubject = 1000,
 ##'                    maxNum = 2, nRecordProb = c(0.9, 0.1),
-##'                    matchCensor = 222 / 922, matchEvent = 18 / 78,
+##'                    matchCensor = 18 / 78, matchEvent = 222 / 922,
 ##'                    censorMax = 12.5, censorMin = 0.5,
 ##'                    lambda = 0.56, rho = 2,
 ##'                    fakeLambda1 = 0.56 * exp(- 3),
@@ -29,7 +29,7 @@
 ##'
 ##' temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2 + x3 + x4, data = dat,
 ##'               control = list(alwaysUpdatePi = NULL, tolEm = 1e-4))
-##' ##            start = list(censorRate = seq.int(0, 1, 0.05)))
+##' ##              start = list(censorRate = seq.int(0, 1, 0.2)))
 ##' temp@logL
 ##' temp@start$censorRate0
 ##' summar(list(temp), boxPlot = FALSE)
@@ -493,12 +493,8 @@ oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, tied, control)
 
     dat$hVec <- with(dat, h0Vec * xExp)
     dat$HVec <- with(dat, H0Vec * xExp)
-
-    ## scaling
-    foo <- sum(dat$HVec)
-    dat$sVec <- exp(- dat$HVec + log(foo)) / foo
-    foo <- sum(dat$H_cVec)
-    dat$G_cVec <- exp(- dat$H_cVec + log(foo)) / foo
+    dat$sVec <- exp(- dat$HVec)
+    dat$G_cVec <- exp(- dat$H_cVec)
 
     ## compute p_jk for each subject
     ## for observed log-likelihood function
@@ -702,7 +698,10 @@ coxEmStart <- function(beta, censorRate, piVec, ..., nBeta_, dat_)
         ## set censorRate from sample truth data
         ## if missing at random, the true censoring rate
         ## can be estimated by true data of unique records
-        censorRate <- unique(c(seq.int(0, 1, 0.1), censorRate0))
+        seq1 <- seq.int(max(0, censorRate0 - 0.05),
+                        min(censorRate0 + 0.05, 1), 0.01)
+        seq2 <- seq.int(0, 1, 0.1)
+        censorRate <- unique(c(seq1, seq2))
     } else if (any(censorRate > 1 | censorRate < 0))
         stop(paste("Starting prob. of censoring case being true",
                    "should between 0 and 1."))
@@ -770,7 +769,7 @@ coxEmControl <- function(gradtol = 1e-6, stepmax = 1e2,
 
     ## automatically determine whether always update pi's
     if (is.null(alwaysUpdatePi))
-        alwaysUpdatePi <- ifelse(censorRate0_ < 0.5, TRUE, FALSE)
+        alwaysUpdatePi <- ifelse(censorRate0_ < 0.2, TRUE, FALSE)
 
     ## return
     list(gradtol = gradtol, stepmax = stepmax,
