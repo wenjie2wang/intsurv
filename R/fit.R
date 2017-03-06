@@ -20,16 +20,16 @@
 ##' set.seed(1216)
 ##' dat <- simuWeibull(nSubject = 1000,
 ##'                    maxNum = 2, nRecordProb = c(0.9, 0.1),
-##'                    matchCensor = 18 / 78, matchEvent = 222 / 922,
+##'                    matchCensor = 0.1, matchEvent = 0.1,
 ##'                    censorMax = 12.5, censorMin = 0.5,
-##'                    lambda = 0.56, rho = 2,
-##'                    fakeLambda1 = 0.56 * exp(- 3),
-##'                    fakeLambda2 = 0.56 * exp(3),
+##'                    lambda = 0.2, rho = 2,
+##'                    fakeLambda1 = 0.2 * exp(- 3),
+##'                    fakeLambda2 = 0.2 * exp(3),
 ##'                    mixture = 0.5, eventOnly = FALSE)
 ##'
 ##' temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2 + x3 + x4, data = dat,
-##'               control = list(alwaysUpdatePi = NULL, tolEm = 1e-4))
-##' ##              start = list(censorRate = seq.int(0, 1, 0.2)))
+##'               control = list(alwaysUpdatePi = TRUE, tolEm = 1e-4),
+##'               start = list(censorRate = seq.int(0, 0.3, 0.1)))
 ##' temp@logL
 ##' temp@start$censorRate0
 ##' summar(list(temp), boxPlot = FALSE)
@@ -197,7 +197,7 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
     I_oc <- betaEst$hessian
 
     ## dm matrix
-    ## incDat$piVec <- initPi(censorRate0, dat = incDat, equally = FALSE)
+    incDat$piVec <- initPi(censorRate0, dat = incDat, equally = FALSE)
     dmMat <- dmECM(betaEst = betaHat, h0Dat = h0Dat, h_cDat = h_cDat,
                    dat = incDat, xMat = xMat, tied = tied, control = control)
 
@@ -217,19 +217,21 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
 
     ## estimates for beta
     ## est_beta <- matrix(NA, nrow = nBeta, ncol = 6L)
-    est_beta <- matrix(NA, nrow = nBeta, ncol = 4L)
+    est_beta <- matrix(NA, nrow = nBeta, ncol = 5L)
     ## colnames(est_beta) <- c("coef", "exp(coef)", "se(coef)",
     ##                         "se_SEM", "z", "Pr(>|z|)")
     ## colnames(est_beta) <- c("coef", "se_comp", "se_SEM", "se_MI")
-    colnames(est_beta) <- c("coef", "se_comp", "se_boot", "se_PREM")
+    colnames(est_beta) <- c("coef", "se_comp", "se_boot", "se_PREM",
+                            "coef_boot")
     rownames(est_beta) <- covar_names
     betaEst <- oneFit0$betaEst
     se_vec <- sqrt(diag(solve(betaEst$hessian)))
-    est_beta[, 1L] <- as.vector(betaEst$estimate)
+    est_beta[, 1L] <- as.numeric(betaEst$estimate)
     ## est_beta[, 2L] <- exp(est_beta[, 1L])
-    est_beta[, 2L] <- as.vector(se_vec)
+    est_beta[, 2L] <- as.numeric(se_vec)
     est_beta[, 3L] <- NA
-    est_beta[, 4L] <- as.vector(sqrt(diag(secmVar)))
+    est_beta[, 4L] <- as.numeric(sqrt(diag(secmVar)))
+    est_beta[, 5L] <- NA
     ## est_beta[, 4L] <- as.vector(sqrt(miVar))
     ## est_beta[, 6L] <- est_beta[, 1L] / est_beta[, 3L]
     ## est_beta[, 7L] <- 2 * stats::pnorm(- abs(est_beta[, 5L]))
@@ -247,6 +249,7 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
                      attr(mm, "contrasts")
 
     ## output: data
+    dat$eventInd <- dat$dupIdx <- NULL
     colnames(dat) <- c(as.character(formula[[2]])[- 1L], covar_names)
 
     ## results to return
@@ -698,10 +701,8 @@ coxEmStart <- function(beta, censorRate, piVec, ..., nBeta_, dat_)
         ## set censorRate from sample truth data
         ## if missing at random, the true censoring rate
         ## can be estimated by true data of unique records
-        seq1 <- seq.int(max(0, censorRate0 - 0.05),
-                        min(censorRate0 + 0.05, 1), 0.01)
-        seq2 <- seq.int(0, 1, 0.1)
-        censorRate <- unique(c(seq1, seq2))
+        step_by <- 0.02
+        censorRate <- seq.int(0, 1, step_by)
     } else if (any(censorRate > 1 | censorRate < 0))
         stop(paste("Starting prob. of censoring case being true",
                    "should between 0 and 1."))
@@ -769,7 +770,7 @@ coxEmControl <- function(gradtol = 1e-6, stepmax = 1e2,
 
     ## automatically determine whether always update pi's
     if (is.null(alwaysUpdatePi))
-        alwaysUpdatePi <- ifelse(censorRate0_ < 0.2, TRUE, FALSE)
+        alwaysUpdatePi <- ifelse(censorRate0_ < 0.9, TRUE, FALSE)
 
     ## return
     list(gradtol = gradtol, stepmax = stepmax,

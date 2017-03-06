@@ -13,9 +13,12 @@ bootSe <- function(obj, numBoot = 50, fixStart = FALSE, ...) {
     nSub <- length(uid)
     estMat <- replicate(numBoot, {
         sID <- sample(uid, size = nSub, replace = TRUE)
-        bootDat <- base::subset(dat, ID %in% sID)
+        tmpDat <- data.frame(ID = sID)
+        bootDat <- merge(tmpDat, dat, by = "ID")
         res <- eval(cal)
         as.numeric(res@estimates$beta[, "coef"])
     })
-    apply(estMat, 1L, sd)
+    seEst <- apply(estMat, 1L, sd)
+    est <- rowMeans(estMat)
+    list(se = seEst, beta = est)
 }
