@@ -18,18 +18,18 @@
 ##' source("../simulation/simuFun.R")
 ##'
 ##' set.seed(1216)
-##' dat <- simuWeibull(nSubject = 1000,
+##' dat <- simuWeibull(nSubject = 270,
 ##'                    maxNum = 2, nRecordProb = c(0.9, 0.1),
-##'                    matchCensor = 0.1, matchEvent = 0.1,
+##'                    matchCensor = 46 / 70, matchEvent = 11 / 200,
 ##'                    censorMax = 12.5, censorMin = 0.5,
-##'                    lambda = 0.2, rho = 2,
-##'                    fakeLambda1 = 0.2 * exp(- 3),
-##'                    fakeLambda2 = 0.2 * exp(3),
+##'                    lambda = 0.065, rho = 2,
+##'                    fakeLambda1 = 0.065 * exp(- 3),
+##'                    fakeLambda2 = 0.065 * exp(3),
 ##'                    mixture = 0.5, eventOnly = FALSE)
 ##'
 ##' temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2 + x3 + x4, data = dat,
-##'               control = list(alwaysUpdatePi = TRUE, tolEm = 1e-4),
-##'               start = list(censorRate = seq.int(0, 0.3, 0.1)))
+##'               control = list(alwaysUpdatePi = TRUE, tolEm = 1e-6))
+##' ##              start = list(censorRate = 0.46))
 ##' temp@logL
 ##' temp@start$censorRate0
 ##' summar(list(temp), boxPlot = FALSE)
@@ -186,52 +186,59 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
     piEst <- oneFit0$piVec[(reOrderIdx <- order(orderInc))]
     start$piVec <- piVec0[reOrderIdx]
     start$censorRate0 <- censorRate0
-    ## update baseline hazard rate h0
+    ## update results
     h0Dat$h0Vec <- oneFit0$h0Vec
-    ## update baseline hazard rate of censoring times
     h_cDat$h_cVec <- oneFit0$h_cVec
-
+    incDat$xExp <- oneFit0$xExp
+    incDat$piVec <- oneFit0$piVec
+    betaEst <- oneFit0$betaEst
+    betaHat <- as.numeric(betaEst$estimate)
     ## numerical approximation of I_oc fisher information matrix
-    incDat$xExp <- oneFit$xExp
     ## I_oc <- approxIoc(dat = incDat, xMat = xMat, tied = tied, nIter = 100)
     I_oc <- betaEst$hessian
 
-    ## dm matrix
-    incDat$piVec <- initPi(censorRate0, dat = incDat, equally = FALSE)
-    dmMat <- dmECM(betaEst = betaHat, h0Dat = h0Dat, h_cDat = h_cDat,
-                   dat = incDat, xMat = xMat, tied = tied, control = control)
+    se_prem <- NA
+    if (! control$noSE) {
+        ## dm matrix
+        ## incDat$piVec <- initPi(censorRate0, dat = incDat, equally = FALSE)
+        ## tmpRes <- oneECMstep(betaHat, h0Dat = h0Dat, h_cDat = h_cDat,
+        ##                      dat = incDat, xMat = xMat, tied = tied,
+        ##                      control = control)
+        ## incDat$piVec <- tmpRes$piVec
+        dmMat <- dmECM(betaEst = betaHat, h0Dat = h0Dat, h_cDat = h_cDat,
+                       dat = incDat, xMat = xMat, tied = tied,
+                       control = control)
 
-    ## variance-covariance matrix by SECM
-    invI_oc <- solve(I_oc)
-    secmVar <- invI_oc + invI_oc %*% dmMat %*% solve(diag(1, nBeta) - dmMat)
-    secmVar <- (secmVar + t(secmVar)) / 2
-    ## secmVar <- solve((diag(1, nBeta) - dmMat) %*% I_oc)
+        ## variance-covariance matrix by SECM
+        invI_oc <- solve(I_oc)
+        secmVar <- invI_oc + invI_oc %*% dmMat %*% solve(diag(1, nBeta) - dmMat)
+        secmVar <- (secmVar + t(secmVar)) / 2
+        ## secmVar <- solve((diag(1, nBeta) - dmMat) %*% I_oc)
 
-    ## se estimatation by multiple imputation method
-    ## miVar <- imputeVar(incDat, xMat, nImpute = 30)
+        ## se estimatation by multiple imputation method
+        ## miVar <- imputeVar(incDat, xMat, nImpute = 30)
 
-    ## se estimatation by PRES, FIXME
-    ## I_oMat <- I_o(betaEst = betaHat, h0Dat = h0Dat, h_cDat = h_cDat,
-    ##               dat = incDat, xMat = xMat, tied = tied, control = control)
-    ## invI_o <- solve(I_oMat)
+        ## se estimatation by PRES, FIXME
+        ## I_oMat <- I_o(betaEst = betaHat, h0Dat = h0Dat, h_cDat = h_cDat,
+        ##               dat = incDat, xMat = xMat, tied = tied,
+        ##               control = control)
+        ## invI_o <- solve(I_oMat)
+        se_prem <- as.numeric(sqrt(diag(secmVar)))
+    }
 
     ## estimates for beta
     ## est_beta <- matrix(NA, nrow = nBeta, ncol = 6L)
-    est_beta <- matrix(NA, nrow = nBeta, ncol = 5L)
+    est_beta <- matrix(NA, nrow = nBeta, ncol = 4L)
     ## colnames(est_beta) <- c("coef", "exp(coef)", "se(coef)",
     ##                         "se_SEM", "z", "Pr(>|z|)")
     ## colnames(est_beta) <- c("coef", "se_comp", "se_SEM", "se_MI")
-    colnames(est_beta) <- c("coef", "se_comp", "se_boot", "se_PREM",
-                            "coef_boot")
+    colnames(est_beta) <- c("coef", "se_PREM", "coef_boot", "se_boot")
     rownames(est_beta) <- covar_names
-    betaEst <- oneFit0$betaEst
-    se_vec <- sqrt(diag(solve(betaEst$hessian)))
-    est_beta[, 1L] <- as.numeric(betaEst$estimate)
+    est_beta[, 1L] <- betaHat
     ## est_beta[, 2L] <- exp(est_beta[, 1L])
-    est_beta[, 2L] <- as.numeric(se_vec)
+    est_beta[, 2L] <- se_prem
     est_beta[, 3L] <- NA
-    est_beta[, 4L] <- as.numeric(sqrt(diag(secmVar)))
-    est_beta[, 5L] <- NA
+    est_beta[, 4L] <- NA
     ## est_beta[, 4L] <- as.vector(sqrt(miVar))
     ## est_beta[, 6L] <- est_beta[, 1L] / est_beta[, 3L]
     ## est_beta[, 7L] <- 2 * stats::pnorm(- abs(est_beta[, 5L]))
@@ -744,9 +751,9 @@ coxEmStart <- function(beta, censorRate, piVec, ..., nBeta_, dat_)
 
 coxEmControl <- function(gradtol = 1e-6, stepmax = 1e2,
                          steptol = 1e-6, iterlim = 1e2,
-                         tolEm = 1e-4, iterlimEm = 1e2,
-                         h = 1e-2, alwaysUpdatePi = NULL, ...,
-                         censorRate0_)
+                         tolEm = 1e-6, iterlimEm = 1e2,
+                         h = sqrt(tolEm), alwaysUpdatePi = NULL, ...,
+                         censorRate0_, noSE_ = FALSE)
 {
     ## controls for function stats::nlm
     if (! is.numeric(gradtol) || gradtol <= 0)
@@ -770,11 +777,12 @@ coxEmControl <- function(gradtol = 1e-6, stepmax = 1e2,
 
     ## automatically determine whether always update pi's
     if (is.null(alwaysUpdatePi))
-        alwaysUpdatePi <- ifelse(censorRate0_ < 0.9, TRUE, FALSE)
+        alwaysUpdatePi <- ifelse(censorRate0_ < 0.8, TRUE, FALSE)
 
     ## return
     list(gradtol = gradtol, stepmax = stepmax,
          steptol = steptol, iterlim = iterlim,
          tolEm = tolEm, iterlimEm = iterlimEm,
-         h = h, alwaysUpdatePi = alwaysUpdatePi)
+         h = h, alwaysUpdatePi = alwaysUpdatePi,
+         noSE_ = noSE_)
 }
