@@ -1,19 +1,18 @@
 ## estimate se by bootstrapping methods
 bootSe <- function(obj, numBoot = 50, fixStart = FALSE, ...) {
     cal <- obj@call
-    if (fixStart) {
-        ## get the starting value used
-        censorRate0 <- obj@start$censorRate0
-        start0 <- list(beta = obj@start$beta, censorRate = censorRate0)
-        cal$start <- quote(start0)
-    } else {
-        censorRate0 <- obj@start$censorRate0
-        seq_cen <- seq.int(max(0, censorRate0 - 0.2),
-                           min(1, censorRate0 + 0.2), 0.02)
-        start0 <- list(beta = obj@start$beta,
+    censorRate0 <- obj@start$censorRate0
+    start0 <- if (fixStart) {
+                  ## get the starting value used
+                  list(beta = obj@start$beta, censorRate = censorRate0)
+              } else {
+                  seq_cen <- seq.int(max(0, censorRate0 - 0.2),
+                                     min(1, censorRate0 + 0.2), 0.05)
+                  list(beta = obj@start$beta,
                        censorRate = seq_cen)
-        cal$start <- quote(start0)
-    }
+              }
+    cal$start <- quote(start0)
+    cal$control <- quote(c(obj@control, list(noSE_ = TRUE)))
     cal$data <- quote(bootDat)
     dat <- obj@data
     uid <- unique(dat$ID)
