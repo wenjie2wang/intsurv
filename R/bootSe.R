@@ -12,15 +12,20 @@ bootSe <- function(obj, numBoot = 50, fixStart = FALSE, ...) {
                        censorRate = seq_cen)
               }
     cal$start <- quote(start0)
-    cal$control <- quote(c(obj@control, list(noSE_ = TRUE)))
+    cal$control <- obj@control
+    cal$control$noSE_ <- TRUE
     cal$data <- quote(bootDat)
     dat <- obj@data
+    dat <- dat[with(dat, order(ID, obsTime)), ]
+    idTab <- table(dat$ID)
     uid <- unique(dat$ID)
     nSub <- length(uid)
     estMat <- replicate(numBoot, {
-        sID <- sample(uid, size = nSub, replace = TRUE)
+        sID <- sort(sample(uid, size = nSub, replace = TRUE))
         tmpDat <- data.frame(ID = sID)
+        repNum <- idTab[match(as.character(sID), names(idTab))]
         bootDat <- merge(tmpDat, dat, by = "ID")
+        bootDat$ID <- rep(seq_along(uid), repNum)
         res <- eval(cal)
         as.numeric(res@estimates$beta[, "coef"])
     })

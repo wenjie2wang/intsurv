@@ -28,7 +28,7 @@
 ##'                    mixture = 0.5, eventOnly = FALSE)
 ##'
 ##' temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2 + x3 + x4, data = dat,
-##'               control = list(alwaysUpdatePi = TRUE, tolEm = 1e-6))
+##'               control = list(alwaysUpdatePi = TRUE, tolEm = 1e-4))
 ##' ##              start = list(censorRate = 0.46))
 ##' temp@logL
 ##' temp@start$censorRate0
@@ -751,7 +751,7 @@ coxEmStart <- function(beta, censorRate, piVec, ..., nBeta_, dat_)
 
 coxEmControl <- function(gradtol = 1e-6, stepmax = 1e2,
                          steptol = 1e-6, iterlim = 1e2,
-                         tolEm = 1e-6, iterlimEm = 1e2,
+                         tolEm = 1e-4, iterlimEm = 1e2,
                          h = sqrt(tolEm), alwaysUpdatePi = NULL, ...,
                          censorRate0_, noSE_ = FALSE)
 {
