@@ -1,16 +1,11 @@
 ## estimate se by bootstrapping methods
-bootSe <- function(obj, numBoot = 50, fixStart = FALSE, ...) {
+bootSe <- function(obj, numBoot = 200, control = list(), ...)
+{
     cal <- obj@call
     censorRate0 <- obj@start$censorRate0
-    start0 <- if (fixStart) {
-                  ## get the starting value used
-                  list(beta = obj@start$beta, censorRate = censorRate0)
-              } else {
-                  seq_cen <- seq.int(max(0, censorRate0 - 0.2),
-                                     min(1, censorRate0 + 0.2), 0.05)
-                  list(beta = obj@start$beta,
-                       censorRate = seq_cen)
-              }
+    control <- c(control, list(censorRate0_ = censorRate0))
+    start0 <- list(beta = obj@start$beta,
+                   censorRate = do.call(control_bootSe, control))
     cal$start <- quote(start0)
     cal$control <- obj@control
     cal$control$noSE_ <- TRUE
@@ -32,4 +27,16 @@ bootSe <- function(obj, numBoot = 50, fixStart = FALSE, ...) {
     seEst <- apply(estMat, 1L, sd)
     est <- rowMeans(estMat)
     list(se = seEst, beta = est)
+}
+
+
+### internal functions
+control_bootSe <- function(grid, fixStart = FALSE, ..., censorRate0_)
+{
+    if (fixStart)
+        return(censorRate0_)
+    if (missing(grid))
+        grid <- seq.int(max(0, censorRate0_ - 0.2),
+                        min(1, censorRate0_ + 0.2), 0.05)
+    grid
 }
