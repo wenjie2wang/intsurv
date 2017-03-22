@@ -33,6 +33,7 @@
 ##' temp@logL
 ##' temp@start$censorRate0
 ##' summar(list(temp), boxPlot = FALSE)
+##' tmp <- bootSe(temp, numBoot = 1, control = list(estOnly = TRUE))
 ##'
 ##' tmpDat <- cbind(dat, piEst = round(temp@estimates$piEst, 3))
 ##' dupID <- with(tmpDat, unique(ID[duplicated(ID)]))
@@ -76,7 +77,7 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
         stop("Argument 'formula' is required.")
     if (missing(data))
         data <- environment(formula)
-    if (! with(data, inherits(eval(Call[[2L]][[2L]]), "Surve")))
+    if (! with(data, inherits(eval(formula[[2L]]), "Surve")))
         stop("Response in formula must be a 'surve' object.")
 
     ## Prepare data: ID, time, event ~ X(s)
@@ -227,21 +228,16 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
     }
 
     ## estimates for beta
-    ## est_beta <- matrix(NA, nrow = nBeta, ncol = 6L)
-    est_beta <- matrix(NA, nrow = nBeta, ncol = 4L)
-    ## colnames(est_beta) <- c("coef", "exp(coef)", "se(coef)",
-    ##                         "se_SEM", "z", "Pr(>|z|)")
-    ## colnames(est_beta) <- c("coef", "se_comp", "se_SEM", "se_MI")
-    colnames(est_beta) <- c("coef", "se_PREM", "coef_boot", "se_boot")
+    est_beta <- matrix(NA, nrow = nBeta, ncol = 5L)
+    colnames(est_beta) <- c("coef", "exp(coef)", "se(coef)", "z", "Pr(>|z|)")
     rownames(est_beta) <- covar_names
     est_beta[, 1L] <- betaHat
-    ## est_beta[, 2L] <- exp(est_beta[, 1L])
-    est_beta[, 2L] <- se_prem
+    est_beta[, 2L] <- exp(est_beta[, "coef"])
     est_beta[, 3L] <- NA
     est_beta[, 4L] <- NA
-    ## est_beta[, 4L] <- as.vector(sqrt(miVar))
-    ## est_beta[, 6L] <- est_beta[, 1L] / est_beta[, 3L]
-    ## est_beta[, 7L] <- 2 * stats::pnorm(- abs(est_beta[, 5L]))
+    est_beta[, 5L] <- NA
+    ## est_beta[, 4L] <- est_beta[, 1L] / est_beta[, 3L]
+    ## est_beta[, 5L] <- 2 * stats::pnorm(- abs(est_beta[, 5L]))
 
     ## output: na.action
     na.action <- if (is.null(attr(mf, "na.action")))
@@ -255,15 +251,11 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
                  else
                      attr(mm, "contrasts")
 
-    ## output: data
-    dat$eventInd <- dat$dupIdx <- NULL
-    colnames(dat) <- c(as.character(formula[[2]])[- 1L], covar_names)
-
     ## results to return
     results <- methods::new("coxEm",
                             call = Call,
                             formula = formula,
-                            data = dat,
+                            data = data,
                             nObs = nObs,
                             estimates = list(beta = est_beta,
                                              piEst = piEst,
@@ -753,7 +745,7 @@ coxEmControl <- function(gradtol = 1e-6, stepmax = 1e2,
                          steptol = 1e-6, iterlim = 1e2,
                          tolEm = 1e-4, iterlimEm = 1e2,
                          h = sqrt(tolEm), alwaysUpdatePi = NULL, ...,
-                         censorRate0_, noSE_ = FALSE)
+                         censorRate0_, noSE_ = TRUE)
 {
     ## controls for function stats::nlm
     if (! is.numeric(gradtol) || gradtol <= 0)

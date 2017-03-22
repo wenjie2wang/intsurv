@@ -1,17 +1,20 @@
 ## estimate se by bootstrapping methods
 bootSe <- function(obj, numBoot = 200, control = list(), ...)
 {
+    fm <- obj@formula
     cal <- obj@call
     censorRate0 <- obj@start$censorRate0
-    control <- c(control, list(censorRate0_ = censorRate0))
-    start0 <- list(beta = obj@start$beta,
-                   censorRate = do.call(control_bootSe, control))
+    control <- do.call(control_bootSe,
+                       c(control, list(censorRate0_ = censorRate0)))
+    start0 <- list(beta = obj@start$beta, censorRate = control$startGrid)
     cal$start <- quote(start0)
     cal$control <- obj@control
     cal$control$noSE_ <- TRUE
     cal$data <- quote(bootDat)
     dat <- obj@data
-    dat <- dat[with(dat, order(ID, obsTime)), ]
+    idName <- as.character(fm[[2L]][[2L]])
+    timeName <- as.character(fm[[2L]][[3L]])
+    dat <- dat[order(dat[, idName], dat[, timeName]), ]
     idTab <- table(dat$ID)
     uid <- unique(dat$ID)
     nSub <- length(uid)
@@ -24,19 +27,25 @@ bootSe <- function(obj, numBoot = 200, control = list(), ...)
         res <- eval(cal)
         as.numeric(res@estimates$beta[, "coef"])
     })
-    seEst <- apply(estMat, 1L, sd)
-    est <- rowMeans(estMat)
-    list(se = seEst, beta = est)
+    if (control$estOnly)
+        return(as.numeric(estMat))
+    obj@estimates$beta[, "se(coef)"] <- apply(estMat, 1L, sd)
+    tmp <- obj@estimates$beta[, "z"] <- obj@estimates$beta[, "coef"] /
+        obj@estimates$beta[, "se(coef)"]
+    obj@estimates$beta[, "Pr(>|z|)"] <- 2 * stats::pnorm(- abs(tmp))
+    obj
 }
 
 
 ### internal functions
-control_bootSe <- function(grid, fixStart = FALSE, ..., censorRate0_)
+control_bootSe <- function(startGrid, fixStart = FALSE, estOnly = FALSE,
+                           ..., censorRate0_)
 {
-    if (fixStart)
-        return(censorRate0_)
-    if (missing(grid))
-        grid <- seq.int(max(0, censorRate0_ - 0.2),
-                        min(1, censorRate0_ + 0.2), 0.05)
-    grid
+    startGrid <- if (fixStart) {
+                     censorRate0_
+                 } else if (missing(startGrid)){
+                     seq.int(max(0, censorRate0_ - 0.2),
+                             min(1, censorRate0_ + 0.2), 0.05)
+                 }
+    list(startGrid = startGrid, estOnly = estOnly)
 }
