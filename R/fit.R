@@ -233,9 +233,7 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
     rownames(est_beta) <- covar_names
     est_beta[, 1L] <- betaHat
     est_beta[, 2L] <- exp(est_beta[, "coef"])
-    est_beta[, 3L] <- NA
-    est_beta[, 4L] <- NA
-    est_beta[, 5L] <- NA
+    ## est_beta[, 3L] <- NA
     ## est_beta[, 4L] <- est_beta[, 1L] / est_beta[, 3L]
     ## est_beta[, 5L] <- 2 * stats::pnorm(- abs(est_beta[, 5L]))
 
