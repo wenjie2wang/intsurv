@@ -1,40 +1,63 @@
-dir = $(shell pwd)
-pkg = survem
-cprt = COPYRIGHT
+objects := $(wildcard R/*.R) DESCRIPTION
+# man := $(wildcard man/*.Rd) NAMESPACE
+dir := $(shell pwd)
+version := $(shell grep "Version" DESCRIPTION | sed "s/Version: //")
+pkg := $(shell grep "Package" DESCRIPTION | sed "s/Package: //")
+tar := $(pkg)_$(version).tar.gz
+# tests := $(wildcard tests/testthat/*.R)
+checkLog := $(pkg).Rcheck/00check.log
+citation := inst/CITATION
+yr := $(shell date +"%Y")
+dt := $(shell date +"%Y-%m-%d")
 
-Rpkg: build
-	make check
+# rmd := vignettes/$(pkg)-intro.Rmd
+# vignettes := vignettes/$(pkg)-intro.html
+cprt := COPYRIGHT
 
-Rd: R/
-	Rscript -e "library(methods); roxygen2::roxygenise();"
 
-build: Rd
-	R CMD build --compact-vignettes $(dir)
+.PHONY: check
+check: $(checkLog)
 
-check: $(pkg)_*.tar.gz
-	R CMD check --as-cran $(pkg)_*.tar.gz
+.PHONY: build
+build: $(tar)
 
-INSTALL: build
-	R CMD INSTALL --build $(pkg)_*.tar.gz
+.PHONY: install
+install: $(tar)
+	R CMD INSTALL $(tar)
 
-preview:
-	Rscript -e "rmarkdown::render('vignettes/$(pkg)-intro.Rmd')"
+# .PHONY: preview
+# preview: $(vignettes)
+
+
+$(tar): $(objects)
+	@make -s updateMeta
+	Rscript -e "library(methods); devtools::document();";
+	R CMD build $(dir)
+
+$(checkLog): $(tar) # $(tests)
+	R CMD check --as-cran $(tar)
+
+# $(vignettes): $(rmd)
+#	Rscript -e "rmarkdown::render('$(rmd)')"
+
 
 ## update copyright year in HEADER, R script and date in DESCRIPTION
-updateHeader:
-	yr=$$(date +"%Y");\
-	sed -i "s/Copyright (C) 2016-[0-9]\{4\}/Copyright (C) 2016-$$yr/" $(cprt);\
-# add HEADER file if there is no header
-	for Rfile in R/*.R; do \
-	if ! grep -e 'Copyright (C)' $$Rfile ;\
-	then cat $(cprt) $$Rfile > tmp ;\
+.PHONY: updateMeta
+updateMeta:
+	@echo "Updating date, version, and copyright year"
+	@sed -i "s/Copyright (C) 2017-[0-9]\{4\}/Copyright (C) 2017-$(yr)/" $(cprt)
+	@for Rfile in R/*.R; do \
+	if ! grep -q 'Copyright (C)' $$Rfile;\
+	then cat $(cprt) $$Rfile > tmp;\
 	mv tmp $$Rfile;\
 	fi;\
-	yr=$$(date +"%Y");\
-	sed -i "s/Copyright (C) 2016-[0-9]*/Copyright (C) 2016-$$yr/" $$Rfile;\
-	done;\
-	dt=$$(date +"%Y-%m-%d");\
-	sed -i "s/Date: [0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}/Date: $$dt/" DESCRIPTION;
+	sed -i "s/Copyright (C) 2017-[0-9]*/Copyright (C) 2017-$(yr)/" $$Rfile;\
+	done;
+	@sed -i "s/Date: [0-9]\{4\}-[0-9]\{1,2\}-[0-9]\{1,2\}/Date: $(dt)/" DESCRIPTION
+	@sed -i "s/version [0-9]\.[0-9]\.[0-9]\(\.[0-9][0-9]*\)*/version $(version)/" $(citation)
+	@sed -i "s/20[0-9]\{2\}/$(yr)/" $(citation)
 
+
+.PHONY: clean
 clean:
 	rm -rf *~ */*~ *.Rhistroy *.tar.gz *.Rcheck/ .\#*

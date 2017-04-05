@@ -1,7 +1,7 @@
-Package: survem
-Title: Survival Models with EM Algorithm for Uncertain Records
+Package: intsurv
+Title: Integrative Survival Modeling
 Version: 0.0.9000
-Date: 2017-03-22
+Date: 2017-04-03
 Authors@R: c(
     person(given = "Wenjie", family = "Wang",
            email = "wenjie.2.wang@uconn.edu",
@@ -9,18 +9,15 @@ Authors@R: c(
     person(given = "Kun", family = "Chen", role = "ctb"),
     person(given = "Jun", family = "Yan", role = "ctb")
     )
-Description: Functions that fit Cox model with EM algorithm for uncertain
-    records.
+Description: Functions fitting extended Cox model through ECM algorithm for
+    uncertain records due to imperfect data integration.
 Imports:
+    methods,
     stats
-Suggests:
-    knitr,
-    rmarkdown
 Depends:
     R (>= 3.2.3)
 License: GPL (>= 3)
 LazyData: true
-VignetteBuilder: knitr
 Collate:
     'class.R'
     'bootSe.R'
@@ -28,6 +25,6 @@ Collate:
     'fit.R'
     'show.R'
     'summary.R'
-URL: https://github.com/wenjie2wang/survem
-BugReports: https://github.com/wenjie2wang/survem/issues
+URL: https://github.com/wenjie2wang/intsurv
+BugReports: https://github.com/wenjie2wang/intsurv/issues
 RoxygenNote: 6.0.1
