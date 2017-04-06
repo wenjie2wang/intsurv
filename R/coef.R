@@ -5,25 +5,25 @@ NULL
 
 #' Estimated Coefficients of Covariates
 #'
-#' \code{coef,coxEm-method} is a S4 class method that extracts
+#' \code{coef,intCox-method} is a S4 class method that extracts
 #' estimated coefficients of covariates from
-#' \code{\link{coxEm-class}} object produced by
-#' function \code{\link{coxEm}}.
+#' \code{\link{intCox-class}} object produced by
+#' function \code{\link{intCox}}.
 #'
-#' @param object \code{\link{coxEm-class}} object.
+#' @param object \code{\link{intCox-class}} object.
 #' @param ... Other arguments for future usage.
 #' @return A named numeric vector.
-#' @aliases coef,coxEm-method
+#' @aliases coef,intCox-method
 #' @seealso
-#' \code{\link{coxEm}} for model fitting;
-#' \code{\link{confint,coxEm-method}} for confidence intervals
+#' \code{\link{intCox}} for model fitting;
+#' \code{\link{confint,intCox-method}} for confidence intervals
 #' for covariate coefficients;
-#' \code{\link{summary,coxEm-method}} for summary of a fitted model.
+#' \code{\link{summary,intCox-method}} for summary of a fitted model.
 #' @examples
-#' ## See examples given in function coxEm.
+#' ## See examples given in function intCox.
 #' @importFrom stats coef
 #' @export
-setMethod(f = "coef", signature = "coxEm",
+setMethod(f = "coef", signature = "intCox",
           definition = function(object, ...) {
               object@estimates$beta
           })

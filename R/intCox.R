@@ -1,18 +1,17 @@
-################################################################################
-### functions fitting Cox model with uncertain survival record data
-### version controlled by git
-################################################################################
-
-
-##' FIXME
+##' Integrative Cox Model for Uncertain Survival Data
 ##'
+##' The function fits the extended Cox model for uncertain survival data
+##' due to imperfect data integration.
+##'
+##' @param
 ##'
 ##' @examples
 ##' ## temp code for testing only
 ##' library(survival)
 ##' source("class.R")
+##' source("survi.R")
 ##' source("coef.R")
-##' source("fit.R")
+##' source("intCox.R")
 ##' source("bootSe.R")
 ##' source("../simulation/simuData.R")
 ##' source("../simulation/simuFun.R")
@@ -27,13 +26,13 @@
 ##'                    fakeLambda2 = 0.065 * exp(3),
 ##'                    mixture = 0.5, eventOnly = FALSE)
 ##'
-##' temp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2 + x3 + x4, data = dat,
-##'               control = list(alwaysUpdatePi = TRUE, tolEm = 1e-4))
-##' ##              start = list(censorRate = 0.46))
+##' temp <- intCox(survi(ID, obsTime, eventInd) ~ x1 + x2 + x3 + x4, data = dat,
+##'                control = list(alwaysUpdatePi = TRUE, tolEm = 1e-4),
+##'                start = list(censorRate = 0.46))
 ##' temp@logL
 ##' temp@start$censorRate0
 ##' summar(list(temp), boxPlot = FALSE)
-##' tmp <- bootSe(temp, numBoot = 1, control = list(estOnly = TRUE))
+##' (tmp <- bootSe(temp, numBoot = 1, control = list(estOnly = TRUE)))
 ##'
 ##' tmpDat <- cbind(dat, piEst = round(temp@estimates$piEst, 3))
 ##' dupID <- with(tmpDat, unique(ID[duplicated(ID)]))
@@ -48,8 +47,8 @@
 ##'
 ##' ## test on the true data of unique records
 ##' trueDat <- dat[with(dat, ! duplicated(ID)), ]
-##' tmp <- coxEm(Surve(ID, obsTime, eventInd) ~ x1 + x2, data = trueDat,
-##'              start = list(beta = c(0, 0)))
+##' tmp <- intCox(survi(ID, obsTime, eventInd) ~ x1 + x2, data = trueDat,
+##'               start = list(beta = c(0, 0)))
 ##' tmp@estimates$beta
 ##'
 ##' ## test on tied event times
@@ -59,15 +58,14 @@
 ##'               x = c(0, 2, 1, 1, 1, 0, 0),
 ##'               sex = c(0, 0, 0, 0, 1, 1, 1))
 ##' coxph(Surv(time, status) ~ x + sex, test1, ties = "breslow")
-##' coef(coxEm(Surve(ID, time, status) ~ x + sex, test1,
-##'            start = list(beta = c(0, 0))))
+##' coef(intCox(survi(ID, time, status) ~ x + sex, test1,
+##'             start = list(beta = c(0, 0))))
 ##'
-##' ## @import data.table? for faster aggregation?
 
 
 ## implementation of ECM algorithm to Cox model
-coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
-                  start = list(), control = list(), ...) {
+intCox <- function(formula, data, subset, na.action, contrasts = NULL,
+                   start = list(), control = list(), ...) {
 
     ## record the function call to return
     Call <- match.call()
@@ -77,7 +75,7 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
         stop("Argument 'formula' is required.")
     if (missing(data))
         data <- environment(formula)
-    if (! with(data, inherits(eval(formula[[2L]]), "Surve")))
+    if (! with(data, inherits(eval(formula[[2L]]), "survi")))
         stop("Response in formula must be a 'surve' object.")
 
     ## Prepare data: ID, time, event ~ X(s)
@@ -91,7 +89,7 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
     mcall[[1L]] <- quote(stats::model.frame)
     mf <- eval(mcall, parent.frame())
     mt <- attr(mf, "terms")
-    mm <- stats::model.matrix(formula, data = mf, contrasts.arg = contrasts)
+    mm <- stats::model.matrix(formula, mf, contrasts.arg = contrasts)
 
     ## number of covariates excluding intercept
     if ((nBeta <- ncol(mm) - 1L) <= 0)
@@ -101,7 +99,7 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
     covar_names <- colnames(mm)[- 1L]
 
     ## data
-    dat <- as.data.frame(cbind(mf[, 1L][, seq_len(3L)], mm[, - 1L]))
+    dat <- as.data.frame(cbind(mf[, 1L], mm[, - 1L]))
     colnames(dat) <- c("ID", "time", "event", covar_names)
     nObs <- nrow(dat)
     nBeta <- ncol(dat) - 3L
@@ -109,11 +107,11 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
 
     ## start' values for 'nlm'
     startList <- c(start, list(nBeta_ = nBeta, dat_ = dat))
-    start <- do.call("coxEmStart", startList)
+    start <- do.call("intCox_start", startList)
 
     ## 'control' for 'nlm'
     control <- c(control, list(censorRate0_ = start$censorRate0))
-    control <- do.call("coxEmControl", control)
+    control <- do.call("intCox_control", control)
 
     ## indicator for subjects having multiple record
     dat$dupIdx <- with(dat, ID %in% unique(ID[duplicated(ID)]))
@@ -250,10 +248,10 @@ coxEm <- function(formula, data, subset, na.action, contrasts = NULL,
                      attr(mm, "contrasts")
 
     ## results to return
-    results <- methods::new("coxEm",
+    results <- methods::new("intCox",
                             call = Call,
                             formula = formula,
-                            data = data,
+                            data = as.data.frame(data),
                             nObs = nObs,
                             estimates = list(beta = est_beta,
                                              piEst = piEst,
@@ -689,7 +687,7 @@ initPi <- function(censorRate, dat, equally = FALSE, ...) {
 }
 
 
-coxEmStart <- function(beta, censorRate, piVec, ..., nBeta_, dat_)
+intCox_start <- function(beta, censorRate, piVec, ..., nBeta_, dat_)
 {
     dupID <- with(dat_, unique(ID[duplicated(ID)]))
     uniDat <- base::subset(dat_, ! ID %in% dupID)
@@ -739,7 +737,7 @@ coxEmStart <- function(beta, censorRate, piVec, ..., nBeta_, dat_)
 }
 
 
-coxEmControl <- function(gradtol = 1e-6, stepmax = 1e2,
+intCox_control <- function(gradtol = 1e-6, stepmax = 1e2,
                          steptol = 1e-6, iterlim = 1e2,
                          tolEm = 1e-4, iterlimEm = 1e2,
                          h = sqrt(tolEm), alwaysUpdatePi = NULL, ...,

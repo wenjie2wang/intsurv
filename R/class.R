@@ -1,32 +1,20 @@
-##' Formula Response for survival data with uncertain records
+##' An S4 Class Representing Formula Response for Integrative Survival Model
 ##'
-##' \code{Surve} is an S3 class that represents
-##' formula response for survival data with
-##' uncertain records.
-##' The last letter 'e' in 'Surve' represents 'EM'.
-##'
-##' @param ID Identificator of each subject.
-##' @param time Time of reccurence event or censoring.
-##' @param event The status indicator, 0 = censored, 1 = event.
-##' @aliases Surve
+##' @slot id Identificator of each subject.
+##' @slot time Time of reccurence event or censoring.
+##' @slot event The status indicator, 0 = censored, 1 = event.
+##' @aliases survi-class
 ##' @export
-Surve <- function (ID, time, event) {
-    ## inpDat <- data.frame(ID, time, event)
-    ## FIXME: function to check the date structure of
-    ## uncertained records
-    ## dat <- checkSurve(inpDat)
-    ## outDat <- with(dat, as.matrix(cbind(ID, time, event)))
-    outDat <- as.matrix(cbind(ID, time, event))
-    ## attr(outDat, "ID") <- attr(dat, "ID")
-    oldClass(outDat) <- "Surve"
-    invisible(outDat)
-}
+setClass("survi", contains = "matrix",
+         slots = c(id = "character",
+                   time = "numeric",
+                   event = "integer"))
 
 
 ##' An S4 Class to Represent a Fitted Model
 ##'
-##' \code{coxEm-class} is an S4 class that represents a fitted model.
-##' Function \code{\link{coxEm}} produces objects of this class.
+##' \code{intCox-class} is an S4 class that represents a fitted model.
+##' Function \code{\link{intCox}} produces objects of this class.
 ##' See ``Slots'' for details.
 ##'
 ##' @slot call Function call.
@@ -43,10 +31,10 @@ Surve <- function (ID, time, event) {
 ##' @slot partLogL A numeric value.
 ##' @slot logL A numeric value.
 ##' @slot fisher A numeric matrix.
-##' @aliases coxEm-class
-##' @seealso \code{\link{coxEm}} for details of slots.
+##' @aliases intCox-class
+##' @seealso \code{\link{intCox}} for details of slots.
 ##' @export
-setClass(Class = "coxEm",
+setClass(Class = "intCox",
          slots = c(call = "call",
                    formula = "formula",
                    data = "data.frame",
@@ -66,7 +54,7 @@ setClass(Class = "coxEm",
 ##' An S4 Class to Represent a Summarized Model
 ##'
 ##' \code{summaryCoxEm-class} is an S4 class that represents a summarized model.
-##' Function \code{\link{summaryCoxEm}} produces objects of this class.  See
+##' Function \code{\link{summary_intCox}} produces objects of this class.  See
 ##' ``Slots'' for details.
 ##'
 ##' @slot call Function call.
@@ -74,6 +62,6 @@ setClass(Class = "coxEm",
 ##' @aliases summaryCoxEm-class
 ##' @seealso \code{\link{summaryCoxEm}} for details of slots.
 ##' @export
-setClass(Class = "summaryCoxEm",
+setClass(Class = "summary_intCox",
          slots = c(call = "call",
                    coefMat = "matrix"))

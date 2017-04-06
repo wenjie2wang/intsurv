@@ -4,7 +4,7 @@ bootSe <- function(obj, numBoot = 200, control = list(), ...)
     fm <- obj@formula
     cal <- obj@call
     censorRate0 <- obj@start$censorRate0
-    control <- do.call(control_bootSe,
+    control <- do.call(bootSe_control,
                        c(control, list(censorRate0_ = censorRate0)))
     start0 <- list(beta = obj@start$beta, censorRate = control$startGrid)
     cal$start <- quote(start0)
@@ -38,7 +38,7 @@ bootSe <- function(obj, numBoot = 200, control = list(), ...)
 
 
 ### internal functions
-control_bootSe <- function(startGrid, fixStart = FALSE, estOnly = FALSE,
+bootSe_control <- function(startGrid, fixStart = FALSE, estOnly = FALSE,
                            ..., censorRate0_)
 {
     startGrid <- if (fixStart) {
