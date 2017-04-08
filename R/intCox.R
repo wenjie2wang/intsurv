@@ -709,10 +709,18 @@ intCox_start <- function(beta, censorRate, piVec, ..., nBeta_, dat_)
             beta <- rep(0, nBeta_)
         } else {
             uniDat$eventInd <- NULL
-            tmp <- survival::coxph(survival::Surv(time, event) ~
-                                       as.matrix(uniDat[, - seq_len(3L)]),
-                                   data = uniDat)
-            beta <- as.numeric(tmp$coefficients)
+            tmp <- tryCatch(
+                survival::coxph(survival::Surv(time, event) ~
+                                    as.matrix(uniDat[, - seq_len(3L)]),
+                                data = uniDat),
+                warning = function(w) {
+                    warning(w)
+                    return(NULL)
+                })
+            beta <- if (is.null(tmp))
+                        rep(0, nBeta_)
+                    else
+                        as.numeric(tmp$coefficients)
         }
     } else {
         beta <- as.numeric(beta)
