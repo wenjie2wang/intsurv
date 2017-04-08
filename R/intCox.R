@@ -1,66 +1,82 @@
 ##' Integrative Cox Model for Uncertain Survival Data
 ##'
 ##' The function fits the extended Cox model for uncertain survival data
-##' due to imperfect data integration.
+##' due to imperfect data integration proposed by Wang (2017).
 ##'
-##' @param
+##' @param formula \code{survi} object specifying the covariates and response
+##'     variable in the model, such as \code{survi(ID, time, event) ~ x1 + x2}.
+##' @param data An optional data frame, list, or environment that contains the
+##'     covariates and response variables included in the model. If not found in
+##'     data, the variables are taken from \code{environment(formula)}, usually
+##'     the environment from which function \code{\link{intCox}} is called.
+##' @param subset An optional vector specifying a subset of observations to be
+##'     used in the fitting process.
+##' @param na.action An optional function that indicates what should the
+##'     procedure do if the data contains \code{NA}s.  The default is set by the
+##'     na.action setting of \code{\link[base]{options}}.  The "factory-fresh"
+##'     default is \code{\link[stats]{na.omit}}.  Other possible values inlcude
+##'     \code{\link[stats]{na.fail}}, \code{\link[stats]{na.exclude}}, and
+##'     \code{\link[stats]{na.pass}}.  \code{help(na.fail)} for details.
+##' @param contrasts An optional list, whose entries are values (numeric
+##'     matrices or character strings naming functions) to be used as
+##'     replacement values for the contrasts replacement function and whose
+##'     names are the names of columns of data containing factors.  See
+##'     \code{contrasts.arg} of \code{\link[stats]{model.matrix.default}} for
+##'     details.
+##' @param start An optional list of starting values for the parameters to be
+##'     estimated in the model.  See more in Section details.
+##' @param control An optional list of parameters to control the maximization
+##'     process of negative log likelihood function and adjust the baseline rate
+##'     function.  See more in Section details.
+##' @param ... Other arguments for future usage.
+##' @return A \code{\link{intCox-class}} object, whose slots include
+##' \itemize{
+##'     \item \code{call}: Function call.
+##'     \item \code{formula}: Formula used in the model fitting.
+##'     \item \code{data}: original input dataset.
+##'         (FIXME: remove this slot before submission to CRAN)
+##'     \item \code{nObs}: Number of observation.
+##'     \item \code{estimates}:
+##'         \itemize{
+##'             \item \code{spline}: The name of splines used.
+##'             \item \code{knots}: Internal knots specified for the baseline
+##'                 rate function.
+##'             \item \code{Boundary.knots}: Boundary knots specified for the
+##'                 baseline rate function.
+##'             \item \code{degree}: Degree of spline bases specified in
+##'                 baseline rate function.
+##'             \item \code{df}: Degree of freedom of the model specified.
+##'     }
+##'     \item \code{estimates}: Estimated coefficients of covariates and
+##'         baseline rate function, and estimated rate parameter of
+##'         gamma frailty variable.
+##'     \item \code{control}: The control list specified for model fitting.
+##'     \item \code{start}: The initial guess specified for the parameters
+##'         to be estimated.
+##'     \item \code{na.action}: The procedure specified to deal with
+##'         missing values in the covariate.
+##'     \item \code{xlevels}: A list that records the levels in
+##'         each factor variable.
+##'     \item \code{contrasts}: Contrasts specified and used for each
+##'         factor variable.
+##'     \item \code{convergCode}: \code{code} returned by function
+##'         \code{\link[stats]{nlm}}, which is an integer indicating why the
+##'         optimization process terminated. \code{help(nlm)} for details.
+##'     \item \code{logL}: Log likelihood of the fitted model.
+##'     \item \code{fisher}: Observed Fisher information matrix.
+##' }
+##'
+##'
+##' @references
+##'
+##' Wang, W., Chen, K., & Yan, J. (2017+).  Extended Cox Model by ECM Algorithm
+##' for Uncertain Survival Records Due to Imperfect Data Integration. (working
+##' in progress)
+##'
+##'
 ##'
 ##' @examples
-##' ## temp code for testing only
-##' library(survival)
-##' source("class.R")
-##' source("survi.R")
-##' source("coef.R")
-##' source("intCox.R")
-##' source("bootSe.R")
-##' source("../simulation/simuData.R")
-##' source("../simulation/simuFun.R")
-##'
-##' set.seed(1216)
-##' dat <- simuWeibull(nSubject = 270,
-##'                    maxNum = 2, nRecordProb = c(0.9, 0.1),
-##'                    matchCensor = 46 / 70, matchEvent = 11 / 200,
-##'                    censorMax = 12.5, censorMin = 0.5,
-##'                    lambda = 0.065, rho = 2,
-##'                    fakeLambda1 = 0.065 * exp(- 3),
-##'                    fakeLambda2 = 0.065 * exp(3),
-##'                    mixture = 0.5, eventOnly = FALSE)
-##'
-##' temp <- intCox(survi(ID, obsTime, eventInd) ~ x1 + x2 + x3 + x4, data = dat,
-##'                control = list(alwaysUpdatePi = TRUE, tolEm = 1e-4),
-##'                start = list(censorRate = 0.46))
-##' temp@logL
-##' temp@start$censorRate0
-##' summar(list(temp), boxPlot = FALSE)
-##' (tmp <- bootSe(temp, numBoot = 1, control = list(estOnly = TRUE)))
-##'
-##' tmpDat <- cbind(dat, piEst = round(temp@estimates$piEst, 3))
-##' dupID <- with(tmpDat, unique(ID[duplicated(ID)]))
-##' subset(tmpDat, ID %in% dupID)
-##' xtabs(~ eventInd + piEst, tmpDat, latentInd != 1L)
-##' xtabs(~ eventInd + piEst, tmpDat, latentInd == 1L)
-##'
-##' naiveCox(temp)
-##' uniOnlyCox(temp)
-##' oracleCox(temp)
-##' oracleWb(temp, rho0 = 2)
-##'
-##' ## test on the true data of unique records
-##' trueDat <- dat[with(dat, ! duplicated(ID)), ]
-##' tmp <- intCox(survi(ID, obsTime, eventInd) ~ x1 + x2, data = trueDat,
-##'               start = list(beta = c(0, 0)))
-##' tmp@estimates$beta
-##'
-##' ## test on tied event times
-##' test1 <- list(ID = seq_len(7),
-##'               time = c(4, 3, 1, 1, 2, 2, 3),
-##'               status = c(1, 1, 1, 0, 1, 1, 0),
-##'               x = c(0, 2, 1, 1, 1, 0, 0),
-##'               sex = c(0, 0, 0, 0, 1, 1, 1))
-##' coxph(Surv(time, status) ~ x + sex, test1, ties = "breslow")
-##' coef(intCox(survi(ID, time, status) ~ x + sex, test1,
-##'             start = list(beta = c(0, 0))))
-##'
+
 
 
 ## implementation of ECM algorithm to Cox model
@@ -254,8 +270,8 @@ intCox <- function(formula, data, subset, na.action, contrasts = NULL,
                             data = as.data.frame(data),
                             nObs = nObs,
                             estimates = list(beta = est_beta,
-                                             piEst = piEst,
-                                             h0Dat = h0Dat),
+                                             pi = piEst,
+                                             h0 = h0Dat),
                             control = control,
                             start = start,
                             na.action = na.action,
