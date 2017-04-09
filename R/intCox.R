@@ -76,6 +76,8 @@
 ##'
 ##'
 ##' @examples
+##' library(intsurv)
+##' intCox(survi())
 
 
 

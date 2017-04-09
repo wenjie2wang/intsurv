@@ -23,7 +23,7 @@ NULL
 ##' @importFrom stats printCoefmat
 ##' @export
 setMethod(
-    f = "show", signature = "summaryCoxEm",
+    f = "show", signature = "summary_intCox",
     definition = function(object) {
         ## if (attr(object@call, "show")) {
         ##     Call <- object@call

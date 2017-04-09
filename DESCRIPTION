@@ -1,7 +1,7 @@
 Package: intsurv
 Title: Integrative Survival Modeling
 Version: 0.0.9000
-Date: 2017-04-03
+Date: 2017-04-08
 Authors@R: c(
     person(given = "Wenjie", family = "Wang",
            email = "wenjie.2.wang@uconn.edu",
@@ -13,7 +13,8 @@ Description: Functions fitting extended Cox model through ECM algorithm for
     uncertain records due to imperfect data integration.
 Imports:
     methods,
-    stats
+    stats,
+    survival
 Depends:
     R (>= 3.2.3)
 License: GPL (>= 3)
@@ -22,9 +23,10 @@ Collate:
     'class.R'
     'bootSe.R'
     'coef.R'
-    'fit.R'
+    'intCox.R'
     'show.R'
     'summary.R'
+    'survi.R'
 URL: https://github.com/wenjie2wang/intsurv
 BugReports: https://github.com/wenjie2wang/intsurv/issues
 RoxygenNote: 6.0.1
