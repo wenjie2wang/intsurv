@@ -1,7 +1,87 @@
+## collation after class.R
+##' @include class.R
+NULL
+
+
 ##' Integrative Cox Model for Uncertain Survival Data
 ##'
-##' The function fits the extended Cox model for uncertain survival data
-##' due to imperfect data integration proposed by Wang (2017).
+##' The function fits the extended Cox model for uncertain survival data due to
+##' imperfect data integration proposed by Wang (2017+). The maximization of the
+##' observed-data likelihood function follows expectation conditional
+##' maximization (ECM) algorithm proposed by Meng (1993).
+##'
+##' The argument \code{start} is an optional list that allows users to specify
+##' starting value of each parameter in the model. The valid named elements are
+##' given as follows:
+##' \itemize{
+##'
+##' \item \code{beta}: A numeric vector for starting values of coefficient
+##'     estimates. The default values are the coefficient estimates from the
+##'     regular Cox model only fitting on records without uncertainty.  If
+##'     censoring rate among subjects having unique certain records is extremely
+##'     high (> 0.99) or \code{\link[survival]{coxph}} returns any warning, such
+##'     as perfect seperation problem between event indicator and one predictor,
+##'     the starting values will be all zeros by default.
+##'
+##' \item \code{censorRate}: A positive numeric vector taking values between 0
+##'     and 1. If a vector of length more than one is given, multiple starting
+##'     values on prior probabilities are applied. In each initialization,
+##'     individual value in the vector is taken as parameter in the multinomial
+##'     distribution indicating the prior probability of censoring record being
+##'     true.  The remaining probability mass is equally assigned to the
+##'     possible event records. For example, when \code{censorRate = 1} is
+##'     specified, the extended model reduces to the regular Cox model fitting
+##'     data before matching, which takes all the censoring records as true. On
+##'     the contrary, when \code{censorRate = 0} is specified, the model does
+##'     not take possible censoring records into account.  If \code{multiStart =
+##'     FALSE}, the default value of \code{censorRate} is the sample censoring
+##'     rate among subjects having records without uncertainty.
+##'
+##' \item \code{piVec}: A numeric vector specifying the prior probability of
+##'     each original record being true. The length of the vector has to be the
+##'     same with number of rows of the data input. The values should be between
+##'     0 and 1. By default, \code{censorRate} is used to generate appropriate
+##'     prior probabilities.
+##'
+##' \item \code{multiStart}: A logical value specifying whether multiple
+##'     starting values of \code{censorRate} is needed. The argument is ignored
+##'     when explicit \code{censorRate} or \code{piVec} is specified. The
+##'     default value is \code{FALSE} for less computation time. However,
+##'     enabling multiple starting values \code{multiStart = TRUE} is suggested
+##'     to reduce the influence of possible local maximizer. If \code{TRUE},
+##'     \code{censorRate} takes a grid from 0 to 1 with step 0.02 by default.
+##'
+##' }
+##'
+##' The argument \code{control} is an optional list that allows users to control
+##' the process of ECM algorithm and each conditional maximization (CM) step.
+##' The valid named elements are given as follows:
+##' \itemize{
+##'     \item \code{gradtol}: A positive scalar giving the tolerance at
+##'         which the scaled gradient is considered close enough to zero
+##'         to terminate each CM step. The default value is \code{1e-6}.
+##'     \item \code{stepmax}: A positive scalar that gives the maximum
+##'         allowable scaled step length for each CM step.
+##'         The default value is \code{1e2}.
+##'     \item \code{steptol}: A positive scalar providing the minimum
+##'         allowable relative step length for each CM step.
+##'         The default value is \code{1e-6}.
+##'     \item \code{iterlim}: A positive integer specifying the maximum
+##'         number of iterations to be performed before
+##'         each CM is terminated. The default value is \code{1e2}.
+##'     \item \code{steptol_ECM}: A positive scalar that specifies the maximum
+##'         allowable relative step size between each ECM iteration.
+##'         The default value is \code{1e-4}.
+##'     \item \code{iterlim_ECM}: A positive integer specifying the maximum
+##'         number of iterations to be performed before the ECM algorithm
+##'         is terminated. The default value is \code{1e2}.
+##' }
+##' Internally, the first four named elements are passed to function
+##' \code{\link[stats]{nlm}}.
+##'
+##' @usage
+##' intCox(formula, data, subset, na.action, contrasts = NULL,
+##'        start = list(), control = list(), ...)
 ##'
 ##' @param formula \code{survi} object specifying the covariates and response
 ##'     variable in the model, such as \code{survi(ID, time, event) ~ x1 + x2}.
@@ -9,8 +89,8 @@
 ##'     covariates and response variables included in the model. If not found in
 ##'     data, the variables are taken from \code{environment(formula)}, usually
 ##'     the environment from which function \code{\link{intCox}} is called.
-##' @param subset An optional vector specifying a subset of observations to be
-##'     used in the fitting process.
+##' @param subset An optional logical vector specifying a subset of observations
+##'     to be used in the fitting process.
 ##' @param na.action An optional function that indicates what should the
 ##'     procedure do if the data contains \code{NA}s.  The default is set by the
 ##'     na.action setting of \code{\link[base]{options}}.  The "factory-fresh"
@@ -26,30 +106,23 @@
 ##' @param start An optional list of starting values for the parameters to be
 ##'     estimated in the model.  See more in Section details.
 ##' @param control An optional list of parameters to control the maximization
-##'     process of negative log likelihood function and adjust the baseline rate
-##'     function.  See more in Section details.
+##'     process.  See more in Section details.
 ##' @param ... Other arguments for future usage.
-##' @return A \code{\link{intCox-class}} object, whose slots include
+##'
+##' @return
+##' A \code{\link{intCox-class}} object, whose slots include
 ##' \itemize{
 ##'     \item \code{call}: Function call.
 ##'     \item \code{formula}: Formula used in the model fitting.
-##'     \item \code{data}: original input dataset.
-##'         (FIXME: remove this slot before submission to CRAN)
 ##'     \item \code{nObs}: Number of observation.
 ##'     \item \code{estimates}:
 ##'         \itemize{
-##'             \item \code{spline}: The name of splines used.
-##'             \item \code{knots}: Internal knots specified for the baseline
-##'                 rate function.
-##'             \item \code{Boundary.knots}: Boundary knots specified for the
-##'                 baseline rate function.
-##'             \item \code{degree}: Degree of spline bases specified in
-##'                 baseline rate function.
-##'             \item \code{df}: Degree of freedom of the model specified.
-##'     }
-##'     \item \code{estimates}: Estimated coefficients of covariates and
-##'         baseline rate function, and estimated rate parameter of
-##'         gamma frailty variable.
+##'             \item \code{beta}: Coefficient estimates.
+##'             \item \code{pi}: Estimated parameters in prior multinomial
+##'                 distribution indicating the probabilities of corresponding
+##'                 record being true.
+##'             \item \code{h0}: Estimated baseline hazard function.
+##'         }
 ##'     \item \code{control}: The control list specified for model fitting.
 ##'     \item \code{start}: The initial guess specified for the parameters
 ##'         to be estimated.
@@ -62,8 +135,11 @@
 ##'     \item \code{convergCode}: \code{code} returned by function
 ##'         \code{\link[stats]{nlm}}, which is an integer indicating why the
 ##'         optimization process terminated. \code{help(nlm)} for details.
-##'     \item \code{logL}: Log likelihood of the fitted model.
-##'     \item \code{fisher}: Observed Fisher information matrix.
+##'     \item \code{partLogL}: Partial log-likelihood function under complete
+##'         data for covariate coefficients.
+##'     \item \code{logL}: Log-likelihood under observed data after convergence.
+##'     \item \code{fisher}: Observed Fisher information matrix under complete
+##'         data after convergence.
 ##' }
 ##'
 ##'
@@ -73,11 +149,25 @@
 ##' for Uncertain Survival Records Due to Imperfect Data Integration. (working
 ##' in progress)
 ##'
-##'
+##' Meng, X. & Rubin, D. (1993). Maximum Likelihood Estimation via the ECM
+##' Algorithm: A General Framework. \emph{Biometrika}, 80(2), 267--278.
 ##'
 ##' @examples
+##'
+##' ## FIXME: add function generating simulation data and example simulated
+##' ## dataset for demonstration
 ##' library(intsurv)
 ##' intCox(survi())
+##'
+##' @seealso
+##' \code{\link{summary,intCox-method}} for summary of fitted model;
+##' \code{\link{coef,intCox-method}} for estimated covariate coefficients;
+##' \code{\link{bootSe}} for SE estimates from bootstrap method.
+##'
+##' @importFrom stats na.fail na.omit na.exclude na.pass .getXlevels
+##' model.extract model.frame model.matrix nlm pnorm
+##' @importFrom survival coxph Surv
+##' @export
 
 
 
@@ -154,13 +244,13 @@ intCox <- function(formula, data, subset, na.action, contrasts = NULL,
         }
 
         ## trace the log-likelihood for observed data
-        logL <- rep(NA, control$iterlimEm)
+        logL <- rep(NA, control$iterlim_ECM)
         ## trace beta estimates from each iteration of ECM
-        betaMat <- matrix(NA, nrow = control$iterlimEm + 1L, ncol = nBeta)
+        betaMat <- matrix(NA, nrow = control$iterlim_ECM + 1L, ncol = nBeta)
         betaMat[1L, ] <- start$beta
-        tolPi <- sqrt(control$tolEm)
+        tolPi <- sqrt(control$steptol_ECM)
 
-        for (iter in seq_len(control$iterlimEm)) {
+        for (iter in seq_len(control$iterlim_ECM)) {
             oneFit <- oneECMstep(betaHat = betaMat[iter, ], h0Dat = h0Dat,
                                  h_cDat = h_cDat, dat = incDat, xMat = xMat,
                                  tied = tied, control = control)
@@ -176,7 +266,7 @@ intCox <- function(formula, data, subset, na.action, contrasts = NULL,
             betaMat[iter + 1L, ] <- betaEst$estimate
             tol <- sum((betaMat[iter + 1L, ] - betaMat[iter, ]) ^ 2) /
                 sum((betaMat[iter + 1L, ] + betaMat[iter, ]) ^ 2)
-            if (tol < control$tolEm) {
+            if (tol < control$steptol_ECM) {
                 betaHat <- betaEst$estimate
                 break
             }
@@ -266,25 +356,22 @@ intCox <- function(formula, data, subset, na.action, contrasts = NULL,
                      attr(mm, "contrasts")
 
     ## results to return
-    results <- methods::new("intCox",
-                            call = Call,
-                            formula = formula,
-                            data = as.data.frame(data),
-                            nObs = nObs,
-                            estimates = list(beta = est_beta,
-                                             pi = piEst,
-                                             h0 = h0Dat),
-                            control = control,
-                            start = start,
-                            na.action = na.action,
-                            xlevels = .getXlevels(mt, mf),
-                            contrasts = contrasts,
-                            convergCode = betaEst$code,
-                            partLogL = - betaEst$minimum,
-                            logL = logL0,
-                            fisher = betaEst$hessian)
-    ## return
-    results
+    methods::new("intCox",
+                 call = Call,
+                 formula = formula,
+                 nObs = nObs,
+                 estimates = list(beta = est_beta,
+                                  pi = piEst,
+                                  h0 = h0Dat),
+                 control = control,
+                 start = start,
+                 na.action = na.action,
+                 xlevels = .getXlevels(mt, mf),
+                 contrasts = contrasts,
+                 convergCode = betaEst$code,
+                 partLogL = - betaEst$minimum,
+                 logL = logL0,
+                 fisher = betaEst$hessian)
 }
 
 
@@ -705,7 +792,8 @@ initPi <- function(censorRate, dat, equally = FALSE, ...) {
 }
 
 
-intCox_start <- function(beta, censorRate, piVec, ..., nBeta_, dat_)
+intCox_start <- function(beta, censorRate, piVec, multiStart = FALSE,
+                         ..., nBeta_, dat_)
 {
     dupID <- with(dat_, unique(ID[duplicated(ID)]))
     uniDat <- base::subset(dat_, ! ID %in% dupID)
@@ -715,7 +803,10 @@ intCox_start <- function(beta, censorRate, piVec, ..., nBeta_, dat_)
         ## if missing at random, the true censoring rate
         ## can be estimated by true data of unique records
         step_by <- 0.02
-        censorRate <- seq.int(0, 1, step_by)
+        censorRate <- if (multiStart)
+                          seq.int(0, 1, step_by)
+                      else
+                          censorRate0
     } else if (any(censorRate > 1 | censorRate < 0))
         stop(paste("Starting prob. of censoring case being true",
                    "should between 0 and 1."))
@@ -756,7 +847,6 @@ intCox_start <- function(beta, censorRate, piVec, ..., nBeta_, dat_)
             stop("'piVec' has to be between 0 and 1.")
         censorRate <- NA                # will not be used
     }
-
     ## return
     list(beta = beta, censorRate = censorRate,
          piVec = piVec, censorRate0 = censorRate0)
@@ -764,10 +854,10 @@ intCox_start <- function(beta, censorRate, piVec, ..., nBeta_, dat_)
 
 
 intCox_control <- function(gradtol = 1e-6, stepmax = 1e2,
-                         steptol = 1e-6, iterlim = 1e2,
-                         tolEm = 1e-4, iterlimEm = 1e2,
-                         h = sqrt(tolEm), alwaysUpdatePi = NULL, ...,
-                         censorRate0_, noSE_ = TRUE)
+                           steptol = 1e-6, iterlim = 1e2,
+                           steptol_ECM = 1e-4, iterlim_ECM = 1e2,
+                           h = sqrt(steptol_ECM), alwaysUpdatePi = NULL, ...,
+                           censorRate0_, noSE_ = TRUE)
 {
     ## controls for function stats::nlm
     if (! is.numeric(gradtol) || gradtol <= 0)
@@ -780,9 +870,9 @@ intCox_control <- function(gradtol = 1e-6, stepmax = 1e2,
         stop("maximum number of iterations must be > 0.")
 
     ## determining convergence of EM
-    if (! is.numeric(tolEm) || tolEm <= 0)
-        stop("value of 'tolEm' must be > 0.")
-    if (! is.numeric(iterlimEm) || iterlimEm <= 0)
+    if (! is.numeric(steptol_ECM) || steptol_ECM <= 0)
+        stop("value of 'steptol_ECM' must be > 0.")
+    if (! is.numeric(iterlim_ECM) || iterlim_ECM <= 0)
         stop("maximum number of iterations for EM must be > 0.")
 
     ## determining the computation of DM matrix
@@ -796,7 +886,6 @@ intCox_control <- function(gradtol = 1e-6, stepmax = 1e2,
     ## return
     list(gradtol = gradtol, stepmax = stepmax,
          steptol = steptol, iterlim = iterlim,
-         tolEm = tolEm, iterlimEm = iterlimEm,
-         h = h, alwaysUpdatePi = alwaysUpdatePi,
-         noSE_ = noSE_)
+         steptol_ECM = steptol_ECM, iterlim_ECM = iterlim_ECM,
+         h = h, alwaysUpdatePi = alwaysUpdatePi, noSE_ = noSE_)
 }
