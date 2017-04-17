@@ -57,24 +57,30 @@ NULL
 ##' the process of ECM algorithm and each conditional maximization (CM) step.
 ##' The valid named elements are given as follows:
 ##' \itemize{
-##'     \item \code{gradtol}: A positive scalar giving the tolerance at
-##'         which the scaled gradient is considered close enough to zero
-##'         to terminate each CM step. The default value is \code{1e-6}.
-##'     \item \code{stepmax}: A positive scalar that gives the maximum
-##'         allowable scaled step length for each CM step.
-##'         The default value is \code{1e2}.
-##'     \item \code{steptol}: A positive scalar providing the minimum
-##'         allowable relative step length for each CM step.
-##'         The default value is \code{1e-6}.
-##'     \item \code{iterlim}: A positive integer specifying the maximum
-##'         number of iterations to be performed before
-##'         each CM is terminated. The default value is \code{1e2}.
-##'     \item \code{steptol_ECM}: A positive scalar that specifies the maximum
-##'         allowable relative step size between each ECM iteration.
-##'         The default value is \code{1e-4}.
-##'     \item \code{iterlim_ECM}: A positive integer specifying the maximum
-##'         number of iterations to be performed before the ECM algorithm
-##'         is terminated. The default value is \code{1e2}.
+##'
+##' \item \code{gradtol}: A positive scalar giving the tolerance at which the
+##'     scaled gradient is considered close enough to zero to terminate each CM
+##'     step. The default value is \code{1e-6}.
+##'
+##' \item \code{stepmax}: A positive scalar that gives the maximum allowable
+##'     scaled step length for each CM step.  The default value is \code{1e2}.
+##'
+##' \item \code{steptol}: A positive scalar providing the minimum allowable
+##'     relative step length for each CM step.  The default value is
+##'     \code{1e-6}.
+##'
+##' \item \code{iterlim}: A positive integer specifying the maximum number of
+##'     iterations to be performed before each CM is terminated. The default
+##'     value is \code{1e2}.
+##'
+##' \item \code{steptol_ECM}: A positive scalar that specifies the maximum
+##'     allowable relative step size between each ECM iteration.  The default
+##'     value is \code{1e-4}.
+##'
+##' \item \code{iterlim_ECM}: A positive integer specifying the maximum number
+##'     of iterations to be performed before the ECM algorithm is
+##'     terminated. The default value is \code{1e2}.
+##'
 ##' }
 ##' Internally, the first four named elements are passed to function
 ##' \code{\link[stats]{nlm}}.
@@ -115,6 +121,7 @@ NULL
 ##'     \item \code{call}: Function call.
 ##'     \item \code{formula}: Formula used in the model fitting.
 ##'     \item \code{nObs}: Number of observation.
+##'     \item \code{data}: A processed data frame used for model fitting.
 ##'     \item \code{estimates}:
 ##'         \itemize{
 ##'             \item \code{beta}: Coefficient estimates.
@@ -211,7 +218,6 @@ intCox <- function(formula, data, subset, na.action, contrasts = NULL,
     colnames(dat) <- c("ID", "time", "event", covar_names)
     nObs <- nrow(dat)
     nBeta <- ncol(dat) - 3L
-    dat$eventInd <- dat$event == 1L
 
     ## start' values for 'nlm'
     startList <- c(start, list(nBeta_ = nBeta, dat_ = dat))
@@ -221,11 +227,12 @@ intCox <- function(formula, data, subset, na.action, contrasts = NULL,
     control <- c(control, list(censorRate0_ = start$censorRate0))
     control <- do.call("intCox_control", control)
 
-    ## indicator for subjects having multiple record
-    dat$dupIdx <- with(dat, ID %in% unique(ID[duplicated(ID)]))
-
-    ## define some variables for ease of computing
+    ## sort by time and ID
     incDat <- dat[(orderInc <- with(dat, order(time, ID))), ]
+    ## indicator for subjects having multiple record
+    incDat$dupIdx <- with(incDat, ID %in% unique(ID[duplicated(ID)]))
+    ## define some variables for ease of computing
+    incDat$eventInd <- incDat$event == 1L
     dupVec <- duplicated(incDat$time)
     tied <- any(dupVec)
     incDat$firstIdx <- ! dupVec
@@ -339,9 +346,15 @@ intCox <- function(formula, data, subset, na.action, contrasts = NULL,
     rownames(est_beta) <- covar_names
     est_beta[, 1L] <- betaHat
     est_beta[, 2L] <- exp(est_beta[, "coef"])
-    ## est_beta[, 3L] <- NA
-    ## est_beta[, 4L] <- est_beta[, 1L] / est_beta[, 3L]
-    ## est_beta[, 5L] <- 2 * stats::pnorm(- abs(est_beta[, 5L]))
+    est_beta[, 3L] <- se_prem
+    est_beta[, 4L] <- est_beta[, "coef"] / est_beta[, "se(coef)"]
+    est_beta[, 5L] <- 2 * stats::pnorm(- abs(est_beta[, "z"]))
+
+    ## output: processed data frame
+    varNames0 <- sapply(seq_len(3L), function(a) {
+        as.character(formula[[2L]][[a + 1]])
+    })
+    colnames(dat)[seq_len(3L)] <- varNames0
 
     ## output: na.action
     na.action <- if (is.null(attr(mf, "na.action")))
@@ -360,6 +373,7 @@ intCox <- function(formula, data, subset, na.action, contrasts = NULL,
                  call = Call,
                  formula = formula,
                  nObs = nObs,
+                 data = dat,
                  estimates = list(beta = est_beta,
                                   pi = piEst,
                                   h0 = h0Dat),
@@ -856,8 +870,9 @@ intCox_start <- function(beta, censorRate, piVec, multiStart = FALSE,
 intCox_control <- function(gradtol = 1e-6, stepmax = 1e2,
                            steptol = 1e-6, iterlim = 1e2,
                            steptol_ECM = 1e-4, iterlim_ECM = 1e2,
-                           h = sqrt(steptol_ECM), alwaysUpdatePi = NULL, ...,
-                           censorRate0_, noSE_ = TRUE)
+                           noSE = FALSE, h = sqrt(steptol_ECM),
+                           ..., alwaysUpdatePi = NULL,
+                           censorRate0_)
 {
     ## controls for function stats::nlm
     if (! is.numeric(gradtol) || gradtol <= 0)
@@ -887,5 +902,5 @@ intCox_control <- function(gradtol = 1e-6, stepmax = 1e2,
     list(gradtol = gradtol, stepmax = stepmax,
          steptol = steptol, iterlim = iterlim,
          steptol_ECM = steptol_ECM, iterlim_ECM = iterlim_ECM,
-         h = h, alwaysUpdatePi = alwaysUpdatePi, noSE_ = noSE_)
+         h = h, alwaysUpdatePi = alwaysUpdatePi, noSE = noSE)
 }

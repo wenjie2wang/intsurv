@@ -11,7 +11,7 @@ setClass("survi", contains = "matrix",
                    event = "integer"))
 
 
-##' An S4 Class to Represent a Fitted Model
+##' An S4 Class to Represent a Fitted Integrative Cox Model
 ##'
 ##' \code{intCox-class} is an S4 class that represents a fitted model.
 ##' Function \code{\link{intCox}} produces objects of this class.
@@ -19,8 +19,8 @@ setClass("survi", contains = "matrix",
 ##'
 ##' @slot call Function call.
 ##' @slot formula Formula.
-##' @slot data A data frame.
 ##' @slot nObs A positive integer.
+##' @slot data A data frame.
 ##' @slot estimates A list.
 ##' @slot control A list.
 ##' @slot start A list.
@@ -51,17 +51,19 @@ setClass(Class = "intCox",
                    fisher = "matrix"))
 
 
-##' An S4 Class to Represent a Summarized Model
+##' An S4 Class to Represent Summary of a Fitted Model
 ##'
-##' \code{summaryCoxEm-class} is an S4 class that represents a summarized model.
-##' Function \code{\link{summary_intCox}} produces objects of this class.  See
-##' ``Slots'' for details.
+##' \code{intCox.summary-class} is an S4 class that represents a summarized
+##' model.  Function \code{\link{summary,intCox-method}} produces objects of
+##' this class.  See ``Slots'' for details.
 ##'
 ##' @slot call Function call.
 ##' @slot coefMat A matrix.
-##' @aliases summaryCoxEm-class
-##' @seealso \code{\link{summaryCoxEm}} for details of slots.
+##' @slot logL A numeric value.
+##' @aliases intCox.summary-class
+##' @seealso \code{\link{summary,intCox-method}} for meaning of slots.
 ##' @export
-setClass(Class = "summary_intCox",
+setClass(Class = "intCox.summary",
          slots = c(call = "call",
-                   coefMat = "matrix"))
+                   coefMat = "matrix",
+                   logL = "numeric"))
