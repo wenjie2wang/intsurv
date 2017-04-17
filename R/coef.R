@@ -5,9 +5,9 @@ NULL
 
 ##' Estimated Coefficients of Covariates
 ##'
-##' \code{coef,intCox-method} is a S4 class method that extracts estimated
-##' coefficients of covariates from \code{\link{intCox-class}} object produced
-##' by function \code{\link{intCox}}.
+##' \code{coef,intCox-method} is an S4 class method that extracts covariate
+##' coefficient estimates from \code{\link{intCox-class}} object from
+##' function \code{\link{intCox}}.
 ##'
 ##' @param object \code{\link{intCox-class}} object.
 ##' @param ... Other arguments for future usage.
