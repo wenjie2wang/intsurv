@@ -55,7 +55,7 @@ updateMeta:
 	done;
 	@sed -i "s/Date: [0-9]\{4\}-[0-9]\{1,2\}-[0-9]\{1,2\}/Date: $(dt)/" DESCRIPTION
 	@sed -i "s/version [0-9]\.[0-9]\.[0-9]\(\.[0-9][0-9]*\)*/version $(version)/" $(citation)
-	@sed -i "s/20[0-9]\{2\}/$(yr)/" $(citation)
+	@sed -i "1,15 s/20[0-9]\{2\}/$(yr)/" $(citation)
 
 
 .PHONY: clean
