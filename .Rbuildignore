@@ -4,6 +4,7 @@
 ^\.travis\.yml$
 ^\.git$
 ^\.gitignore$
+^\.travis\.yml$
 ^test$
 ^Makefile$
 ^COPYRIGHT$
