@@ -1,5 +1,4 @@
 objects := $(wildcard R/*.R) DESCRIPTION
-# man := $(wildcard man/*.Rd) NAMESPACE
 dir := $(shell pwd)
 version := $(shell grep "Version" DESCRIPTION | sed "s/Version: //")
 pkg := $(shell grep "Package" DESCRIPTION | sed "s/Package: //")
@@ -54,7 +53,8 @@ updateMeta:
 	sed -i "s/Copyright (C) 2017-[0-9]*/Copyright (C) 2017-$(yr)/" $$Rfile;\
 	done;
 	@sed -i "s/Date: [0-9]\{4\}-[0-9]\{1,2\}-[0-9]\{1,2\}/Date: $(dt)/" DESCRIPTION
-	@sed -i "s/version [0-9]\.[0-9]\.[0-9]\(\.[0-9][0-9]*\)*/version $(version)/" $(citation)
+	@longS="version [0-9]\{1,\}\.[0-9]\{1,\}\.[0-9]\{1,\}\(\.[0-9][0-9]*\)*"
+	@sed -i "s/$longS/version $(version)/" $(citation)
 	@sed -i "1,15 s/20[0-9]\{2\}/$(yr)/" $(citation)
 
 

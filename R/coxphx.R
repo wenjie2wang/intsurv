@@ -1,3 +1,23 @@
+################################################################################
+##
+##   R package intsurv by Wenjie Wang, Kun Chen and Jun Yan
+##   Copyright (C) 2017
+##
+##   This file is part of the R package intsurv.
+##
+##   The R package intsurv is free software: You can redistribute it and/or
+##   modify it under the terms of the GNU General Public License as published
+##   by the Free Software Foundation, either version 3 of the License, or
+##   any later version (at your option). See the GNU General Public License
+##   at <http://www.gnu.org/licenses/> for details.
+##
+##   The R package intsurv is distributed in the hope that it will be useful,
+##   but WITHOUT ANY WARRANTY without even the implied warranty of
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+##
+################################################################################
+
+
 ## collation after class.R
 ##' @include class.R
 NULL
@@ -163,8 +183,8 @@ NULL
 ##'
 ##' ## FIXME: add function generating simulation data and example simulated
 ##' ## dataset for demonstration
-##' library(intsurv)
-##' coxphx(Survi())
+##' ## library(intsurv)
+##' ## coxphx(Survi())
 ##'
 ##' @seealso
 ##' \code{\link{summary,coxphx-method}} for summary of fitted model;
@@ -307,8 +327,8 @@ coxphx <- function(formula, data, subset, na.action, contrasts = NULL,
     incDat$piVec <- oneFit0$piVec
     betaEst <- oneFit0$betaEst
     betaHat <- as.numeric(betaEst$estimate)
-    ## numerical approximation of I_oc fisher information matrix
-    ## I_oc <- approxIoc(dat = incDat, xMat = xMat, tied = tied, nIter = 100)
+
+    ## approximation of I_oc fisher information matrix
     I_oc <- betaEst$hessian
 
     se_prem <- NA
@@ -328,9 +348,6 @@ coxphx <- function(formula, data, subset, na.action, contrasts = NULL,
         secmVar <- invI_oc + invI_oc %*% dmMat %*% solve(diag(1, nBeta) - dmMat)
         secmVar <- (secmVar + t(secmVar)) / 2
         ## secmVar <- solve((diag(1, nBeta) - dmMat) %*% I_oc)
-
-        ## se estimatation by multiple imputation method
-        ## miVar <- imputeVar(incDat, xMat, nImpute = 30)
 
         ## se estimatation by PRES, FIXME
         ## I_oMat <- I_o(betaEst = betaHat, h0Dat = h0Dat, h_cDat = h_cDat,
@@ -420,159 +437,6 @@ dmECM <- function(betaEst, h0Dat, h_cDat, dat, xMat, tied, control)
                      betaEst = betaEst, h0Dat = h0Dat, h_cDat = h_cDat,
                      dat = dat,  xMat = xMat, tied = tied, control = control)
     do.call(rbind, dmList)
-}
-
-
-## Fisher score function
-scoreFun <- function(betaEst, h0Dat, h_cDat, dat, xMat, tied, control)
-{
-    ## update results involving beta estimates
-    dat$betaX <- as.numeric(xMat %*% betaEst)
-    dat$xExp <- exp(dat$betaX)
-    dat$xExp <- ifelse(is.infinite(dat$xExp), 1e50, dat$xExp)
-
-    ## use initial value of pi
-    dat$p_jk <- dat$piVec
-    h0Dat$h0Vec <- h0t(dat, tied = tied)
-    h_cDat$h_cVec <- h_c(dat, tied = tied)
-
-    ## update baseline hazard rate of event times
-    h0Dat$H0Vec <- cumsum(h0Dat$h0Vec)
-    ## update baseline hazard rate of censoring times
-    h_cDat$H_cVec <- cumsum(h_cDat$h_cVec)
-
-    if (tied) {
-        time_idx <- match(dat$time, h0Dat$time)
-        dat$h0Vec <- with(dat, ifelse(eventInd, h0Dat$h0Vec[time_idx], 0))
-        dat$H0Vec <- h0Dat$H0Vec[time_idx]
-        dat$h_cVec <- with(dat, ifelse(eventInd, 0, h_cDat$h_cVec[time_idx]))
-        dat$H_cVec <- h_cDat$H_cVec[time_idx]
-    } else {
-        dat$h0Vec <- with(dat, ifelse(eventInd, h0Dat$h0Vec, 0))
-        dat$H0Vec <- h0Dat$H0Vec
-        dat$h_cVec <- with(dat, ifelse(eventInd, 0, h_cDat$h_cVec))
-        dat$H_cVec <- h_cDat$H_cVec
-    }
-
-    dat$hVec <- with(dat, h0Vec * xExp)
-    dat$HVec <- with(dat, H0Vec * xExp)
-
-    ## scaling
-    foo <- sum(dat$HVec)
-    dat$sVec <- exp(- dat$HVec + log(foo)) / foo
-    foo <- sum(dat$H_cVec)
-    dat$G_cVec <- exp(- dat$H_cVec + log(foo)) / foo
-
-    ## compute p_jk for each subject
-    ## for observed log-likelihood function
-    dat$p_jk_numer <- with(dat, ifelse(eventInd,
-                                       piVec * hVec * sVec * G_cVec,
-                                       piVec * sVec * h_cVec * G_cVec))
-
-    s_p_jk_denom <- with(dat, tapply(p_jk_numer, ID, FUN = sum))
-    idx <- match(as.character(dat$ID), names(s_p_jk_denom))
-    dat$p_jk_denom <- s_p_jk_denom[idx]
-    dat$p_jk <- with(dat, ifelse(dupIdx,
-                          ifelse(p_jk_denom == 0, piVec,
-                                 p_jk_numer / p_jk_denom), 1))
-
-    ## building blocks
-    parSeq <- seq_along(betaEst)
-    xMatDeltaN <- xMat[dat$eventInd, ] * dat[dat$eventInd, "p_jk"]
-    delta_tildeN <- deltaTildeN(dat, tied)
-    k_0 <- k0(dat, tied)
-    k_1 <- k1(parSeq, dat, xMat, tied)
-    dLbeta(xMatDeltaN, k_0, k_1, delta_tildeN)
-}
-
-
-## SE from PRES
-oneRowI_o <- function(ind, betaEst, h0Dat, h_cDat, dat, xMat, tied, control)
-{
-    h <- control$h
-    nBeta <- length(betaEst)
-    baseVec <- rep(0, nBeta)
-    baseVec[ind] <- h
-    theta1 <- betaEst - 2 * baseVec
-    theta2 <- betaEst - baseVec
-    theta3 <- betaEst + baseVec
-    theta4 <- betaEst + 2 * baseVec
-    oneFit1 <- scoreFun(theta1, h0Dat, h_cDat, dat, xMat, tied, control)
-    oneFit2 <- scoreFun(theta2, h0Dat, h_cDat, dat, xMat, tied, control)
-    oneFit3 <- scoreFun(theta3, h0Dat, h_cDat, dat, xMat, tied, control)
-    oneFit4 <- scoreFun(theta4, h0Dat, h_cDat, dat, xMat, tied, control)
-    (oneFit1 - oneFit4 + 8 * (oneFit3 - oneFit2)) / (12 * h)
-}
-
-
-## DM matrix for ECM by PREM
-I_o <- function(betaEst, h0Dat, h_cDat, dat, xMat, tied, control)
-{
-    resList <- lapply(seq_along(betaEst), oneRowI_o,
-                      betaEst = betaEst, h0Dat = h0Dat, h_cDat = h_cDat,
-                      dat = dat,  xMat = xMat, tied = tied, control = control)
-    do.call(rbind, resList)
-}
-
-
-## sample latent indicators based on estiamted posterior prob.
-rLatent <- function(dat) {
-    tmpList <- with(dat, tapply(piVec, ID, function(a) {
-        if (sum(a))
-            return(rmultinom(1L, size = 1L, prob = a))
-        ## else return
-        0
-    }))
-    unlist(tmpList)
-}
-
-
-## one imputation
-oneImpute <- function(dat, xMat) {
-    ## one latent sample
-    dat$latent <- rLatent(dat)
-    uniDat <- subset(dat, latent == 1L)
-    oneFit <- survival::coxph(survival::Surv(time, event) ~ xMat,
-                              data = dat, ties = "breslow")
-    est <- oneFit$coefficients
-    betaVar <- diag(oneFit$var)
-    c(est, betaVar)
-}
-
-
-## se estimates by multiple imputation
-imputeVar <- function(dat, xMat, nImpute) {
-    nBeta <- ncol(xMat)
-    idx <- seq_len(nBeta)
-    coefMat <- replicate(nImpute, oneImpute(dat, xMat))
-    eVar <- apply(coefMat[idx, ], 1, var)
-    adj <- 1 + 1 / nImpute
-    mVar <- rowMeans(coefMat[- idx, ])
-    mVar + adj * eVar
-}
-
-
-## I_oc matrix from one latent sample
-oneIoc <- function(parSeq, dat, xMat, tied) {
-    ## one latent sample
-    dat$p_jk <- rLatent(dat)
-    ## prepare for fisher information matrix
-    delta_tildeN <- deltaTildeN(dat, tied)
-    k_0 <- k0(dat, tied)
-    k_1 <- k1(parSeq, dat, xMat, tied)
-    k_2 <- k2(parSeq, dat, xMat, tied)
-    ## one fisher information matrix in vector
-    - as.vector(d2Lbeta(parSeq, k_0, k_1, k_2, delta_tildeN))
-}
-
-
-## approximation of I_oc matrix
-approxIoc <- function(dat, xMat, tied, nIter = 1e3) {
-    nBeta <- ncol(xMat)
-    parSeq <- seq_len(nBeta)
-    tmpMat <- replicate(nIter, oneIoc(parSeq, dat, xMat, tied))
-    tmpVec <- rowMeans(tmpMat)
-    matrix(tmpVec, ncol = nBeta)
 }
 
 
@@ -781,7 +645,11 @@ d2Lbeta <- function(parSeq, k_0, k_1, k_2, delta_tildeN) {
 
 
 ## determine initial piVec from given censorRate
-initPi <- function(censorRate, dat, equally = FALSE, ...) {
+initPi <- function(censorRate, dat, equally = FALSE, ...)
+{
+    ## nonsense to eliminate cran checking note
+    eventInd <- NULL
+
     ## mixture probability for each subject: piVec
     numTab <- table(dat$ID)
     dat$numRecord <- numTab[match(as.character(dat$ID), names(numTab))]
@@ -809,6 +677,9 @@ initPi <- function(censorRate, dat, equally = FALSE, ...) {
 coxphx_start <- function(beta, censorRate, piVec, multiStart = FALSE,
                          ..., nBeta_, dat_)
 {
+    ## nonsense to eliminate cran checking note
+    ID <- NULL
+
     dupID <- with(dat_, unique(ID[duplicated(ID)]))
     uniDat <- base::subset(dat_, ! ID %in% dupID)
     censorRate0 <- round(1 - mean(uniDat$event), 2)

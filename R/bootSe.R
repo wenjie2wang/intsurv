@@ -1,3 +1,28 @@
+################################################################################
+##
+##   R package intsurv by Wenjie Wang, Kun Chen and Jun Yan
+##   Copyright (C) 2017
+##
+##   This file is part of the R package intsurv.
+##
+##   The R package intsurv is free software: You can redistribute it and/or
+##   modify it under the terms of the GNU General Public License as published
+##   by the Free Software Foundation, either version 3 of the License, or
+##   any later version (at your option). See the GNU General Public License
+##   at <http://www.gnu.org/licenses/> for details.
+##
+##   The R package intsurv is distributed in the hope that it will be useful,
+##   but WITHOUT ANY WARRANTY without even the implied warranty of
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+##
+################################################################################
+
+
+## collation after class.R
+##' @include class.R
+NULL
+
+
 ##' Standard Error Estimates through Bootstrapping Methods
 ##'
 ##' This function addes or updates standard error (SE) estimates through
@@ -18,7 +43,7 @@
 ##'
 ##' @usage
 ##' bootSe(object, numBoot = 50, se = c("mad", "inter-quantile", "sd"),
-##'        control = list(), ...)
+##'        start = list(), control = list(), ...)
 ##'
 ##' @param object \code{\link{coxphx-class}} object.
 ##' @param numBoot A positive integer specifying number of bootstrap samples
@@ -36,6 +61,7 @@
 ##'     bootstrap samples, or specifys the function to return coefficient
 ##'     estimates from the bootstrap samples. See the available options in
 ##'     Section Details.
+##' @param ... Other arguments for future usage.
 ##'
 ##' @return \code{\link{coxphx-class}} object by default or a numeric matrix of
 ##'     coefficient estimates from each bootstrap sample.
@@ -47,10 +73,10 @@
 ##' in progress)
 ##'
 ##' @examples
-##' ## See examples given in function 'coxphx' by '?coxphx'.
+##' ## See examples given in function 'coxphx'
 ##' @seealso
 ##' \code{\link{coxphx}} for fitting extended Cox model for uncertain records.
-##' @importFrom stats quantile pnorm
+##' @importFrom stats median pnorm qnorm quantile sd
 ##' @export
 bootSe <- function(object, numBoot = 50, se = c("mad", "inter-quantile", "sd"),
                    start = list(), control = list(), ...)
@@ -99,7 +125,7 @@ bootSe <- function(object, numBoot = 50, se = c("mad", "inter-quantile", "sd"),
     } else if (identical(se, "inter-quantile")) {
         object@estimates$beta[, "se(coef)"] <- apply(estMat, 1L, function(a) {
             diff(stats::quantile(a, probs = c(0.25, 0.75))) /
-                (qnorm(0.75) - qnorm(0.25))
+                (stats::qnorm(0.75) - stats::qnorm(0.25))
         })
     } else (identical(se, "sd"))
         object@estimates$beta[, "se(coef)"] <- apply(estMat, 1L, sd)
@@ -121,7 +147,7 @@ bootSe_start <- function(beta0, censorRate, multiStart = FALSE, ...,
     if (missing(censorRate)) {
         censorRate <- if (! multiStart) {
                           censorRate0
-                      } else if (missing(startGrid)){
+                      } else {
                           seq.int(max(0, censorRate0 - 0.2),
                                   min(1, censorRate0 + 0.2), 0.05)
                       }
