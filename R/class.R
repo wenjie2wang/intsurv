@@ -3,9 +3,9 @@
 ##' @slot id Identificator of each subject.
 ##' @slot time Time of reccurence event or censoring.
 ##' @slot event The status indicator, 0 = censored, 1 = event.
-##' @aliases survi-class
+##' @aliases Survi-class
 ##' @export
-setClass("survi", contains = "matrix",
+setClass("Survi", contains = "matrix",
          slots = c(id = "character",
                    time = "numeric",
                    event = "integer"))
@@ -13,8 +13,8 @@ setClass("survi", contains = "matrix",
 
 ##' An S4 Class to Represent a Fitted Integrative Cox Model
 ##'
-##' \code{intCox-class} is an S4 class that represents a fitted model.
-##' Function \code{\link{intCox}} produces objects of this class.
+##' \code{coxphx-class} is an S4 class that represents a fitted model.
+##' Function \code{\link{coxphx}} produces objects of this class.
 ##' See ``Slots'' for details.
 ##'
 ##' @slot call Function call.
@@ -31,10 +31,10 @@ setClass("survi", contains = "matrix",
 ##' @slot partLogL A numeric value.
 ##' @slot logL A numeric value.
 ##' @slot fisher A numeric matrix.
-##' @aliases intCox-class
-##' @seealso \code{\link{intCox}} for details of slots.
+##' @aliases coxphx-class
+##' @seealso \code{\link{coxphx}} for details of slots.
 ##' @export
-setClass(Class = "intCox",
+setClass(Class = "coxphx",
          slots = c(call = "call",
                    formula = "formula",
                    data = "data.frame",
@@ -53,17 +53,17 @@ setClass(Class = "intCox",
 
 ##' An S4 Class to Represent Summary of a Fitted Model
 ##'
-##' \code{intCox.summary-class} is an S4 class that represents a summarized
-##' model.  Function \code{\link{summary,intCox-method}} produces objects of
+##' \code{coxphx.summary-class} is an S4 class that represents a summarized
+##' model.  Function \code{\link{summary,coxphx-method}} produces objects of
 ##' this class.  See ``Slots'' for details.
 ##'
 ##' @slot call Function call.
 ##' @slot coefMat A matrix.
 ##' @slot logL A numeric value.
-##' @aliases intCox.summary-class
-##' @seealso \code{\link{summary,intCox-method}} for meaning of slots.
+##' @aliases coxphx.summary-class
+##' @seealso \code{\link{summary,coxphx-method}} for meaning of slots.
 ##' @export
-setClass(Class = "intCox.summary",
+setClass(Class = "coxphx.summary",
          slots = c(call = "call",
                    coefMat = "matrix",
                    logL = "numeric"))

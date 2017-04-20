@@ -1,7 +1,7 @@
 ##' Standard Error Estimates through Bootstrapping Methods
 ##'
 ##' This function addes or updates standard error (SE) estimates through
-##' bootstrap method for \code{\link{intCox-class}} object by default.  Three
+##' bootstrap method for \code{\link{coxphx-class}} object by default.  Three
 ##' different methods are available for computing SE from bootstrap samples
 ##' through argument \code{se}.
 ##'
@@ -20,7 +20,7 @@
 ##' bootSe(object, numBoot = 50, se = c("mad", "inter-quantile", "sd"),
 ##'        control = list(), ...)
 ##'
-##' @param object \code{\link{intCox-class}} object.
+##' @param object \code{\link{coxphx-class}} object.
 ##' @param numBoot A positive integer specifying number of bootstrap samples
 ##'     used for SE estimates.  A large number, such as 200, is often needed for
 ##'     a more reliable estimation in practice.
@@ -37,7 +37,7 @@
 ##'     estimates from the bootstrap samples. See the available options in
 ##'     Section Details.
 ##'
-##' @return \code{\link{intCox-class}} object by default or a numeric matrix of
+##' @return \code{\link{coxphx-class}} object by default or a numeric matrix of
 ##'     coefficient estimates from each bootstrap sample.
 ##'
 ##' @references
@@ -55,8 +55,8 @@
 bootSe <- function(object, numBoot = 50, se = c("mad", "inter-quantile", "sd"),
                    start = list(), control = list(), ...)
 {
-    if (! inherits(object, "intCox"))
-        stop("The 'object' has to be an 'intCox' class object.")
+    if (! inherits(object, "coxphx"))
+        stop("The 'object' has to be an 'coxphx' class object.")
     se <- match.arg(se)
     fm <- object@formula
     cal <- object@call
