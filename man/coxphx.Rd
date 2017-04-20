@@ -2,7 +2,7 @@
 % Please edit documentation in R/coxphx.R
 \name{coxphx}
 \alias{coxphx}
-\title{Integrative Cox Model for Uncertain Survival Data}
+\title{Extended Cox Model for Uncertain Survival Data}
 \usage{
 coxphx(formula, data, subset, na.action, contrasts = NULL,
        start = list(), control = list(), ...)
@@ -76,9 +76,9 @@ A \code{\link{coxphx-class}} object, whose slots include
 }
 }
 \description{
-The function fits the extended Cox model for uncertain survival data due to
-imperfect data integration proposed by Wang (2017+). The maximization of the
-observed-data likelihood function follows expectation conditional
+The function fits the extended Cox model proposed by Wang (2017+) for
+uncertain survival data due to imperfect data integration. The maximization
+of the observed-data likelihood function follows expectation conditional
 maximization (ECM) algorithm proposed by Meng (1993).
 }
 \details{
@@ -159,8 +159,8 @@ Internally, the first four named elements are passed to function
 }
 \examples{
 
-## FIXME: add function generating simulation data and example simulated
-## dataset for demonstration
+## FIXME: add function generating simulation data
+## and example simulated dataset for demonstration
 ## library(intsurv)
 ## coxphx(Survi())
 

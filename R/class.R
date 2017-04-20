@@ -18,7 +18,7 @@
 ################################################################################
 
 
-##' An S4 Class Representing Formula Response for Integrative Survival Model
+##' An S4 Class Representing Formula Response
 ##'
 ##' @slot .Data A numeric matrix object.
 ##' @slot id Identificator of each subject.
@@ -32,7 +32,7 @@ setClass("Survi", contains = "matrix",
                    event = "integer"))
 
 
-##' An S4 Class to Represent a Fitted Integrative Cox Model
+##' An S4 Class to Represent a Fitted Extended Cox Model
 ##'
 ##' \code{coxphx-class} is an S4 class that represents a fitted model.
 ##' Function \code{\link{coxphx}} produces objects of this class.

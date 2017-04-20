@@ -3,7 +3,7 @@
 \docType{class}
 \name{coxphx-class}
 \alias{coxphx-class}
-\title{An S4 Class to Represent a Fitted Integrative Cox Model}
+\title{An S4 Class to Represent a Fitted Extended Cox Model}
 \description{
 \code{coxphx-class} is an S4 class that represents a fitted model.
 Function \code{\link{coxphx}} produces objects of this class.

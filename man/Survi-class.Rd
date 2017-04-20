@@ -3,9 +3,9 @@
 \docType{class}
 \name{Survi-class}
 \alias{Survi-class}
-\title{An S4 Class Representing Formula Response for Integrative Survival Model}
+\title{An S4 Class Representing Formula Response}
 \description{
-An S4 Class Representing Formula Response for Integrative Survival Model
+An S4 Class Representing Formula Response
 }
 \section{Slots}{
 

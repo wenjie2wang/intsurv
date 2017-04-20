@@ -36,8 +36,7 @@ NULL
 ##' @export
 Survi <- function(ID, time, event)
 {
-    ## inpDat <- data.frame(id, time, event)
-    ## TODO: function to check the date structure of uncertained records
+    ## inpDat <- data.frame(ID, time, event)
     ## dat <- checkSurvi(inpDat)
     ## outDat <- with(dat, as.matrix(cbind(ID, time, event)))
     mat <- as.matrix(cbind(ID, time, event))

@@ -23,11 +23,11 @@
 NULL
 
 
-##' Integrative Cox Model for Uncertain Survival Data
+##' Extended Cox Model for Uncertain Survival Data
 ##'
-##' The function fits the extended Cox model for uncertain survival data due to
-##' imperfect data integration proposed by Wang (2017+). The maximization of the
-##' observed-data likelihood function follows expectation conditional
+##' The function fits the extended Cox model proposed by Wang (2017+) for
+##' uncertain survival data due to imperfect data integration. The maximization
+##' of the observed-data likelihood function follows expectation conditional
 ##' maximization (ECM) algorithm proposed by Meng (1993).
 ##'
 ##' The argument \code{start} is an optional list that allows users to specify
@@ -181,8 +181,8 @@ NULL
 ##'
 ##' @examples
 ##'
-##' ## FIXME: add function generating simulation data and example simulated
-##' ## dataset for demonstration
+##' ## FIXME: add function generating simulation data
+##' ## and example simulated dataset for demonstration
 ##' ## library(intsurv)
 ##' ## coxphx(Survi())
 ##'
