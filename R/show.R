@@ -33,11 +33,11 @@ setMethod(
     definition = function(object)
     {
         ## function call
-        cat("Call:\n", paste(deparse(Call), sep = "\n", collapse = "\n"),
+        cat("Call:\n", paste(deparse(object@call), sep = "\n", collapse = "\n"),
             "\n\n", sep = "")
         ## coefficient estimates
         cat("Coefficients of covariates: \n")
-        printCoefmat(object@coefMat)
+        printCoefmat(object@estimates$beta)
         ## return
         invisible(object)
     }
