@@ -21,7 +21,7 @@
 ##' An S4 Class Representing Formula Response
 ##'
 ##' @slot .Data A numeric matrix object.
-##' @slot id Identificator of each subject.
+##' @slot ID Identificator of each subject.
 ##' @slot time Time of reccurence event or censoring.
 ##' @slot event The status indicator, 0 = censored, 1 = event.
 ##' @aliases Survi-class

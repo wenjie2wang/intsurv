@@ -34,6 +34,7 @@ NULL
 ##' @param event The status indicator, 0 = censored, 1 = event.
 ##' @param check A logical value specifying whether to perform check on input
 ##'     data.
+##' @param ... Other arguments for future usage.
 ##' @aliases Survi
 ##' @export
 Survi <- function(ID, time, event, check = TRUE, ...)

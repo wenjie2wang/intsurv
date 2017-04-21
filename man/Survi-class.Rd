@@ -12,7 +12,7 @@ An S4 Class Representing Formula Response
 \describe{
 \item{\code{.Data}}{A numeric matrix object.}
 
-\item{\code{id}}{Identificator of each subject.}
+\item{\code{ID}}{Identificator of each subject.}
 
 \item{\code{time}}{Time of reccurence event or censoring.}
 

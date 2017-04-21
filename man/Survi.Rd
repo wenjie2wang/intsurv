@@ -4,7 +4,7 @@
 \alias{Survi}
 \title{Formula Response for Survival Data With Uncertainty}
 \usage{
-Survi(ID, time, event)
+Survi(ID, time, event, check = TRUE, ...)
 }
 \arguments{
 \item{ID}{Identificator of each subject.}
@@ -12,6 +12,11 @@ Survi(ID, time, event)
 \item{time}{Time of reccurence event or censoring.}
 
 \item{event}{The status indicator, 0 = censored, 1 = event.}
+
+\item{check}{A logical value specifying whether to perform check on input
+data.}
+
+\item{...}{Other arguments for future usage.}
 }
 \description{
 \code{Survi} returns an S4 class that represents formula response for
