@@ -210,7 +210,8 @@ coxphx <- function(formula, data, subset, na.action, contrasts = NULL,
         stop("Argument 'formula' is required.")
     if (missing(data))
         data <- environment(formula)
-    if (! with(data, inherits(eval(formula[[2L]]), "Survi")))
+    dat0 <- with(data, eval(formula[[2L]]))
+    if (! inherits(dat0, "Survi"))
         stop("Response in formula must be a 'Survi' object.")
 
     ## Prepare data: ID, time, event ~ X(s)
@@ -368,6 +369,9 @@ coxphx <- function(formula, data, subset, na.action, contrasts = NULL,
     est_beta[, 5L] <- 2 * stats::pnorm(- abs(est_beta[, "z"]))
 
     ## output: processed data frame
+    dat$ID <- factor(dat$ID, levels = unique(dat$ID),
+                     labels = unique(dat0@ID))
+    dat$ID <- as.character(dat$ID)
     varNames0 <- sapply(seq_len(3L), function(a) {
         as.character(formula[[2L]][[a + 1]])
     })

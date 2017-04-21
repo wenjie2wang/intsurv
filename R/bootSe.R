@@ -98,17 +98,18 @@ bootSe <- function(object, numBoot = 50, se = c("mad", "inter-quantile", "sd"),
     dat <- object@data
     idName <- as.character(fm[[2L]][[2L]])
     timeName <- as.character(fm[[2L]][[3L]])
-    dat <- dat[order(dat[, idName], dat[, timeName]), ]
+    eventName <- as.character(fm[[2L]][[4L]])
+    dat <- dat[order(dat[, idName], dat[, timeName],
+                     1L - dat[, eventName]), ]
+    uid <- unique(as.character(dat[, idName]))
     idTab <- table(dat[, idName])
-    uid <- unique(dat[, idName])
-    nSub <- length(uid)
     estMat <- replicate(numBoot, {
-        sID <- sort(sample(uid, size = nSub, replace = TRUE))
+        sID <- sort(sample(uid, replace = TRUE))
         tmpDat <- data.frame(ID = sID)
         colnames(tmpDat) <- idName
-        repNum <- idTab[match(as.character(sID), names(idTab))]
+        repNum <- idTab[match(sID, uid)]
         bootDat <- merge(tmpDat, dat, by = idName)
-        bootDat[[idName]] <- rep(seq_along(uid), repNum)
+        bootDat[[idName]] <- rep(seq_along(sID), times = repNum)
         res <- eval(cal)
         as.numeric(res@estimates$beta[, "coef"])
     })

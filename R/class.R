@@ -27,7 +27,7 @@
 ##' @aliases Survi-class
 ##' @export
 setClass("Survi", contains = "matrix",
-         slots = c(id = "character",
+         slots = c(ID = "character",
                    time = "numeric",
                    event = "integer"))
 
