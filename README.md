@@ -4,7 +4,7 @@
 [![Build Status][travis_master]][travis]
 
 
-The R package **intsurv** mainly provides functions fitting extended Cox
+The R package **intsurv** mainly provides functions fitting integrative Cox
 proportional hazard model proposed by Wang (2017+) for uncertain survival data
 due to imperfect data integration.
 
@@ -24,9 +24,9 @@ remotes::install_github("wenjie2wang/intsurv")
 
 ## Reference
 
-Wang, W., Chen, K., & Yan, J. (2017+).  Extended Cox Model by ECM Algorithm for
-Uncertain Survival Records Due to Imperfect Data Integration. (working in
-progress)
+Wang, W., Aseltine, R., Chen, K., & Yan, J. (2017+).  Integrative Survival
+Analysis with Uncertain Event Records from Imperfect Data Integration. (working
+in progress)
 
 
 [cranVersion]: http://www.r-pkg.org/badges/version/intsurv
