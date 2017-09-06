@@ -14,8 +14,8 @@ An S4 Class Representing Formula Response
 
 \item{\code{ID}}{Identificator of each subject.}
 
-\item{\code{time}}{Time of reccurence event or censoring.}
+\item{\code{time}}{Observerd event time or censoring time.}
 
-\item{\code{event}}{The status indicator, 0 = censored, 1 = event.}
+\item{\code{event}}{The event indicator, 0 = censored, 1 = event.}
 }}
 

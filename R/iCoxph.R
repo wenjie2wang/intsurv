@@ -23,9 +23,9 @@
 NULL
 
 
-##' Extended Cox Model for Uncertain Survival Data
+##' Integrative Cox Model for Uncertain Survival Data
 ##'
-##' The function fits the extended Cox model proposed by Wang (2017+) for
+##' The function fits the integrative Cox model proposed by Wang (2017+) for
 ##' uncertain survival data due to imperfect data integration. The maximization
 ##' of the observed-data likelihood function follows expectation conditional
 ##' maximization (ECM) algorithm proposed by Meng (1993).
@@ -106,7 +106,7 @@ NULL
 ##' \code{\link[stats]{nlm}}.
 ##'
 ##' @usage
-##' coxphx(formula, data, subset, na.action, contrasts = NULL,
+##' iCoxph(formula, data, subset, na.action, contrasts = NULL,
 ##'        start = list(), control = list(), ...)
 ##'
 ##' @param formula \code{Survi} object specifying the covariates and response
@@ -114,7 +114,7 @@ NULL
 ##' @param data An optional data frame, list, or environment that contains the
 ##'     covariates and response variables included in the model. If not found in
 ##'     data, the variables are taken from \code{environment(formula)}, usually
-##'     the environment from which function \code{\link{coxphx}} is called.
+##'     the environment from which function \code{\link{iCoxph}} is called.
 ##' @param subset An optional logical vector specifying a subset of observations
 ##'     to be used in the fitting process.
 ##' @param na.action An optional function that indicates what should the
@@ -136,7 +136,7 @@ NULL
 ##' @param ... Other arguments for future usage.
 ##'
 ##' @return
-##' A \code{\link{coxphx-class}} object, whose slots include
+##' A \code{\link{iCoxph-class}} object, whose slots include
 ##' \itemize{
 ##'     \item \code{call}: Function call.
 ##'     \item \code{formula}: Formula used in the model fitting.
@@ -172,9 +172,9 @@ NULL
 ##'
 ##' @references
 ##'
-##' Wang, W., Chen, K., & Yan, J. (2017+).  Extended Cox Model by ECM Algorithm
-##' for Uncertain Survival Records Due to Imperfect Data Integration. (working
-##' in progress)
+##' Wang, W., Chen, K., & Yan, J. (2017+).  Integrative Survival Analysis with
+##' Uncertain Event Records from Imperfect Data Integration. (working in
+##' progress)
 ##'
 ##' Meng, X. & Rubin, D. (1993). Maximum Likelihood Estimation via the ECM
 ##' Algorithm: A General Framework. \emph{Biometrika}, 80(2), 267--278.
@@ -184,22 +184,18 @@ NULL
 ##' ## FIXME: add function generating simulation data
 ##' ## and example simulated dataset for demonstration
 ##' ## library(intsurv)
-##' ## coxphx(Survi())
+##' ## iCoxph(Survi())
 ##'
 ##' @seealso
-##' \code{\link{summary,coxphx-method}} for summary of fitted model;
-##' \code{\link{coef,coxphx-method}} for estimated covariate coefficients;
+##' \code{\link{summary,iCoxph-method}} for summary of fitted model;
+##' \code{\link{coef,iCoxph-method}} for estimated covariate coefficients;
 ##' \code{\link{bootSe}} for SE estimates from bootstrap method.
 ##'
 ##' @importFrom stats na.fail na.omit na.exclude na.pass .getXlevels
 ##' model.extract model.frame model.matrix nlm pnorm
 ##' @importFrom survival coxph Surv
 ##' @export
-
-
-
-## implementation of ECM algorithm to Cox model
-coxphx <- function(formula, data, subset, na.action, contrasts = NULL,
+iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
                    start = list(), control = list(), ...) {
 
     ## record the function call to return
@@ -242,11 +238,11 @@ coxphx <- function(formula, data, subset, na.action, contrasts = NULL,
 
     ## start' values for 'nlm'
     startList <- c(start, list(nBeta_ = nBeta, dat_ = dat))
-    start <- do.call("coxphx_start", startList)
+    start <- do.call("iCoxph_start", startList)
 
     ## 'control' for 'nlm'
     control <- c(control, list(censorRate0_ = start$censorRate0))
-    control <- do.call("coxphx_control", control)
+    control <- do.call("iCoxph_control", control)
 
     ## sort by time and ID
     incDat <- dat[(orderInc <- with(dat, order(time, ID))), ]
@@ -390,7 +386,7 @@ coxphx <- function(formula, data, subset, na.action, contrasts = NULL,
                      attr(mm, "contrasts")
 
     ## results to return
-    methods::new("coxphx",
+    methods::new("iCoxph",
                  call = Call,
                  formula = formula,
                  nObs = nObs,
@@ -678,7 +674,7 @@ initPi <- function(censorRate, dat, equally = FALSE, ...)
 }
 
 
-coxphx_start <- function(beta, censorRate, piVec, multiStart = FALSE,
+iCoxph_start <- function(beta, censorRate, piVec, multiStart = FALSE,
                          ..., nBeta_, dat_)
 {
     ## nonsense to eliminate cran checking note
@@ -742,7 +738,7 @@ coxphx_start <- function(beta, censorRate, piVec, multiStart = FALSE,
 }
 
 
-coxphx_control <- function(gradtol = 1e-6, stepmax = 1e2,
+iCoxph_control <- function(gradtol = 1e-6, stepmax = 1e2,
                            steptol = 1e-6, iterlim = 1e2,
                            steptol_ECM = 1e-4, iterlim_ECM = 1e2,
                            noSE = FALSE, h = sqrt(steptol_ECM),

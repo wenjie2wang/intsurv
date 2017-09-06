@@ -26,7 +26,7 @@ NULL
 ##' Standard Error Estimates through Bootstrapping Methods
 ##'
 ##' This function addes or updates standard error (SE) estimates through
-##' bootstrap method for \code{\link{coxphx-class}} object by default.  Three
+##' bootstrap method for \code{\link{iCoxph-class}} object by default.  Three
 ##' different methods are available for computing SE from bootstrap samples
 ##' through argument \code{se}.
 ##'
@@ -37,7 +37,7 @@ NULL
 ##' estimates can be easily computed based on estimates from bootstrap samples.
 ##'
 ##' The available elements of argument \code{start} are the same with those of
-##' argument \code{start} in function \code{\link{coxphx}} except that the
+##' argument \code{start} in function \code{\link{iCoxph}} except that the
 ##' \code{piVec} is not available since its length may vary in different
 ##' bootstrap samples.
 ##'
@@ -45,7 +45,7 @@ NULL
 ##' bootSe(object, numBoot = 50, se = c("mad", "inter-quantile", "sd"),
 ##'        start = list(), control = list(), ...)
 ##'
-##' @param object \code{\link{coxphx-class}} object.
+##' @param object \code{\link{iCoxph-class}} object.
 ##' @param numBoot A positive integer specifying number of bootstrap samples
 ##'     used for SE estimates.  A large number, such as 200, is often needed for
 ##'     a more reliable estimation in practice.
@@ -63,7 +63,7 @@ NULL
 ##'     Section Details.
 ##' @param ... Other arguments for future usage.
 ##'
-##' @return \code{\link{coxphx-class}} object by default or a numeric matrix of
+##' @return \code{\link{iCoxph-class}} object by default or a numeric matrix of
 ##'     coefficient estimates from each bootstrap sample.
 ##'
 ##' @references
@@ -73,16 +73,16 @@ NULL
 ##' in progress)
 ##'
 ##' @examples
-##' ## See examples given in function 'coxphx'
+##' ## See examples given in function 'iCoxph'
 ##' @seealso
-##' \code{\link{coxphx}} for fitting extended Cox model for uncertain records.
+##' \code{\link{iCoxph}} for fitting extended Cox model for uncertain records.
 ##' @importFrom stats median pnorm qnorm quantile sd
 ##' @export
 bootSe <- function(object, numBoot = 50, se = c("mad", "inter-quantile", "sd"),
                    start = list(), control = list(), ...)
 {
-    if (! inherits(object, "coxphx"))
-        stop("The 'object' has to be an 'coxphx' class object.")
+    if (! inherits(object, "iCoxph"))
+        stop("The 'object' has to be an 'iCoxph' class object.")
     se <- match.arg(se)
     fm <- object@formula
     cal <- object@call

@@ -14,16 +14,15 @@ citEntry(entry = "Manual",
                              "https://github.com/wenjie2wang/intsurv"))
 
 citEntry(entry = "Article",
-         title = paste("Extended {C}ox Model by {ECM} Algorithm",
-                       "for Uncertain Survival Records",
-                       "Due to Imperfect Data Integration"),
+         title = paste("Integrative Survival Analysis with Uncertain Event",
+                       "Records from Imperfect Data Integration with",
+                       "Application in a Suicide Risk Study"),
          author = personList(as.person("Wenjie Wang"),
                              as.person("Kun Chen"),
                              as.person("Jun Yan")),
          year =	"2017+",
          journal = "(working in progress)",
-         textVersion = paste("Wang, W., Chen, K., Yan, J. (2017+).",
-                             "Extended {C}ox Model by {ECM} Algorithm",
-                             "for Uncertain Survival Records",
-                             "Due to Imperfect Data Integration.",
+         textVersion = paste("Integrative Survival Analysis with Uncertain",
+                             "Event Records from Imperfect Data Integration",
+                             "with Application in a Suicide Risk Study"
                              "(working in progress)"))

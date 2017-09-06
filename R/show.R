@@ -29,10 +29,10 @@ NULL
 ##'
 ##' \itemize{
 ##'
-##' \item For \code{\link{coxphx-class}} object, it prints out a brief summary
+##' \item For \code{\link{iCoxph-class}} object, it prints out a brief summary
 ##'     of the fitted model.
 ##'
-##' \item For \code{\link{coxphx.summary-class}} object, it prints out summary
+##' \item For \code{\link{iCoxph.summary-class}} object, it prints out summary
 ##'       of a fitted model.
 ##'
 ##' }
@@ -45,11 +45,11 @@ NULL
 
 
 ##' @rdname show-method
-##' @aliases show,coxphx-method
+##' @aliases show,iCoxph-method
 ##' @importFrom stats printCoefmat
 ##' @export
 setMethod(
-    f = "show", signature = "coxphx",
+    f = "show", signature = "iCoxph",
     definition = function(object)
     {
         ## function call
@@ -65,11 +65,11 @@ setMethod(
 
 
 ##' @rdname show-method
-##' @aliases show,coxphx.summary-method
+##' @aliases show,iCoxph.summary-method
 ##' @importFrom stats printCoefmat
 ##' @export
 setMethod(
-    f = "show", signature = "coxphx.summary",
+    f = "show", signature = "iCoxph.summary",
     definition = function(object)
     {
         ## function call

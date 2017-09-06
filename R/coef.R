@@ -25,23 +25,23 @@ NULL
 
 ##' Estimated Coefficients of Covariates
 ##'
-##' \code{coef,coxphx-method} is an S4 class method that extracts covariate
-##' coefficient estimates from \code{\link{coxphx-class}} object from
-##' function \code{\link{coxphx}}.
+##' \code{coef,iCoxph-method} is an S4 class method that extracts covariate
+##' coefficient estimates from \code{\link{iCoxph-class}} object from
+##' function \code{\link{iCoxph}}.
 ##'
-##' @param object \code{\link{coxphx-class}} object.
+##' @param object \code{\link{iCoxph-class}} object.
 ##' @param ... Other arguments for future usage.
 ##' @return A named numeric vector.
-##' @aliases coef,coxphx-method
+##' @aliases coef,iCoxph-method
 ##' @seealso
-##' \code{\link{coxphx}} for fitting integrative Cox model;
-##' \code{\link{summary,coxphx-method}} for summary of a fitted model.
+##' \code{\link{iCoxph}} for fitting integrative Cox model;
+##' \code{\link{summary,iCoxph-method}} for summary of a fitted model.
 ##' @examples
-##' ## See examples given in function coxphx.
+##' ## See examples given in function iCoxph.
 ##' @importFrom stats coef
 ##' @export
 setMethod(
-    f = "coef", signature = "coxphx",
+    f = "coef", signature = "iCoxph",
     definition = function(object, ...)
     {
         object@estimates$beta[, "coef"]

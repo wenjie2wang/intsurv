@@ -2,10 +2,10 @@
 
 export(Survi)
 export(bootSe)
-export(coxphx)
+export(iCoxph)
 exportClasses(Survi)
-exportClasses(coxphx)
-exportClasses(coxphx.summary)
+exportClasses(iCoxph)
+exportClasses(iCoxph.summary)
 exportMethods(coef)
 exportMethods(show)
 exportMethods(summary)

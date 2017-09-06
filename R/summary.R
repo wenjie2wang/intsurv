@@ -25,37 +25,37 @@ NULL
 
 ##' Summary of a Fitted Model
 ##'
-##' For \code{\link{coxphx}} object, the function returns a
-##' \code{\link{coxphx.summary-class}} object whose slots include
+##' For \code{\link{iCoxph}} object, the function returns a
+##' \code{\link{iCoxph.summary-class}} object whose slots include
 ##' \itemize{
 ##'     \item \code{call}: Function call of model fitting.
 ##'     \item \code{coefMat}: Estimated covariate coefficients.
 ##'     \item \code{logL}: Log-likelihood under observed data.
 ##' }
 ##'
-##' @param object \code{\link{coxphx-class}} object.
+##' @param object \code{\link{iCoxph-class}} object.
 ##' @param showCall A logic value with default \code{TRUE}, indicating whether
 ##'     \code{show} method prints out the original call information of
-##'     \code{coxphx}.  Set \code{FALSE} for a more concise printout.
+##'     \code{iCoxph}.  Set \code{FALSE} for a more concise printout.
 ##' @param ... Other arguments for future usage.
 ##'
-##' @return \code{coxphx.summary-class} class object.
-##' @aliases summary,coxphx-method
+##' @return \code{iCoxph.summary-class} class object.
+##' @aliases summary,iCoxph-method
 ##' @examples
-##' ## See examples given in function coxphx
+##' ## See examples given in function iCoxph
 ##' @seealso
-##' \code{\link{coxphx}} for model fitting;
-##' \code{\link{coef,coxphx-method}} for coefficient estimates.
+##' \code{\link{iCoxph}} for model fitting;
+##' \code{\link{coef,iCoxph-method}} for coefficient estimates.
 ##' @export
 setMethod(
-    f = "summary", signature = "coxphx",
+    f = "summary", signature = "iCoxph",
     definition = function(object, showCall = TRUE, ...)
     {
         Call <- object@call
         attr(Call, "show") <- showCall
         betaMat <- object@estimates$beta
         len_logL <- length(object@logL)
-        new("coxphx.summary",
+        new("iCoxph.summary",
             call = Call,
             coefMat = betaMat,
             logL = object@logL[len_logL])

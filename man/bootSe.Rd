@@ -8,7 +8,7 @@ bootSe(object, numBoot = 50, se = c("mad", "inter-quantile", "sd"),
        start = list(), control = list(), ...)
 }
 \arguments{
-\item{object}{\code{\link{coxphx-class}} object.}
+\item{object}{\code{\link{iCoxph-class}} object.}
 
 \item{numBoot}{A positive integer specifying number of bootstrap samples
 used for SE estimates.  A large number, such as 200, is often needed for
@@ -32,12 +32,12 @@ Section Details.}
 \item{...}{Other arguments for future usage.}
 }
 \value{
-\code{\link{coxphx-class}} object by default or a numeric matrix of
+\code{\link{iCoxph-class}} object by default or a numeric matrix of
     coefficient estimates from each bootstrap sample.
 }
 \description{
 This function addes or updates standard error (SE) estimates through
-bootstrap method for \code{\link{coxphx-class}} object by default.  Three
+bootstrap method for \code{\link{iCoxph-class}} object by default.  Three
 different methods are available for computing SE from bootstrap samples
 through argument \code{se}.
 }
@@ -49,12 +49,12 @@ parallel computing or high performance computing (HPC) cluster. Then the SE
 estimates can be easily computed based on estimates from bootstrap samples.
 
 The available elements of argument \code{start} are the same with those of
-argument \code{start} in function \code{\link{coxphx}} except that the
+argument \code{start} in function \code{\link{iCoxph}} except that the
 \code{piVec} is not available since its length may vary in different
 bootstrap samples.
 }
 \examples{
-## See examples given in function 'coxphx'
+## See examples given in function 'iCoxph'
 }
 \references{
 Wang, W., Chen, K., & Yan, J. (2017+).  Extended Cox Model by ECM Algorithm
@@ -62,5 +62,5 @@ for Uncertain Survival Records Due to Imperfect Data Integration. (working
 in progress)
 }
 \seealso{
-\code{\link{coxphx}} for fitting extended Cox model for uncertain records.
+\code{\link{iCoxph}} for fitting extended Cox model for uncertain records.
 }
