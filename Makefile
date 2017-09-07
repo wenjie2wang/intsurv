@@ -36,7 +36,7 @@ $(tar): $(objects)
 	Rscript -e "library(methods); devtools::document();";
 	R CMD build $(dir)
 
-$(checkLog): $(tar) # $(tests)
+$(checkLog): $(tar)
 	R CMD check --as-cran $(tar)
 
 # $(vignettes): $(rmd)
