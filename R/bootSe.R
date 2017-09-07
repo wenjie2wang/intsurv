@@ -84,7 +84,6 @@ bootSe <- function(object, numBoot = 50, se = c("mad", "inter-quantile", "sd"),
     if (! inherits(object, "iCoxph"))
         stop("The 'object' has to be an 'iCoxph' class object.")
     se <- match.arg(se)
-    fm <- object@formula
     cal <- object@call
     ## update start list
     start <- do.call(bootSe_start, c(start, list(start0 = object@start)))
@@ -92,6 +91,7 @@ bootSe <- function(object, numBoot = 50, se = c("mad", "inter-quantile", "sd"),
     ## update local control list
     control <- do.call(bootSe_control, control)
     ## add noSE = TRUE to the original control list
+    fm <- cal$formula <- object@formula
     cal$control <- object@control
     cal$control$noSE <- TRUE
     cal$data <- quote(bootDat)
