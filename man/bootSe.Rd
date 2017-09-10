@@ -56,11 +56,6 @@ bootstrap samples.
 \examples{
 ## See examples given in function 'iCoxph'
 }
-\references{
-Wang, W., Chen, K., & Yan, J. (2017+).  Extended Cox Model by ECM Algorithm
-for Uncertain Survival Records Due to Imperfect Data Integration. (working
-in progress)
-}
 \seealso{
 \code{\link{iCoxph}} for fitting extended Cox model for uncertain records.
 }

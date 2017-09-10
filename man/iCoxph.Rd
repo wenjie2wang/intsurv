@@ -166,9 +166,9 @@ Internally, the first four named elements are passed to function
 
 }
 \references{
-Wang, W., Chen, K., & Yan, J. (2017+).  Integrative Survival Analysis with
-Uncertain Event Records from Imperfect Data Integration. (working in
-progress)
+Wang, W., Aseltine, R., Chen, K., & Yan, J. (2017+).  Integrative Survival
+Analysis with Uncertain Event Records from Imperfect Data Integration with
+Application in a Suicide Risk Study. (working in progress)
 
 Meng, X. & Rubin, D. (1993). Maximum Likelihood Estimation via the ECM
 Algorithm: A General Framework. \emph{Biometrika}, 80(2), 267--278.

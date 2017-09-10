@@ -66,12 +66,6 @@ NULL
 ##' @return \code{\link{iCoxph-class}} object by default or a numeric matrix of
 ##'     coefficient estimates from each bootstrap sample.
 ##'
-##' @references
-##'
-##' Wang, W., Chen, K., & Yan, J. (2017+).  Extended Cox Model by ECM Algorithm
-##' for Uncertain Survival Records Due to Imperfect Data Integration. (working
-##' in progress)
-##'
 ##' @examples
 ##' ## See examples given in function 'iCoxph'
 ##' @seealso
@@ -91,7 +85,7 @@ bootSe <- function(object, numBoot = 50, se = c("mad", "inter-quantile", "sd"),
     ## update local control list
     control <- do.call(bootSe_control, control)
     ## add noSE = TRUE to the original control list
-    fm <- cal$formula <- object@formula
+    fm <- object@formula
     cal$control <- object@control
     cal$control$noSE <- TRUE
     cal$data <- quote(bootDat)

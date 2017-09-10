@@ -172,9 +172,9 @@ NULL
 ##'
 ##' @references
 ##'
-##' Wang, W., Chen, K., & Yan, J. (2017+).  Integrative Survival Analysis with
-##' Uncertain Event Records from Imperfect Data Integration. (working in
-##' progress)
+##' Wang, W., Aseltine, R., Chen, K., & Yan, J. (2017+).  Integrative Survival
+##' Analysis with Uncertain Event Records from Imperfect Data Integration with
+##' Application in a Suicide Risk Study. (working in progress)
 ##'
 ##' Meng, X. & Rubin, D. (1993). Maximum Likelihood Estimation via the ECM
 ##' Algorithm: A General Framework. \emph{Biometrika}, 80(2), 267--278.
@@ -196,8 +196,8 @@ NULL
 ##' @importFrom survival coxph Surv
 ##' @export
 iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
-                   start = list(), control = list(), ...) {
-
+                   start = list(), control = list(), ...)
+{
     ## record the function call to return
     Call <- match.call()
 
@@ -209,6 +209,7 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
     dat0 <- with(data, eval(formula[[2L]]))
     if (! inherits(dat0, "Survi"))
         stop("Response in formula must be a 'Survi' object.")
+    Call$formula <- formula
 
     ## Prepare data: ID, time, event ~ X(s)
     mcall <- match.call(expand.dots = FALSE)
@@ -741,7 +742,7 @@ iCoxph_start <- function(beta, censorRate, piVec, multiStart = FALSE,
 iCoxph_control <- function(gradtol = 1e-6, stepmax = 1e2,
                            steptol = 1e-6, iterlim = 1e2,
                            steptol_ECM = 1e-4, iterlim_ECM = 1e2,
-                           noSE = FALSE, h = sqrt(steptol_ECM),
+                           noSE = TRUE, h = sqrt(steptol_ECM),
                            ..., alwaysUpdatePi = NULL,
                            censorRate0_)
 {
