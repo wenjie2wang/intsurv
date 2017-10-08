@@ -1,7 +1,7 @@
 Package: intsurv
 Title: Integrative Survival Modeling
 Version: 0.1.0.9000
-Date: 2017-09-09
+Date: 2017-10-08
 Authors@R: c(
     person(given = "Wenjie", family = "Wang",
            email = "wenjie.2.wang@uconn.edu",
@@ -19,7 +19,7 @@ Depends:
     R (>= 3.2.3)
 License: GPL (>= 3)
 LazyData: true
-Collate:
+Collate: 
     'class.R'
     'Survi.R'
     'bootSe.R'
@@ -27,6 +27,7 @@ Collate:
     'iCoxph.R'
     'intsurv.R'
     'show.R'
+    'simuData.R'
     'summary.R'
 URL: https://github.com/wenjie2wang/intsurv
 BugReports: https://github.com/wenjie2wang/intsurv/issues

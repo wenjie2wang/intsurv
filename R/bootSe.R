@@ -133,7 +133,7 @@ bootSe <- function(object, numBoot = 50, se = c("mad", "inter-quantile", "sd"),
 
 
 ### internal functions =========================================================
-bootSe_start <- function(beta0, censorRate, multiStart = FALSE, ...,
+bootSe_start <- function(beta0, censorRate, multiStart = TRUE, ...,
                          start0)
 {
     censorRate0 <- start0$censorRate0

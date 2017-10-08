@@ -158,12 +158,11 @@ Internally, the first four named elements are passed to function
 \code{\link[stats]{nlm}}.
 }
 \examples{
-
-## FIXME: add function generating simulation data
-## and example simulated dataset for demonstration
-## library(intsurv)
-## iCoxph(Survi())
-
+library(intsurv)
+set.seed(1216)
+simuDat <- simuWeibull(nSubject = 100)
+iCoxph(Survi(ID, obsTime, eventInd) ~ x1 + x2 + x3 + x4, simuDat,
+       control = list(noSE = TRUE))
 }
 \references{
 Wang, W., Aseltine, R., Chen, K., & Yan, J. (2017+).  Integrative Survival

@@ -108,7 +108,7 @@ NULL
 ##' @usage
 ##' iCoxph(formula, data, subset, na.action, contrasts = NULL,
 ##'        start = list(), control = list(), ...)
-##'
+##' @aliases iCoxph
 ##' @param formula \code{Survi} object specifying the covariates and response
 ##'     variable in the model, such as \code{Survi(ID, time, event) ~ x1 + x2}.
 ##' @param data An optional data frame, list, or environment that contains the
@@ -180,19 +180,18 @@ NULL
 ##' Algorithm: A General Framework. \emph{Biometrika}, 80(2), 267--278.
 ##'
 ##' @examples
-##'
-##' ## FIXME: add function generating simulation data
-##' ## and example simulated dataset for demonstration
-##' ## library(intsurv)
-##' ## iCoxph(Survi())
-##'
+##' library(intsurv)
+##' set.seed(1216)
+##' simuDat <- simuWeibull(nSubject = 100)
+##' iCoxph(Survi(ID, obsTime, eventInd) ~ x1 + x2 + x3 + x4, simuDat,
+##'        control = list(noSE = TRUE))
 ##' @seealso
 ##' \code{\link{summary,iCoxph-method}} for summary of fitted model;
 ##' \code{\link{coef,iCoxph-method}} for estimated covariate coefficients;
 ##' \code{\link{bootSe}} for SE estimates from bootstrap method.
 ##'
 ##' @importFrom stats na.fail na.omit na.exclude na.pass .getXlevels
-##' model.extract model.frame model.matrix nlm pnorm
+##'     model.extract model.frame model.matrix nlm pnorm
 ##' @importFrom survival coxph Surv
 ##' @export
 iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
