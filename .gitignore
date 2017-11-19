@@ -18,6 +18,9 @@
 vignettes/*.html
 vignettes/*.pdf
 
-reference
-simulation
+# compiled objects
+*.o
+*.so
+
+# other directories
 test/
