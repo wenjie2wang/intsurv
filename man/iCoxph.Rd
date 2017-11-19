@@ -153,6 +153,11 @@ The valid named elements are given as follows:
     of iterations to be performed before the ECM algorithm is
     terminated. The default value is \code{1e2}.
 
+\item \code{commonCenRate}: If \code{TRUE}, the algorithm keeps a same
+    probability for all the uncertain censoring cases to be the truth; If
+    \code{FASLE}, it allows different probabilities for censoring cases to
+    be the truth.
+
 }
 Internally, the first four named elements are passed to function
 \code{\link[stats]{nlm}}.
