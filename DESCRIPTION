@@ -1,7 +1,7 @@
 Package: intsurv
 Title: Integrative Survival Modeling
 Version: 0.1.0.9000
-Date: 2017-10-08
+Date: 2017-11-19
 Authors@R: c(
     person(given = "Wenjie", family = "Wang",
            email = "wenjie.2.wang@uconn.edu",
@@ -9,17 +9,20 @@ Authors@R: c(
     person(given = "Kun", family = "Chen", role = "ctb"),
     person(given = "Jun", family = "Yan", role = "ctb")
     )
-Description: Functions fitting extended Cox model through ECM algorithm for
+Description: Functions fitting integrative Cox model through ECM algorithm for
     uncertain records due to imperfect data integration.
+Depends:
+    R (>= 3.2.3)
 Imports:
+    Rcpp (>= 0.12.0),
     methods,
     stats,
     survival
-Depends:
-    R (>= 3.2.3)
+LinkingTo: Rcpp
 License: GPL (>= 3)
 LazyData: true
 Collate: 
+    'RcppExports.R'
     'class.R'
     'Survi.R'
     'bootSe.R'
