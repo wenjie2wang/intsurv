@@ -532,7 +532,7 @@ oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, tied, control)
                                  piVec * hVec * sVec * G_cVec,
                                  piVec * sVec * h_cVec * G_cVec))
     ## log-likelihood function under observed data
-    logL <- sum(log(tapply(dat$w_jk, dat$ID, sum)))
+    logL <- sum(log(aggregateSum(dat$w_jk, dat$ID, addNames = FALSE)))
 
     ## update h0_jk and h_c_jk with previous (or initial) estimates of beta
     ## h0Vec <- h0t(dat, tied)
@@ -595,8 +595,8 @@ h0t <- function(dat, tied) {
 deltaTildeN <- function(dat, tied) {
     out <- with(dat, eventIdx * p_jk)
     if (tied)
-        out <- tapply(out, dat$time, FUN = sum)
-    as.numeric(out)
+        return(aggregateSum(out, dat$time, addNames = FALSE))
+    out
 }
 
 
@@ -613,8 +613,8 @@ h_c <- function(dat, tied) {
 deltaC <- function(dat, tied) {
     out <- with(dat, (! eventIdx) * p_jk)
     if (tied)
-        out <- tapply(out, dat$time, FUN = sum)
-    as.numeric(out)
+        return(aggregateSum(out, dat$time, addNames = FALSE))
+    out
 }
 
 
@@ -654,7 +654,7 @@ k2 <- function(parSeq, dat, xMat, tied) {
 
 dLbeta <- function(xMatDeltaN, k_0, k_1, delta_tildeN) {
     sum_jk <- colSums(xMatDeltaN)
-    int_t <- colSums(na.omit(k_1 / k_0 * delta_tildeN))
+    int_t <- colSums(k_1 / k_0 * delta_tildeN, na.rm = TRUE)
     sum_jk - int_t
 }
 
