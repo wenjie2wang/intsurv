@@ -46,13 +46,13 @@ $(checkLog): $(tar)
 .PHONY: updateMeta
 updateMeta:
 	@echo "Updating date, version, and copyright year"
-	@sed -i "s/Copyright (C) 2017-[0-9]\{4\}/Copyright (C) 2017-$(yr)/" $(cprt)
+	@sed -i "s/Copyright (C) 2017-*[0-9]\{4\}/Copyright (C) 2017-$(yr)/" $(cprt)
 	@for Rfile in R/*.R; do \
 	if ! grep -q 'Copyright (C)' $$Rfile;\
 	then cat $(cprt) $$Rfile > tmp;\
 	mv tmp $$Rfile;\
 	fi;\
-	sed -i "s/Copyright (C) 2017-[0-9]*/Copyright (C) 2017-$(yr)/" $$Rfile;\
+	sed -i "s/Copyright (C) 2017-*[0-9]*/Copyright (C) 2017-$(yr)/" $$Rfile;\
 	done;
 	@sed -i "s/Date: [0-9]\{4\}-[0-9]\{1,2\}-[0-9]\{1,2\}/Date: $(dt)/" DESCRIPTION
 	@longS="version [0-9]\{1,\}\.[0-9]\{1,\}\.[0-9]\{1,\}\(\.[0-9][0-9]*\)*"

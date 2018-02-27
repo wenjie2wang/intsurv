@@ -1,7 +1,7 @@
 ################################################################################
 ##
 ##   R package intsurv by Wenjie Wang, Kun Chen and Jun Yan
-##   Copyright (C) 2017
+##   Copyright (C) 2017-2018
 ##
 ##   This file is part of the R package intsurv.
 ##
