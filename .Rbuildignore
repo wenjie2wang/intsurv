@@ -6,6 +6,7 @@
 ^\.gitignore$
 ^\.travis\.yml$
 ^test$
+^working$
 ^Makefile$
 ^COPYRIGHT$
 ^LICENSE$
