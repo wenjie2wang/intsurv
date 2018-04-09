@@ -59,7 +59,13 @@ updateMeta:
 	@sed -i "s/$longS/version $(version)/" $(citation)
 	@sed -i "1,15 s/20[0-9]\{2\}/$(yr)/" $(citation)
 
+## make tags
+.PHONY: TAGS
+TAGS:
+	Rscript -e "utils::rtags(path = 'R', ofile = 'TAGS')"
+	gtags
 
+## do some cleaning
 .PHONY: clean
 clean:
 	rm -rf *~ */*~ *.Rhistroy *.tar.gz *.Rcheck/ .\#*
