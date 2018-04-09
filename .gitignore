@@ -25,3 +25,9 @@ vignettes/*.pdf
 # other directories
 test/
 working/
+
+# ignore tags
+TAGS
+GTAGS
+GRTAGS
+GPATH
