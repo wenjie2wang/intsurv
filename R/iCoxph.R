@@ -188,8 +188,8 @@ NULL
 ##' library(intsurv)
 ##' set.seed(1216)
 ##' simuDat <- simuWeibull(nSubject = 100)
-##' iCoxph(Survi(ID, obsTime, eventInd) ~ x1 + x2 + x3 + x4, simuDat,
-##'        control = list(noSE = TRUE))
+##' fit <- iCoxph(Survi(ID, obsTime, eventInd) ~ x1 + x2 + x3 + x4, simuDat,
+##'               control = list(noSE = TRUE))
 ##' @seealso
 ##' \code{\link{summary,iCoxph-method}} for summary of fitted model;
 ##' \code{\link{coef,iCoxph-method}} for estimated covariate coefficients;
@@ -214,7 +214,7 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
     if (missing(data))
         data <- environment(formula)
     dat0 <- with(data, eval(formula[[2L]]))
-    if (! inherits(dat0, "Survi"))
+    if (! is.Survi(dat0))
         stop("Response in formula must be a 'Survi' object.")
     Call$formula <- formula
 
@@ -317,7 +317,7 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
         }
 
         ## keep the one fit maximizing observed log likelihood
-        logL <- stats::na.omit(logL)
+        logL <- rmNA(logL)
         logL_max <- logL[length(logL)]
         if (logL_max > logL_max0) {
             logL_max0 <- logL_max
@@ -330,9 +330,7 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
     }
 
     ## clean-up NA's
-    betaMat0 <- stats::na.omit(betaMat0)
-    attr(logL0, "na.action") <- attr(logL0, "class") <-
-        attr(betaMat0, "na.action") <- attr(betaMat0, "class") <- NULL
+    betaMat0 <- rmNA(betaMat0)
     ## prepare for outputs
     piEst <- oneFit0$piVec[(reOrderIdx <- order(orderInc))]
     start$piVec <- piVec0[reOrderIdx]
@@ -662,8 +660,8 @@ dLbeta <- function(xMatDeltaN, k_0, k_1, delta_tildeN) {
 d2Lbeta <- function(parSeq, k_0, k_1, k_2, delta_tildeN) {
     ## part 1
     nPar <- length(parSeq)
-    mat1 <- na.omit(k_2 / k_0 * delta_tildeN)
-    part1 <- matrix(colSums(mat1), nPar, nPar)
+    mat1 <- k_2 / k_0 * delta_tildeN
+    part1 <- matrix(colSums(mat1, na.rm = TRUE), nPar, nPar)
 
     ## part 2
     mat2 <- k_1 / k_0
@@ -753,8 +751,10 @@ iCoxph_start <- function(beta, censorRate, piVec, multiStart = FALSE,
     } else {
         beta <- as.numeric(beta)
         if (length(beta) != nBeta_)
-            stop(paste("Number of starting values for coefficients of",
-                       "covariates does not match with the specified formula."))
+            stop(wrapMessages(
+                "Number of starting values for coefficients of",
+                "covariates does not match with the specified formula."
+            ), call. = FALSE)
     }
 
     if (missing(piVec)) {

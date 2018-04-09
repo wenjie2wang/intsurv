@@ -6,8 +6,8 @@
 using namespace Rcpp;
 
 // aggregateSum
-Rcpp::NumericVector aggregateSum(Rcpp::NumericVector x, Rcpp::NumericVector indices, bool simplify, bool addNames);
-RcppExport SEXP _intsurv_aggregateSum(SEXP xSEXP, SEXP indicesSEXP, SEXP simplifySEXP, SEXP addNamesSEXP) {
+Rcpp::NumericVector aggregateSum(Rcpp::NumericVector x, Rcpp::NumericVector indices, bool simplify, bool addNames, bool cumulate, bool revcum);
+RcppExport SEXP _intsurv_aggregateSum(SEXP xSEXP, SEXP indicesSEXP, SEXP simplifySEXP, SEXP addNamesSEXP, SEXP cumulateSEXP, SEXP revcumSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -15,13 +15,27 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type indices(indicesSEXP);
     Rcpp::traits::input_parameter< bool >::type simplify(simplifySEXP);
     Rcpp::traits::input_parameter< bool >::type addNames(addNamesSEXP);
-    rcpp_result_gen = Rcpp::wrap(aggregateSum(x, indices, simplify, addNames));
+    Rcpp::traits::input_parameter< bool >::type cumulate(cumulateSEXP);
+    Rcpp::traits::input_parameter< bool >::type revcum(revcumSEXP);
+    rcpp_result_gen = Rcpp::wrap(aggregateSum(x, indices, simplify, addNames, cumulate, revcum));
+    return rcpp_result_gen;
+END_RCPP
+}
+// revcumsum
+Rcpp::NumericVector revcumsum(SEXP x);
+RcppExport SEXP _intsurv_revcumsum(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(revcumsum(x));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_intsurv_aggregateSum", (DL_FUNC) &_intsurv_aggregateSum, 4},
+    {"_intsurv_aggregateSum", (DL_FUNC) &_intsurv_aggregateSum, 6},
+    {"_intsurv_revcumsum", (DL_FUNC) &_intsurv_revcumsum, 1},
     {NULL, NULL, 0}
 };
 

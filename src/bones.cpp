@@ -1,16 +1,20 @@
 #include <Rcpp.h>
+// [[Rcpp::plugins(cpp11)]]
+
 
 // [[Rcpp::export]]
 Rcpp::NumericVector aggregateSum(Rcpp::NumericVector x,
                                  Rcpp::NumericVector indices,
                                  bool simplify = true,
-                                 bool addNames = true)
+                                 bool addNames = true,
+                                 bool cumulate = false,
+                                 bool revcum = false)
 {
   // naive function to sum x based on indices
-  const long int n_x = x.size();
+  const unsigned long int n_x = x.size();
 
   Rcpp::NumericVector uniInd = Rcpp::sort_unique(indices);
-  const long int n_uniInd = uniInd.size();
+  const unsigned long int n_uniInd = uniInd.size();
 
   // the x's having a same index are summed
   Rcpp::NumericVector sumVec(n_uniInd);
@@ -20,6 +24,22 @@ Rcpp::NumericVector aggregateSum(Rcpp::NumericVector x,
           sumVec[i] += x[j];
         }
       }
+  }
+  // if `cumulate = true` for cumulated summation
+  if (cumulate) {
+    if (revcum) {
+      long double tmp = sumVec[n_uniInd - 1];
+      for (int i = n_uniInd - 2; i >= 0; --i) {
+        tmp += sumVec[i];
+        sumVec[i] = tmp;
+      }
+    } else {
+      long double tmp = sumVec[0];
+      for (size_t i = 1; i < n_uniInd; ++i) {
+        tmp += sumVec[i];
+        sumVec[i] = tmp;
+      }
+    }
   }
   // if simplify the sum results to unique and sorted indices
   if (simplify) {
@@ -41,4 +61,19 @@ Rcpp::NumericVector aggregateSum(Rcpp::NumericVector x,
     }
   }
   return out;
+}
+
+
+// [[Rcpp::export]]
+Rcpp::NumericVector revcumsum(SEXP x)
+{
+  Rcpp::NumericVector xVec(x);
+  const unsigned long int n_x = xVec.size();
+  Rcpp::NumericVector res(n_x);
+  long double tmp = 0.0;
+  for (int i = n_x - 1; i >= 0; --i) {
+    tmp += xVec[i];
+    res[i] = tmp;
+  }
+  return res;
 }

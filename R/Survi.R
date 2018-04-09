@@ -73,11 +73,14 @@ Survi <- function(ID, time, event, check = TRUE, ...)
 check_Survi <- function(dat)
 {
     ## check 0: event or censoring times cannot contain missing values
-    idx0 <- is.na(dat$time)
-    if (any(idx0))
-        stop("'time' cannot contain missing values.",
-             "\nPlease check subject:",
-             paste(unique(sDat$ID[idx0]), collapse = ", "))
+    if (anyNA(dat$time)) {
+        idx0 <- is.na(dat$time)
+        stop(wrapMessages(
+            "The `time` cannot contain missing values.",
+            "Please check subject:",
+            paste(unique(dat$ID[idx0]), collapse = ", ")
+        ), call. = FALSE)
+    }
 
     ## check 1: each subject has at most one censoring time later than events
     sDat <- dat[with(dat, order(ID, time, 1L - event)), ]
@@ -85,9 +88,12 @@ check_Survi <- function(dat)
     cenIdx <- sDat$event != 1L
     idx1 <- dupIdx & cenIdx
     if (any(idx1))
-        stop("Every subject must have at most one censored time",
-             "later than all the possible event times.",
-             "\nPlease check subject:",
-             paste(unique(sDat$ID[idx1]), collapse = ", "))
+        stop(wrapMessages(
+            "Every subject must have at most one censored time",
+            "later than all the possible event times.",
+            "Please check subject:",
+            paste(unique(sDat$ID[idx1]), collapse = ", ")
+        ), call. = FALSE)
+    ## return
     dat
 }
