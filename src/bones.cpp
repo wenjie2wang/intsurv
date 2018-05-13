@@ -21,7 +21,7 @@ bool AlmostRelativeEqual(double A, double B,
 // [[Rcpp::export]]
 Rcpp::NumericVector aggregateSum(const Rcpp::NumericVector& x,
                                  const Rcpp::NumericVector& indices,
-                                 bool simplify = false,
+                                 bool simplify = true,
                                  bool cumulate = false,
                                  bool revcum = false)
 {

@@ -275,14 +275,6 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
             incDat$piVec <- piVec <- start$piVec[orderInc]
         }
 
-        ## use initial value of pi to initialize h_0 and h_c
-        incDat$betaX <- as.numeric(xMat %*% start$beta)
-        incDat$xExp <- exp(incDat$betaX)
-        incDat$xExp <- ifelse(is.infinite(incDat$xExp), 1e50, incDat$xExp)
-        incDat$p_jk <- incDat$piVec
-        h0Dat$h0Vec <- h0t(incDat, tied = tied)
-        h_cDat$h_cVec <- h_c(incDat, tied = tied)
-
         ## trace the log-likelihood for observed data
         logL <- rep(NA, control$iterlim_ECM)
         ## trace beta estimates from each iteration of ECM
@@ -461,6 +453,16 @@ dmECM <- function(betaEst, h0Dat, h_cDat, dat, xMat, tied, control)
 ## perform one step of EM algorithm
 oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, tied, control)
 {
+    ## update results involving beta estimates
+    dat$betaX <- as.numeric(xMat %*% betaHat)
+    dat$xExp <- exp(dat$betaX)
+    dat$xExp <- ifelse(is.infinite(dat$xExp), 1e50, dat$xExp)
+
+    ## use initial value of pi
+    dat$p_jk <- dat$piVec
+    h0Dat$h0Vec <- h0t(dat, tied = tied)
+    h_cDat$h_cVec <- h_c(dat, tied = tied)
+
     ## update baseline hazard rate of event times
     h0Dat$H0Vec <- cumsum(h0Dat$h0Vec)
     ## update baseline hazard rate of censoring times
@@ -493,19 +495,6 @@ oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, tied, control)
     dat$p_jk_denom <- with(dat, aggregateSum(w_jk, ID, simplify = FALSE))
     dat$p_jk <- with(dat, ifelse(dupIdx, w_jk / p_jk_denom, 1))
 
-    ## update piVec
-    pi_c <- with(dat, mean(p_jk[dupIdx & (! eventIdx)]))
-    p_jk_dupEvent <- with(dat, ifelse(dupIdx & eventIdx, p_jk, 0))
-    denom_pi_jk_dupEvent <- aggregateSum(p_jk_dupEvent, dat$ID,
-                                         simplify = FALSE)
-    dat$piVec <- ifelse(dat$dupIdx, {
-        ifelse(dat$eventIdx, {
-            ifelse(denom_pi_jk_dupEvent > 0,
-                   dat$p_jk * (1 - pi_c) / denom_pi_jk_dupEvent,
-                   0)
-        }, pi_c)
-    }, 1)
-
     ## update h_0(t)
     h0Dat$h0Vec <- h0t(dat, tied = tied)
 
@@ -518,19 +507,8 @@ oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, tied, control)
                           gradtol = control$gradtol, stepmax = control$stepmax,
                           steptol = control$steptol, iterlim = control$iterlim)
 
-    ## update results involving beta estimates
-    dat$betaX <- as.numeric(xMat %*% betaEst$estimate)
-    dat$xExp <- exp(dat$betaX)
-    dat$xExp <- ifelse(is.infinite(dat$xExp), 1e50, dat$xExp)
-    dat$hVec <- with(dat, h0Vec * xExp)
-    dat$HVec <- with(dat, H0Vec * xExp)
-    dat$sVec <- exp(- dat$HVec)
-    dat$G_cVec <- exp(- dat$H_cVec)
-    dat$w_jk <- with(dat, ifelse(eventIdx,
-                                 piVec * hVec * sVec * G_cVec,
-                                 piVec * sVec * h_cVec * G_cVec))
     ## log-likelihood function under observed data
-    logL <- sum(log(aggregateSum(dat$w_jk, dat$ID)))
+    logL <- sum(log(dat$p_jk_denom))
 
     ## update h0_jk and h_c_jk with previous (or initial) estimates of beta
     ## h0Vec <- h0t(dat, tied)
@@ -538,7 +516,7 @@ oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, tied, control)
     list(betaEst = betaEst,
          h0Vec = h0Dat$h0Vec,
          h_cVec = h_cDat$h_cVec,
-         piVec = dat$piVec,
+         piVec = dat$p_jk,
          logL = logL,
          xExp = dat$xExp)
 }
@@ -601,7 +579,7 @@ deltaTildeN <- function(dat, tied) {
 ## baseline hazard rate for censoring time
 h_c <- function(dat, tied) {
     numer <- deltaC(dat, tied)
-    denom <- rev(cumsum(rev(dat$p_jk)))
+    denom <- revcumsum(dat$p_jk)
     if (tied)
         denom <- denom[dat$firstIdx]
     ifelse(numer > 0, numer / denom, 0)
@@ -618,7 +596,7 @@ deltaC <- function(dat, tied) {
 
 k0 <- function(dat, tied) {
     p_jk_xExp <- with(dat, p_jk * xExp)
-    out <- rev(cumsum(rev(p_jk_xExp)))
+    out <- revcumsum(p_jk_xExp)
     if (tied)
         out <- out[dat$firstIdx]
     out
@@ -629,7 +607,7 @@ k1 <- function(parSeq, dat, xMat, tied) {
     ## matrix of dimension # unique event time by # parameters
     out <- sapply(parSeq, function(ind, dat, xMat) {
         p_jk_xExp_x <- with(dat, p_jk * xExp) * xMat[, ind]
-        rev(cumsum(rev(p_jk_xExp_x)))
+        revcumsum(p_jk_xExp_x)
     }, dat = dat, xMat = xMat)
     if (tied)
         out <- out[dat$firstIdx, ]
@@ -642,7 +620,7 @@ k2 <- function(parSeq, dat, xMat, tied) {
     ## matrix of dimension # unique event time by (# parameters) ^ 2
     out <- mapply(function(ind1, ind2) {
         p_jk_xExp_x2 <- with(dat, p_jk * xExp) * xMat[, ind1] * xMat[, ind2]
-        rev(cumsum(rev(p_jk_xExp_x2)))
+        revcumsum(p_jk_xExp_x2)
     }, ind_grid[, 1L], ind_grid[, 2L])
     if (tied)
         out <- out[dat$firstIdx, ]
