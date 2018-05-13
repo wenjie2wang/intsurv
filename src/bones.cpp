@@ -2,11 +2,26 @@
 // [[Rcpp::plugins(cpp11)]]
 
 
+bool AlmostRelativeEqual(double A, double B,
+                         double MaxRelDiff = DBL_EPSILON)
+{
+  // Calculate the difference.
+  double diff = fabs(A - B);
+  A = fabs(A);
+  B = fabs(B);
+  // Find the largest
+  double largest = (B > A) ? B : A;
+
+  if (diff <= largest * MaxRelDiff)
+    return true;
+  return false;
+}
+
+
 // [[Rcpp::export]]
-Rcpp::NumericVector aggregateSum(Rcpp::NumericVector x,
-                                 Rcpp::NumericVector indices,
-                                 bool simplify = true,
-                                 bool addNames = true,
+Rcpp::NumericVector aggregateSum(const Rcpp::NumericVector& x,
+                                 const Rcpp::NumericVector& indices,
+                                 bool simplify = false,
                                  bool cumulate = false,
                                  bool revcum = false)
 {
@@ -20,7 +35,7 @@ Rcpp::NumericVector aggregateSum(Rcpp::NumericVector x,
   Rcpp::NumericVector sumVec(n_uniInd);
   for (size_t i = 0; i < n_uniInd; ++i) {
       for (size_t j = 0; j < n_x; ++j) {
-        if (uniInd[i] == indices[j]) {
+        if (AlmostRelativeEqual(uniInd[i], indices[j])) {
           sumVec[i] += x[j];
         }
       }
@@ -44,9 +59,9 @@ Rcpp::NumericVector aggregateSum(Rcpp::NumericVector x,
   // if simplify the sum results to unique and sorted indices
   if (simplify) {
     // add the names of indices? slows the function down a lot
-    if (addNames) {
-      sumVec.attr("names") = Rcpp::as<Rcpp::CharacterVector>(uniInd);
-    }
+    // if (addNames) {
+    //   sumVec.attr("names") = Rcpp::as<Rcpp::CharacterVector>(uniInd);
+    // }
     return sumVec;
   }
 
@@ -54,7 +69,7 @@ Rcpp::NumericVector aggregateSum(Rcpp::NumericVector x,
   Rcpp::NumericVector out(n_x);
   for (size_t i = 0; i < n_x; ++i) {
     for (size_t j = 0; j < n_uniInd; ++j) {
-      if (indices[i] == uniInd[j]) {
+      if (AlmostRelativeEqual(indices[i], uniInd[j])) {
         out[i] = sumVec[j];
         break;
       }

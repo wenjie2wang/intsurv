@@ -496,8 +496,8 @@ oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, tied, control)
     ## update piVec
     pi_c <- with(dat, mean(p_jk[dupIdx & (! eventIdx)]))
     p_jk_dupEvent <- with(dat, ifelse(dupIdx & eventIdx, p_jk, 0))
-    denom_pi_jk_dupEvent <- aggregateSum(p_jk_dupEvent,
-                                         dat$ID, simplify = FALSE)
+    denom_pi_jk_dupEvent <- aggregateSum(p_jk_dupEvent, dat$ID,
+                                         simplify = FALSE)
     dat$piVec <- ifelse(dat$dupIdx, {
         ifelse(dat$eventIdx, {
             ifelse(denom_pi_jk_dupEvent > 0,
@@ -530,7 +530,7 @@ oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, tied, control)
                                  piVec * hVec * sVec * G_cVec,
                                  piVec * sVec * h_cVec * G_cVec))
     ## log-likelihood function under observed data
-    logL <- sum(log(aggregateSum(dat$w_jk, dat$ID, addNames = FALSE)))
+    logL <- sum(log(aggregateSum(dat$w_jk, dat$ID)))
 
     ## update h0_jk and h_c_jk with previous (or initial) estimates of beta
     ## h0Vec <- h0t(dat, tied)
@@ -593,7 +593,7 @@ h0t <- function(dat, tied) {
 deltaTildeN <- function(dat, tied) {
     out <- with(dat, eventIdx * p_jk)
     if (tied)
-        return(aggregateSum(out, dat$time, addNames = FALSE))
+        return(aggregateSum(out, dat$time))
     out
 }
 
@@ -611,7 +611,7 @@ h_c <- function(dat, tied) {
 deltaC <- function(dat, tied) {
     out <- with(dat, (! eventIdx) * p_jk)
     if (tied)
-        return(aggregateSum(out, dat$time, addNames = FALSE))
+        return(aggregateSum(out, dat$time))
     out
 }
 
@@ -810,7 +810,6 @@ iCoxph_control <- function(gradtol = 1e-6, stepmax = 1e2,
          steptol = steptol, iterlim = iterlim,
          steptol_ECM = steptol_ECM,
          iterlim_ECM = iterlim_ECM,
-         commonCenProb = FALSE,
          h = h,
          alwaysUpdatePi = alwaysUpdatePi,
          noSE = noSE)
