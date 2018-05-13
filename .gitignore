@@ -23,7 +23,7 @@ vignettes/*.pdf
 *.so
 
 # other directories
-test/
+testing/
 working/
 
 # ignore tags
