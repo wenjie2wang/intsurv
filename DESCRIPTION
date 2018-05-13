@@ -1,7 +1,7 @@
 Package: intsurv
 Title: Integrative Survival Modeling
 Version: 0.1.0.9000
-Date: 2018-04-08
+Date: 2018-05-13
 Authors@R: c(
     person(given = "Wenjie", family = "Wang",
            email = "wenjie.2.wang@uconn.edu",
@@ -18,10 +18,12 @@ Imports:
     methods,
     stats,
     survival
-LinkingTo: Rcpp
+LinkingTo:
+    Rcpp,
+    RcppArmadillo
 License: GPL (>= 3)
 LazyData: true
-Collate: 
+Collate:
     'RcppExports.R'
     'class.R'
     'Survi.R'

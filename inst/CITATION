@@ -1,7 +1,7 @@
 citHeader("To cite intsurv in publications use:")
 
 citEntry(entry = "Manual",
-         title = "{intsurv}: {I}ntegrative Survival Modeling}",
+         title = "{intsurv}: {I}ntegrative Survival Modeling",
          author = personList(as.person("Wenjie Wang"),
                              as.person("Kun Chen"),
                              as.person("Jun Yan")),
