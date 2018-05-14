@@ -1,6 +1,6 @@
 Package: intsurv
 Title: Integrative Survival Modeling
-Version: 0.1.0.9000
+Version: 0.1.0.9001
 Date: 2018-05-13
 Authors@R: c(
     person(given = "Wenjie", family = "Wang",
