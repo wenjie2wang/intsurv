@@ -147,8 +147,15 @@ bootSe_start <- function(beta0, censorRate, multiStart = TRUE, ...,
                                   min(1, censorRate0 + 0.2), 0.05)
                       }
     }
-    list(beta = beta, censorRate = censorRate,
-         censorRate0 = censorRate0)
+    piVec <- if (is.na(start0$pi0)) {
+                 NULL
+             } else {
+                 start0$pi0
+             }
+    list(beta = beta,
+         censorRate = censorRate,
+         censorRate0 = censorRate0,
+         piVec = piVec)
 }
 
 
