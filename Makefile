@@ -28,11 +28,11 @@ install: $(tar)
 
 
 $(tar): $(objects)
-	@if [ "$$(uname)" == "Darwin" ];\
-	then echo "remeber to update date and version number";\
-	else make -s updateMeta;\
-	fi;\
 	Rscript -e "library(methods); devtools::document();";
+	@if [ "$$(uname)" == "Darwin" ];\
+	then printf "remeber to update date and version number\n";\
+	else $(MAKE) -s updateMeta;\
+	fi;\
 	R CMD build .
 
 $(checkLog): $(tar)
