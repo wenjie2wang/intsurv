@@ -264,17 +264,29 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
     h0Dat <- h_cDat <- data.frame(time = incDat$time[incDat$firstIdx])
     xMat <- as.matrix(incDat[, 4L : (3L + nBeta)])
 
-    ## from different starting values of piVec
+    ## form different starting values of piVec
+    piMat <- matrix(
+        sapply(start$censorRate, initPi, dat = incDat),
+        nrow = nObs
+    )
+    pi0 <- NA
+    if (! is.null(start$piVec)) {
+        piMat_new <- matrix(
+            sapply(start$piVec, initPi2, dat = dat,
+                   randomly = start$randomly)[orderInc, ],
+            nrow = nObs
+        )
+        piMat <- cbind(piMat, piMat_new)
+    }
+    if (! is.null(start$piMat))
+        piMat <- cbind(piMat, start$piMat[orderInc, , drop = FALSE])
+
+    ## initialize log-likelihood
     logL_max0 <- - Inf
-    for (oneStart in start$censorRate) {
 
-        if (is.null(start$piVec)) {
-            ## determined by censorRate
-            incDat$piVec <- piVec <- initPi(oneStart, dat = incDat)
-        } else {
-            incDat$piVec <- piVec <- start$piVec[orderInc]
-        }
+    for (oneStart in seq_len(ncol(piMat))) {
 
+        incDat$piVec <- piVec <- piMat[, oneStart]
         ## trace the log-likelihood for observed data
         logL <- rep(NA, control$iterlim_ECM)
         ## trace beta estimates from each iteration of ECM
@@ -302,6 +314,7 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
             betaMat[iter + 1L, ] <- betaEst$estimate
             tol <- sum((betaMat[iter + 1L, ] - betaMat[iter, ]) ^ 2) /
                 sum((betaMat[iter + 1L, ] + betaMat[iter, ]) ^ 2)
+
             if (tol < control$steptol_ECM) {
                 betaHat <- betaEst$estimate
                 break
@@ -317,7 +330,11 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
             oneFit0 <- oneFit
             betaMat0 <- betaMat
             piVec0 <- piVec
-            censorRate0 <- oneStart
+            if (oneStart <= length(start$censorRate)) {
+                censorRate0 <- start$censorRate[oneStart]
+            } else {
+                pi0 <- start$piVec[oneStart - length(start$censorRate)]
+            }
         }
     }
 
@@ -325,7 +342,8 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
     betaMat0 <- rmNA(betaMat0)
     ## prepare for outputs
     piEst <- oneFit0$piVec[(reOrderIdx <- order(orderInc))]
-    start$piVec <- piVec0[reOrderIdx]
+    start$piEst <- piVec0[reOrderIdx]
+    start$pi0 <- pi0
     start$censorRate0 <- censorRate0
     ## update results
     h0Dat$h0Vec <- oneFit0$h0Vec
@@ -569,7 +587,7 @@ h0t <- function(dat, tied) {
 
 ## building blocks that follows notation in manuscript
 deltaTildeN <- function(dat, tied) {
-    out <- with(dat, eventIdx * p_jk)
+    out <- with(dat, as.numeric(eventIdx) * p_jk)
     if (tied)
         return(aggregateSum(out, dat$time))
     out
@@ -587,7 +605,7 @@ h_c <- function(dat, tied) {
 
 
 deltaC <- function(dat, tied) {
-    out <- with(dat, (! eventIdx) * p_jk)
+    out <- with(dat, as.numeric(! eventIdx) * p_jk)
     if (tied)
         return(aggregateSum(out, dat$time))
     out
@@ -665,14 +683,14 @@ initPi <- function(censorRate, dat, equally = FALSE, ...)
     dat$numRecord <- numTab[match(as.character(dat$ID), names(numTab))]
 
     ## subject ID with censoring records
-    cenID <- with(subset(dat, ! eventIdx), unique(ID))
+    cenID <- with(base::subset(dat, ! eventIdx), unique(ID))
     cenIdx <- as.integer(dat$ID %in% cenID)
 
     ## for subjects with multiple records
     idx1 <- with(dat, numRecord > 1L & eventIdx)
     idx2 <- with(dat, numRecord > 1L & (! eventIdx))
 
-    piVec <- rep(1L, NROW(dat))
+    piVec <- rep(1, NROW(dat))
     if (equally) {
         piVec[idx1 | idx2] <- 1 / dat[idx1 | idx2, "numRecord"]
     } else {
@@ -684,7 +702,31 @@ initPi <- function(censorRate, dat, equally = FALSE, ...)
 }
 
 
-iCoxph_start <- function(beta, censorRate, piVec, multiStart = FALSE,
+## assign initial piVec not based on censoring
+initPi2 <- function(pi0, dat, randomly = FALSE, ...)
+{
+    nData <- NROW(dat)
+    piVec <- rep(1L, nData)
+    dupIdx <- duplicated(dat$ID)
+    dupID <- dat$ID[dupIdx]
+    uniIdx <- ! dat$ID %in% unique(dupID)
+    numTab <- table(dupID)
+    numRecord <- numTab[match(as.character(dupID), names(numTab))]
+    firstIdx <- ! (dupIdx | uniIdx)
+    piVec[firstIdx] <- pi0
+    piVec[dupIdx] <- (1 - pi0) / numRecord
+    ## randomly impute within subject
+    if (randomly) {
+        randomOrder <- stats::runif(nData)
+        piVec <- piVec[order(dat$ID, randomOrder)]
+    }
+    ## return
+    piVec
+}
+
+
+iCoxph_start <- function(beta, censorRate = NULL, piVec = NULL, piMat = NULL,
+                         multiStart = FALSE, randomly = FALSE,
                          ..., nBeta_, dat_)
 {
     ## nonsense to eliminate cran checking note
@@ -693,7 +735,7 @@ iCoxph_start <- function(beta, censorRate, piVec, multiStart = FALSE,
     dupID <- with(dat_, unique(ID[duplicated(ID)]))
     uniDat <- base::subset(dat_, ! ID %in% dupID)
     censorRate0 <- round(1 - mean(uniDat$event), 2)
-    if (missing(censorRate)) {
+    if (is.null(censorRate)) {
         ## set censorRate from sample truth data
         ## if missing at random, the true censoring rate
         ## can be estimated by true data of unique records
@@ -735,20 +777,20 @@ iCoxph_start <- function(beta, censorRate, piVec, multiStart = FALSE,
             ), call. = FALSE)
     }
 
-    if (missing(piVec)) {
-        piVec <- NULL
-    } else {
-        if (length(piVec) != nrow(dat_))
-            stop("'piVec' must have same length with number of rows of data.")
-        if (any(piVec > 1 | piVec < 0))
-            stop("'piVec' has to be between 0 and 1.")
+    if (! is.null(piMat)) {
+        if (nrow(piMat) != nrow(dat_))
+            stop("'piMat' must have same length with number of rows of data.")
+        if (any(piMat > 1 | piMat < 0))
+            stop("'piMat' has to be between 0 and 1.")
         censorRate <- NA                # will not be used
     }
     ## return
     list(beta = beta,
          piVec = piVec,
+         piMat = piMat,
          censorRate = censorRate,
-         censorRate0 = censorRate0)
+         censorRate0 = censorRate0,
+         randomly = randomly)
 }
 
 
