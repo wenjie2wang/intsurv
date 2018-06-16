@@ -284,56 +284,59 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
     ## initialize log-likelihood
     logL_max0 <- - Inf
 
-    for (oneStart in seq_len(ncol(piMat))) {
+    for (oneBetaVec in seq_len(ncol(start$betaMat))) {
+        for (oneStart in seq_len(ncol(piMat))) {
 
-        incDat$piVec <- piVec <- piMat[, oneStart]
-        ## trace the log-likelihood for observed data
-        logL <- rep(NA, control$iterlim_ECM)
-        ## trace beta estimates from each iteration of ECM
-        betaMat <- matrix(NA, nrow = control$iterlim_ECM + 1L, ncol = nBeta)
-        betaMat[1L, ] <- start$beta
-        tolPi <- sqrt(control$steptol_ECM)
+            incDat$piVec <- piVec <- piMat[, oneStart]
+            ## trace the log-likelihood for observed data
+            logL <- rep(NA, control$iterlim_ECM)
+            ## trace beta estimates from each iteration of ECM
+            betaMat <- matrix(NA, nrow = control$iterlim_ECM + 1L, ncol = nBeta)
+            betaMat[1L, ] <- start$betaMat[, oneBetaVec]
+            tolPi <- sqrt(control$steptol_ECM)
 
-        for (iter in seq_len(control$iterlim_ECM)) {
-            oneFit <- oneECMstep(betaHat = betaMat[iter, ],
-                                 h0Dat = h0Dat,
-                                 h_cDat = h_cDat,
-                                 dat = incDat,
-                                 xMat = xMat,
-                                 tied = tied,
-                                 control = control)
-            ## log likehood
-            logL[iter] <- oneFit$logL
+            for (iter in seq_len(control$iterlim_ECM)) {
+                oneFit <- oneECMstep(betaHat = betaMat[iter, ],
+                                     h0Dat = h0Dat,
+                                     h_cDat = h_cDat,
+                                     dat = incDat,
+                                     xMat = xMat,
+                                     tied = tied,
+                                     control = control)
+                ## log likehood
+                logL[iter] <- oneFit$logL
 
-            ## always update p_jk or not? maybe yes
-            if (control$alwaysUpdatePi || (iter > 1 && tol < tolPi))
-                incDat$piVec <- oneFit$piVec
+                ## always update p_jk or not? maybe yes
+                if (control$alwaysUpdatePi || (iter > 1 && tol < tolPi))
+                    incDat$piVec <- oneFit$piVec
 
-            ## update beta estimates
-            betaEst <- oneFit$betaEst
-            betaMat[iter + 1L, ] <- betaEst$estimate
-            tol <- sum((betaMat[iter + 1L, ] - betaMat[iter, ]) ^ 2) /
-                sum((betaMat[iter + 1L, ] + betaMat[iter, ]) ^ 2)
+                ## update beta estimates
+                betaEst <- oneFit$betaEst
+                betaMat[iter + 1L, ] <- betaEst$estimate
+                tol <- sum((betaMat[iter + 1L, ] - betaMat[iter, ]) ^ 2) /
+                    sum((betaMat[iter + 1L, ] + betaMat[iter, ]) ^ 2)
 
-            if (tol < control$steptol_ECM) {
-                betaHat <- betaEst$estimate
-                break
+                if (tol < control$steptol_ECM) {
+                    betaHat <- betaEst$estimate
+                    break
+                }
             }
-        }
 
-        ## keep the one fit maximizing observed log likelihood
-        logL <- rmNA(logL)
-        logL_max <- logL[length(logL)]
-        if (logL_max > logL_max0) {
-            logL_max0 <- logL_max
-            logL0 <- logL
-            oneFit0 <- oneFit
-            betaMat0 <- betaMat
-            piVec0 <- piVec
-            if (oneStart <= length(start$censorRate)) {
-                censorRate0 <- start$censorRate[oneStart]
-            } else {
-                pi0 <- start$piVec[oneStart - length(start$censorRate)]
+            ## keep the one fit maximizing observed log likelihood
+            logL <- rmNA(logL)
+            logL_max <- logL[length(logL)]
+            if (logL_max > logL_max0) {
+                logL_max0 <- logL_max
+                logL0 <- logL
+                oneFit0 <- oneFit
+                betaMat0 <- betaMat
+                piVec0 <- piVec
+                beta0 <- betaMat[1L, ]
+                if (oneStart <= length(start$censorRate)) {
+                    censorRate0 <- start$censorRate[oneStart]
+                } else {
+                    pi0 <- start$piVec[oneStart - length(start$censorRate)]
+                }
             }
         }
     }
@@ -345,6 +348,7 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
     start$piEst <- piVec0[reOrderIdx]
     start$pi0 <- pi0
     start$censorRate0 <- censorRate0
+    start$beta0 <- beta0
     ## update results
     h0Dat$h0Vec <- oneFit0$h0Vec
     h_cDat$h_cVec <- oneFit0$h_cVec
@@ -725,7 +729,9 @@ initPi2 <- function(pi0, dat, randomly = FALSE, ...)
 }
 
 
-iCoxph_start <- function(beta, censorRate = NULL, piVec = NULL, piMat = NULL,
+iCoxph_start <- function(betaVec = NULL, betaMat = NULL,
+                         piVec = NULL, piMat = NULL,
+                         censorRate = NULL,
                          multiStart = FALSE, randomly = FALSE,
                          ..., nBeta_, dat_)
 {
@@ -749,10 +755,10 @@ iCoxph_start <- function(beta, censorRate = NULL, piVec = NULL, piMat = NULL,
                    "should between 0 and 1."))
 
     ## initialize covariate coefficient: beta
-    if (missing(beta)) {
+    if (is.null(betaVec)) {
         ## if high censoring for subjects having unique records
         if (mean(uniDat$event) < 0.01) {
-            beta <- rep(0, nBeta_)
+            betaVec <- matrix(rep(0, nBeta_), ncol = 1)
         } else {
             uniDat$eventIdx <- NULL
             tmp <- tryCatch(
@@ -767,15 +773,16 @@ iCoxph_start <- function(beta, censorRate = NULL, piVec = NULL, piMat = NULL,
                         rep(0, nBeta_)
                     else
                         as.numeric(tmp$coefficients)
+            betaVec <- as.matrix(beta)
         }
-    } else {
-        beta <- as.numeric(beta)
-        if (length(beta) != nBeta_)
-            stop(wrapMessages(
-                "Number of starting values for coefficients of",
-                "covariates does not match with the specified formula."
-            ), call. = FALSE)
     }
+    betaMat <- cbind(betaMat, betaVec)
+    if (nrow(betaMat) != nBeta_)
+        stop(wrapMessages(
+            "Number of starting values for coefficients of",
+            "covariates does not match with the specified formula."
+        ), call. = FALSE)
+
 
     if (! is.null(piMat)) {
         if (nrow(piMat) != nrow(dat_))
@@ -785,7 +792,7 @@ iCoxph_start <- function(beta, censorRate = NULL, piVec = NULL, piMat = NULL,
         censorRate <- NA                # will not be used
     }
     ## return
-    list(beta = beta,
+    list(betaMat = betaMat,
          piVec = piVec,
          piMat = piMat,
          censorRate = censorRate,
