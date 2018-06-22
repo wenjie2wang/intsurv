@@ -793,9 +793,9 @@ iCoxph_start <- function(betaVec = NULL, betaMat = NULL,
             p_jk_denom <- aggregateSum(w_jk, dat_$ID, simplify = FALSE)
             pi_par <- ifelse(dupIdx, w_jk / p_jk_denom, 1)
         }
+        piMat <- cbind(piMat, pi_par)
     }
 
-    piMat <- cbind(piMat, pi_par)
     ## initialize covariate coefficient: beta
     if (is.null(betaVec)) {
         ## if high censoring for subjects having unique records
