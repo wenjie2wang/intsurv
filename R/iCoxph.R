@@ -313,8 +313,8 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
                 ## update beta estimates
                 betaEst <- oneFit$betaEst
                 betaMat[iter + 1L, ] <- betaEst$estimate
-                tol <- sum((betaMat[iter + 1L, ] - betaMat[iter, ]) ^ 2) /
-                    sum((betaMat[iter + 1L, ] + betaMat[iter, ]) ^ 2)
+                tol <- L2norm2(betaMat[iter + 1L, ] - betaMat[iter, ]) /
+                    L2norm2(betaMat[iter + 1L, ] + betaMat[iter, ])
 
                 if (tol < control$steptol_ECM) {
                     betaHat <- betaEst$estimate
@@ -484,6 +484,8 @@ oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, tied, control)
     dat$p_jk <- dat$piVec
     h0Dat$h0Vec <- h0t(dat, tied = tied)
     h_cDat$h_cVec <- h_c(dat, tied = tied)
+    ## help converge more quickly?
+    ## dat$p_jk <- ifelse(dat$p_jk < 1e-3, 0, dat$p_jk)
 
     ## update baseline hazard rate of event times
     h0Dat$H0Vec <- cumsum(h0Dat$h0Vec)
@@ -531,6 +533,7 @@ oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, tied, control)
 
     ## log-likelihood function under observed data
     logL <- sum(log(dat$p_jk_denom))
+
 
     ## update h0_jk and h_c_jk with previous (or initial) estimates of beta
     ## h0Vec <- h0t(dat, tied)
@@ -731,7 +734,7 @@ initPi2 <- function(pi0, dat, randomly = FALSE, ...)
 
 iCoxph_start <- function(betaVec = NULL, betaMat = NULL,
                          piVec = NULL, piMat = NULL,
-                         censorRate = NULL,
+                         censorRate = NULL, parametric = FALSE,
                          multiStart = FALSE, randomly = FALSE,
                          ..., nBeta_, dat_)
 {
@@ -739,7 +742,8 @@ iCoxph_start <- function(betaVec = NULL, betaMat = NULL,
     ID <- NULL
 
     dupID <- with(dat_, unique(ID[duplicated(ID)]))
-    uniDat <- base::subset(dat_, ! ID %in% dupID)
+    dupIdx <- dat_$ID %in% dupID
+    uniDat <- base::subset(dat_, ! dupIdx)
     censorRate0 <- round(1 - mean(uniDat$event), 2)
     if (is.null(censorRate)) {
         ## set censorRate from sample truth data
@@ -750,10 +754,48 @@ iCoxph_start <- function(betaVec = NULL, betaMat = NULL,
                           seq.int(0, 1, step_by)
                       else
                           censorRate0
+
     } else if (any(censorRate > 1 | censorRate < 0))
         stop(paste("Starting prob. of censoring case being true",
                    "should between 0 and 1."))
 
+    ## add parametric estimate as starting values
+    if (parametric) {
+        tmp <- tryCatch(
+            survival::survreg(survival::Surv(time, event) ~
+                                  as.matrix(uniDat[, - seq_len(3L)]),
+                              data = uniDat),
+            warning = function(w) {
+                warning(w)
+                return(NULL)
+            })
+        if (is.null(tmp))
+            pi_par <- NULL
+        else {
+            tmpList <- transCoef(tmp)
+            betaHat <- tmpList$beta
+            lambda0 <- tmpList$lambda0
+            shape <- 1 / tmp$scale
+            xMat <- as.matrix(dat_[, - seq_len(3L)])
+            betaX <- xMat %*% betaHat
+            hVec <- exp(log(lambda0) + log(shape) +
+                        (shape - 1) * log(dat_$time) + betaX)
+            HVec <- exp(log(lambda0) + shape * log(dat_$time) + betaX)
+            sVec <- pmax(exp(- HVec), .Machine$double.eps)
+            censorTimes <- dat_$time[dat_$event < 1]
+            censorMax <- max(censorTimes)
+            censorMin <- min(censorTimes)
+            h_cVec <- 1 / (censorMax - censorMin)
+            G_cVec <- (censorMax - dat_$time) / (censorMax - censorMin)
+            w_jk <- with(uniDat, ifelse(event,
+                                              hVec * sVec * G_cVec,
+                                              sVec * h_cVec * G_cVec))
+            p_jk_denom <- aggregateSum(w_jk, dat_$ID, simplify = FALSE)
+            pi_par <- ifelse(dupIdx, w_jk / p_jk_denom, 1)
+        }
+    }
+
+    piMat <- cbind(piMat, pi_par)
     ## initialize covariate coefficient: beta
     if (is.null(betaVec)) {
         ## if high censoring for subjects having unique records
@@ -777,19 +819,18 @@ iCoxph_start <- function(betaVec = NULL, betaMat = NULL,
         }
     }
     betaMat <- cbind(betaMat, betaVec)
+    ## some quick checks on beta
     if (nrow(betaMat) != nBeta_)
         stop(wrapMessages(
             "Number of starting values for coefficients of",
             "covariates does not match with the specified formula."
         ), call. = FALSE)
-
-
+    ## some quick checks on pi
     if (! is.null(piMat)) {
         if (nrow(piMat) != nrow(dat_))
             stop("'piMat' must have same length with number of rows of data.")
         if (any(piMat > 1 | piMat < 0))
             stop("'piMat' has to be between 0 and 1.")
-        censorRate <- NA                # will not be used
     }
     ## return
     list(betaMat = betaMat,
@@ -805,7 +846,8 @@ iCoxph_control <- function(gradtol = 1e-6, stepmax = 1e2,
                            steptol = 1e-6, iterlim = 1e2,
                            steptol_ECM = 1e-4, iterlim_ECM = 1e2,
                            noSE = TRUE, h = sqrt(steptol_ECM),
-                           ..., alwaysUpdatePi = NULL,
+                           ...,
+                           alwaysUpdatePi = NULL,
                            censorRate0_)
 {
     ## controls for function stats::nlm
@@ -840,4 +882,22 @@ iCoxph_control <- function(gradtol = 1e-6, stepmax = 1e2,
          h = h,
          alwaysUpdatePi = alwaysUpdatePi,
          noSE = noSE)
+}
+
+## computing L2-norm of vector x
+L2norm <- function(x) {
+    sqrt(sum(x ^ 2))
+}
+L2norm2 <- function(x) {
+    sum(x ^ 2)
+}
+
+### transform estimates from AFT form to PH form for Weibull model
+transCoef <- function(survRegObj) {
+    shape <- 1 / survRegObj$scale
+    betaEst <- survRegObj$coefficients
+    lambda0 <- exp(- shape * betaEst[1])
+    names(lambda0) <- NULL
+    betaEst <- - shape * betaEst[- 1]
+    list(beta = betaEst, lambda0 = lambda0)
 }
