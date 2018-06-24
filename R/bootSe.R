@@ -133,26 +133,22 @@ bootSe <- function(object, numBoot = 50, se = c("mad", "inter-quantile", "sd"),
 
 
 ### internal functions =========================================================
-bootSe_start <- function(beta0, censorRate, multiStart = TRUE, ...,
-                         start0)
+bootSe_start <- function(multiStart = TRUE, ..., start0)
 {
     censorRate0 <- start0$censorRate0
-    if (missing(beta0))
-        beta <- start0$beta
-    if (missing(censorRate)) {
-        censorRate <- if (! multiStart) {
-                          censorRate0
-                      } else {
-                          seq.int(max(0, censorRate0 - 0.2),
-                                  min(1, censorRate0 + 0.2), 0.05)
-                      }
-    }
+    betaMat <- matrix(start0$beta0, ncol = 1)
+    censorRate <- if (! multiStart) {
+                      censorRate0
+                  } else {
+                      seq.int(max(0, censorRate0 - 0.2),
+                              min(1, censorRate0 + 0.2), 0.05)
+                  }
     piVec <- if (is.na(start0$pi0)) {
                  NULL
              } else {
                  start0$pi0
              }
-    list(beta = beta,
+    list(betaMat = betaMat,
          censorRate = censorRate,
          censorRate0 = censorRate0,
          piVec = piVec)

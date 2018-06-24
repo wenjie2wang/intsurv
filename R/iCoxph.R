@@ -306,6 +306,8 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
                 ## log likehood
                 logL[iter] <- oneFit$logL
 
+                tol_pi <- L2norm(oneFit$piVec - incDat$piVec) /
+                    L2norm(oneFit$piVec + incDat$piVec)
                 ## always update p_jk or not? maybe yes
                 if (control$alwaysUpdatePi || (iter > 1 && tol < tolPi))
                     incDat$piVec <- oneFit$piVec
@@ -313,9 +315,10 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
                 ## update beta estimates
                 betaEst <- oneFit$betaEst
                 betaMat[iter + 1L, ] <- betaEst$estimate
-                tol <- L2norm2(betaMat[iter + 1L, ] - betaMat[iter, ]) /
-                    L2norm2(betaMat[iter + 1L, ] + betaMat[iter, ])
+                tol_beta <- L2norm(betaMat[iter + 1L, ] - betaMat[iter, ]) /
+                    L2norm(betaMat[iter + 1L, ] + betaMat[iter, ])
 
+                tol <- tol_beta + tol_pi
                 if (tol < control$steptol_ECM) {
                     betaHat <- betaEst$estimate
                     break
@@ -484,7 +487,7 @@ oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, tied, control)
     dat$p_jk <- dat$piVec
     h0Dat$h0Vec <- h0t(dat, tied = tied)
     h_cDat$h_cVec <- h_c(dat, tied = tied)
-    ## help converge more quickly?
+    ## help converge more quickly
     ## dat$p_jk <- ifelse(dat$p_jk < 1e-3, 0, dat$p_jk)
 
     ## update baseline hazard rate of event times
@@ -844,7 +847,10 @@ iCoxph_start <- function(betaVec = NULL, betaMat = NULL,
 
 iCoxph_control <- function(gradtol = 1e-6, stepmax = 1e2,
                            steptol = 1e-6, iterlim = 1e2,
-                           steptol_ECM = 1e-4, iterlim_ECM = 1e2,
+                           steptol_ECM = 1e-2,
+                           steptol_ECM_beta = 1e-2,
+                           steptol_ECM_pi = 1e-2,
+                           iterlim_ECM = 1e3,
                            noSE = TRUE, h = sqrt(steptol_ECM),
                            ...,
                            alwaysUpdatePi = NULL,
