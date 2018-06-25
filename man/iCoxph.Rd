@@ -145,9 +145,13 @@ The valid named elements are given as follows:
     iterations to be performed before each CM is terminated. The default
     value is \code{1e2}.
 
-\item \code{steptol_ECM}: A positive scalar that specifies the maximum
-    allowable relative step size between each ECM iteration.  The default
-    value is \code{1e-4}.
+\item \code{steptol_ECM_beta}: A positive scalar that specifies the
+    maximum allowable relative step size between each ECM iteration.  The
+    default value is \code{1e-4}.
+
+\item \code{steptol_ECM_pi}: A positive scalar that specifies the
+    maximum allowable relative step size between each ECM iteration.  The
+    default value is \code{1e-4}.
 
 \item \code{iterlim_ECM}: A positive integer specifying the maximum number
     of iterations to be performed before the ECM algorithm is

@@ -93,9 +93,13 @@ NULL
 ##'     iterations to be performed before each CM is terminated. The default
 ##'     value is \code{1e2}.
 ##'
-##' \item \code{steptol_ECM}: A positive scalar that specifies the maximum
-##'     allowable relative step size between each ECM iteration.  The default
-##'     value is \code{1e-4}.
+##' \item \code{steptol_ECM_beta}: A positive scalar that specifies the
+##'     maximum allowable relative step size between each ECM iteration.  The
+##'     default value is \code{1e-4}.
+##'
+##' \item \code{steptol_ECM_pi}: A positive scalar that specifies the
+##'     maximum allowable relative step size between each ECM iteration.  The
+##'     default value is \code{1e-4}.
 ##'
 ##' \item \code{iterlim_ECM}: A positive integer specifying the maximum number
 ##'     of iterations to be performed before the ECM algorithm is
@@ -293,7 +297,7 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
             ## trace beta estimates from each iteration of ECM
             betaMat <- matrix(NA, nrow = control$iterlim_ECM + 1L, ncol = nBeta)
             betaMat[1L, ] <- start$betaMat[, oneBetaVec]
-            tolPi <- sqrt(control$steptol_ECM)
+            tolPi <- sqrt(control$steptol_ECM_pi)
 
             for (iter in seq_len(control$iterlim_ECM)) {
                 oneFit <- oneECMstep(betaHat = betaMat[iter, ],
@@ -306,20 +310,20 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
                 ## log likehood
                 logL[iter] <- oneFit$logL
 
-                tol_pi <- L2norm(oneFit$piVec - incDat$piVec) /
-                    L2norm(oneFit$piVec + incDat$piVec)
+                tol_pi <- L2norm2(oneFit$piVec - incDat$piVec) /
+                    L2norm2(oneFit$piVec + incDat$piVec)
                 ## always update p_jk or not? maybe yes
-                if (control$alwaysUpdatePi || (iter > 1 && tol < tolPi))
+                if (control$alwaysUpdatePi || (iter > 1 && tol_beta < tolPi))
                     incDat$piVec <- oneFit$piVec
 
                 ## update beta estimates
                 betaEst <- oneFit$betaEst
                 betaMat[iter + 1L, ] <- betaEst$estimate
-                tol_beta <- L2norm(betaMat[iter + 1L, ] - betaMat[iter, ]) /
-                    L2norm(betaMat[iter + 1L, ] + betaMat[iter, ])
+                tol_beta <- L2norm2(betaMat[iter + 1L, ] - betaMat[iter, ]) /
+                    L2norm2(betaMat[iter + 1L, ] + betaMat[iter, ])
 
-                tol <- tol_beta + tol_pi
-                if (tol < control$steptol_ECM) {
+                if (tol_beta < control$steptol_ECM_beta &&
+                    tol_pi < control$steptol_ECM_pi) {
                     betaHat <- betaEst$estimate
                     break
                 }
@@ -847,11 +851,10 @@ iCoxph_start <- function(betaVec = NULL, betaMat = NULL,
 
 iCoxph_control <- function(gradtol = 1e-6, stepmax = 1e2,
                            steptol = 1e-6, iterlim = 1e2,
-                           steptol_ECM = 1e-2,
-                           steptol_ECM_beta = 1e-2,
-                           steptol_ECM_pi = 1e-2,
+                           steptol_ECM_beta = 1e-4,
+                           steptol_ECM_pi = 1e-4,
                            iterlim_ECM = 1e3,
-                           noSE = TRUE, h = sqrt(steptol_ECM),
+                           noSE = TRUE, h = sqrt(steptol_ECM_beta),
                            ...,
                            alwaysUpdatePi = NULL,
                            censorRate0_)
@@ -867,8 +870,10 @@ iCoxph_control <- function(gradtol = 1e-6, stepmax = 1e2,
         stop("maximum number of iterations must be > 0.")
 
     ## determining convergence of EM
-    if (! is.numeric(steptol_ECM) || steptol_ECM <= 0)
-        stop("value of 'steptol_ECM' must be > 0.")
+    if (! is.numeric(steptol_ECM_beta) || steptol_ECM_beta <= 0)
+        stop("value of 'steptol_ECM_beta' must be > 0.")
+    if (! is.numeric(steptol_ECM_pi) || steptol_ECM_pi <= 0)
+        stop("value of 'steptol_ECM_pi' must be > 0.")
     if (! is.numeric(iterlim_ECM) || iterlim_ECM <= 0)
         stop("maximum number of iterations for EM must be > 0.")
 
@@ -883,7 +888,8 @@ iCoxph_control <- function(gradtol = 1e-6, stepmax = 1e2,
     ## return
     list(gradtol = gradtol, stepmax = stepmax,
          steptol = steptol, iterlim = iterlim,
-         steptol_ECM = steptol_ECM,
+         steptol_ECM_beta = steptol_ECM_beta,
+         steptol_ECM_pi = steptol_ECM_pi,
          iterlim_ECM = iterlim_ECM,
          h = h,
          alwaysUpdatePi = alwaysUpdatePi,
