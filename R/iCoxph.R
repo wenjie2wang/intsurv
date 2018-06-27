@@ -269,10 +269,12 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
     xMat <- as.matrix(incDat[, 4L : (3L + nBeta)])
 
     ## form different starting values of piVec
-    piMat <- matrix(
-        sapply(start$censorRate, initPi, dat = incDat),
-        nrow = nObs
-    )
+    piMat <- if (! is.na(start$censorRate)) {
+                 matrix(
+                     sapply(start$censorRate, initPi, dat = incDat),
+                     nrow = nObs
+                 )
+             }
     pi0 <- NA
     if (! is.null(start$piVec)) {
         piMat_new <- matrix(
@@ -287,17 +289,20 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
 
     ## initialize log-likelihood
     logL_max0 <- - Inf
+    n_beta_start <- ncol(start$betaMat)
+    n_pi_start <- ncol(piMat)
+    logL_max_vec <- rep(NA, n_beta_start * n_pi_start)
 
-    for (oneBetaVec in seq_len(ncol(start$betaMat))) {
-        for (oneStart in seq_len(ncol(piMat))) {
+    for (oneBeta in seq_len(n_beta_start)) {
+        for (onePi in seq_len(n_pi_start)) {
 
-            incDat$piVec <- piVec <- piMat[, oneStart]
+            incDat$piVec <- piVec <- piMat[, onePi]
             ## trace the log-likelihood for observed data
             logL <- rep(NA, control$iterlim_ECM)
             ## trace beta estimates from each iteration of ECM
             betaMat <- matrix(NA, nrow = control$iterlim_ECM + 1L, ncol = nBeta)
-            betaMat[1L, ] <- start$betaMat[, oneBetaVec]
-            tolPi <- sqrt(control$steptol_ECM_pi)
+            betaMat[1L, ] <- start$betaMat[, oneBeta]
+            tol_update <- sqrt(control$steptol_ECM_beta)
 
             for (iter in seq_len(control$iterlim_ECM)) {
                 oneFit <- oneECMstep(betaHat = betaMat[iter, ],
@@ -310,17 +315,18 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
                 ## log likehood
                 logL[iter] <- oneFit$logL
 
-                tol_pi <- L2norm2(oneFit$piVec - incDat$piVec) /
-                    L2norm2(oneFit$piVec + incDat$piVec)
                 ## always update p_jk or not? maybe yes
-                if (control$alwaysUpdatePi || (iter > 1 && tol_beta < tolPi))
+                if (control$alwaysUpdatePi ||
+                    (iter > 1 && tol_beta < tol_update))
                     incDat$piVec <- oneFit$piVec
 
                 ## update beta estimates
                 betaEst <- oneFit$betaEst
                 betaMat[iter + 1L, ] <- betaEst$estimate
-                tol_beta <- L2norm2(betaMat[iter + 1L, ] - betaMat[iter, ]) /
-                    L2norm2(betaMat[iter + 1L, ] + betaMat[iter, ])
+                tol_beta <- L2norm(betaMat[iter + 1L, ] - betaMat[iter, ]) /
+                    L2norm(betaMat[iter + 1L, ] + betaMat[iter, ])
+                tol_pi <- L2norm(oneFit$piVec - incDat$piVec) /
+                    L2norm(oneFit$piVec + incDat$piVec)
 
                 if (tol_beta < control$steptol_ECM_beta &&
                     tol_pi < control$steptol_ECM_pi) {
@@ -331,7 +337,8 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
 
             ## keep the one fit maximizing observed log likelihood
             logL <- rmNA(logL)
-            logL_max <- logL[length(logL)]
+            logL_max <- logL_max_vec[(oneBeta - 1) * n_pi_start + onePi] <-
+                logL[length(logL)]
             if (logL_max > logL_max0) {
                 logL_max0 <- logL_max
                 logL0 <- logL
@@ -339,10 +346,11 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
                 betaMat0 <- betaMat
                 piVec0 <- piVec
                 beta0 <- betaMat[1L, ]
-                if (oneStart <= length(start$censorRate)) {
-                    censorRate0 <- start$censorRate[oneStart]
+                if (onePi <= length(rmNA(start$censorRate))) {
+                    start$censorRate0 <- start$censorRate[onePi]
                 } else {
-                    pi0 <- start$piVec[oneStart - length(start$censorRate)]
+                    start$pi0 <-
+                        start$piVec[onePi - length(rmNA(start$censorRate))]
                 }
             }
         }
@@ -353,9 +361,8 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
     ## prepare for outputs
     piEst <- oneFit0$piVec[(reOrderIdx <- order(orderInc))]
     start$piEst <- piVec0[reOrderIdx]
-    start$pi0 <- pi0
-    start$censorRate0 <- censorRate0
     start$beta0 <- beta0
+    start$logL_max_vec <- logL_max_vec
     ## update results
     h0Dat$h0Vec <- oneFit0$h0Vec
     h_cDat$h_cVec <- oneFit0$h_cVec
@@ -492,7 +499,7 @@ oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, tied, control)
     h0Dat$h0Vec <- h0t(dat, tied = tied)
     h_cDat$h_cVec <- h_c(dat, tied = tied)
     ## help converge more quickly
-    ## dat$p_jk <- ifelse(dat$p_jk < 1e-3, 0, dat$p_jk)
+    dat$p_jk <- ifelse(dat$p_jk < 1e-3, 0, dat$p_jk)
 
     ## update baseline hazard rate of event times
     h0Dat$H0Vec <- cumsum(h0Dat$h0Vec)
@@ -741,8 +748,11 @@ initPi2 <- function(pi0, dat, randomly = FALSE, ...)
 
 iCoxph_start <- function(betaVec = NULL, betaMat = NULL,
                          piVec = NULL, piMat = NULL,
-                         censorRate = NULL, parametric = FALSE,
-                         multiStart = FALSE, randomly = FALSE,
+                         censorRate = NULL,
+                         parametric = FALSE,
+                         parametricOnly = FALSE,
+                         multiStart = FALSE,
+                         randomly = FALSE,
                          ..., nBeta_, dat_)
 {
     ## nonsense to eliminate cran checking note
@@ -759,6 +769,8 @@ iCoxph_start <- function(betaVec = NULL, betaMat = NULL,
         step_by <- 0.02
         censorRate <- if (multiStart)
                           seq.int(0, 1, step_by)
+                      else if (parametricOnly)
+                          NA_real_
                       else
                           censorRate0
 
@@ -772,11 +784,9 @@ iCoxph_start <- function(betaVec = NULL, betaMat = NULL,
             survival::survreg(survival::Surv(time, event) ~
                                   as.matrix(uniDat[, - seq_len(3L)]),
                               data = uniDat),
-            warning = function(w) {
-                warning(w)
-                return(NULL)
-            })
-        if (is.null(tmp))
+            warning = function(w) w,
+            error = function(e) e)
+        if (any(c("warning", "error") %in% class(tmp)))
             pi_par <- NULL
         else {
             tmpList <- transCoef(tmp)
@@ -795,8 +805,8 @@ iCoxph_start <- function(betaVec = NULL, betaMat = NULL,
             h_cVec <- 1 / (censorMax - censorMin)
             G_cVec <- (censorMax - dat_$time) / (censorMax - censorMin)
             w_jk <- with(uniDat, ifelse(event,
-                                              hVec * sVec * G_cVec,
-                                              sVec * h_cVec * G_cVec))
+                                        hVec * sVec * G_cVec,
+                                        sVec * h_cVec * G_cVec))
             p_jk_denom <- aggregateSum(w_jk, dat_$ID, simplify = FALSE)
             pi_par <- ifelse(dupIdx, w_jk / p_jk_denom, 1)
         }
@@ -853,7 +863,7 @@ iCoxph_control <- function(gradtol = 1e-6, stepmax = 1e2,
                            steptol = 1e-6, iterlim = 1e2,
                            steptol_ECM_beta = 1e-4,
                            steptol_ECM_pi = 1e-4,
-                           iterlim_ECM = 1e3,
+                           iterlim_ECM = 1e2,
                            noSE = TRUE, h = sqrt(steptol_ECM_beta),
                            ...,
                            alwaysUpdatePi = NULL,

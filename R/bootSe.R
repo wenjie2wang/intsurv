@@ -133,7 +133,7 @@ bootSe <- function(object, numBoot = 50, se = c("mad", "inter-quantile", "sd"),
 
 
 ### internal functions =========================================================
-bootSe_start <- function(multiStart = TRUE, ..., start0)
+bootSe_start <- function(multiStart = FALSE, ..., start0)
 {
     censorRate0 <- start0$censorRate0
     betaMat <- matrix(start0$beta0, ncol = 1)
