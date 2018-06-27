@@ -113,17 +113,25 @@ bootSe <- function(object, numBoot = 50, se = c("mad", "inter-quantile", "sd"),
         colnames(estMat) <- paste0("b", seq_len(nBeta))
         return(estMat)
     }
-    if (identical(se, "mad")) {
-        object@estimates$beta[, "se(coef)"] <- apply(estMat, 1L, function(a) {
+    ## some computing can be skipped but kept now for testing
+    se_mad <- apply(estMat, 1L, function(a) {
             median(abs(a - median(a))) * 1.4826
-        })
-    } else if (identical(se, "inter-quantile")) {
-        object@estimates$beta[, "se(coef)"] <- apply(estMat, 1L, function(a) {
+    })
+    se_interQ <- apply(estMat, 1L, function(a) {
             diff(stats::quantile(a, probs = c(0.25, 0.75))) /
                 (stats::qnorm(0.75) - stats::qnorm(0.25))
-        })
-    } else (identical(se, "sd"))
-        object@estimates$beta[, "se(coef)"] <- apply(estMat, 1L, sd)
+    })
+    se_sd <- apply(estMat, 1L, sd)
+    object@estimates$beta[, "se(coef)"] <-
+        switch(se,
+               "mad" = se_mad,
+               "inter-quantile" = se_interQ,
+               "sd" = se_sd)
+    ## save estMat for testing
+    object@estimates$boostrap_beta <- estMat
+    object@estimates$boostrap_se <- cbind("mad" = se_mad,
+                                          "inter-quantile" = se_interQ,
+                                          "sd" = se_sd)
 
     tmp <- object@estimates$beta[, "z"] <- object@estimates$beta[, "coef"] /
         object@estimates$beta[, "se(coef)"]
@@ -133,25 +141,37 @@ bootSe <- function(object, numBoot = 50, se = c("mad", "inter-quantile", "sd"),
 
 
 ### internal functions =========================================================
-bootSe_start <- function(multiStart = FALSE, ..., start0)
+bootSe_start <- function(betaVec = NULL,
+                         betaMat = NULL,
+                         piVec = NULL,
+                         censorRate = NULL,
+                         ...,
+                         start0)
 {
+    if (is.null(betaVec))
+        betaVec <- start0$beta0
+    if (is.null(piVec))
+        piVec <- start0$piVec
+
     censorRate0 <- start0$censorRate0
-    betaMat <- matrix(start0$beta0, ncol = 1)
-    censorRate <- if (! multiStart) {
-                      censorRate0
-                  } else {
-                      seq.int(max(0, censorRate0 - 0.2),
-                              min(1, censorRate0 + 0.2), 0.05)
-                  }
-    piVec <- if (is.na(start0$pi0)) {
-                 NULL
-             } else {
-                 start0$pi0
-             }
-    list(betaMat = betaMat,
+    if (is.null(censorRate) && ! is.na(censorRate0)) {
+        censorRate <- if (start0$multiStart) {
+                          seq.int(max(0, censorRate0 - 0.2),
+                                  min(1, censorRate0 + 0.2), 0.05)
+                      } else {
+                          start0$censorRate
+                      }
+    }
+
+    ## return
+    list(betaVec = betaVec,
+         betaMat = betaMat,
+         piVec = piVec,
          censorRate = censorRate,
-         censorRate0 = censorRate0,
-         piVec = piVec)
+         parametric = start0$parametric,
+         parametricOnly = start0$parametricOnly,
+         multiStart = start0$multiStart,
+         randomly = start0$randomly)
 }
 
 

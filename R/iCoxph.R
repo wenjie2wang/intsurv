@@ -269,7 +269,8 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
     xMat <- as.matrix(incDat[, 4L : (3L + nBeta)])
 
     ## form different starting values of piVec
-    piMat <- if (! is.na(start$censorRate)) {
+    piMat <- if (! all(is.na(start$censorRate))) {
+                 start$censorRate <- rmNA(start$censorRate)
                  matrix(
                      sapply(start$censorRate, initPi, dat = incDat),
                      nrow = nObs
@@ -345,12 +346,12 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
                 oneFit0 <- oneFit
                 betaMat0 <- betaMat
                 piVec0 <- piVec
-                beta0 <- betaMat[1L, ]
-                if (onePi <= length(rmNA(start$censorRate))) {
+                start$beta0 <- betaMat[1L, ]
+                if (onePi <= length(start$censorRate)) {
                     start$censorRate0 <- start$censorRate[onePi]
                 } else {
-                    start$pi0 <-
-                        start$piVec[onePi - length(rmNA(start$censorRate))]
+                    start["pi0"] <-
+                        list(start$piVec[onePi - length(start$censorRate)])
                 }
             }
         }
@@ -361,7 +362,6 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
     ## prepare for outputs
     piEst <- oneFit0$piVec[(reOrderIdx <- order(orderInc))]
     start$piEst <- piVec0[reOrderIdx]
-    start$beta0 <- beta0
     start$logL_max_vec <- logL_max_vec
     ## update results
     h0Dat$h0Vec <- oneFit0$h0Vec
@@ -746,14 +746,18 @@ initPi2 <- function(pi0, dat, randomly = FALSE, ...)
 }
 
 
-iCoxph_start <- function(betaVec = NULL, betaMat = NULL,
-                         piVec = NULL, piMat = NULL,
+iCoxph_start <- function(betaVec = NULL,
+                         betaMat = NULL,
+                         piVec = NULL,
+                         piMat = NULL,
                          censorRate = NULL,
                          parametric = FALSE,
                          parametricOnly = FALSE,
                          multiStart = FALSE,
                          randomly = FALSE,
-                         ..., nBeta_, dat_)
+                         ...,
+                         nBeta_,
+                         dat_)
 {
     ## nonsense to eliminate cran checking note
     ID <- NULL
@@ -855,6 +859,9 @@ iCoxph_start <- function(betaVec = NULL, betaMat = NULL,
          piMat = piMat,
          censorRate = censorRate,
          censorRate0 = censorRate0,
+         parametric = parametric,
+         parametricOnly = parametricOnly,
+         multiStart = multiStart,
          randomly = randomly)
 }
 
