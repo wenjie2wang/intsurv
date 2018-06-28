@@ -293,6 +293,7 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
     n_beta_start <- ncol(start$betaMat)
     n_pi_start <- ncol(piMat)
     logL_max_vec <- rep(NA, n_beta_start * n_pi_start)
+    beta_est_mat <- matrix(NA, nrow = n_beta_start * n_pi_start, ncol = nBeta)
 
     for (oneBeta in seq_len(n_beta_start)) {
         for (onePi in seq_len(n_pi_start)) {
@@ -338,8 +339,11 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
 
             ## keep the one fit maximizing observed log likelihood
             logL <- rmNA(logL)
-            logL_max <- logL_max_vec[(oneBeta - 1) * n_pi_start + onePi] <-
-                logL[length(logL)]
+            iter <- (oneBeta - 1) * n_pi_start + onePi
+            n_step <- length(logL)
+            logL_max <- logL_max_vec[iter] <- logL[n_step]
+            beta_est_mat[iter, ] <- betaHat
+
             if (logL_max > logL_max0) {
                 logL_max0 <- logL_max
                 logL0 <- logL
@@ -363,6 +367,7 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
     piEst <- oneFit0$piVec[(reOrderIdx <- order(orderInc))]
     start$piEst <- piVec0[reOrderIdx]
     start$logL_max_vec <- logL_max_vec
+    start$beta_est_mat <- beta_est_mat
     ## update results
     h0Dat$h0Vec <- oneFit0$h0Vec
     h_cDat$h_cVec <- oneFit0$h_cVec
@@ -499,7 +504,8 @@ oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, tied, control)
     h0Dat$h0Vec <- h0t(dat, tied = tied)
     h_cDat$h_cVec <- h_c(dat, tied = tied)
     ## help converge more quickly
-    dat$p_jk <- ifelse(dat$p_jk < 1e-3, 0, dat$p_jk)
+    dat$p_jk <- ifelse(dat$p_jk < 1e-3, 0, ifelse(dat$p_jk > 1 - 1e-3,
+                                                  1, dat$p_jk))
 
     ## update baseline hazard rate of event times
     h0Dat$H0Vec <- cumsum(h0Dat$h0Vec)
@@ -784,37 +790,32 @@ iCoxph_start <- function(betaVec = NULL,
 
     ## add parametric estimate as starting values
     if (parametric) {
-        tmp <- tryCatch(
-            survival::survreg(survival::Surv(time, event) ~
-                                  as.matrix(uniDat[, - seq_len(3L)]),
-                              data = uniDat),
-            warning = function(w) w,
-            error = function(e) e)
-        if (any(c("warning", "error") %in% class(tmp)))
-            pi_par <- NULL
-        else {
-            tmpList <- transCoef(tmp)
-            betaHat <- tmpList$beta
-            lambda0 <- tmpList$lambda0
-            shape <- 1 / tmp$scale
-            xMat <- as.matrix(dat_[, - seq_len(3L)])
-            betaX <- xMat %*% betaHat
-            hVec <- exp(log(lambda0) + log(shape) +
-                        (shape - 1) * log(dat_$time) + betaX)
-            HVec <- exp(log(lambda0) + shape * log(dat_$time) + betaX)
-            sVec <- pmax(exp(- HVec), .Machine$double.eps)
-            censorTimes <- dat_$time[dat_$event < 1]
-            censorMax <- max(censorTimes)
-            censorMin <- min(censorTimes)
-            h_cVec <- 1 / (censorMax - censorMin)
-            G_cVec <- (censorMax - dat_$time) / (censorMax - censorMin)
-            w_jk <- with(uniDat, ifelse(event,
-                                        hVec * sVec * G_cVec,
-                                        sVec * h_cVec * G_cVec))
-            p_jk_denom <- aggregateSum(w_jk, dat_$ID, simplify = FALSE)
-            pi_par <- ifelse(dupIdx, w_jk / p_jk_denom, 1)
-        }
-        piMat <- cbind(piMat, pi_par)
+        uni_xMat <- as.matrix(uniDat[, - seq_len(3L)])
+        xMat <- as.matrix(dat_[, - seq_len(3L)])
+        event_funs <- parametric_start(uniDat$time, uniDat$event, uni_xMat)
+        cen_funs <- parametric_start(uniDat$time, 1 - uniDat$event)
+        hVec <- event_funs$haz_fun(dat_$time, xMat)
+        sVec <- event_funs$surv_fun(dat_$time, xMat)
+        h_cVec <- cen_funs$haz_fun(dat_$time)
+        G_cVec <- cen_funs$surv_fun(dat_$time)
+
+        ## following equations derived
+        log_w_jk_1 <- ifelse(
+            dat_$event > 0,
+            log(hVec) + log(sVec) + log(G_cVec),
+            log(h_cVec) + log(G_cVec) + log(sVec)
+        )
+        w_jk_1 <- exp(log_w_jk_1)
+        p_jk_denom_1 <- aggregateSum(w_jk_1, dat_$ID, simplify = FALSE)
+        pi_par_1 <- ifelse(dupIdx, w_jk_1 / p_jk_denom_1, 1)
+
+        ## if hazard estimates is not reliable
+        log_w_jk_2 <- log(sVec) + log(G_cVec)
+        w_jk_2 <- exp(log_w_jk_2)
+        p_jk_denom_2 <- aggregateSum(w_jk_2, dat_$ID, simplify = FALSE)
+        pi_par_2 <- ifelse(dupIdx, w_jk_2 / p_jk_denom_2, 1)
+
+        piMat <- cbind(piMat, pi_par_1, pi_par_2)
     }
 
     ## initialize covariate coefficient: beta
@@ -921,12 +922,51 @@ L2norm2 <- function(x) {
     sum(x ^ 2)
 }
 
-### transform estimates from AFT form to PH form for Weibull model
-transCoef <- function(survRegObj) {
-    shape <- 1 / survRegObj$scale
-    betaEst <- survRegObj$coefficients
-    lambda0 <- exp(- shape * betaEst[1])
-    names(lambda0) <- NULL
-    betaEst <- - shape * betaEst[- 1]
-    list(beta = betaEst, lambda0 = lambda0)
+## return parametric hazard function and survival function
+parametric_start <- function(time, event, xMat = NULL)
+{
+    ## transform estimates from AFT form to PH form for Weibull model
+    transCoef <- function(survRegObj) {
+        shape <- 1 / survRegObj$scale
+        betaEst <- survRegObj$coefficients
+        lambda0 <- exp(- shape * betaEst[1])
+        names(lambda0) <- NULL
+        betaEst <- - shape * betaEst[- 1]
+        list(beta = betaEst, lambda0 = lambda0)
+    }
+
+    ## fitting with survreg
+    fm <- if (is.null(xMat)) {
+              survival::Surv(time, event) ~ 1
+          } else {
+              survival::Surv(time, event) ~ xMat
+          }
+    event_fit <- survival::survreg(fm)
+    event_list <- transCoef(event_fit)
+    betaHat <- event_list$beta
+    lambda0 <- event_list$lambda0
+    shape <- 1 / event_fit$scale
+
+    ## (baseline) hazard function and survival function
+    haz_fun <- function(time, xMat = NULL) {
+        betaX <- if (! is.null(xMat)) {
+                     as.numeric(xMat %*% betaHat)
+                 } else {
+                     0
+                 }
+        exp(log(lambda0) + log(shape) +
+            (shape - 1) * log(time) + betaX)
+    }
+    surv_fun <- function(time, xMat = NULL) {
+        betaX <- if (! is.null(xMat)) {
+                     as.numeric(xMat %*% betaHat)
+                 } else {
+                     0
+                 }
+        HVec <- exp(log(lambda0) + shape * log(time) + betaX)
+        exp(- HVec)
+    }
+    ## return
+    list(haz_fun = haz_fun,
+         surv_fun = surv_fun)
 }

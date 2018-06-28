@@ -68,4 +68,4 @@ TAGS:
 ## do some cleaning
 .PHONY: clean
 clean:
-	rm -rf *~ */*~ *.Rhistroy *.tar.gz *.Rcheck/ .\#*
+	@rm -rf *~ */*~ *.Rhistroy *.tar.gz *.Rcheck/ .\#*
