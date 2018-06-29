@@ -757,6 +757,7 @@ iCoxph_start <- function(betaVec = NULL,
                          piVec = NULL,
                          piMat = NULL,
                          censorRate = NULL,
+                         semiparametric = FALSE,
                          parametric = FALSE,
                          parametricOnly = FALSE,
                          multiStart = FALSE,
@@ -771,6 +772,9 @@ iCoxph_start <- function(betaVec = NULL,
     dupID <- with(dat_, unique(ID[duplicated(ID)]))
     dupIdx <- dat_$ID %in% dupID
     uniDat <- base::subset(dat_, ! dupIdx)
+    uni_xMat <- as.matrix(uniDat[, - seq_len(3L)])
+    xMat <- as.matrix(dat_[, - seq_len(3L)])
+
     censorRate0 <- round(1 - mean(uniDat$event), 2)
     if (is.null(censorRate)) {
         ## set censorRate from sample truth data
@@ -785,13 +789,11 @@ iCoxph_start <- function(betaVec = NULL,
                           censorRate0
 
     } else if (any(censorRate > 1 | censorRate < 0))
-        stop(paste("Starting prob. of censoring case being true",
-                   "should between 0 and 1."))
+        stop("Starting prob. of censoring case being true",
+             "should between 0 and 1.")
 
-    ## add parametric estimate as starting values
+    ## use parametric estimate as starting values
     if (any(parametric)) {
-        uni_xMat <- as.matrix(uniDat[, - seq_len(3L)])
-        xMat <- as.matrix(dat_[, - seq_len(3L)])
         event_funs <- parametric_start(uniDat$time, uniDat$event, uni_xMat)
         cen_funs <- parametric_start(uniDat$time, 1 - uniDat$event)
         hVec <- event_funs$haz_fun(dat_$time, xMat)
@@ -799,7 +801,7 @@ iCoxph_start <- function(betaVec = NULL,
         h_cVec <- cen_funs$haz_fun(dat_$time)
         G_cVec <- cen_funs$surv_fun(dat_$time)
 
-        ## following equations derived
+        ## following the equations derived
         log_w_jk_1 <- ifelse(
             dat_$event > 0,
             log(hVec) + log(sVec) + log(G_cVec),
@@ -821,6 +823,37 @@ iCoxph_start <- function(betaVec = NULL,
             piMat <- cbind(piMat, pi_par_2)
     }
 
+    ## use non/semi-parametric estimates
+    if (any(semiparametric)) {
+        event_funs <- semi_parametric_start(uniDat$time, uniDat$event, uni_xMat)
+        cen_funs <- semi_parametric_start(uniDat$time, 1 - uniDat$event)
+        hVec <- event_funs$haz_fun(dat_$time, xMat)
+        sVec <- event_funs$surv_fun(dat_$time, xMat)
+        h_cVec <- cen_funs$haz_fun(dat_$time)
+        G_cVec <- cen_funs$surv_fun(dat_$time)
+
+        ## following the equations derived
+        log_w_jk_3 <- ifelse(
+            dat_$event > 0,
+            log(hVec) + log(sVec) + log(G_cVec),
+            log(h_cVec) + log(G_cVec) + log(sVec)
+        )
+        w_jk_3 <- exp(log_w_jk_3)
+        p_jk_denom_3 <- aggregateSum(w_jk_3, dat_$ID, simplify = FALSE)
+        pi_par_3 <- ifelse(dupIdx, w_jk_3 / p_jk_denom_3, 1)
+
+        ## what if the baseline hazard estimates is not available
+        log_w_jk_4 <- log(sVec) + log(G_cVec)
+        w_jk_4 <- exp(log_w_jk_4)
+        p_jk_denom_4 <- aggregateSum(w_jk_4, dat_$ID, simplify = FALSE)
+        pi_par_4 <- ifelse(dupIdx, w_jk_4 / p_jk_denom_4, 1)
+
+        if (semiparametric[1])
+            piMat <- cbind(piMat, pi_par_3)
+        if (length(semiparametric) > 1 && semiparametric[2])
+            piMat <- cbind(piMat, pi_par_4)
+    }
+
     ## initialize covariate coefficient: beta
     if (is.null(betaVec)) {
         ## if high censoring for subjects having unique records
@@ -829,8 +862,7 @@ iCoxph_start <- function(betaVec = NULL,
         } else {
             uniDat$eventIdx <- NULL
             tmp <- tryCatch(
-                survival::coxph(survival::Surv(time, event) ~
-                                    as.matrix(uniDat[, - seq_len(3L)]),
+                survival::coxph(survival::Surv(time, event) ~ uni_xMat,
                                 data = uniDat),
                 warning = function(w) {
                     warning(w)
@@ -944,11 +976,11 @@ parametric_start <- function(time, event, xMat = NULL)
           } else {
               survival::Surv(time, event) ~ xMat
           }
-    event_fit <- survival::survreg(fm)
-    event_list <- transCoef(event_fit)
-    betaHat <- event_list$beta
-    lambda0 <- event_list$lambda0
-    shape <- 1 / event_fit$scale
+    fit <- survival::survreg(fm)
+    shape <- 1 / fit$scale
+    fit_list <- transCoef(fit)
+    betaHat <- fit_list$beta
+    lambda0 <- fit_list$lambda0
 
     ## (baseline) hazard function and survival function
     haz_fun <- function(time, xMat = NULL) {
@@ -968,6 +1000,49 @@ parametric_start <- function(time, event, xMat = NULL)
                  }
         HVec <- exp(log(lambda0) + shape * log(time) + betaX)
         exp(- HVec)
+    }
+    ## return
+    list(haz_fun = haz_fun,
+         surv_fun = surv_fun)
+}
+
+## return semi-parametric hazard function and survival function
+semi_parametric_start <- function(time, event, xMat = NULL)
+{
+    ## fitting with survival::coxph
+    fm <- if (is.null(xMat)) {
+              survival::Surv(time, event) ~ 1
+          } else {
+              survival::Surv(time, event) ~ xMat
+          }
+    fit <- survival::coxph(fm, ties = "breslow")
+    betaHat <- fit$coefficients
+    haz0 <- survival::basehaz(fit, centered = FALSE)
+
+    ## stepfun hazard function
+    haz_fun <- function(time, xMat = NULL) {
+        betaX <- if (! is.null(xMat)) {
+                     as.numeric(xMat %*% betaHat)
+                 } else {
+                     0
+                 }
+        ## only consider positive hazard here
+        inst_haz0 <- diff(c(0, haz0$hazard))
+        inst_bool <- inst_haz0 > 0
+        base_haz0 <- c(haz0$hazard[inst_bool][1], inst_haz0[inst_bool])
+        base_haz_fun <- stats::stepfun(haz0$time[inst_bool], base_haz0)
+        base_haz_fun(time) * exp(betaX)
+    }
+
+    ## survival function
+    surv_fun <- function(time, xMat = NULL) {
+        betaX <- if (! is.null(xMat)) {
+                     as.numeric(xMat %*% betaHat)
+                 } else {
+                     0
+                 }
+        haz_fun <- stats::stepfun(haz0$time, c(0, haz0$hazard))
+        exp(- haz_fun(time) * exp(betaX))
     }
     ## return
     list(haz_fun = haz_fun,
