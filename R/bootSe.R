@@ -127,6 +127,7 @@ bootSe <- function(object, numBoot = 50, se = c("mad", "inter-quantile", "sd"),
                "mad" = se_mad,
                "inter-quantile" = se_interQ,
                "sd" = se_sd)
+
     ## save estMat for testing
     object@estimates$boostrap_beta <- estMat
     object@estimates$boostrap_se <- cbind("mad" = se_mad,

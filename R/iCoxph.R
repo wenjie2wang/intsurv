@@ -789,7 +789,7 @@ iCoxph_start <- function(betaVec = NULL,
                    "should between 0 and 1."))
 
     ## add parametric estimate as starting values
-    if (parametric) {
+    if (any(parametric)) {
         uni_xMat <- as.matrix(uniDat[, - seq_len(3L)])
         xMat <- as.matrix(dat_[, - seq_len(3L)])
         event_funs <- parametric_start(uniDat$time, uniDat$event, uni_xMat)
@@ -815,7 +815,10 @@ iCoxph_start <- function(betaVec = NULL,
         p_jk_denom_2 <- aggregateSum(w_jk_2, dat_$ID, simplify = FALSE)
         pi_par_2 <- ifelse(dupIdx, w_jk_2 / p_jk_denom_2, 1)
 
-        piMat <- cbind(piMat, pi_par_1, pi_par_2)
+        if (parametric[1])
+            piMat <- cbind(piMat, pi_par_1)
+        if (length(parametric) > 1 && parametric[2])
+            piMat <- cbind(piMat, pi_par_2)
     }
 
     ## initialize covariate coefficient: beta
