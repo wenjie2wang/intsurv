@@ -81,7 +81,7 @@ bootSe <- function(object, numBoot = 50, se = c("mad", "inter-quantile", "sd"),
     cal <- object@call
     ## update start list
     start <- do.call(bootSe_start, c(start, list(start0 = object@start)))
-    cal$start <- quote(start)
+    cal$start <- start
     ## update local control list
     control <- do.call(bootSe_control, control)
     ## add noSE = TRUE to the original control list
@@ -169,6 +169,7 @@ bootSe_start <- function(betaVec = NULL,
          betaMat = betaMat,
          piVec = piVec,
          censorRate = censorRate,
+         semiparametric = start0$semiparametric,
          parametric = start0$parametric,
          parametricOnly = start0$parametricOnly,
          multiStart = start0$multiStart,
