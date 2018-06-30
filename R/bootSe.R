@@ -88,6 +88,7 @@ bootSe <- function(object, numBoot = 50, se = c("mad", "inter-quantile", "sd"),
     fm <- object@formula
     cal$control <- object@control
     cal$control$noSE <- TRUE
+    ## pre-processing data
     cal$data <- quote(bootDat)
     dat <- object@data
     idName <- as.character(fm[[2L]][[2L]])
@@ -95,11 +96,18 @@ bootSe <- function(object, numBoot = 50, se = c("mad", "inter-quantile", "sd"),
     eventName <- as.character(fm[[2L]][[4L]])
     dat <- dat[order(dat[, idName], dat[, timeName],
                      1L - dat[, eventName]), ]
-    uid <- unique(as.character(dat[, idName]))
-    idTab <- table(dat[, idName])
+    id_string <- as.character(dat[, idName])
+    uid <- unique(id_string)
+    dupID <- unique(id_string[duplicated(id_string)])
+    dupIdx <- id_string %in% dupID
+    uni_id_string <- id_string[! dupIdx]
+    dup_id_string <- unique(id_string[dupIdx])
+    idTab <- table(id_string)
     estMat <- replicate(numBoot, {
-        sID <- sort(sample(uid, replace = TRUE))
-        tmpDat <- data.frame(ID = sID)
+        uni_sID <- sample(uni_id_string, replace = TRUE)
+        dup_sID <- sample(dup_id_string, replace = TRUE)
+        sID <- sort(c(uni_sID, dup_sID))
+        tmpDat <- data.frame(ID = sID, stringsAsFactors = FALSE)
         colnames(tmpDat) <- idName
         repNum <- idTab[match(sID, uid)]
         bootDat <- merge(tmpDat, dat, by = idName)

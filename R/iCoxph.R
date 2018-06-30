@@ -199,12 +199,10 @@ NULL
 ##' \code{\link{coef,iCoxph-method}} for estimated covariate coefficients;
 ##' \code{\link{bootSe}} for SE estimates from bootstrap method.
 ##'
-##' @importFrom Rcpp sourceCpp
-##' @useDynLib intsurv
-##'
 ##' @importFrom stats na.fail na.omit na.exclude na.pass .getXlevels
 ##'     model.extract model.frame model.matrix nlm pnorm
 ##' @importFrom survival coxph Surv
+##' @importFrom reda mcf
 ##' @export
 iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
                    start = list(), control = list(), ...)
@@ -1010,15 +1008,34 @@ parametric_start <- function(time, event, xMat = NULL)
 ## return semi-parametric hazard function and survival function
 semi_parametric_start <- function(time, event, xMat = NULL)
 {
-    ## fitting with survival::coxph
+    ## fit with survival::coxph
     fm <- if (is.null(xMat)) {
               survival::Surv(time, event) ~ 1
           } else {
               survival::Surv(time, event) ~ xMat
           }
-    fit <- survival::coxph(fm, ties = "breslow")
-    betaHat <- fit$coefficients
-    haz0 <- survival::basehaz(fit, centered = FALSE)
+    ## fitting may fail in bootstrap samples
+    fit <- tryCatch(survival::coxph(fm),
+                    warning = function(w) {
+                        warning(w)
+                        return(NULL)
+                    })
+
+    if (is.null(fit)) {
+        betaHat <- rep(0, NCOL(xMat))
+        repNum <- ifelse(event > 0, 2, 1)
+        re_time <- rep(time, times = repNum)
+        re_id <- rep(seq_along(time), times = repNum)
+        re_event <- rep(event, times = repNum)
+        re_event[duplicated(re_id)] <- 0
+        haz0 <- reda::mcf(reda::Survr(ID = re_id, time = re_time,
+                                      event = re_event) ~ 1,
+                          variance = "Poisson")
+        haz0 <- data.frame(time = haz0@MCF$time, hazard = haz0@MCF$MCF)
+    } else {
+        betaHat <- as.numeric(fit$coefficients)
+        haz0 <- survival::basehaz(fit, centered = FALSE)
+    }
 
     ## stepfun hazard function
     haz_fun <- function(time, xMat = NULL) {

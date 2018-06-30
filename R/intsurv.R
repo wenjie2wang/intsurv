@@ -30,7 +30,11 @@
 ##' for Uncertain Survival Records Due to Imperfect Data Integration. (working
 ##' in progress)
 ##'
+##' @importFrom Rcpp sourceCpp
+##' @useDynLib intsurv
+##'
 ##' @importFrom methods setClass setGeneric setMethod new validObject
+##'
 ##' @docType package
 ##' @name intsurv-package
 NULL
