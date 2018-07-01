@@ -866,10 +866,11 @@ iCoxph_start <- function(betaVec = NULL,
                     warning(w)
                     return(NULL)
                 })
-            beta <- if (is.null(tmp))
+            beta <- if (is.null(tmp)) {
                         rep(0, nBeta_)
-                    else
+                    } else {
                         as.numeric(tmp$coefficients)
+                    }
             betaVec <- as.matrix(beta)
         }
     }
@@ -1008,18 +1009,17 @@ parametric_start <- function(time, event, xMat = NULL)
 ## return semi-parametric hazard function and survival function
 semi_parametric_start <- function(time, event, xMat = NULL)
 {
-    ## fit with survival::coxph
-    fm <- if (is.null(xMat)) {
-              survival::Surv(time, event) ~ 1
-          } else {
-              survival::Surv(time, event) ~ xMat
-          }
-    ## fitting may fail in bootstrap samples
-    fit <- tryCatch(survival::coxph(fm),
-                    warning = function(w) {
-                        warning(w)
-                        return(NULL)
-                    })
+    ## set default value
+    fit <- NULL
+    ## try fitting with survival::coxph
+    if (! is.null(xMat)) {
+        fm <- survival::Surv(time, event) ~ xMat
+        ## fitting may fail in bootstrap samples
+        fit <- tryCatch(survival::coxph(fm),
+                        warning = function(w) {
+                            return(NULL)
+                        })
+    }
 
     if (is.null(fit)) {
         betaHat <- rep(0, NCOL(xMat))
