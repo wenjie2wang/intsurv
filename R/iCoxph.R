@@ -328,10 +328,12 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
                 tol_pi <- L2norm(oneFit$piVec - incDat$piVec) /
                     L2norm(oneFit$piVec + incDat$piVec)
 
+                betaHat <- betaEst$estimate
                 if (tol_beta < control$steptol_ECM_beta &&
                     tol_pi < control$steptol_ECM_pi) {
-                    betaHat <- betaEst$estimate
                     break
+                } else if (iter == control$iterlim_ECM) {
+                    warning("Reached the maximum number of ECM iterations!")
                 }
             }
 
@@ -904,9 +906,9 @@ iCoxph_start <- function(betaVec = NULL,
 
 iCoxph_control <- function(gradtol = 1e-6, stepmax = 1e2,
                            steptol = 1e-6, iterlim = 1e2,
-                           steptol_ECM_beta = 1e-4,
-                           steptol_ECM_pi = 1e-4,
-                           iterlim_ECM = 1e2,
+                           steptol_ECM_beta = 1e-6,
+                           steptol_ECM_pi = 1e-8,
+                           iterlim_ECM = 2e2,
                            noSE = TRUE, h = sqrt(steptol_ECM_beta),
                            ...,
                            alwaysUpdatePi = NULL,
