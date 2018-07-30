@@ -98,10 +98,9 @@ bootSe <- function(object, numBoot = 50, se = c("mad", "inter-quantile", "sd"),
                      1L - dat[, eventName]), ]
     id_string <- as.character(dat[, idName])
     uid <- unique(id_string)
-    dupID <- unique(id_string[duplicated(id_string)])
-    dupIdx <- id_string %in% dupID
+    dup_id_string <- unique(id_string[duplicated(id_string)])
+    dupIdx <- id_string %in% dup_id_string
     uni_id_string <- id_string[! dupIdx]
-    dup_id_string <- unique(id_string[dupIdx])
     idTab <- table(id_string)
     estMat <- replicate(numBoot, {
         uni_sID <- sample(uni_id_string, replace = TRUE)
