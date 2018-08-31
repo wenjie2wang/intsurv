@@ -5,7 +5,8 @@ Date: 2018-07-30
 Authors@R: c(
     person(given = "Wenjie", family = "Wang",
            email = "wenjie.2.wang@uconn.edu",
-           role = c("aut", "cre")),
+           role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0003-0363-3180")),
     person(given = "Kun", family = "Chen", role = "ctb"),
     person(given = "Jun", family = "Yan", role = "ctb")
     )
