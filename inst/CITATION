@@ -1,28 +1,31 @@
 citHeader("To cite intsurv in publications use:")
 
-citEntry(entry = "Manual",
-         title = "{intsurv}: {I}ntegrative Survival Modeling",
-         author = personList(as.person("Wenjie Wang"),
-                             as.person("Kun Chen"),
-                             as.person("Jun Yan")),
-         note =	"{R} package version 0.1.0.9000",
-         year =	"2018",
-         url = "https://github.com/wenjie2wang/intsurv",
-         textVersion = paste("Wang, W., Chen, K., Yan, J. (2018). intsurv:",
-                             "{I}ntegrative Survival Modeling.",
-                             "R package version 0.1.0.9000",
-                             "https://github.com/wenjie2wang/intsurv"))
+citEntry(
+    entry = "Manual",
+    title = "{intsurv}: {I}ntegrative Survival Models",
+    author = personList(as.person("Wenjie Wang")),
+    note = "{R} package version 0.1.0.9007",
+    year = "2018",
+    url = "https://github.com/wenjie2wang/intsurv",
+    textVersion = paste(
+        "Wang, W. (2018). intsurv:",
+        "{I}ntegrative Survival Models.",
+        "R package version 0.1.0.9007",
+        "https://github.com/wenjie2wang/intsurv"
+    )
+)
 
-citEntry(entry = "Article",
-         title = paste("Integrative Survival Analysis with Uncertain Event",
-                       "Records from Imperfect Data Integration with",
-                       "Application in a Suicide Risk Study"),
-         author = personList(as.person("Wenjie Wang"),
-                             as.person("Kun Chen"),
-                             as.person("Jun Yan")),
-         year =	"2017+",
-         journal = "(working in progress)",
-         textVersion = paste("Integrative Survival Analysis with Uncertain",
-                             "Event Records from Imperfect Data Integration",
-                             "with Application in a Suicide Risk Study",
-                             "(working in progress)"))
+citEntry(
+    entry = "Article",
+    title = paste("Integrative Survival Analysis with Uncertain Event",
+                  "Times in Application to a Suicide Risk Study"),
+    author = personList(as.person("Wenjie Wang"),
+                        as.person("Robert Aseltine"),
+                        as.person("Kun Chen"),
+                        as.person("Jun Yan")),
+    year = "2018+",
+    journal = "(working in progress)",
+    textVersion = paste("Integrative Survival Analysis with Uncertain Event",
+                        "Times in Application to a Suicide Risk Study",
+                        "(working in progress)")
+)

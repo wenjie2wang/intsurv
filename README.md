@@ -24,9 +24,9 @@ remotes::install_github("wenjie2wang/intsurv")
 
 ## Reference
 
-Wang, W., Aseltine, R., Chen, K., & Yan, J. (2017+).  Integrative Survival
-Analysis with Uncertain Event Records from Imperfect Data Integration with
-Application in a Suicide Risk Study. (working in progress)
+Wang, W., Aseltine, R., Chen, K., & Yan, J. (2018+).  Integrative Survival
+Analysis with Uncertain Event Times in Application to a Suicide Risk
+Study. (working in progress)
 
 
 [cranVersion]: http://www.r-pkg.org/badges/version/intsurv
