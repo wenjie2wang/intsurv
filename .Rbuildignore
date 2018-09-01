@@ -5,10 +5,10 @@
 ^\.git$
 ^\.gitignore$
 ^\.travis\.yml$
+^misc$
 ^testing$
 ^working$
 ^Makefile$
-^COPYRIGHT$
 ^LICENSE$
 ^TODO.org$
 ^docs$

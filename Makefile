@@ -1,16 +1,11 @@
-objects := $(wildcard R/*.R) DESCRIPTION
-version := $(shell grep "Version" DESCRIPTION | sed "s/Version: //")
-pkg := $(shell grep "Package" DESCRIPTION | sed "s/Package: //")
+objects := $(wildcard R/*.R) $(wildcard src/*.[hc]pp) DESCRIPTION
+version := $(shell grep "Version" DESCRIPTION | awk '{print $NF}')
+pkg := $(shell grep "Package" DESCRIPTION | awk '{print $NF}')
 tar := $(pkg)_$(version).tar.gz
-# tests := $(wildcard tests/testthat/*.R)
 checkLog := $(pkg).Rcheck/00check.log
-citation := inst/CITATION
-yr := $(shell date +"%Y")
-dt := $(shell date +"%Y-%m-%d")
-
+# tests := $(wildcard tests/testthat/*.R)
 # rmd := vignettes/$(pkg)-intro.Rmd
 # vignettes := vignettes/$(pkg)-intro.html
-cprt := COPYRIGHT
 
 
 .PHONY: check
@@ -29,10 +24,7 @@ install: $(tar)
 
 $(tar): $(objects)
 	Rscript -e "library(methods); devtools::document();";
-	@if [ "$$(uname)" == "Darwin" ];\
-	then printf "remeber to update date and version number\n";\
-	else $(MAKE) -s updateMeta;\
-	fi;\
+	@$(MAKE) updateTimestamp
 	R CMD build .
 
 $(checkLog): $(tar)
@@ -43,21 +35,9 @@ $(checkLog): $(tar)
 
 
 ## update copyright year in HEADER, R script and date in DESCRIPTION
-.PHONY: updateMeta
-updateMeta:
-	@echo "Updating date, version, and copyright year"
-	@sed -i "s/Copyright (C) 2017-*[0-9]\{4\}/Copyright (C) 2017-$(yr)/" $(cprt)
-	@for Rfile in R/*.R; do \
-	if ! grep -q 'Copyright (C)' $$Rfile;\
-	then cat $(cprt) $$Rfile > tmp;\
-	mv tmp $$Rfile;\
-	fi;\
-	sed -i "s/Copyright (C) 2017-*[0-9]*/Copyright (C) 2017-$(yr)/" $$Rfile;\
-	done;
-	@sed -i "s/Date: [0-9]\{4\}-[0-9]\{1,2\}-[0-9]\{1,2\}/Date: $(dt)/" DESCRIPTION
-	@longS="version [0-9]\{1,\}\.[0-9]\{1,\}\.[0-9]\{1,\}\(\.[0-9][0-9]*\)*"
-	@sed -i "s/$longS/version $(version)/" $(citation)
-	@sed -i "1,15 s/20[0-9]\{2\}/$(yr)/" $(citation)
+.PHONY: updateTimestamp
+updateTimestamp:
+	@bash misc/update_timestamp.sh
 
 ## make tags
 .PHONY: TAGS
