@@ -151,8 +151,8 @@ namespace Intsurv {
         for (size_t k {0}; k < control.max_iter; ++k) {
             // update gradient function
             g_k = object.gradient(x);
-            // check whether convergence is reached
-            if (std::sqrt(vec2num(crossprod(g_k))) < control.epsilon) {
+            // check whether convergence is reached by relative difference
+            if (norm(g_k) < control.epsilon * std::max(norm(x), 1.0)) {
                 return status_code;
             }
             // compute column index

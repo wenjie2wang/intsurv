@@ -114,22 +114,21 @@ namespace Intsurv {
         step = 1.0;
         // the function value at the current x
         const arma::vec xp {x};
-        const double fx_init {object.objective(xp)};
+        arma::vec f_grad {x};
+        const double fx_init {object.objective(xp, f_grad)};
         // the projection of gradient on the search direction
         const double dg_init {
-            vec2num(crossprod(object.gradient(xp), drt))
+            vec2num(crossprod(f_grad, drt))
         };
         if (dg_init > 0)
             std::logic_error("Error: the moving direction is not decreasing.");
         const double dg_test {control.c1 * dg_init};
         double size_factor, f_x, dg;
-        arma::vec f_grad;
 
         for (size_t i {0}; i < control.max_iter; ++i) {
             // update x, objective function value, and it gradient
             x = xp + step * drt;
-            f_x = object.objective(x);
-            f_grad = object.gradient(x);
+            f_x = object.objective(x, f_grad);
 
             // check the first Wolfe condition
             if (f_x > fx_init + step * dg_test) {

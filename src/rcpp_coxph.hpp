@@ -72,10 +72,16 @@ namespace Intsurv {
             }
         }
 
-        // function members
+        // function members with overloads
+
+        // function that computes objective function only
         double objective(const arma::vec& beta) const;
+
+        // function that computes gradients only
         arma::vec gradient(const arma::vec& beta) const;
 
+        // function that computes objective and overwrite gradients
+        double objective(const arma::vec& beta, arma::vec& grad) const;
     };
 
     // the negative loglikelihood function based on the broslow's formula
@@ -121,6 +127,40 @@ namespace Intsurv {
                 numer_mat.col(j) = numer_mat.col(j) / h0_denom_event;
             }
             return - (arma::sum(d_z, 0) - arma::sum(numer_mat, 0)).t();
+        }
+    }
+
+    // the negative loglikelihood function based on the broslow's formula
+    double RcppCoxph::objective(const arma::vec& beta,
+                                arma::vec& grad) const
+    {
+        const arma::vec dz_beta {d_z * beta};
+        const arma::vec exp_z_beta {arma::exp(z * beta)};
+        const arma::vec h0_denom {cum_sum(exp_z_beta, true)};
+                arma::mat numer_mat {arma::zeros(z.n_rows, z.n_cols)};
+        for (size_t i {0}; i < z.n_rows; ++i) {
+            numer_mat.row(i) = exp_z_beta(i) * z.row(i);
+        }
+        numer_mat = cum_sum_cols(numer_mat, true);
+        if (hasTies) {
+            arma::vec h0_denom_event {h0_denom.elem(uni_event_ind)};
+            numer_mat = numer_mat.rows(uni_event_ind);
+            for (size_t j {0}; j < z.n_cols; ++j) {
+                numer_mat.col(j) = numer_mat.col(j) % delta_n / h0_denom_event;
+            }
+            // overwrite grad
+            grad = - (arma::sum(d_z, 0) - arma::sum(numer_mat, 0)).t();
+            return - arma::sum(dz_beta - delta_n % arma::log(h0_denom_event));
+        } else {
+            arma::vec h0_denom_event {h0_denom.elem(event_ind)};
+            numer_mat = numer_mat.rows(event_ind);
+            for (size_t j {0}; j < z.n_cols; ++j) {
+                numer_mat.col(j) = numer_mat.col(j) / h0_denom_event;
+            }
+            // overwrite grad
+            grad = - (arma::sum(d_z, 0) - arma::sum(numer_mat, 0)).t();
+            return - (arma::sum(dz_beta) -
+                      arma::sum(arma::log(h0_denom_event)));
         }
     }
 

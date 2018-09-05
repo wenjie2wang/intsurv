@@ -243,6 +243,12 @@ namespace Intsurv {
         return X * X.t();
     }
 
+    // function that computes L2-norm
+    inline double norm(const arma::vec& x)
+    {
+        return std::sqrt(vec2num(crossprod(x)));
+    }
+
 }
 
 #endif
