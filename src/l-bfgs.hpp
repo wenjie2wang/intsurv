@@ -66,7 +66,7 @@ namespace Intsurv {
     // Springer-Verlag New York.
 
     // algorithm 7.4 on Page 178, Chapter 7.2
-    arma::vec TwoLoop(const int& k,
+    arma::vec twoLoop(const int& k,
                       const int& m,
                       arma::vec q,
                       const arma::mat& s_mat,
@@ -129,9 +129,9 @@ namespace Intsurv {
     //! Nocedal, J., & Wright, S. (2006). Numerical Optimization. :
     //! Springer-Verlag New York.
     template <typename T>
-    int L_BFGS(arma::vec& x,
-               const T& object,
-               const control_lbfgs& control)
+    int lbfgs(arma::vec& x,
+              const T& object,
+              const control_lbfgs& control)
     {
         unsigned long int n_param {x.n_rows};
         int status_code {0};
@@ -161,11 +161,10 @@ namespace Intsurv {
             // initialize H_k^0
             H_k = initialize_inverse_hessian(y_mat.col(j0), s_mat.col(j0));
             // call algorithm 7.4 to compute p_k
-            p_k = - TwoLoop(k, control.m, g_k, s_mat, y_mat, H_k);
+            p_k = - twoLoop(k, control.m, g_k, s_mat, y_mat, H_k);
             // compute alpha_k
             status_code = LineSearchBacktracking(
-                alpha_k, x, object, p_k, control_ls
-                );
+                alpha_k, x, object, p_k, control_ls);
             if (status_code != 0)
                 throw std::runtime_error("Error: line search failed.");
             // update s_mat and y_mat

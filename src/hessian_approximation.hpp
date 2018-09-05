@@ -28,6 +28,23 @@ namespace Intsurv {
     // Nocedal, J., & Wright, S. (2006). Numerical Optimization. :
     // Springer-Verlag New York.
 
+    // function that updates the inverse of hessian approximation directly
+    inline int update_inverse_hessian(arma::mat& H_k,
+                                      const arma::vec& y_k,
+                                      const arma::vec& s_k)
+    {
+        double rho_k_denom {arma::as_scalar(crossprod(y_k, s_k))};
+        if (isAlmostEqual(rho_k_denom, 0.0)) {
+            return - 1;
+        }
+        double rho_k {1 / rho_k_denom};
+        arma::mat s_y_t {tcrossprod(s_k, y_k)};
+        arma::mat I_mat {arma::eye<arma::mat>(size(s_y_t))};
+        H_k = (I_mat - rho_k * s_y_t) * H_k * (I_mat - rho_k * s_y_t.t()) +
+            rho_k * tcrossprod(s_k);
+        return 0;
+    }
+
     // Chapter 7.2, Page 179
     // function that initializes the inverse of hessian approximation
     inline arma::mat initialize_inverse_hessian(const arma::vec& y_k,
