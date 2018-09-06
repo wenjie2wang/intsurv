@@ -20,7 +20,7 @@ else
     # update copyright year in the template headers
     regexp1="s/Copyright (C) 2017-*[0-9]{4}/Copyright (C) 2017-$yr/"
     sed -i -E "$regexp1" $cprt_R
-    sed -i -E "$regexp1" $cprt_cpp
+    sed "s_#_/_g" $cprt_R > $cprt_cpp
 
     # update copyright year in all R scripts
     for Rfile in R/*.R
@@ -36,13 +36,12 @@ else
     for cppfile in src/*.[hc]pp
     do
         if ! grep -q 'Copyright (C)' $cppfile; then
-            sed "s_#_/_g" $cprt_R > $cprt_cpp
             cat $cprt_cpp $cppfile > tmp
             mv tmp $cppfile
-            rm $cprt_cpp
         fi
         sed -i -E "$regexp1" $cppfile
     done
+    rm $cprt_cpp
 
     # update date in DESCRIPTION
     regexp2="s/Date: [0-9]{4}-[0-9]{1,2}-[0-9]{1,2}/Date: $dt/"
