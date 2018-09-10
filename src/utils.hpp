@@ -87,8 +87,8 @@ namespace Intsurv {
     // set intersection for vector a and vector b
     // armadillo vector has just one template type parameter
     template <typename T, template <typename> class ARMA_VEC_TYPE>
-    ARMA_VEC_TYPE<T> vec_intersection(const ARMA_VEC_TYPE<T>& a,
-                                      const ARMA_VEC_TYPE<T>& b)
+    inline ARMA_VEC_TYPE<T> vec_intersection(const ARMA_VEC_TYPE<T>& a,
+                                             const ARMA_VEC_TYPE<T>& b)
     {
         std::vector<T> res;
         std::set_intersection(a.begin(), a.end(), b.begin(), b.end(),
@@ -135,11 +135,11 @@ namespace Intsurv {
     }
 
     // aggregate sum of a vector based on same indices
-    arma::vec aggregate_sum(const arma::vec& x,
-                            const arma::vec& indices,
-                            const bool simplify = true,
-                            const bool cumulative = false,
-                            const bool reversely = false)
+    inline arma::vec aggregate_sum(const arma::vec& x,
+                                   const arma::vec& indices,
+                                   const bool simplify = true,
+                                   const bool cumulative = false,
+                                   const bool reversely = false)
     {
         const unsigned long int n_x {x.size()};
         arma::vec uniInd {arma::unique(indices)};
@@ -173,11 +173,11 @@ namespace Intsurv {
         return out;
     }
     // column-wise aggregrate sum
-    arma::mat aggregate_sum_cols(const arma::mat& x,
-                                 const arma::vec& indices,
-                                 const bool simplify = true,
-                                 const bool cumulative = false,
-                                 const bool reversely = false)
+    inline arma::mat aggregate_sum_cols(const arma::mat& x,
+                                        const arma::vec& indices,
+                                        const bool simplify = true,
+                                        const bool cumulative = false,
+                                        const bool reversely = false)
     {
         // if it does need aggregate
         const unsigned long int x_nrows {x.n_rows};
@@ -247,6 +247,10 @@ namespace Intsurv {
     inline double norm(const arma::vec& x)
     {
         return std::sqrt(vec2num(crossprod(x)));
+    }
+    inline double norm(const arma::vec& x, const arma::vec& y)
+    {
+        return std::sqrt(vec2num(crossprod(x, y)));
     }
 
 }

@@ -75,17 +75,18 @@ namespace Intsurv {
         // function members with overloads
 
         // function that computes objective function only
-        double objective(const arma::vec& beta) const;
+        inline double objective(const arma::vec& beta) const;
 
         // function that computes gradients only
-        arma::vec gradient(const arma::vec& beta) const;
+        inline arma::vec gradient(const arma::vec& beta) const;
 
         // function that computes objective and overwrite gradients
-        double objective(const arma::vec& beta, arma::vec& grad) const;
+        inline double objective(const arma::vec& beta, arma::vec& grad) const;
     };
 
+
     // the negative loglikelihood function based on the broslow's formula
-    double RcppCoxph::objective(const arma::vec& beta) const
+    inline double RcppCoxph::objective(const arma::vec& beta) const
     {
         const arma::vec dz_beta {d_z * beta};
         const arma::vec exp_z_beta {arma::exp(z * beta)};
@@ -104,7 +105,7 @@ namespace Intsurv {
     }
 
     // the negative gradient of negative loglikelihood function
-    arma::vec RcppCoxph::gradient(const arma::vec& beta) const
+    inline arma::vec RcppCoxph::gradient(const arma::vec& beta) const
     {
         const arma::vec exp_z_beta {arma::exp(z * beta)};
         const arma::vec h0_denom {cum_sum(exp_z_beta, true)};
@@ -131,8 +132,8 @@ namespace Intsurv {
     }
 
     // the negative loglikelihood function based on the broslow's formula
-    double RcppCoxph::objective(const arma::vec& beta,
-                                arma::vec& grad) const
+    inline double RcppCoxph::objective(const arma::vec& beta,
+                                       arma::vec& grad) const
     {
         const arma::vec dz_beta {d_z * beta};
         const arma::vec exp_z_beta {arma::exp(z * beta)};

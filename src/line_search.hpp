@@ -25,6 +25,12 @@
 
 namespace Intsurv {
 
+    // TODO: add the line search method based on
+
+    // Mor\'e, Jorge J, & Thuente, D. J. (1994). Line search algorithms with
+    // guaranteed sufficient decrease. ACM Transactions on Mathematical
+    // Software (TOMS), 20(3), 286–307.
+
     //! @class Class for Control Parameters
     class control_line_search
     {
@@ -105,10 +111,11 @@ namespace Intsurv {
     //! @reference
     //! backtracking line search from the lbfgs C-library
     template <typename T>
-    int LineSearchBacktracking(double& step, arma::vec& x,
-                               const T& object,
-                               const arma::vec& drt,
-                               const control_line_search& control)
+    inline int LineSearchBacktracking(double& step,
+                                      arma::vec& x,
+                                      const T& object,
+                                      const arma::vec& drt,
+                                      const control_line_search& control)
     {
         // initialize step size to be 1
         step = 1.0;

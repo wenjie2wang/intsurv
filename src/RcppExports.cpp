@@ -6,36 +6,35 @@
 
 using namespace Rcpp;
 
-// aggregateSum
-Rcpp::NumericVector aggregateSum(const Rcpp::NumericVector& x, const Rcpp::NumericVector& indices, bool simplify, bool cumulate, bool revcum);
-RcppExport SEXP _intsurv_aggregateSum(SEXP xSEXP, SEXP indicesSEXP, SEXP simplifySEXP, SEXP cumulateSEXP, SEXP revcumSEXP) {
+// rcpp_logistic
+Rcpp::NumericVector rcpp_logistic(const arma::mat& x, const arma::vec y);
+RcppExport SEXP _intsurv_rcpp_logistic(SEXP xSEXP, SEXP ySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type x(xSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type indices(indicesSEXP);
-    Rcpp::traits::input_parameter< bool >::type simplify(simplifySEXP);
-    Rcpp::traits::input_parameter< bool >::type cumulate(cumulateSEXP);
-    Rcpp::traits::input_parameter< bool >::type revcum(revcumSEXP);
-    rcpp_result_gen = Rcpp::wrap(aggregateSum(x, indices, simplify, cumulate, revcum));
+    Rcpp::traits::input_parameter< const arma::mat& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const arma::vec >::type y(ySEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_logistic(x, y));
     return rcpp_result_gen;
 END_RCPP
 }
-// revcumsum
-Rcpp::NumericVector revcumsum(SEXP x);
-RcppExport SEXP _intsurv_revcumsum(SEXP xSEXP) {
+// rcpp_coxph
+Rcpp::NumericVector rcpp_coxph(const arma::vec& time, const arma::vec& event, const arma::mat& z);
+RcppExport SEXP _intsurv_rcpp_coxph(SEXP timeSEXP, SEXP eventSEXP, SEXP zSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< SEXP >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(revcumsum(x));
+    Rcpp::traits::input_parameter< const arma::vec& >::type time(timeSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type event(eventSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type z(zSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_coxph(time, event, z));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_intsurv_aggregateSum", (DL_FUNC) &_intsurv_aggregateSum, 5},
-    {"_intsurv_revcumsum", (DL_FUNC) &_intsurv_revcumsum, 1},
+    {"_intsurv_rcpp_logistic", (DL_FUNC) &_intsurv_rcpp_logistic, 2},
+    {"_intsurv_rcpp_coxph", (DL_FUNC) &_intsurv_rcpp_coxph, 3},
     {NULL, NULL, 0}
 };
 

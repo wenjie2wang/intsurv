@@ -66,12 +66,12 @@ namespace Intsurv {
     // Springer-Verlag New York.
 
     // algorithm 7.4 on Page 178, Chapter 7.2
-    arma::vec twoLoop(const int& k,
-                      const int& m,
-                      arma::vec q,
-                      const arma::mat& s_mat,
-                      const arma::mat& y_mat,
-                      const arma::mat& H_k)
+    inline arma::vec twoLoop(const int& k,
+                             const int& m,
+                             arma::vec q,
+                             const arma::mat& s_mat,
+                             const arma::mat& y_mat,
+                             const arma::mat& H_k)
     {
         unsigned long int n_param {s_mat.n_rows};
         int j {0};
@@ -129,9 +129,9 @@ namespace Intsurv {
     //! Nocedal, J., & Wright, S. (2006). Numerical Optimization. :
     //! Springer-Verlag New York.
     template <typename T>
-    int lbfgs(arma::vec& x,
-              const T& object,
-              const control_lbfgs& control)
+    inline int lbfgs(arma::vec& x,
+                     const T& object,
+                     const control_lbfgs& control)
     {
         unsigned long int n_param {x.n_rows};
         int status_code {0};
