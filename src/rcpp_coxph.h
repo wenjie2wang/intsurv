@@ -39,7 +39,7 @@ namespace Intsurv {
     public:
         double partial_logL {0}; // partial log-likelihood
         arma::vec coef;          // covariate coefficient estimates
-        arma::mat h0;            // baseline hazard estimates
+        arma::vec h0;            // baseline hazard estimates
 
         // constructors
         RcppCoxph(const arma::vec time_,
