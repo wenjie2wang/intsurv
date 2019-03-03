@@ -19,7 +19,7 @@
 #define RCPP_COXPH_H
 
 #include <RcppArmadillo.h>
-#include "utils.hpp"
+#include "utils.h"
 
 namespace Intsurv {
 

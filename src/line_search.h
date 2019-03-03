@@ -21,7 +21,7 @@
 #include <RcppArmadillo.h>
 // #include <armadillo>
 #include <stdexcept>
-#include "utils.hpp"
+#include "utils.h"
 
 namespace Intsurv {
 

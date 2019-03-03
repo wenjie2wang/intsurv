@@ -19,7 +19,7 @@
 #define LOGISTIC_REG_H
 
 #include <RcppArmadillo.h>
-#include "utils.hpp"
+#include "utils.h"
 
 namespace Intsurv {
 

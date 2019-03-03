@@ -167,11 +167,11 @@ Internally, the first four named elements are passed to function
 \code{\link[stats]{nlm}}.
 }
 \examples{
-library(intsurv)
-set.seed(1216)
-simuDat <- simuWeibull(nSubject = 100)
-fit <- iCoxph(Survi(ID, obsTime, eventInd) ~ x1 + x2 + x3 + x4, simuDat,
-              control = list(noSE = TRUE))
+## library(intsurv)
+## set.seed(1216)
+## simuDat <- simuWeibull(nSubject = 100)
+## fit <- iCoxph(Survi(ID, obsTime, eventInd) ~ x1 + x2 + x3 + x4, simuDat,
+##               control = list(noSE = TRUE))
 }
 \references{
 Wang, W., Aseltine, R., Chen, K., & Yan, J. (2017+).  Integrative Survival

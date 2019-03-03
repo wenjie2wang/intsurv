@@ -185,11 +185,11 @@ NULL
 ##' Algorithm: A General Framework. \emph{Biometrika}, 80(2), 267--278.
 ##'
 ##' @examples
-##' library(intsurv)
-##' set.seed(1216)
-##' simuDat <- simuWeibull(nSubject = 100)
-##' fit <- iCoxph(Survi(ID, obsTime, eventInd) ~ x1 + x2 + x3 + x4, simuDat,
-##'               control = list(noSE = TRUE))
+##' ## library(intsurv)
+##' ## set.seed(1216)
+##' ## simuDat <- simuWeibull(nSubject = 100)
+##' ## fit <- iCoxph(Survi(ID, obsTime, eventInd) ~ x1 + x2 + x3 + x4, simuDat,
+##' ##               control = list(noSE = TRUE))
 ##' @seealso
 ##' \code{\link{summary,iCoxph-method}} for summary of fitted model;
 ##' \code{\link{coef,iCoxph-method}} for estimated covariate coefficients;

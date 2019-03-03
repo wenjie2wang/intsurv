@@ -22,9 +22,9 @@
 #include <RcppArmadillo.h>
 // #include <armadillo>
 
-#include "utils.hpp"
-#include "hessian_approximation.hpp"
-#include "line_search.hpp"
+#include "utils.h"
+#include "hessian_approximation.h"
+#include "line_search.h"
 
 namespace Intsurv {
 
