@@ -1,6 +1,6 @@
 objects := $(wildcard R/*.R) $(wildcard src/*.[hc]pp) DESCRIPTION
-version := $(shell grep "Version" DESCRIPTION | awk '{print $NF}')
-pkg := $(shell grep "Package" DESCRIPTION | awk '{print $NF}')
+version := $(shell grep "Version" DESCRIPTION | awk '{print $$NF}')
+pkg := $(shell grep "Package" DESCRIPTION | awk '{print $$NF}')
 tar := $(pkg)_$(version).tar.gz
 checkLog := $(pkg).Rcheck/00check.log
 # tests := $(wildcard tests/testthat/*.R)
@@ -28,7 +28,8 @@ $(tar): $(objects)
 	R CMD build .
 
 $(checkLog): $(tar)
-	R CMD check --as-cran $(tar)
+# R CMD check --as-cran $(tar)
+	R CMD check $(tar)
 
 # $(vignettes): $(rmd)
 #	Rscript -e "rmarkdown::render('$(rmd)')"
