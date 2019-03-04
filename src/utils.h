@@ -244,13 +244,74 @@ namespace Intsurv {
     }
 
     // function that computes L2-norm
-    inline double norm(const arma::vec& x)
+    inline double l2_norm(const arma::vec& x)
     {
         return std::sqrt(vec2num(crossprod(x)));
     }
-    inline double norm(const arma::vec& x, const arma::vec& y)
+    inline double l2_norm(const arma::vec& x, const arma::vec& y)
     {
         return std::sqrt(vec2num(crossprod(x, y)));
+    }
+
+    // function computing relateive tolerance based on l2-norm
+    inline double rel_l2_norm(const arma::vec& x_old, const arma::vec& x_new)
+    {
+        return l2_norm(x_new - x_old) / l2_norm(x_new + x_old);
+    }
+
+    // function that computes L1-norm
+    inline double l1_norm(const arma::vec& x)
+    {
+        return arma::sum(arma::abs(x));
+    }
+
+    // function computing relateive tolerance based on l1_norm
+    inline double rel_l1_norm(const arma::vec& x_old, const arma::vec& x_new)
+    {
+        return l1_norm(x_new - x_old) / l1_norm(x_new + x_old);
+    }
+
+
+    // sign function
+    inline double sign(const double& x)
+    {
+        if (x < 0) {
+            return - 1.0;
+        } else if (x > 0) {
+            return 1.0;
+        } else {
+            return 0.0;
+        }
+    }
+
+    // positive part
+    template <typename T_scalar>
+    inline T_scalar positive(T_scalar x)
+    {
+        if (x < 0) {
+            return 0;
+        } else {
+            return x;
+        }
+    }
+
+    // soft-thresholding operator
+    inline double soft_threshold(const double& beta, const double& lambda)
+    {
+        return positive(std::abs(beta) - lambda) * sign(beta);
+    }
+
+    // convert uvec from logical comparison to uvec indices
+    inline arma::uvec arma_which(const arma::uvec& x)
+    {
+        arma::uvec res { arma::zeros<arma::uvec>(arma::sum(x)) };
+        for (size_t i {0}, j {0}; i < x.n_elem; ++i) {
+            if (x[i] > 0) {
+                res[j] = i;
+                j++;
+            }
+        }
+        return res;
     }
 
 }

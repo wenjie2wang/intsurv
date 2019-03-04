@@ -39,6 +39,7 @@ namespace Intsurv {
         inline double objective(const arma::vec& beta) const;
         inline arma::vec gradient(const arma::vec& beta) const;
         inline double objective(const arma::vec& beta, arma::vec& grad) const;
+        inline arma::vec linkinv(const arma::vec& eta) const;
 
     };
 
@@ -76,6 +77,12 @@ namespace Intsurv {
             arma::as_scalar(arma::sum(arma::log(1 + exp_x_beta) - y_x_beta))
         };
         return res;
+    }
+
+    // define inverse link function
+    inline arma::vec LogisticReg::linkinv(const arma::vec& eta) const
+    {
+        return 1 / (1 + arma::exp(- eta));
     }
 
 }
