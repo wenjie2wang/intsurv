@@ -19,6 +19,7 @@
 #define UTILS_H
 
 #include <limits>
+#include <stdexcept>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -56,7 +57,7 @@ namespace Intsurv {
         }
         return res;
     }
-    // function checking if there exists any duplicates
+    // returns indices of duplicated elements
     inline arma::uvec duplicated(const arma::vec& x, bool fromLast = false)
     {
         std::unordered_set<double> seen;
@@ -78,12 +79,30 @@ namespace Intsurv {
         }
         return arma::conv_to<arma::uvec>::from(res);
     }
-    // function that returns the indices of first unique elements from last
-    inline arma::uvec find_unique_last(const arma::vec& x)
+    // function that returns the indices of the first unique indices
+    inline arma::uvec find_first_unique(const arma::vec& x,
+                                        bool fromLast = false)
     {
-        return arma::reverse(x.n_elem - 1 -
-                             arma::find_unique(arma::reverse(x)));
+        std::unordered_set<double> seen;
+        std::vector<unsigned int> res;
+        if (fromLast) {
+            for (size_t i {1}; i <= x.n_rows; ++i) {
+                if (seen.insert(x(x.n_rows - i)).second) {
+                    // if duplicated, add index to vector res
+                    res.push_back(i);
+                }
+            }
+        } else {
+            for (size_t i {0}; i < x.n_rows; ++i) {
+                if (seen.insert(x(i)).second) {
+                    // if duplicated, add index to vector res
+                    res.push_back(i);
+                }
+            }
+        }
+        return arma::conv_to<arma::uvec>::from(res);
     }
+
     // set intersection for vector a and vector b
     // armadillo vector has just one template type parameter
     template <typename T, template <typename> class ARMA_VEC_TYPE>
@@ -115,23 +134,62 @@ namespace Intsurv {
         // otherwise, using arma::cumsum
         return arma::cumsum(x);
     }
-    // column-wise cumulative sum in possibly reverse order
-    inline arma::mat cum_sum_cols(const arma::mat& x,
-                                  const bool reversely = false)
+    // cumulative sum of a matrix in possibly reverse order
+    // dim = 0 for column-wise sum; dim = 1 for row-wise sum
+    inline arma::mat cum_sum(const arma::mat& x,
+                             const bool reversely = false,
+                             unsigned int dim = 0)
     {
         // if cumsum reversely
         if (reversely) {
-            const unsigned long int n_x = x.n_rows;
-            arma::mat tmp {arma::zeros(1, x.n_cols)};
-            arma::mat res {x};
-            for (size_t i {1}; i <= n_x; ++i) {
-                tmp += x.row(n_x - i);
-                res.row(n_x - i) = tmp;
+            if (dim == 0) {
+                const unsigned long int n_x = x.n_rows;
+                arma::mat tmp {x.row(n_x - 1)};
+                arma::mat res {x};
+                for (size_t i {2}; i <= n_x; ++i) {
+                    tmp += x.row(n_x - i);
+                    res.row(n_x - i) = tmp;
+                }
+                return res;
+            } else if (dim == 1) {
+                const unsigned long int n_x = x.n_cols;
+                arma::mat tmp {x.col(n_x - 1)};
+                arma::mat res {x};
+                for (size_t i {2}; i <= n_x; ++i) {
+                    tmp += x.col(n_x - i);
+                    res.col(n_x - i) = tmp;
+                }
+                return res;
+            } else {
+                throw std::range_error("The 'dim' has to be either 0 or 1.");
+            }
+        }
+        // otherwise, using arma::cumsum
+        return arma::cumsum(x, dim);
+    }
+    // cumulative sum of a cube in possibly reverse order
+    // along its third dimension
+    inline arma::cube cum_sum(const arma::cube& x,
+                              const bool reversely = false)
+    {
+        const unsigned long int n_x = x.n_slices;
+        arma::cube res {x};
+        // if cumsum reversely
+        if (reversely) {
+            arma::mat tmp {x.slice(n_x - 1)};
+            for (size_t i {2}; i <= n_x; ++i) {
+                tmp += x.slice(n_x - i);
+                res.slice(n_x - i) = tmp;
+            }
+            return res;
+        } else {
+            arma::mat tmp {x.slice(0)};
+            for (size_t i {1}; i < n_x; ++i) {
+                tmp += x.slice(i);
+                res.slice(i) = tmp;
             }
             return res;
         }
-        // otherwise, using arma::cumsum
-        return arma::cumsum(x, 0);
     }
 
     // aggregate sum of a vector based on same indices
@@ -142,6 +200,11 @@ namespace Intsurv {
                                    const bool reversely = false)
     {
         const unsigned long int n_x {x.size()};
+        if (n_x != indices.n_elem) {
+            throw std::logic_error(
+                "The x and indices must have the same length."
+                );
+        }
         arma::vec uniInd {arma::unique(indices)};
         const unsigned long int n_uniInd {uniInd.n_rows};
         // the x's having a same index are summed
@@ -172,15 +235,19 @@ namespace Intsurv {
         }
         return out;
     }
-    // column-wise aggregrate sum
-    inline arma::mat aggregate_sum_cols(const arma::mat& x,
-                                        const arma::vec& indices,
-                                        const bool simplify = true,
-                                        const bool cumulative = false,
-                                        const bool reversely = false)
+    // column-wise aggregrate sum for a matrix
+    inline arma::mat aggregate_sum(const arma::mat& x,
+                                   const arma::vec& indices,
+                                   const bool simplify = true,
+                                   const bool cumulative = false,
+                                   const bool reversely = false)
     {
-        // if it does need aggregate
         const unsigned long int x_nrows {x.n_rows};
+        if (x_nrows != indices.n_elem) {
+            throw std::logic_error(
+                "The number of rows of x must equal the length of indices."
+                );
+        }
         arma::vec uniInd {arma::unique(indices)};
         const unsigned long int n_uniInd {uniInd.n_rows};
         // the x's having a same index are summed
@@ -193,7 +260,7 @@ namespace Intsurv {
             }
         }
         if (cumulative) {
-            sumMat = cum_sum_cols(sumMat, reversely);
+            sumMat = cum_sum(sumMat, reversely);
         }
         // if simplify the sum results to unique and sorted indices
         if (simplify) {
@@ -211,6 +278,50 @@ namespace Intsurv {
         }
         return out;
     }
+    // aggregrate sum for a cube over the third dimension
+    inline arma::cube aggregate_sum(const arma::cube& x,
+                                    const arma::vec& indices,
+                                    const bool simplify = true,
+                                    const bool cumulative = false,
+                                    const bool reversely = false)
+    {
+        const unsigned long int x_nslices {x.n_slices};
+        if (x_nslices != indices.n_elem) {
+            throw std::logic_error(
+                "The number of slices of x must equal the length of indices."
+                );
+        }
+        arma::vec uniInd {arma::unique(indices)};
+        const unsigned long int n_uniInd {uniInd.n_rows};
+        // the x's having a same index are summed
+        arma::cube sumCube {arma::zeros(x.n_rows, x.n_cols, n_uniInd)};
+        for (size_t i {0}; i < n_uniInd; ++i) {
+            for (size_t j {0}; j < x_nslices; ++j) {
+                if (isAlmostEqual(uniInd[i], indices[j])) {
+                    sumCube.slice(i) += x.slice(j);
+                }
+            }
+        }
+        if (cumulative) {
+            sumCube = cum_sum(sumCube, reversely);
+        }
+        // if simplify the sum results to unique and sorted indices
+        if (simplify) {
+            return sumCube;
+        }
+        // else
+        arma::cube out {arma::zeros(arma::size(x))};
+        for (size_t i {0}; i < x_nslices; ++i) {
+            for (size_t j {0}; j < n_uniInd; ++j) {
+                if (isAlmostEqual(indices[i], uniInd[j])) {
+                    out.slice(i) = sumCube.slice(j);
+                    break;
+                }
+            }
+        }
+        return out;
+    }
+
 
     // inline handy functions
     inline arma::vec mat2vec(const arma::mat& x) {
