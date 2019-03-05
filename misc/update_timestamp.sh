@@ -18,7 +18,7 @@ else
     version=$(grep "Version" DESCRIPTION | awk '{print $NF}')
 
     # update copyright year in the template headers
-    regexp1="s/Copyright (C) 2017-*[0-9]{4}/Copyright (C) 2017-$yr/"
+    regexp1="s/Copyright \(C\) 2017-[0-9]+/Copyright \(C\) 2017-$yr/"
     sed -i -E "$regexp1" $cprt_R
     sed "s_#_/_g" $cprt_R > $cprt_cpp
 
@@ -33,7 +33,7 @@ else
     done
 
     # update copyright year in all C++ scripts
-    for cppfile in src/*.[hc]pp
+    for cppfile in src/*.{h,cpp}
     do
         if ! grep -q 'Copyright (C)' $cppfile; then
             cat $cprt_cpp $cppfile > tmp
