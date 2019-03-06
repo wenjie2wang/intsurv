@@ -23,6 +23,8 @@
 #include "logistic_reg.h"
 
 // fitting regular logistic model by monotonic quadratic approximation algorithm
+// non-integer y vector is allowed
+// reference: Bohning and Lindsay (1988) SIAM
 // [[Rcpp::export]]
 Rcpp::NumericVector rcpp_logistic(const arma::mat& x,
                                   const arma::vec& y,
@@ -39,7 +41,6 @@ Rcpp::NumericVector rcpp_logistic(const arma::mat& x,
     arma::vec beta { beta0 };
     arma::vec eta { arma::zeros(y.n_elem) };
     arma::vec y_hat { eta };
-    // solve by the Bohning and Lindsay (1988) AISM paper
     arma::mat iter_mat { 4 * arma::inv_sympd(x.t() * x) * x.t() };
     size_t i {0};
     while (i < max_iter) {
@@ -63,22 +64,20 @@ Rcpp::NumericVector rcpp_logistic(const arma::mat& x,
 // run one cycle of coordinate descent over a given active set
 void reg_logistic_update(arma::vec& beta,
                          arma::uvec& is_active,
-                         const Intsurv::LogisticReg object,
-                         const arma::mat& x,
-                         const arma::vec& y,
+                         const Intsurv::LogisticReg& object,
                          const arma::rowvec& b_vec,
                          const arma::vec& penalty,
                          const bool update_active = false)
 {
-    arma::vec y_hat { arma::zeros(y.n_elem) };
     double dlj { 0 };
-    for (size_t j {0}; j < x.n_cols; ++j) {
+    unsigned int n { object.sample_size() };
+    double n_y { static_cast<double>(n) };
+    for (size_t j {0}; j < beta.n_elem; ++j) {
         if (is_active[j]) {
-            y_hat = object.linkinv(x * beta);
-            dlj = arma::mean((y - y_hat) % x.col(j));
+            dlj = object.gradient(beta, j) / n_y;
             // update beta
             beta[j] = Intsurv::soft_threshold(
-                b_vec[j] * beta[j] + dlj, penalty[j]) / b_vec[j];
+                b_vec[j] * beta[j] - dlj, penalty[j]) / b_vec[j];
             if (update_active) {
                 // check if it has been shrinkaged to zero
                 if (Intsurv::isAlmostEqual(beta[j], 0)) {
@@ -100,7 +99,7 @@ Rcpp::NumericVector rcpp_reg_logistic(const arma::mat& x,
                                       const double lambda = 0,
                                       arma::vec penalty_factor = 0,
                                       const arma::vec start = 0,
-                                      const unsigned int max_iter = 100,
+                                      const unsigned int max_iter = 1000,
                                       const double rel_tol = 1e-6)
 {
     Intsurv::LogisticReg object { Intsurv::LogisticReg(x, y) };
@@ -130,7 +129,7 @@ Rcpp::NumericVector rcpp_reg_logistic(const arma::mat& x,
             // cycles over the active set
             while (ii < max_iter) {
                 reg_logistic_update(beta, is_active, object,
-                                    x, y, b_vec, penalty_factor, true);
+                                    b_vec, penalty_factor, true);
                 if (Intsurv::isAlmostEqual(Intsurv::l2_norm(beta), 0) ||
                     Intsurv::rel_l2_norm(beta, beta0) < rel_tol) {
                     break;
@@ -142,7 +141,7 @@ Rcpp::NumericVector rcpp_reg_logistic(const arma::mat& x,
             // run a full cycle over the converged beta
             is_active = arma::ones<arma::uvec>(x.n_cols);
             reg_logistic_update(beta, is_active, object,
-                                x, y, b_vec, penalty_factor, true);
+                                b_vec, penalty_factor, true);
             // check two active sets coincide
             if (arma::sum(arma::abs(is_active - is_active_stored)) > 0) {
                 // if different, repeat this process
@@ -156,7 +155,7 @@ Rcpp::NumericVector rcpp_reg_logistic(const arma::mat& x,
         // regular coordinate descent
         while (i < max_iter) {
             reg_logistic_update(beta, is_active, object,
-                                x, y, b_vec, penalty_factor, false);
+                                b_vec, penalty_factor, false);
             if (Intsurv::isAlmostEqual(Intsurv::l2_norm(beta), 0) ||
                 Intsurv::rel_l2_norm(beta, beta0) < rel_tol) {
                 break;
