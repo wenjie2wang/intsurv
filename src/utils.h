@@ -18,6 +18,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <algorithm>
 #include <limits>
 #include <stdexcept>
 #include <string>
@@ -327,29 +328,28 @@ namespace Intsurv {
     inline arma::vec mat2vec(const arma::mat& x) {
         return arma::conv_to<arma::vec>::from(x);
     }
-    inline double vec2num(const arma::vec& x) {
-        return arma::as_scalar(x);
-    }
 
     // function template for crossprod of two matrix-like objects
     template <typename T_matrix_like>
-    inline arma::mat crossprod(T_matrix_like X, T_matrix_like Y)
+    inline arma::mat crossprod(const T_matrix_like& X,
+                               const T_matrix_like& Y)
     {
         return X.t() * Y;
     }
     template <typename T_matrix_like>
-    inline arma::mat crossprod(T_matrix_like X)
+    inline arma::mat crossprod(const T_matrix_like& X)
     {
         return X.t() * X;
     }
     // function template for tcrossprod of two matrix-like objects
     template <typename T_matrix_like>
-    inline arma::mat tcrossprod(T_matrix_like X, T_matrix_like Y)
+    inline arma::mat tcrossprod(const T_matrix_like& X,
+                                const T_matrix_like& Y)
     {
         return X * Y.t();
     }
     template <typename T_matrix_like>
-    inline arma::mat tcrossprod(T_matrix_like X)
+    inline arma::mat tcrossprod(const T_matrix_like& X)
     {
         return X * X.t();
     }
@@ -357,11 +357,11 @@ namespace Intsurv {
     // function that computes L2-norm
     inline double l2_norm(const arma::vec& x)
     {
-        return std::sqrt(vec2num(crossprod(x)));
+        return std::sqrt(arma::as_scalar(crossprod(x)));
     }
     inline double l2_norm(const arma::vec& x, const arma::vec& y)
     {
-        return std::sqrt(vec2num(crossprod(x, y)));
+        return std::sqrt(arma::as_scalar(crossprod(x, y)));
     }
 
     // function computing relateive tolerance based on l2-norm
@@ -421,6 +421,59 @@ namespace Intsurv {
                 res[j] = i;
                 j++;
             }
+        }
+        return res;
+    }
+
+    // cumulative max in possibly reverse order
+    inline arma::vec cum_max(const arma::vec& x,
+                             const bool reversely = false)
+    {
+        arma::vec res { x };
+        if (reversely) {
+            for (size_t i {2}; i <= x.n_elem; ++i) {
+                res(x.n_elem - i) = std::max(res(x.n_elem - i + 1),
+                                             x(x.n_elem - i));
+            }
+        } else {
+            for (size_t i {1}; i < x.n_elem; ++i) {
+                res(i) = std::max(res(i - 1), x(i));
+            }
+        }
+        return res;
+    }
+    inline arma::mat cum_max(const arma::mat& x,
+                             const bool reversely = false)
+    {
+        arma::mat res { x };
+        for (size_t i {0}; i < x.n_cols; ++i) {
+            res.col(i) = cum_max(mat2vec(x.col(i)), reversely);
+        }
+        return res;
+    }
+    // cumulative min in possibly reverse order
+    inline arma::vec cum_min(const arma::vec& x,
+                             const bool reversely = false)
+    {
+        arma::vec res { x };
+        if (reversely) {
+            for (size_t i {2}; i <= x.n_elem; ++i) {
+                res(x.n_elem - i) = std::min(res(x.n_elem - i + 1),
+                                             x(x.n_elem - i));
+            }
+        } else {
+            for (size_t i {1}; i < x.n_elem; ++i) {
+                res(i) = std::min(res(i - 1), x(i));
+            }
+        }
+        return res;
+    }
+    inline arma::mat cum_min(const arma::mat& x,
+                             const bool reversely = false)
+    {
+        arma::mat res { x };
+        for (size_t i {0}; i < x.n_cols; ++i) {
+            res.col(i) = cum_min(mat2vec(x.col(i)), reversely);
         }
         return res;
     }
