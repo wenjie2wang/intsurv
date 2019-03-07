@@ -168,36 +168,3 @@ arma::vec rcpp_reg_coxph(const arma::vec& time,
     }
     return beta;
 }
-
-
-// [[Rcpp::export]]
-Rcpp::NumericVector grad_fun(const arma::vec& beta,
-                             const arma::vec& time,
-                             const arma::vec& event,
-                             const arma::mat& x)
-{
-    Intsurv::RcppCoxph object { Intsurv::RcppCoxph(time, event, x) };
-    arma::vec grad { object.gradient(beta) };
-    return Rcpp::NumericVector(grad.begin(), grad.end());
-}
-
-// [[Rcpp::export]]
-double obj_fun(const arma::vec& beta,
-               const arma::vec& time,
-               const arma::vec& event,
-               const arma::mat& x)
-{
-    Intsurv::RcppCoxph object { Intsurv::RcppCoxph(time, event, x) };
-    return object.objective(beta);
-}
-
-// [[Rcpp::export]]
-double grad_fun_k(const arma::vec& beta,
-                  const unsigned int k,
-                  const arma::vec& time,
-                  const arma::vec& event,
-                  const arma::mat& x)
-{
-    Intsurv::RcppCoxph object { Intsurv::RcppCoxph(time, event, x) };
-    return object.gradient(beta, k);
-}

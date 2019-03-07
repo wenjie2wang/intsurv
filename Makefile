@@ -23,7 +23,9 @@ install: $(tar)
 
 
 $(tar): $(objects)
-	Rscript -e "library(methods); devtools::document();";
+	@Rscript -e "library(methods);" \
+		-e "devtools::document();" \
+		-e "Rcpp::compileAttributes()";
 	@$(MAKE) updateTimestamp
 	R CMD build .
 

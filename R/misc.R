@@ -34,3 +34,11 @@ rmNA <- function(x)
 {
     x[! is.na(x)]
 }
+
+## computing L2-norm of vector x
+L2norm <- function(x) {
+    sqrt(sum(x ^ 2))
+}
+L2norm2 <- function(x) {
+    sum(x ^ 2)
+}
