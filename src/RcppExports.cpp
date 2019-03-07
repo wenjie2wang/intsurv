@@ -1,6 +1,6 @@
 //
 // intsurv: Integrative Survival Models
-// Copyright (C) 2017-2018  Wenjie Wang <wjwang.stat@gmail.com>
+// Copyright (C) 2017-2019  Wenjie Wang <wjwang.stat@gmail.com>
 //
 // This file is part of the R package intsurv.
 //
@@ -24,34 +24,41 @@
 using namespace Rcpp;
 
 // rcpp_logistic
-Rcpp::NumericVector rcpp_logistic(const arma::mat& x, const arma::vec y);
-RcppExport SEXP _intsurv_rcpp_logistic(SEXP xSEXP, SEXP ySEXP) {
+Rcpp::NumericVector rcpp_logistic(const arma::mat& x, const arma::vec& y, const arma::vec start, const unsigned int max_iter, const double rel_tol);
+RcppExport SEXP _intsurv_rcpp_logistic(SEXP xSEXP, SEXP ySEXP, SEXP startSEXP, SEXP max_iterSEXP, SEXP rel_tolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::mat& >::type x(xSEXP);
-    Rcpp::traits::input_parameter< const arma::vec >::type y(ySEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_logistic(x, y));
+    Rcpp::traits::input_parameter< const arma::vec& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const arma::vec >::type start(startSEXP);
+    Rcpp::traits::input_parameter< const unsigned int >::type max_iter(max_iterSEXP);
+    Rcpp::traits::input_parameter< const double >::type rel_tol(rel_tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_logistic(x, y, start, max_iter, rel_tol));
     return rcpp_result_gen;
 END_RCPP
 }
-// rcpp_coxph
-Rcpp::NumericVector rcpp_coxph(const arma::vec& time, const arma::vec& event, const arma::mat& z);
-RcppExport SEXP _intsurv_rcpp_coxph(SEXP timeSEXP, SEXP eventSEXP, SEXP zSEXP) {
+// rcpp_reg_logistic
+Rcpp::NumericVector rcpp_reg_logistic(const arma::mat& x, const arma::vec& y, const double lambda, arma::vec penalty_factor, const arma::vec start, const unsigned int max_iter, const double rel_tol);
+RcppExport SEXP _intsurv_rcpp_reg_logistic(SEXP xSEXP, SEXP ySEXP, SEXP lambdaSEXP, SEXP penalty_factorSEXP, SEXP startSEXP, SEXP max_iterSEXP, SEXP rel_tolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::vec& >::type time(timeSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type event(eventSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type z(zSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_coxph(time, event, z));
+    Rcpp::traits::input_parameter< const arma::mat& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const double >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type penalty_factor(penalty_factorSEXP);
+    Rcpp::traits::input_parameter< const arma::vec >::type start(startSEXP);
+    Rcpp::traits::input_parameter< const unsigned int >::type max_iter(max_iterSEXP);
+    Rcpp::traits::input_parameter< const double >::type rel_tol(rel_tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_reg_logistic(x, y, lambda, penalty_factor, start, max_iter, rel_tol));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_intsurv_rcpp_logistic", (DL_FUNC) &_intsurv_rcpp_logistic, 2},
-    {"_intsurv_rcpp_coxph", (DL_FUNC) &_intsurv_rcpp_coxph, 3},
+    {"_intsurv_rcpp_logistic", (DL_FUNC) &_intsurv_rcpp_logistic, 5},
+    {"_intsurv_rcpp_reg_logistic", (DL_FUNC) &_intsurv_rcpp_reg_logistic, 7},
     {NULL, NULL, 0}
 };
 
