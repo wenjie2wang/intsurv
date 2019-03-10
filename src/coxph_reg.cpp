@@ -29,64 +29,15 @@
 arma::vec rcpp_coxph(const arma::vec& time,
                      const arma::vec& event,
                      const arma::mat& x,
+                     const arma::vec& offset = 0,
                      const arma::vec& start = 0,
                      const unsigned int max_iter = 1000,
                      const double rel_tol = 1e-6)
 {
-    Intsurv::RcppCoxph object { Intsurv::RcppCoxph(time, event, x) };
-    arma::mat b_mat { object.bl_cov_lowerbound_mat() };
-    arma::mat inv_b_mat { arma::inv_sympd(b_mat) };
-    arma::vec beta0 { arma::zeros(x.n_cols) };
-    if (start.n_elem == x.n_cols) {
-        beta0 = start;
-    }
-    arma::vec beta { beta0 }, h_vec { beta0 }, grad_vec { beta0 };
-    size_t i {0};
-    double b_new {0}, alpha {0};
-    while (i < max_iter) {
-        grad_vec = object.gradient(beta0);
-        h_vec = - inv_b_mat * grad_vec;
-        b_new = object.bl_step_lowerbound(x, h_vec);
-        alpha = - arma::as_scalar(Intsurv::crossprod(h_vec, grad_vec)) / b_new;
-        beta = beta0 + alpha * h_vec;
-        if (Intsurv::rel_l2_norm(beta, beta0) < rel_tol) {
-            break;
-        }
-        // update beta
-        beta0 = beta;
-        i++;
-    }
-    return beta;
-}
-
-
-// run one cycle of coordinate descent over a given active set
-void reg_coxph_update(arma::vec& beta,
-                      arma::uvec& is_active,
-                      const Intsurv::RcppCoxph& object,
-                      const arma::vec& penalty,
-                      const bool update_active = false)
-{
-    // compute D_k
-    arma::vec d_vec { object.cmd_lowerbound() };
-    double dlj { 0 };
-    double n_sample { static_cast<double>(object.sample_size()) };
-    for (size_t j {0}; j < beta.n_elem; ++j) {
-        if (is_active[j]) {
-            dlj = object.gradient(beta, j) / n_sample;
-            // update beta
-            beta[j] = Intsurv::soft_threshold(
-                d_vec[j] * beta[j] - dlj, penalty[j]) / d_vec[j];
-            if (update_active) {
-                // check if it has been shrinkaged to zero
-                if (Intsurv::isAlmostEqual(beta[j], 0)) {
-                    is_active[j] = 0;
-                } else {
-                    is_active[j] = 1;
-                }
-            }
-        }
-    }
+    Intsurv::CoxphReg object { Intsurv::CoxphReg(time, event, x) };
+    object.set_offset(offset);
+    object.fit(start, max_iter, rel_tol);
+    return object.coef;
 }
 
 
@@ -98,73 +49,13 @@ arma::vec rcpp_reg_coxph(const arma::vec& time,
                          const arma::mat& x,
                          const double lambda = 0,
                          arma::vec penalty_factor = 0,
+                         const arma::vec& offset = 0,
                          const arma::vec& start = 0,
                          const unsigned int max_iter = 1000,
                          const double rel_tol = 1e-6)
 {
-    Intsurv::RcppCoxph object { Intsurv::RcppCoxph(time, event, x) };
-    // declarations
-    arma::vec beta0 { arma::zeros(x.n_cols) };
-    if (start.n_elem == x.n_cols) {
-        beta0 = start;
-    }
-    arma::vec beta { beta0 };
-    arma::uvec is_active { arma::ones<arma::uvec>(x.n_cols) };
-    arma::uvec is_active_stored { is_active };
-
-    if (penalty_factor.n_elem == x.n_cols) {
-        // re-scale so that sum(factor) = number of predictors
-        penalty_factor = penalty_factor * x.n_cols / arma::sum(penalty_factor);
-    } else {
-        penalty_factor = arma::ones(x.n_cols);
-    }
-    penalty_factor *= lambda;
-
-    // the lower bound for second derivative in cmd
-    arma::vec d_vec { object.cmd_lowerbound() };
-
-    size_t i {0};
-    // use active-set if p > n ("helps when p >> n")
-    if (x.n_cols > x.n_rows) {
-        size_t ii {0};
-        while (i < max_iter) {
-            // cycles over the active set
-            while (ii < max_iter) {
-                reg_coxph_update(beta, is_active, object,
-                                 penalty_factor, true);
-                if (Intsurv::isAlmostEqual(Intsurv::l2_norm(beta), 0) ||
-                    Intsurv::rel_l2_norm(beta, beta0) < rel_tol) {
-                    break;
-                }
-                beta0 = beta;
-                ii++;
-            }
-            is_active_stored = is_active;
-            // run a full cycle over the converged beta
-            is_active = arma::ones<arma::uvec>(x.n_cols);
-            reg_coxph_update(beta, is_active, object,
-                             penalty_factor, true);
-            // check two active sets coincide
-            if (arma::sum(arma::abs(is_active - is_active_stored)) > 0) {
-                // if different, repeat this process
-                ii = 0;
-                i++;
-            } else {
-                break;
-            }
-        }
-    } else {
-        // regular coordinate descent
-        while (i < max_iter) {
-            reg_coxph_update(beta, is_active, object,
-                             penalty_factor, false);
-            if (Intsurv::isAlmostEqual(Intsurv::l2_norm(beta), 0) ||
-                Intsurv::rel_l2_norm(beta, beta0) < rel_tol) {
-                break;
-            }
-            beta0 = beta;
-            i++;
-        }
-    }
-    return beta;
+    Intsurv::CoxphReg object { Intsurv::CoxphReg(time, event, x) };
+    object.set_offset(offset);
+    object.regularized_fit(lambda, penalty_factor, start, max_iter, rel_tol);
+    return object.coef;
 }
