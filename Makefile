@@ -52,3 +52,4 @@ TAGS:
 .PHONY: clean
 clean:
 	@rm -rf *~ */*~ *.Rhistroy src/{*.o,*.so} *.tar.gz *.Rcheck/ .\#*
+	@rm -rf src/RcppExports.cpp
