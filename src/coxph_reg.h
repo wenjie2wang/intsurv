@@ -26,21 +26,33 @@ namespace Intsurv {
     // define class for inputs and outputs
     class CoxphReg {
     private:
-        arma::vec time;            // sorted observed times
-        arma::vec event;           // sorted event indicators
-        arma::mat x;               // sorted design matrix
-        arma::vec offset;          // sorted offset term
-
         arma::uvec des_event_ind;  // index sorting events descendingly
         arma::uvec asc_time_ind;   // index sorting times ascendingly
 
+        // all the following results are sorted accordingly
+        arma::vec time;            // (sorted) observed times
+        arma::vec event;           // (sorted) event indicators
+        arma::mat x;               // (sorted and standardized) design matrix
+
+        bool standardize;          // is x standardized
+        arma::rowvec x_center;     // the column center of x
+        arma::rowvec x_scale;      // the scale of x
+        arma::vec coef0;           // coef before scaling
+
         bool hasTies {false};      // if there exists ties on event times
+
+        // at each unique time point
+        arma::uvec event_ind;      // indices of event times
         arma::uvec uni_event_ind;  // the index indicating the first record
                                    // on each distinct event time
+        arma::uvec uni_time_ind;   // the index indicating the first record on
+                                   // each time whether event or censoring
+        arma::vec offset;          // offset term
 
-        arma::uvec event_ind;      // indices of event times
+        // at each unique event time point
         arma::vec d_time;          // distinct event times
         arma::mat d_x;             // design matrix aggregated at d_time
+        arma::vec d_offset;        // offset terms aggregated at d_time
         arma::vec delta_n;         // event counts at d_time
         arma::vec riskset_size;    // size of risk-set at d_time
 
@@ -48,14 +60,22 @@ namespace Intsurv {
         arma::mat inv_bl_cov_lowerbound_1;
 
     public:
-        double partial_logL {0}; // partial log-likelihood
-        arma::vec coef;          // covariate coefficient estimates
-        arma::vec h0;            // baseline hazard estimates
+        double partial_logL {0};   // partial log-likelihood
+        arma::vec coef;            // covariate coefficient estimates
+
+        // baseline estimates at every time point (unique or not)
+        arma::vec h0_time;
+        arma::vec S0_time;
+        arma::vec H0_time;
+        arma::vec h_time;
+        arma::vec H_time;
+        arma::vec S_time;
 
         // constructors
         CoxphReg(const arma::vec& time_,
                  const arma::vec& event_,
-                 const arma::mat& x_)
+                 const arma::mat& x_,
+                 const bool standardize_ = true)
         {
             // sort based on time and event
             // time: ascending order
@@ -68,6 +88,23 @@ namespace Intsurv {
             time = time.elem(asc_time_ind);
             event = event.elem(asc_time_ind);
             x = x.rows(asc_time_ind);
+
+            // standardize covariates
+            standardize = standardize_;
+            if (standardize) {
+                x_center = arma::mean(x);
+                x_scale = arma::stddev(x, 1);
+                for (size_t j {0}; j < x.n_cols; ++j) {
+                    if (x_scale(j) > 0) {
+                        x.col(j) = (x.col(j) - x_center(j)) / x_scale(j);
+                    } else {
+                        throw std::range_error(
+                            "The design 'x' contains constant column."
+                            );
+                    }
+                }
+            }
+
             // binary event indicator
             event_ind = arma::find(event > 0);
             // check if there exists ties on event times
@@ -81,22 +118,38 @@ namespace Intsurv {
             for (size_t j {0}; j < x.n_cols; ++j) {
                 d_x.col(j) = d_x.col(j) % delta_n;
             }
+            // initialize offset
+            this->set_offset(arma::zeros(1));
+            this->d_offset = this->offset.elem(event_ind) % delta_n;
+
+            uni_time_ind = find_first_unique(time);
             if (hasTies) {
-                arma::uvec uni_time_ind {find_first_unique(time)};
                 // re-define uni_event_ind
                 uni_event_ind = vec_intersection(uni_time_ind, event_ind);
                 d_time = time.elem(uni_event_ind);
                 // aggregate at distinct event times
                 delta_n = aggregate_sum(delta_n, d_time0);
                 d_x = aggregate_sum(d_x, d_time0);
+                d_offset = aggregate_sum(d_offset, d_time0);
             }
             riskset_size = arma::ones(time.n_elem);
             riskset_size = cum_sum(riskset_size, true).elem(uni_event_ind);
         }
 
+        // re-scale coef back
+        inline void rescale_coef()
+        {
+            this->coef = coef0;
+            if (this->standardize) {
+                for (size_t j {0}; j < coef0.n_elem; ++j) {
+                    this->coef[j] = coef0[j] / x_scale[j];
+                }
+            }
+        }
+
         // partially update event non-zero-one indicators
         // assuming only old event weights strictly between 0 and 1 need update
-        void update_event_weight(const arma::vec& event_)
+        inline void update_event_weight(const arma::vec& event_)
         {
             event = event_.elem(des_event_ind);
             event = event.elem(asc_time_ind);
@@ -115,18 +168,26 @@ namespace Intsurv {
         }
 
         // set offset
-        void set_offset(const arma::vec& offset_)
+        inline void set_offset(const arma::vec& offset_,
+                               const bool& sort = false)
         {
             if (offset_.n_elem == x.n_rows) {
-                // update offset for appropriate input
-                offset = offset_.elem(des_event_ind);
-                offset = offset.elem(asc_time_ind);
+                offset = offset_;
+                if (sort) {
+                    // update offset for appropriate input
+                    offset = offset.elem(des_event_ind);
+                    offset = offset.elem(asc_time_ind);
+                }
             } else if (offset.is_empty()) {
                 offset = arma::zeros(time.n_elem);
             } else {
                 throw std::length_error("Failed to set 'offset'.");
             }
         }
+
+        // function that computes baseline estimates
+        inline void compute_haz_surv_time(const arma::vec& beta);
+        inline void compute_haz_surv_time();
 
         // function that computes objective function only
         inline double objective(const arma::vec& beta) const;
@@ -140,7 +201,7 @@ namespace Intsurv {
         inline double objective(const arma::vec& beta, arma::vec& grad) const;
 
         // function computing B&L covariance lower bound matrix
-        void compute_inv_bl_cov_lowerbound_1(bool force_update);
+        inline void compute_inv_bl_cov_lowerbound_1(bool force_update);
 
         // function computing B&L lower bound for step size
         inline double bl_step_lowerbound(const arma::mat& x,
@@ -158,31 +219,85 @@ namespace Intsurv {
         inline arma::vec get_x() const { return x; }
 
         // fit regular Cox model
-        void fit(const arma::vec& start,
-                 const unsigned int max_iter,
-                 const double rel_tol);
+        inline void fit(const arma::vec& start,
+                        const unsigned int max_iter,
+                        const double rel_tol);
 
         // one-full cycle of coordinate-majorization-descent
-        void regularized_fit_update(arma::vec& beta,
-                                    arma::uvec& is_active,
-                                    const arma::vec& penalty,
-                                    const bool& update_active);
+        inline void regularized_fit_update(arma::vec& beta,
+                                           arma::uvec& is_active,
+                                           const arma::vec& penalty,
+                                           const bool& update_active);
 
         // fit regularized Cox model with adaptive lasso penalty
-        void regularized_fit(const double& lambda,
-                             arma::vec penalty_factor,
-                             const arma::vec& start,
-                             const unsigned int& max_iter,
-                             const double& rel_tol);
+        inline void regularized_fit(const double& lambda,
+                                    const arma::vec& penalty_factor,
+                                    const arma::vec& start,
+                                    const unsigned int& max_iter,
+                                    const double& rel_tol);
 
+        // helper functions
+        inline arma::uvec get_sort_index()
+        {
+            return des_event_ind.elem(asc_time_ind);
+        }
 
     };
+    // end of class definition
 
+    // compute baseline hazard function and its friends
+    // here beta is coef estimate for non-standardized data
+    inline void CoxphReg::compute_haz_surv_time(const arma::vec& beta)
+    {
+        arma::vec exp_x_beta { arma::ones(x.n_rows) };
+        if (this->standardize) {
+            if (! beta.is_empty() && beta.n_elem == x.n_cols) {
+                // re-scale the input beta
+                arma::vec beta0 { beta % x_scale.t() };
+                exp_x_beta = arma::exp(x * beta0 +
+                                       arma::as_scalar(x_center * beta));
+            } else {
+                // use estimated coef
+                exp_x_beta = arma::exp(x * this->coef0 +
+                                       arma::as_scalar(x_center * this->coef));
+            }
+        } else {
+            if (! beta.is_empty() && beta.n_elem == x.n_cols) {
+                exp_x_beta = arma::exp(x * beta);
+            } else {
+                // use estimated coef
+                exp_x_beta = arma::exp(x * this->coef);
+            }
+        }
+
+        // 1. hazard rate function
+        arma::vec h0_numer { Intsurv::aggregate_sum(event, time, false) };
+        arma::vec h0_denom { exp_x_beta % arma::exp(this->offset) };
+        h0_denom = Intsurv::aggregate_sum(h0_denom, time, false, true, true);
+        this->h0_time = h0_numer / h0_denom;
+        this->h_time = this->h0_time % exp_x_beta;
+
+        // 2. baseline cumulative hazard function
+        this->H0_time = arma::zeros(h0_time.n_elem);
+        for (size_t i: uni_event_ind) {
+            this->H0_time(i) = h0_time(i);
+        }
+        this->H0_time = Intsurv::cum_sum(this->H0_time);
+        this->H_time = this->H0_time % exp_x_beta;
+
+        // 3. baseline survival function
+        this->S0_time = arma::exp(- this->H0_time);
+        this->S_time = arma::exp(- this->H_time);
+    }
+    inline void CoxphReg::compute_haz_surv_time()
+    {
+        compute_haz_surv_time(this->coef);
+    }
 
     // the negative log-likelihood function based on the broslow's formula
     inline double CoxphReg::objective(const arma::vec& beta) const
     {
-        const arma::vec dx_beta {d_x * beta};
+        const arma::vec dx_beta {d_x * beta + d_offset};
         const arma::vec exp_x_beta {arma::exp(x * beta + offset)};
         const arma::vec h0_denom {cum_sum(exp_x_beta, true)};
         arma::vec log_h0_denom_event {arma::log(h0_denom.elem(uni_event_ind))};
@@ -222,7 +337,7 @@ namespace Intsurv {
     inline double CoxphReg::objective(const arma::vec& beta,
                                        arma::vec& grad) const
     {
-        const arma::vec dx_beta {d_x * beta};
+        const arma::vec dx_beta {d_x * beta + d_offset};
         const arma::vec exp_x_beta {arma::exp(x * beta + offset)};
         const arma::vec h0_denom {cum_sum(exp_x_beta, true)};
         arma::mat numer_mat {arma::zeros(x.n_rows, x.n_cols)};
@@ -242,7 +357,9 @@ namespace Intsurv {
 
     // one lower bound of covariance matrix
     // reference: formula (5.9) in Bohning and Lindsay (1988) SIAM
-    void CoxphReg::compute_inv_bl_cov_lowerbound_1(bool force_update = false)
+    inline void CoxphReg::compute_inv_bl_cov_lowerbound_1(
+        bool force_update = false
+        )
     {
         if (inv_bl_cov_lowerbound_1.is_empty() || force_update) {
             arma::mat res { arma::zeros(x.n_cols, x.n_cols) };
@@ -261,7 +378,7 @@ namespace Intsurv {
                 res += (sum_risk_xxt.slice(i) - crossprod(sum_risk_x.row(i)) /
                         riskset_size(i)) * (delta_n(i) / 2);
             }
-            inv_bl_cov_lowerbound_1 = arma::inv_sympd(res);
+            this->inv_bl_cov_lowerbound_1 = arma::inv_sympd(res);
         }
     }
     inline double CoxphReg::bl_step_lowerbound(const arma::mat& x,
@@ -304,9 +421,9 @@ namespace Intsurv {
     // fit regular Cox model by monotonic quadratic approximation algorithm
     // that allows non-integer "event" and tied events
     // reference: Bohning and Lindsay (1988) SIAM
-    void CoxphReg::fit(const arma::vec& start = 0,
-                       const unsigned int max_iter = 1000,
-                       const double rel_tol = 1e-6)
+    inline void CoxphReg::fit(const arma::vec& start = 0,
+                              const unsigned int max_iter = 1000,
+                              const double rel_tol = 1e-6)
     {
         this->compute_inv_bl_cov_lowerbound_1();
         arma::vec beta0 { arma::zeros(x.n_cols) };
@@ -318,7 +435,7 @@ namespace Intsurv {
         double b_new {0}, alpha {0};
         while (i < max_iter) {
             grad_vec = this->gradient(beta0);
-            h_vec = - inv_bl_cov_lowerbound_1 * grad_vec;
+            h_vec = - this->inv_bl_cov_lowerbound_1 * grad_vec;
             b_new = this->bl_step_lowerbound(x, h_vec);
             alpha = - arma::as_scalar(
                 Intsurv::crossprod(h_vec, grad_vec)
@@ -331,14 +448,17 @@ namespace Intsurv {
             beta0 = beta;
             i++;
         }
-        coef = beta;
+        this->coef0 = beta;
+        this->rescale_coef();
     }
 
     // run one cycle of coordinate descent over a given active set
-    void CoxphReg::regularized_fit_update(arma::vec& beta,
-                                          arma::uvec& is_active,
-                                          const arma::vec& penalty,
-                                          const bool& update_active = false)
+    inline void CoxphReg::regularized_fit_update(
+        arma::vec& beta,
+        arma::uvec& is_active,
+        const arma::vec& penalty,
+        const bool& update_active = false
+        )
     {
         // compute D_k
         arma::vec d_vec { cmd_lowerbound() };
@@ -364,11 +484,13 @@ namespace Intsurv {
 
     // fitting regularized Cox model with coordinate-majorizatio-descent
     // algorithm that allows non-integer "event" and tied events
-    void CoxphReg::regularized_fit(const double& lambda = 0,
-                                   arma::vec penalty_factor = 0,
-                                   const arma::vec& start = 0,
-                                   const unsigned int& max_iter = 1000,
-                                   const double& rel_tol = 1e-6)
+    inline void CoxphReg::regularized_fit(
+        const double& lambda = 0,
+        const arma::vec& penalty_factor = 0,
+        const arma::vec& start = 0,
+        const unsigned int& max_iter = 1000,
+        const double& rel_tol = 1e-6
+        )
     {
         // declarations
         arma::vec beta0 { arma::zeros(x.n_cols) };
@@ -379,14 +501,12 @@ namespace Intsurv {
         arma::uvec is_active { arma::ones<arma::uvec>(x.n_cols) };
         arma::uvec is_active_stored { is_active };
 
+        arma::vec penalty { arma::ones(x.n_cols) };
         if (penalty_factor.n_elem == x.n_cols) {
             // re-scale so that sum(factor) = number of predictors
-            penalty_factor = penalty_factor * x.n_cols /
-                arma::sum(penalty_factor);
-        } else {
-            penalty_factor = arma::ones(x.n_cols);
+            penalty = penalty_factor * x.n_cols / arma::sum(penalty_factor);
         }
-        penalty_factor *= lambda;
+        penalty *= lambda;
 
         // the lower bound for second derivative in cmd
         arma::vec d_vec { cmd_lowerbound() };
@@ -399,7 +519,7 @@ namespace Intsurv {
                 // cycles over the active set
                 while (ii < max_iter) {
                     regularized_fit_update(beta, is_active,
-                                           penalty_factor, true);
+                                           penalty, true);
                     if (Intsurv::isAlmostEqual(Intsurv::l2_norm(beta), 0) ||
                         Intsurv::rel_l2_norm(beta, beta0) < rel_tol) {
                         break;
@@ -410,7 +530,7 @@ namespace Intsurv {
                 is_active_stored = is_active;
                 // run a full cycle over the converged beta
                 is_active = arma::ones<arma::uvec>(x.n_cols);
-                regularized_fit_update(beta, is_active, penalty_factor, true);
+                regularized_fit_update(beta, is_active, penalty, true);
                 // check two active sets coincide
                 if (arma::sum(arma::abs(is_active - is_active_stored)) > 0) {
                     // if different, repeat this process
@@ -423,7 +543,7 @@ namespace Intsurv {
         } else {
             // regular coordinate descent
             while (i < max_iter) {
-                regularized_fit_update(beta, is_active, penalty_factor, false);
+                regularized_fit_update(beta, is_active, penalty, false);
                 if (Intsurv::isAlmostEqual(Intsurv::l2_norm(beta), 0) ||
                     Intsurv::rel_l2_norm(beta, beta0) < rel_tol) {
                     break;
@@ -432,9 +552,9 @@ namespace Intsurv {
                 i++;
             }
         }
-        coef = beta;
+        this->coef0 = beta;
+        this->rescale_coef();
     }
-
 
 
 }

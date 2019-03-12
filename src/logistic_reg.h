@@ -27,30 +27,85 @@ namespace Intsurv {
     class LogisticReg
     {
     private:
-        arma::mat x;
+        arma::mat x;            // (standardized) x
         arma::vec y;
         bool intercept;
+        bool standardize;       // is x standardized
+        arma::rowvec x_center;  // the column center of x
+        arma::rowvec x_scale;   // the scale of x
+        arma::vec coef0;        // coef before rescaling
+        // iteration matrix in Bohning and Lindsay (1988)
+        arma::mat bl_iter_mat;
         arma::rowvec cmd_lowerbound;
 
     public:
-        arma::vec coef;
+        arma::vec coef;         // coef rescaled
         double negative_logL {0};
 
         // constructors
-        LogisticReg(const arma::mat& x_, const arma::vec& y_,
-                    const bool intercept_ = true)
+        LogisticReg(const arma::mat& x_,
+                    const arma::vec& y_,
+                    const bool intercept_ = true,
+                    const bool standardize_ = true)
         {
             intercept = intercept_;
-            if (intercept_) {
-                x = arma::join_horiz(arma::ones(x_.n_rows), x_);
-            } else {
-                x = x_;
+            standardize = standardize_;
+            x = x_;
+            if (standardize) {
+                x_center = arma::mean(x);
+                x_scale = arma::stddev(x, 1);
+                for (size_t j {0}; j < x.n_cols; ++j) {
+                    if (x_scale(j) > 0) {
+                        x.col(j) = (x.col(j) - x_center(j)) / x_scale(j);
+                    } else {
+                        throw std::range_error(
+                            "The design 'x' contains constant column."
+                            );
+                    }
+                }
+            }
+            if (intercept) {
+                x = arma::join_horiz(arma::ones(x.n_rows), x);
             }
             y = y_;
         }
 
         // function members
+        // transfer coef for standardized data to coef for non-standardized data
+        inline void rescale_coef()
+        {
+            this->coef = coef0;
+            if (this->standardize) {
+                if (this->intercept) {
+                    arma::uvec non_int_ind {
+                        arma::regspace<arma::uvec>(1, coef0.n_elem - 1)
+                    };
+                    this->coef[0] = coef0(0) -
+                        arma::as_scalar((x_center / x_scale) *
+                                        coef0.elem(non_int_ind));
+                }
+                for (size_t j {1}; j < coef0.n_elem; ++j) {
+                    this->coef[j] = coef0[j] / x_scale[j - 1];
+                }
+            }
+        }
+        // transfer coef for non-standardized data to coef for standardized data
+        inline arma::vec rev_rescale_coef(const arma::vec& beta) const
+        {
+            arma::vec beta0 { beta };
+            double tmp {0};
+            for (size_t j {1}; j < beta.n_elem; ++j) {
+                beta0(j) *= x_scale(j - 1);
+                tmp += beta(j) * x_center(j - 1);
+            }
+            beta0(0) += tmp;
+            return beta0;
+        }
+
         inline arma::vec linkinv(const arma::vec& eta) const;
+
+        // here beta is coef vector for non-standardized data
+        inline arma::vec predict(const arma::vec& beta) const;
 
         inline double objective(const arma::vec& beta) const;
 
@@ -61,44 +116,70 @@ namespace Intsurv {
 
         inline double objective(const arma::vec& beta, arma::vec& grad) const;
 
+        // compute iteration matrix in Bohning and Lindsay (1988)
+        inline void compute_bl_iter_mat(bool force_update);
+
         // fit regular logistic regression model
-        void fit(const arma::vec& start,
-                 const unsigned int& max_iter,
-                 const double& rel_tol);
+        inline void fit(const arma::vec& start,
+                        const unsigned int& max_iter,
+                        const double& rel_tol);
 
         // compute cov lowerbound used in regularied model
-        void compute_cmd_lowerbound(bool force_update);
+        inline void compute_cmd_lowerbound(bool force_update);
 
         // update step for regularized logistic regression model
-        void regularized_fit_update(arma::vec& beta,
-                                    arma::uvec& is_active,
-                                    const arma::rowvec& b_vec,
-                                    const arma::vec& penalty,
-                                    const bool& update_active);
+        inline void regularized_fit_update(arma::vec& beta,
+                                           arma::uvec& is_active,
+                                           const arma::rowvec& b_vec,
+                                           const arma::vec& penalty,
+                                           const bool& update_active);
 
         // fit regularized logistic regression model
-        void regularized_fit(const double& lambda,
-                             const arma::vec& penalty_factor,
-                             const arma::vec& start,
-                             const unsigned int& max_iter,
-                             const double& rel_tol);
+        inline void regularized_fit(const double& lambda,
+                                    const arma::vec& penalty_factor,
+                                    const arma::vec& start,
+                                    const unsigned int& max_iter,
+                                    const double& rel_tol);
+
+        // function that helps update y
+        inline void update_y(const arma::vec& y_) { this->y = y_; }
 
         // some simple functions
-        unsigned int sample_size() const
+        inline unsigned int sample_size() const
         {
             return y.n_elem;
         }
 
         // helper function members to access some private members
-        arma::mat get_x() const { return x; }
-        arma::vec get_y() const { return y; }
+        inline arma::mat get_x(bool include_intercept = true) const
+        {
+            arma::mat out {this->x};
+            if (include_intercept && this-> intercept) {
+                out.shed_col(0);
+            }
+            if (this->standardize) {
+                for (size_t j {0}; j < out.n_cols; ++j) {
+                    out.col(j) = x_scale(j) * out.col(j) + x_center(j);
+                }
+            }
+            return out;
+        }
+        inline arma::vec get_y() const { return y; }
 
     };
 
     // define inverse link function
-    inline arma::vec LogisticReg::linkinv(const arma::vec& eta) const
+    inline arma::vec LogisticReg::linkinv(const arma::vec& beta) const
     {
-        return 1 / (1 + arma::exp(- eta));
+        return 1 / (1 + arma::exp(- Intsurv::mat2vec(x * beta)));
+    }
+    inline arma::vec LogisticReg::predict(const arma::vec& beta) const
+    {
+        arma::vec beta0 { beta };
+        if (this->standardize) {
+            beta0 = rev_rescale_coef(beta0);
+        }
+        return linkinv(beta0);
     }
 
     // define objective function (negative log-likehood function)
@@ -113,14 +194,14 @@ namespace Intsurv {
     // define gradient function
     inline arma::vec LogisticReg::gradient(const arma::vec& beta) const
     {
-        arma::vec y_hat { linkinv(x * beta) };
+        arma::vec y_hat { linkinv(beta) };
         return x.t() * (y_hat - y);
     }
     // define gradient function at k-th dimension
     inline double LogisticReg::gradient(const arma::vec& beta,
                                         const unsigned int k) const
     {
-        arma::vec y_hat { linkinv(x * beta) };
+        arma::vec y_hat { linkinv(beta) };
         return arma::sum((y_hat - y) % x.col(k));
     }
 
@@ -138,12 +219,20 @@ namespace Intsurv {
         return res;
     }
 
+    // compute iteration matrix in Bohning and Lindsay (1988)
+    inline void LogisticReg::compute_bl_iter_mat(bool force_update = false)
+    {
+        if (force_update || this->bl_iter_mat.is_empty()) {
+            this->bl_iter_mat = 4 * arma::inv_sympd(x.t() * x) * x.t();
+        }
+    }
+
     // fitting regular logistic model by monotonic quadratic approximation
     // algorithm non-integer y vector is allowed
     // reference: Bohning and Lindsay (1988) SIAM
-    void LogisticReg::fit(const arma::vec& start = 0,
-                          const unsigned int& max_iter = 1000,
-                          const double& rel_tol = 1e-6)
+    inline void LogisticReg::fit(const arma::vec& start = 0,
+                                 const unsigned int& max_iter = 1000,
+                                 const double& rel_tol = 1e-6)
     {
         arma::vec beta0 { arma::zeros(x.n_cols) };
         if (start.n_elem == x.n_cols) {
@@ -152,12 +241,11 @@ namespace Intsurv {
         arma::vec beta { beta0 };
         arma::vec eta { arma::zeros(y.n_elem) };
         arma::vec y_hat { eta };
-        arma::mat iter_mat { 4 * arma::inv_sympd(x.t() * x) * x.t() };
+        this->compute_bl_iter_mat();
         size_t i {0};
         while (i < max_iter) {
-            eta = x * beta0;
-            y_hat = linkinv(eta);
-            beta = beta0 + iter_mat * (y - y_hat);
+            y_hat = linkinv(beta0);
+            beta = beta0 + this->bl_iter_mat * (y - y_hat);
             if (Intsurv::rel_l2_norm(beta, beta0) < rel_tol) {
                 break;
             }
@@ -165,24 +253,28 @@ namespace Intsurv {
             beta0 = beta;
             i++;
         }
-        this->coef = beta;
+        this->coef0 = beta;
+        // rescale coef back
+        this->rescale_coef();
     }
 
     // compute CMD lowerbound vector
-    void LogisticReg::compute_cmd_lowerbound(bool force_update = false)
+    inline void LogisticReg::compute_cmd_lowerbound(bool force_update = false)
     {
         if (force_update || cmd_lowerbound.is_empty()) {
             this->cmd_lowerbound = arma::sum(arma::square(x), 0) /
-                (4 * y.n_elem);
+                (4 * x.n_rows);
         }
     }
 
     // run one cycle of coordinate descent over a given active set
-    void LogisticReg::regularized_fit_update(arma::vec& beta,
-                                             arma::uvec& is_active,
-                                             const arma::rowvec& b_vec,
-                                             const arma::vec& penalty,
-                                             const bool& update_active = false)
+    inline void LogisticReg::regularized_fit_update(
+        arma::vec& beta,
+        arma::uvec& is_active,
+        const arma::rowvec& b_vec,
+        const arma::vec& penalty,
+        const bool& update_active = false
+        )
     {
         double dlj { 0 };
         unsigned int n { y.n_elem };
@@ -206,11 +298,13 @@ namespace Intsurv {
     }
 
     // regularized logistic model by coordinate-majorization-descent algorithm
-    void LogisticReg::regularized_fit(const double& lambda = 0,
-                                      const arma::vec& penalty_factor = 0,
-                                      const arma::vec& start = 0,
-                                      const unsigned int& max_iter = 1000,
-                                      const double& rel_tol = 1e-6)
+    inline void LogisticReg::regularized_fit(
+        const double& lambda = 0,
+        const arma::vec& penalty_factor = 0,
+        const arma::vec& start = 0,
+        const unsigned int& max_iter = 1000,
+        const double& rel_tol = 1e-6
+        )
     {
         arma::vec beta0 { arma::zeros(x.n_cols) };
         if (start.n_elem == x.n_cols) {
@@ -223,7 +317,7 @@ namespace Intsurv {
         unsigned int int_intercept { static_cast<unsigned int>(intercept) };
         arma::vec penalty { arma::ones(x.n_cols - int_intercept) };
         if (penalty_factor.n_elem == penalty.n_elem) {
-            penalty = penalty_factor / arma::sum(penalty_factor);
+            penalty = penalty_factor * x.n_cols / arma::sum(penalty_factor);
         }
         penalty *= lambda;
         if (this->intercept) {
@@ -276,7 +370,9 @@ namespace Intsurv {
                 i++;
             }
         }
-        this->coef = beta;
+        this->coef0 = beta;
+        // rescale coef back
+        this->rescale_coef();
     }
 
 }
