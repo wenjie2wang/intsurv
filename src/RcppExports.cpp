@@ -24,8 +24,8 @@
 using namespace Rcpp;
 
 // coxph_cure
-Rcpp::NumericVector coxph_cure(const arma::vec& time, const arma::vec& event, const arma::mat& cox_x, const arma::mat& cure_x, const bool cure_intercept, const arma::vec& cox_start, const arma::vec& cure_start, const unsigned int& max_iter, const double& rel_tol);
-RcppExport SEXP _intsurv_coxph_cure(SEXP timeSEXP, SEXP eventSEXP, SEXP cox_xSEXP, SEXP cure_xSEXP, SEXP cure_interceptSEXP, SEXP cox_startSEXP, SEXP cure_startSEXP, SEXP max_iterSEXP, SEXP rel_tolSEXP) {
+Rcpp::NumericVector coxph_cure(const arma::vec& time, const arma::vec& event, const arma::mat& cox_x, const arma::mat& cure_x, const bool cure_intercept, const arma::vec& cox_start, const arma::vec& cure_start, const unsigned int& em_max_iter, const double& em_rel_tol, const unsigned int& cox_mstep_max_iter, const double& cox_mstep_rel_tol, const unsigned int& cure_mstep_max_iter, const double& cure_mstep_rel_tol);
+RcppExport SEXP _intsurv_coxph_cure(SEXP timeSEXP, SEXP eventSEXP, SEXP cox_xSEXP, SEXP cure_xSEXP, SEXP cure_interceptSEXP, SEXP cox_startSEXP, SEXP cure_startSEXP, SEXP em_max_iterSEXP, SEXP em_rel_tolSEXP, SEXP cox_mstep_max_iterSEXP, SEXP cox_mstep_rel_tolSEXP, SEXP cure_mstep_max_iterSEXP, SEXP cure_mstep_rel_tolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -36,9 +36,40 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const bool >::type cure_intercept(cure_interceptSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type cox_start(cox_startSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type cure_start(cure_startSEXP);
-    Rcpp::traits::input_parameter< const unsigned int& >::type max_iter(max_iterSEXP);
-    Rcpp::traits::input_parameter< const double& >::type rel_tol(rel_tolSEXP);
-    rcpp_result_gen = Rcpp::wrap(coxph_cure(time, event, cox_x, cure_x, cure_intercept, cox_start, cure_start, max_iter, rel_tol));
+    Rcpp::traits::input_parameter< const unsigned int& >::type em_max_iter(em_max_iterSEXP);
+    Rcpp::traits::input_parameter< const double& >::type em_rel_tol(em_rel_tolSEXP);
+    Rcpp::traits::input_parameter< const unsigned int& >::type cox_mstep_max_iter(cox_mstep_max_iterSEXP);
+    Rcpp::traits::input_parameter< const double& >::type cox_mstep_rel_tol(cox_mstep_rel_tolSEXP);
+    Rcpp::traits::input_parameter< const unsigned int& >::type cure_mstep_max_iter(cure_mstep_max_iterSEXP);
+    Rcpp::traits::input_parameter< const double& >::type cure_mstep_rel_tol(cure_mstep_rel_tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(coxph_cure(time, event, cox_x, cure_x, cure_intercept, cox_start, cure_start, em_max_iter, em_rel_tol, cox_mstep_max_iter, cox_mstep_rel_tol, cure_mstep_max_iter, cure_mstep_rel_tol));
+    return rcpp_result_gen;
+END_RCPP
+}
+// coxph_cure_reg
+Rcpp::NumericVector coxph_cure_reg(const arma::vec& time, const arma::vec& event, const arma::mat& cox_x, const arma::mat& cure_x, const bool cure_intercept, const double& cox_lambda, const arma::vec& cox_penalty_factor, const double& cure_lambda, const arma::vec& cure_penalty_factor, const arma::vec& cox_start, const arma::vec& cure_start, const unsigned int& em_max_iter, const double& em_rel_tol, const unsigned int& cox_mstep_max_iter, const double& cox_mstep_rel_tol, const unsigned int& cure_mstep_max_iter, const double& cure_mstep_rel_tol);
+RcppExport SEXP _intsurv_coxph_cure_reg(SEXP timeSEXP, SEXP eventSEXP, SEXP cox_xSEXP, SEXP cure_xSEXP, SEXP cure_interceptSEXP, SEXP cox_lambdaSEXP, SEXP cox_penalty_factorSEXP, SEXP cure_lambdaSEXP, SEXP cure_penalty_factorSEXP, SEXP cox_startSEXP, SEXP cure_startSEXP, SEXP em_max_iterSEXP, SEXP em_rel_tolSEXP, SEXP cox_mstep_max_iterSEXP, SEXP cox_mstep_rel_tolSEXP, SEXP cure_mstep_max_iterSEXP, SEXP cure_mstep_rel_tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::vec& >::type time(timeSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type event(eventSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type cox_x(cox_xSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type cure_x(cure_xSEXP);
+    Rcpp::traits::input_parameter< const bool >::type cure_intercept(cure_interceptSEXP);
+    Rcpp::traits::input_parameter< const double& >::type cox_lambda(cox_lambdaSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type cox_penalty_factor(cox_penalty_factorSEXP);
+    Rcpp::traits::input_parameter< const double& >::type cure_lambda(cure_lambdaSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type cure_penalty_factor(cure_penalty_factorSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type cox_start(cox_startSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type cure_start(cure_startSEXP);
+    Rcpp::traits::input_parameter< const unsigned int& >::type em_max_iter(em_max_iterSEXP);
+    Rcpp::traits::input_parameter< const double& >::type em_rel_tol(em_rel_tolSEXP);
+    Rcpp::traits::input_parameter< const unsigned int& >::type cox_mstep_max_iter(cox_mstep_max_iterSEXP);
+    Rcpp::traits::input_parameter< const double& >::type cox_mstep_rel_tol(cox_mstep_rel_tolSEXP);
+    Rcpp::traits::input_parameter< const unsigned int& >::type cure_mstep_max_iter(cure_mstep_max_iterSEXP);
+    Rcpp::traits::input_parameter< const double& >::type cure_mstep_rel_tol(cure_mstep_rel_tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(coxph_cure_reg(time, event, cox_x, cure_x, cure_intercept, cox_lambda, cox_penalty_factor, cure_lambda, cure_penalty_factor, cox_start, cure_start, em_max_iter, em_rel_tol, cox_mstep_max_iter, cox_mstep_rel_tol, cure_mstep_max_iter, cure_mstep_rel_tol));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -70,7 +101,8 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_intsurv_coxph_cure", (DL_FUNC) &_intsurv_coxph_cure, 9},
+    {"_intsurv_coxph_cure", (DL_FUNC) &_intsurv_coxph_cure, 13},
+    {"_intsurv_coxph_cure_reg", (DL_FUNC) &_intsurv_coxph_cure_reg, 17},
     {"_intsurv_aggregateSum", (DL_FUNC) &_intsurv_aggregateSum, 5},
     {"_intsurv_revcumsum", (DL_FUNC) &_intsurv_revcumsum, 1},
     {NULL, NULL, 0}
