@@ -200,20 +200,29 @@ namespace Intsurv {
                                    const bool cumulative = false,
                                    const bool reversely = false)
     {
-        const unsigned long int n_x {x.size()};
+        const unsigned int n_x { x.n_elem };
         if (n_x != indices.n_elem) {
             throw std::logic_error(
                 "The x and indices must have the same length."
                 );
         }
-        arma::vec uniInd {arma::unique(indices)};
-        const unsigned long int n_uniInd {uniInd.n_rows};
+        arma::vec uniInd { arma::unique(indices) };
+        const unsigned int n_uniInd { uniInd.n_elem };
+
         // the x's having a same index are summed
-        arma::vec sumVec {arma::zeros(n_uniInd)};
-        for (size_t i {0}; i < n_uniInd; ++i) {
-            for (size_t j {0}; j < n_x; ++j) {
-                if (isAlmostEqual(uniInd[i], indices[j])) {
-                    sumVec[i] += x[j];
+        arma::vec sumVec { arma::zeros(n_uniInd) };
+
+        // early exit if no need to aggregate for all unique indices
+        bool is_all_unique { n_uniInd == n_x };
+        if (is_all_unique) {
+            arma::uvec sort_ind { arma::sort_index(indices) };
+            sumVec = x.elem(sort_ind);
+        } else {
+            for (size_t i {0}; i < n_uniInd; ++i) {
+                for (size_t j {0}; j < n_x; ++j) {
+                    if (isAlmostEqual(uniInd[i], indices[j])) {
+                        sumVec[i] += x[j];
+                    }
                 }
             }
         }
@@ -221,7 +230,7 @@ namespace Intsurv {
             sumVec = cum_sum(sumVec, reversely);
         }
         // if simplify the sum results to unique and sorted indices
-        if (simplify) {
+        if (simplify || is_all_unique) {
             return sumVec;
         }
         // else
