@@ -48,6 +48,8 @@ namespace Intsurv {
         arma::uvec uni_time_ind;   // the index indicating the first record on
                                    // each time whether event or censoring
         arma::vec offset;          // offset term
+        // size of risk-set at each time point
+        arma::vec riskset_size_time;
 
         // at each unique event time point
         arma::vec d_time;          // distinct event times
@@ -70,6 +72,9 @@ namespace Intsurv {
         arma::vec h_time;
         arma::vec H_time;
         arma::vec S_time;
+        arma::vec hc_time;
+        arma::vec Hc_time;
+        arma::vec Sc_time;
 
         // constructors
         CoxphReg(const arma::vec& time_,
@@ -188,6 +193,7 @@ namespace Intsurv {
         // function that computes baseline estimates
         inline void compute_haz_surv_time(const arma::vec& beta);
         inline void compute_haz_surv_time();
+        inline void compute_censor_haz_surv_time();
 
         // function that computes objective function only
         inline double objective(const arma::vec& beta) const;
@@ -292,6 +298,24 @@ namespace Intsurv {
     inline void CoxphReg::compute_haz_surv_time()
     {
         compute_haz_surv_time(this->coef);
+    }
+    inline void CoxphReg::compute_censor_haz_surv_time()
+    {
+        // 1. hazard rate function
+        arma::vec censor_ind { 1 - event };
+        arma::vec delta_c { Intsurv::aggregate_sum(censor_ind, time, false) };
+        if (this->riskset_size_time.is_empty()) {
+            arma::vec tmp { arma::ones(this->time.n_elem) };
+            this->riskset_size_time =
+                Intsurv::aggregate_sum(tmp, time, false, true, true);
+        }
+        this->hc_time = delta_c / this->riskset_size_time;
+        this->Hc_time = arma::zeros(this->hc_time.n_elem);
+        for (size_t i: uni_time_ind) {
+            this->Hc_time(i) = this->Hc_time(i);
+        }
+        this->Hc_time = Intsurv::cum_sum(this->Hc_time);
+        this->Sc_time = arma::exp(- this->Sc_time);
     }
 
     // the negative log-likelihood function based on the broslow's formula
