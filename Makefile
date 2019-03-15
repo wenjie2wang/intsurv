@@ -23,6 +23,7 @@ install: $(tar)
 
 
 $(tar): $(objects)
+	@rm -rf src/RcppExports.cpp R/RcppExports.R
 	@Rscript -e "library(methods);" \
 	-e "Rcpp::compileAttributes()" \
 	-e "devtools::document();";
@@ -52,4 +53,3 @@ TAGS:
 .PHONY: clean
 clean:
 	@rm -rf *~ */*~ *.Rhistroy src/{*.o,*.so} *.tar.gz *.Rcheck/ .\#*
-	@rm -rf src/RcppExports.cpp R/RcppExports.R
