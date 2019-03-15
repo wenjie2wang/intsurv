@@ -18,7 +18,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <algorithm>
+#include <algorithm>            // std::max
+#include <cmath>                // std::pow and std::sqrt, etc.
 #include <limits>
 #include <stdexcept>
 #include <string>
@@ -376,7 +377,12 @@ namespace Intsurv {
     // function computing relateive tolerance based on l2-norm
     inline double rel_l2_norm(const arma::vec& x_old, const arma::vec& x_new)
     {
-        return l2_norm(x_new - x_old) / l2_norm(x_new + x_old);
+        double denom { l2_norm(x_new + x_old) };
+        if (isAlmostEqual(denom, 0)) {
+            return 0;
+        } else {
+            return l2_norm(x_new - x_old) / denom;
+        }
     }
 
     // function that computes L1-norm
