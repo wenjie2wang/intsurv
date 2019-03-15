@@ -24,8 +24,8 @@ install: $(tar)
 
 $(tar): $(objects)
 	@Rscript -e "library(methods);" \
-		-e "devtools::document();" \
-		-e "Rcpp::compileAttributes()";
+	-e "Rcpp::compileAttributes()" \
+	-e "devtools::document();";
 	@$(MAKE) updateTimestamp
 	R CMD build .
 
@@ -52,4 +52,4 @@ TAGS:
 .PHONY: clean
 clean:
 	@rm -rf *~ */*~ *.Rhistroy src/{*.o,*.so} *.tar.gz *.Rcheck/ .\#*
-	@rm -rf src/RcppExports.cpp
+	@rm -rf src/RcppExports.cpp R/RcppExports.R
