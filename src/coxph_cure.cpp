@@ -81,7 +81,6 @@ Rcpp::List coxph_cure(
     }
 
     arma::vec p_vec { cure_object.predict(cure_beta) };
-    cox_object.set_offset(arma::log(s_event));
     cox_object.compute_haz_surv_time(cox_beta);
 
     size_t i {0};
@@ -129,9 +128,10 @@ Rcpp::List coxph_cure(
             }
             // for case 2
             for (size_t j: case2_ind) {
-                obs_ell += std::log(p_vec(j) * cox_object.S_time(j) +
-                                    (1 - p_vec(j)));
-                    }
+                obs_ell += std::log(
+                    p_vec(j) * cox_object.S_time(j) + (1 - p_vec(j))
+                    );
+            }
             break;
         }
         // update iter
@@ -263,7 +263,6 @@ Rcpp::List coxph_cure_reg(
     }
 
     arma::vec p_vec { cure_object.predict(cure_beta) };
-    cox_object.set_offset(arma::log(s_event));
     cox_object.compute_haz_surv_time(cox_beta);
 
     size_t i {0}, mat_idx {0};

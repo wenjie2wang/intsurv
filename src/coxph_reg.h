@@ -154,10 +154,14 @@ namespace Intsurv {
 
         // partially update event non-zero-one indicators
         // assuming only old event weights strictly between 0 and 1 need update
-        inline void update_event_weight(const arma::vec& event_)
+        inline void update_event_weight(const arma::vec& event_,
+                                        const bool& is_sorted = true)
         {
-            event = event_.elem(des_event_ind);
-            event = event.elem(asc_time_ind);
+            event = event_;
+            if (! is_sorted) {
+                event = event.elem(des_event_ind);
+                event = event.elem(asc_time_ind);
+            }
             // need to update delta_n and d_x
             delta_n = event.elem(event_ind);
             d_x = x.rows(event_ind);
@@ -174,11 +178,11 @@ namespace Intsurv {
 
         // set offset
         inline void set_offset(const arma::vec& offset_,
-                               const bool& sort = false)
+                               const bool& is_sorted = true)
         {
             if (offset_.n_elem == x.n_rows) {
                 offset = offset_;
-                if (sort) {
+                if (! is_sorted) {
                     // update offset for appropriate input
                     offset = offset.elem(des_event_ind);
                     offset = offset.elem(asc_time_ind);
@@ -301,7 +305,6 @@ namespace Intsurv {
     }
     inline void CoxphReg::compute_censor_haz_surv_time()
     {
-        // 1. hazard rate function
         arma::vec censor_ind { 1 - event };
         arma::vec delta_c { Intsurv::aggregate_sum(censor_ind, time, false) };
         if (this->riskset_size_time.is_empty()) {
@@ -312,10 +315,10 @@ namespace Intsurv {
         this->hc_time = delta_c / this->riskset_size_time;
         this->Hc_time = arma::zeros(this->hc_time.n_elem);
         for (size_t i: uni_time_ind) {
-            this->Hc_time(i) = this->Hc_time(i);
+            this->Hc_time(i) = this->hc_time(i);
         }
         this->Hc_time = Intsurv::cum_sum(this->Hc_time);
-        this->Sc_time = arma::exp(- this->Sc_time);
+        this->Sc_time = arma::exp(- this->Hc_time);
     }
 
     // the negative log-likelihood function based on the broslow's formula
