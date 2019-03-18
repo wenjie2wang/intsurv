@@ -34,3 +34,7 @@ revcumsum <- function(x) {
     .Call('_intsurv_revcumsum', PACKAGE = 'intsurv', x)
 }
 
+int_coxph_cure <- function(time, event, cox_x, cure_x, cure_intercept = TRUE, cox_start = 0L, cure_start = 0L, prob_event_start = 0.5, em_max_iter = 1000L, em_rel_tol = 1e-3, cox_mstep_max_iter = 30L, cox_mstep_rel_tol = 1e-3, cure_mstep_max_iter = 30L, cure_mstep_rel_tol = 1e-6) {
+    .Call('_intsurv_int_coxph_cure', PACKAGE = 'intsurv', time, event, cox_x, cure_x, cure_intercept, cox_start, cure_start, prob_event_start, em_max_iter, em_rel_tol, cox_mstep_max_iter, cox_mstep_rel_tol, cure_mstep_max_iter, cure_mstep_rel_tol)
+}
+
