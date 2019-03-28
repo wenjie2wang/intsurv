@@ -60,10 +60,17 @@ namespace Intsurv {
 
         // inverse matrix of formula (5.9) in Bohning and Lindsay (1988) SIAM
         arma::mat inv_bl_cov_lowerbound_1;
+        // for regularized regression
+        arma::vec cmd_lowerbound;
 
     public:
         double partial_logL {0};   // partial log-likelihood
         arma::vec coef;            // covariate coefficient estimates
+
+        // regularized
+        arma::mat reg_coef;     // coef rescaled
+        arma::vec reg_lambda;   // lambda sequence
+        arma::vec reg_neg_logL; // negative likelihood
 
         // baseline estimates at every time point (unique or not)
         arma::vec h0_time;
@@ -216,7 +223,7 @@ namespace Intsurv {
                                          const arma::vec& h) const;
 
         // get the lower bound of second derivative in CMD algorithm
-        inline arma::vec cmd_lowerbound() const;
+        inline void compute_cmd_lowerbound(bool force_update);
 
         // some simple functions
         inline unsigned int sample_size() const { return time.n_elem; }
@@ -238,9 +245,18 @@ namespace Intsurv {
                                            const bool& update_active);
 
         // fit regularized Cox model with adaptive lasso penalty
+        // for a perticular lambda
         inline void regularized_fit(const double& lambda,
                                     const arma::vec& penalty_factor,
                                     const arma::vec& start,
+                                    const unsigned int& max_iter,
+                                    const double& rel_tol);
+
+        // overload for a sequence of lambda's
+        inline void regularized_fit(arma::vec lambda,
+                                    const unsigned int& nlambda,
+                                    double lambda_min_ratio,
+                                    const arma::vec& penalty_factor,
                                     const unsigned int& max_iter,
                                     const double& rel_tol);
 
@@ -279,9 +295,9 @@ namespace Intsurv {
         }
 
         // 1. hazard rate function
-        arma::vec h0_numer { Intsurv::aggregate_sum(event, time, false) };
+        arma::vec h0_numer { aggregate_sum(event, time, false) };
         arma::vec h0_denom { exp_x_beta % arma::exp(this->offset) };
-        h0_denom = Intsurv::aggregate_sum(h0_denom, time, false, true, true);
+        h0_denom = aggregate_sum(h0_denom, time, false, true, true);
         this->h0_time = h0_numer / h0_denom;
         this->h_time = this->h0_time % exp_x_beta;
 
@@ -290,7 +306,7 @@ namespace Intsurv {
         for (size_t i: uni_event_ind) {
             this->H0_time(i) = h0_time(i);
         }
-        this->H0_time = Intsurv::cum_sum(this->H0_time);
+        this->H0_time = cum_sum(this->H0_time);
         this->H_time = this->H0_time % exp_x_beta;
 
         // 3. baseline survival function
@@ -304,18 +320,18 @@ namespace Intsurv {
     inline void CoxphReg::compute_censor_haz_surv_time()
     {
         arma::vec censor_ind { 1 - event };
-        arma::vec delta_c { Intsurv::aggregate_sum(censor_ind, time, false) };
+        arma::vec delta_c { aggregate_sum(censor_ind, time, false) };
         if (this->riskset_size_time.is_empty()) {
             arma::vec tmp { arma::ones(this->time.n_elem) };
             this->riskset_size_time =
-                Intsurv::aggregate_sum(tmp, time, false, true, true);
+                aggregate_sum(tmp, time, false, true, true);
         }
         this->hc_time = delta_c / this->riskset_size_time;
         this->Hc_time = arma::zeros(this->hc_time.n_elem);
         for (size_t i: uni_time_ind) {
             this->Hc_time(i) = this->hc_time(i);
         }
-        this->Hc_time = Intsurv::cum_sum(this->Hc_time);
+        this->Hc_time = cum_sum(this->Hc_time);
         this->Sc_time = arma::exp(- this->Hc_time);
     }
 
@@ -348,7 +364,7 @@ namespace Intsurv {
     }
     // the gradient of negative loglikelihood function at k-th direction
     inline double CoxphReg::gradient(const arma::vec& beta,
-                                      const unsigned int k) const
+                                     const unsigned int k) const
     {
         const arma::vec exp_x_beta { arma::exp(x * beta + offset) };
         arma::vec h0_denom { cum_sum(exp_x_beta, true) };
@@ -360,7 +376,7 @@ namespace Intsurv {
 
     // the negative log-likelihood function based on the broslow's formula
     inline double CoxphReg::objective(const arma::vec& beta,
-                                       arma::vec& grad) const
+                                      arma::vec& grad) const
     {
         const arma::vec dx_beta {d_x * beta + d_offset};
         const arma::vec exp_x_beta {arma::exp(x * beta + offset)};
@@ -427,20 +443,22 @@ namespace Intsurv {
 
     // compute lower bound of second derivative
     // in coordinate-majorization-descent algorithm (cmd)
-    inline arma::vec CoxphReg::cmd_lowerbound() const
+    inline void CoxphReg::compute_cmd_lowerbound(bool force_update = false)
     {
-        // compute D_k at each event time point
-        arma::mat max_risk_x { Intsurv::cum_max(x, true) };
-        arma::mat min_risk_x { Intsurv::cum_min(x, true) };
-        max_risk_x = max_risk_x.rows(uni_event_ind);
-        min_risk_x = min_risk_x.rows(uni_event_ind);
-        arma::vec res { arma::zeros(x.n_cols) };
-        for (size_t k {0}; k < x.n_cols; ++k) {
-            res(k) = arma::sum(
-                pow(max_risk_x.col(k) - min_risk_x.col(k), 2) % delta_n
-                ) / (4 * x.n_rows);
+        if (this->cmd_lowerbound.is_empty() || force_update) {
+            // compute D_k at each event time point
+            arma::mat max_risk_x { cum_max(x, true) };
+            arma::mat min_risk_x { cum_min(x, true) };
+            max_risk_x = max_risk_x.rows(uni_event_ind);
+            min_risk_x = min_risk_x.rows(uni_event_ind);
+            arma::vec res { arma::zeros(x.n_cols) };
+            for (size_t k {0}; k < x.n_cols; ++k) {
+                res(k) = arma::sum(
+                    pow(max_risk_x.col(k) - min_risk_x.col(k), 2) % delta_n
+                    ) / (4 * x.n_rows);
+            }
+            this->cmd_lowerbound = res;
         }
-        return res;
     }
 
     // fit regular Cox model by monotonic quadratic approximation algorithm
@@ -462,11 +480,9 @@ namespace Intsurv {
             grad_vec = this->gradient(beta0);
             h_vec = - this->inv_bl_cov_lowerbound_1 * grad_vec;
             b_new = this->bl_step_lowerbound(x, h_vec);
-            alpha = - arma::as_scalar(
-                Intsurv::crossprod(h_vec, grad_vec)
-                ) / b_new;
+            alpha = - arma::as_scalar(crossprod(h_vec, grad_vec)) / b_new;
             beta = beta0 + alpha * h_vec;
-            if (Intsurv::rel_l2_norm(beta, beta0) < rel_tol) {
+            if (rel_l2_norm(beta, beta0) < rel_tol) {
                 break;
             }
             // update beta
@@ -485,19 +501,19 @@ namespace Intsurv {
         const bool& update_active = false
         )
     {
-        // compute D_k
-        arma::vec d_vec { cmd_lowerbound() };
+        // compute lowerbound vector used in CMD algorithm
+        compute_cmd_lowerbound();
         double dlj { 0 };
-        double n_sample { static_cast<double>(time.n_elem) };
         for (size_t j {0}; j < beta.n_elem; ++j) {
             if (is_active[j]) {
-                dlj = gradient(beta, j) / n_sample;
+                dlj = gradient(beta, j) / time.n_elem;
                 // update beta
-                beta[j] = Intsurv::soft_threshold(
-                    d_vec[j] * beta[j] - dlj, penalty[j]) / d_vec[j];
+                beta[j] = soft_threshold(
+                    this->cmd_lowerbound[j] * beta[j] - dlj, penalty[j]) /
+                    this->cmd_lowerbound[j];
                 if (update_active) {
                     // check if it has been shrinkaged to zero
-                    if (Intsurv::isAlmostEqual(beta[j], 0)) {
+                    if (isAlmostEqual(beta[j], 0)) {
                         is_active[j] = 0;
                     } else {
                         is_active[j] = 1;
@@ -509,6 +525,7 @@ namespace Intsurv {
 
     // fitting regularized Cox model with coordinate-majorizatio-descent
     // algorithm that allows non-integer "event" and tied events
+    // for a perticular lambda
     inline void CoxphReg::regularized_fit(
         const double& lambda = 0,
         const arma::vec& penalty_factor = 0,
@@ -517,84 +534,272 @@ namespace Intsurv {
         const double& rel_tol = 1e-6
         )
     {
-        // declarations
+        // set penalty terms
         arma::vec penalty { arma::ones(x.n_cols) };
         if (penalty_factor.n_elem == x.n_cols) {
             // re-scale so that sum(factor) = number of predictors
             penalty = penalty_factor * x.n_cols / arma::sum(penalty_factor);
         }
-        penalty *= lambda;
 
         // the maximum (large enough) lambda that results in all-zero estimates
-        arma::vec beta0 { arma::zeros(x.n_cols) };
+        arma::vec beta0 { arma::zeros(x.n_cols) }, beta { beta0 };
+        arma::vec grad_beta { beta0 }, strong_rhs { beta0 };
         double lambda_max {
             arma::max(arma::abs(this->gradient(beta0)) /
                       penalty) / this->x.n_rows
         };
+
         // early exit for large lambda greater than lambda_max
+        this->coef0 = beta0;
+        this->coef = beta0;
         if (lambda > lambda_max) {
-            this->coef0 = beta0;
-            // no need to rescale
-            this->coef = beta0;
+            // no need to rescale all-zero coef
             return;
         }
 
         // use the input starting value
         if (start.n_elem == x.n_cols) {
             beta0 = start;
+            beta = start;
         }
-        arma::vec beta { beta0 };
 
         // for active set
-        arma::uvec is_active { arma::ones<arma::uvec>(x.n_cols) };
+        arma::uvec is_active { arma::zeros<arma::uvec>(x.n_cols) };
         arma::uvec is_active_stored { is_active };
 
-        // the lower bound for second derivative in cmd
-        arma::vec d_vec { cmd_lowerbound() };
+        // update active set by strong rule
+        grad_beta = arma::abs(this->gradient(this->coef0)) / this->x.n_rows;
+        strong_rhs = (2 * lambda - lambda_max) * penalty;
 
-        size_t i {0};
-        // use active-set if p > n ("helps when p >> n")
-        if (x.n_cols > x.n_rows) {
-            size_t ii {0};
-            while (i < max_iter) {
-                // cycles over the active set
-                while (ii < max_iter) {
+        for (size_t j {0}; j < x.n_cols; ++j) {
+            if (grad_beta(j) > strong_rhs(j)) {
+                is_active(j) = 1;
+            } else {
+                beta(j) = 0;
+                beta0(j) = 0;
+            }
+        }
+        arma::uvec is_active_strong { is_active };
+        arma::uvec is_active_strong_new { is_active };
+
+        strong_rhs = lambda * penalty;
+        bool kkt_failed { true };
+        // eventually, strong rule will guess correctly
+        while (kkt_failed) {
+            size_t i {0};
+            // use active-set if p > n ("helps when p >> n")
+            if (x.n_cols > x.n_rows) {
+                size_t ii {0};
+                while (i < max_iter) {
+                    // cycles over the active set
+                    while (ii < max_iter) {
+                        regularized_fit_update(beta, is_active,
+                                               strong_rhs, true);
+                        if (rel_l2_norm(beta, beta0) < rel_tol) {
+                            break;
+                        }
+                        beta0 = beta;
+                        ii++;
+                    }
+                    is_active_stored = is_active;
+                    // run a full cycle over the converged beta
+                    is_active = is_active_strong;
                     regularized_fit_update(beta, is_active,
-                                           penalty, true);
-                    if (Intsurv::isAlmostEqual(Intsurv::l2_norm(beta), 0) ||
-                        Intsurv::rel_l2_norm(beta, beta0) < rel_tol) {
+                                           strong_rhs, true);
+                    // check two active sets coincide
+                    if (arma::sum(arma::abs(is_active - is_active_stored))) {
+                        // if different, repeat this process
+                        ii = 0;
+                        i++;
+                    } else {
+                        break;
+                    }
+                }
+            } else {
+                // regular coordinate descent
+                while (i < max_iter) {
+                    regularized_fit_update(beta, is_active_strong,
+                                           strong_rhs, false);
+                    if (rel_l2_norm(beta, beta0) < rel_tol) {
                         break;
                     }
                     beta0 = beta;
-                    ii++;
-                }
-                is_active_stored = is_active;
-                // run a full cycle over the converged beta
-                is_active = arma::ones<arma::uvec>(x.n_cols);
-                regularized_fit_update(beta, is_active, penalty, true);
-                // check two active sets coincide
-                if (arma::sum(arma::abs(is_active - is_active_stored)) > 0) {
-                    // if different, repeat this process
-                    ii = 0;
                     i++;
-                } else {
-                    break;
                 }
             }
-        } else {
-            // regular coordinate descent
-            while (i < max_iter) {
-                regularized_fit_update(beta, is_active, penalty, false);
-                if (Intsurv::isAlmostEqual(Intsurv::l2_norm(beta), 0) ||
-                    Intsurv::rel_l2_norm(beta, beta0) < rel_tol) {
-                    break;
+            // check kkt condition
+            for (size_t j {0}; j < x.n_cols; ++j) {
+                if (is_active_strong(j)) {
+                    continue;
                 }
-                beta0 = beta;
-                i++;
+                if (std::abs(this->gradient(beta, j)) / this->x.n_rows >
+                    strong_rhs(j)) {
+                    // update active set
+                    is_active_strong_new(j) = 1;
+                }
+            }
+            if (arma::sum(arma::abs(is_active_strong - is_active_strong_new))) {
+                is_active_strong = is_active_strong_new;
+            } else {
+                kkt_failed = false;
             }
         }
         this->coef0 = beta;
         this->rescale_coef();
+    }
+
+
+    // for a sequence of lambda's
+    inline void CoxphReg::regularized_fit(
+        arma::vec lambda = 0,
+        const unsigned int& nlambda = 100,
+        double lambda_min_ratio = 1e-4,
+        const arma::vec& penalty_factor = 0,
+        const unsigned int& max_iter = 1000,
+        const double& rel_tol = 1e-6
+        )
+    {
+        // set penalty terms
+        arma::vec penalty { arma::ones(x.n_cols) };
+        if (penalty_factor.n_elem == x.n_cols) {
+            // re-scale so that sum(factor) = number of predictors
+            penalty = penalty_factor * x.n_cols / arma::sum(penalty_factor);
+        }
+        // the maximum (large enough) lambda that results in all-zero estimates
+        arma::vec beta0 { arma::zeros(x.n_cols) }, beta { beta0 };
+        arma::vec grad_beta { beta0 }, strong_rhs { beta0 };
+        double lambda_max {
+            arma::max(arma::abs(this->gradient(beta0)) /
+                      penalty) / this->x.n_rows
+        };
+        double log_lambda_max { std::log(lambda_max) };
+        // construct lambda sequence
+        if (this->x.n_cols > this->x.n_rows) {
+            lambda_min_ratio = std::sqrt(lambda_min_ratio);
+        }
+        // take unique lambda and sort descendingly
+        lambda = arma::reverse(arma::unique(lambda));
+        arma::vec lambda_seq {
+            arma::zeros(std::max(nlambda, lambda.n_elem))
+                };
+        if (lambda.n_elem == 1 && nlambda > 1) {
+            lambda_seq = arma::exp(
+                arma::linspace(log_lambda_max,
+                               log_lambda_max + std::log(lambda_min_ratio),
+                               nlambda)
+                );
+        } else {
+            lambda_seq = lambda;
+        }
+        this->reg_lambda = lambda_seq;
+
+        // set up the estimate matrix
+        arma::mat beta_mat { arma::zeros(x.n_cols, lambda_seq.n_elem) };
+        this->coef0 = beta0;
+        this->coef = beta0;
+
+        // for active set
+        arma::uvec is_active { arma::zeros<arma::uvec>(x.n_cols) };
+        arma::uvec is_active_stored { is_active };
+        arma::uvec is_active_strong { is_active };
+        arma::uvec is_active_strong_new { is_active };
+
+        // for the lambda sequence
+        for (size_t k {0}; k < lambda_seq.n_elem; ++k) {
+            // early exit for large lambda greater than lambda_max
+            if (lambda_seq(k) >= lambda_max) {
+                beta_mat.col(k) = this->coef;
+                continue;
+            }
+            // update acitve set by strong rule (for lambda < lamda_max)
+            grad_beta = arma::abs(this->gradient(beta)) / this->x.n_rows;
+            if (k == 0) {
+                // use lambda_max
+                strong_rhs = (2 * lambda_seq(k) - lambda_max) * penalty;
+            } else {
+                // use the last lambda
+                strong_rhs = (2 * lambda_seq(k) - lambda_seq(k - 1)) * penalty;
+            }
+            for (size_t j {0}; j < this->x.n_cols; ++j) {
+                if (grad_beta(j) > strong_rhs(j)) {
+                    is_active(j) = 1;
+                } else {
+                    beta(j) = 0;
+                    beta0(j) = 0;
+                }
+            }
+            is_active_strong = is_active;
+            is_active_strong_new = is_active;
+
+            strong_rhs = lambda_seq(k) * penalty;
+            bool kkt_failed { true };
+            // eventually, strong rule will guess correctly
+            while (kkt_failed) {
+                size_t i {0};
+                // use active-set if p > n ("helps when p >> n")
+                if (x.n_cols > x.n_rows) {
+                    size_t ii {0};
+                    while (i < max_iter) {
+                        // cycles over the active set
+                        while (ii < max_iter) {
+                            regularized_fit_update(beta, is_active,
+                                                   strong_rhs, true);
+                            if (rel_l2_norm(beta, beta0) < rel_tol) {
+                                break;
+                            }
+                            beta0 = beta;
+                            ii++;
+                        }
+                        is_active_stored = is_active;
+                        // run a full cycle over the converged beta
+                        is_active = is_active_strong;
+                        regularized_fit_update(beta, is_active,
+                                               strong_rhs, true);
+                        // check two active sets coincide
+                        if (arma::sum(arma::abs(is_active -
+                                                is_active_stored))) {
+                            // if different, repeat this process
+                            ii = 0;
+                            i++;
+                        } else {
+                            break;
+                        }
+                    }
+                } else {
+                    // regular coordinate descent
+                    while (i < max_iter) {
+                        regularized_fit_update(beta, is_active_strong,
+                                               strong_rhs, false);
+                        if (rel_l2_norm(beta, beta0) < rel_tol) {
+                            break;
+                        }
+                        beta0 = beta;
+                        i++;
+                    }
+                }
+                // check kkt condition
+                for (size_t j {0}; j < x.n_cols; ++j) {
+                    if (is_active_strong(j)) {
+                        continue;
+                    }
+                    if (std::abs(this->gradient(beta, j)) / this->x.n_rows >
+                        strong_rhs(j)) {
+                        // update active set
+                        is_active_strong_new(j) = 1;
+                    }
+                }
+                if (arma::sum(arma::abs(is_active_strong -
+                                        is_active_strong_new))) {
+                    is_active_strong = is_active_strong_new;
+                } else {
+                    kkt_failed = false;
+                }
+            }
+            this->coef0 = beta;
+            this->rescale_coef();
+            beta_mat.col(k) = this->coef;
+        }
+        this->reg_coef = beta_mat;
     }
 
 }

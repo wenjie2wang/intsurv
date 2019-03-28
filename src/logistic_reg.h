@@ -34,13 +34,20 @@ namespace Intsurv {
         arma::rowvec x_center;  // the column center of x
         arma::rowvec x_scale;   // the scale of x
         arma::vec coef0;        // coef before rescaling
+
         // iteration matrix in Bohning and Lindsay (1988)
         arma::mat bl_iter_mat;
+        // for regularized regression
         arma::rowvec cmd_lowerbound;
 
     public:
         arma::vec coef;         // coef rescaled
-        double negative_logL {0};
+        double neg_LogL;        // negative likelihood
+
+        // regularized
+        arma::mat reg_coef;     // coef rescaled
+        arma::vec reg_lambda;   // lambda sequence
+        arma::vec reg_neg_logL; // negative likelihood
 
         // constructors
         LogisticReg(const arma::mat& x_,
@@ -130,14 +137,22 @@ namespace Intsurv {
         // update step for regularized logistic regression model
         inline void regularized_fit_update(arma::vec& beta,
                                            arma::uvec& is_active,
-                                           const arma::rowvec& b_vec,
                                            const arma::vec& penalty,
                                            const bool& update_active);
 
         // fit regularized logistic regression model
+        // for a perticular lambda
         inline void regularized_fit(const double& lambda,
                                     const arma::vec& penalty_factor,
                                     const arma::vec& start,
+                                    const unsigned int& max_iter,
+                                    const double& rel_tol);
+
+        // overload for a sequence of lambda's
+        inline void regularized_fit(arma::vec lambda,
+                                    const unsigned int& nlambda,
+                                    double lambda_min_ratio,
+                                    const arma::vec& penalty_factor,
                                     const unsigned int& max_iter,
                                     const double& rel_tol);
 
@@ -171,7 +186,7 @@ namespace Intsurv {
     // define inverse link function
     inline arma::vec LogisticReg::linkinv(const arma::vec& beta) const
     {
-        return 1 / (1 + arma::exp(- Intsurv::mat2vec(x * beta)));
+        return 1 / (1 + arma::exp(- mat2vec(x * beta)));
     }
     inline arma::vec LogisticReg::predict(const arma::vec& beta) const
     {
@@ -194,15 +209,13 @@ namespace Intsurv {
     // define gradient function
     inline arma::vec LogisticReg::gradient(const arma::vec& beta) const
     {
-        arma::vec y_hat { linkinv(beta) };
-        return x.t() * (y_hat - y);
+        return x.t() * (linkinv(beta) - y);
     }
     // define gradient function at k-th dimension
     inline double LogisticReg::gradient(const arma::vec& beta,
                                         const unsigned int k) const
     {
-        arma::vec y_hat { linkinv(beta) };
-        return arma::sum((y_hat - y) % x.col(k));
+        return arma::sum((linkinv(beta) - y) % x.col(k));
     }
 
     // define objective function and overwrites graidient
@@ -246,7 +259,7 @@ namespace Intsurv {
         while (i < max_iter) {
             y_hat = linkinv(beta0);
             beta = beta0 + this->bl_iter_mat * (y - y_hat);
-            if (Intsurv::rel_l2_norm(beta, beta0) < rel_tol) {
+            if (rel_l2_norm(beta, beta0) < rel_tol) {
                 break;
             }
             // update beta
@@ -271,23 +284,23 @@ namespace Intsurv {
     inline void LogisticReg::regularized_fit_update(
         arma::vec& beta,
         arma::uvec& is_active,
-        const arma::rowvec& b_vec,
         const arma::vec& penalty,
         const bool& update_active = false
         )
     {
+        // compute lowerbound vector used in CMD algorithm
+        this->compute_cmd_lowerbound();
         double dlj { 0 };
-        unsigned int n { y.n_elem };
-        double n_y { static_cast<double>(n) };
         for (size_t j {0}; j < beta.n_elem; ++j) {
             if (is_active[j]) {
-                dlj = this->gradient(beta, j) / n_y;
+                dlj = this->gradient(beta, j) / y.n_elem;
                 // update beta
-                beta[j] = Intsurv::soft_threshold(
-                    b_vec[j] * beta[j] - dlj, penalty[j]) / b_vec[j];
+                beta[j] = soft_threshold(
+                    cmd_lowerbound[j] * beta[j] - dlj, penalty[j]) /
+                    cmd_lowerbound[j];
                 if (update_active) {
                     // check if it has been shrinkaged to zero
-                    if (Intsurv::isAlmostEqual(beta[j], 0)) {
+                    if (isAlmostEqual(beta[j], 0)) {
                         is_active[j] = 0;
                     } else {
                         is_active[j] = 1;
@@ -298,6 +311,7 @@ namespace Intsurv {
     }
 
     // regularized logistic model by coordinate-majorization-descent algorithm
+    // for a perticular lambda
     inline void LogisticReg::regularized_fit(
         const double& lambda = 0,
         const arma::vec& penalty_factor = 0,
@@ -308,20 +322,22 @@ namespace Intsurv {
     {
         // set penalty terms
         unsigned int int_intercept { static_cast<unsigned int>(intercept) };
-        arma::vec penalty { arma::ones(x.n_cols - int_intercept) };
+        unsigned int n_predictor { x.n_cols - int_intercept };
+        if (n_predictor < 1) {
+            throw std::range_error("Predictors not found.");
+        }
+        arma::vec penalty { arma::ones(n_predictor) };
         if (penalty_factor.n_elem == penalty.n_elem) {
             penalty = penalty_factor * x.n_cols / arma::sum(penalty_factor);
         }
-        penalty *= lambda;
 
-        // for active set
-        arma::uvec is_active { arma::ones<arma::uvec>(x.n_cols) };
-        arma::uvec is_active_stored { is_active };
-
-        arma::vec beta0 { arma::zeros(x.n_cols) };
+        arma::vec beta0 { arma::zeros(x.n_cols) }, beta { beta0 };
         arma::vec grad_zero { arma::abs(this->gradient(beta0)) };
+        arma::vec grad_beta { grad_zero }, strong_rhs { grad_beta };
+
+        // large enough lambda for all-zero coef (except intercept)
         double lambda_max {
-            arma::max(grad_zero.tail(penalty.n_elem) /
+            arma::max(grad_zero.tail(n_predictor) /
                       penalty) / this->x.n_rows
         };
 
@@ -329,76 +345,287 @@ namespace Intsurv {
             penalty = arma::join_vert(arma::zeros(1), penalty);
         }
 
-        if (start.n_elem == x.n_cols) {
-            beta0 = start;
+        // for active set
+        arma::uvec is_active { arma::zeros<arma::uvec>(x.n_cols) };
+        arma::uvec is_active_stored { is_active };
+
+        // get solution of lambda_max for a warm start
+        if (this->intercept) {
+            // only needs to estimate intercept
+            is_active(0) = 1;
+            regularized_fit_update(beta, is_active,
+                                   penalty * lambda_max, false);
         }
-        arma::vec beta { beta0 };
+        this->coef0 = beta;
+        // rescale coef back
+        this->rescale_coef();
 
-        // compute lowerbound vector used in CMD algorithm
-        this->compute_cmd_lowerbound();
-        arma::rowvec b_vec { this->cmd_lowerbound };
-        size_t i {0};
-
-        // early exit for large lambda greater than lambda_max
-        if (lambda > lambda_max) {
-            beta = arma::zeros(x.n_cols);
-            if (this->intercept) {
-                // only needs to estimate intercept
-                is_active(0) = 1;
-                regularized_fit_update(beta, is_active,
-                                       b_vec, penalty, false);
-            }
-            this->coef0 = beta;
-            // rescale coef back
-            this->rescale_coef();
+        // early exit for lambda greater than lambda_max
+        if (lambda >= lambda_max) {
             return;
         }
 
-        // use active-set if p > n ("helps when p >> n")
-        if (x.n_cols > x.n_rows) {
-            size_t ii {0};
-            while (i < max_iter) {
-                // cycles over the active set
-                while (ii < max_iter) {
+        // use the input start if correctly specified
+        if (start.n_elem == x.n_cols) {
+            beta0 = start;
+            beta = start;
+        }
+
+        // update active set by strong rule
+        grad_beta = arma::abs(this->gradient(this->coef0)) / this->x.n_rows;
+        strong_rhs = (2 * lambda - lambda_max) * penalty;
+
+        for (size_t j {1}; j < n_predictor + 1; ++j) {
+            if (grad_beta(j) > strong_rhs(j)) {
+                is_active(j) = 1;
+            } else {
+                beta(j) = 0;
+                beta0(j) = 0;
+            }
+        }
+        arma::uvec is_active_strong { is_active };
+        arma::uvec is_active_strong_new { is_active };
+
+        strong_rhs = lambda * penalty;
+        bool kkt_failed { true };
+        // eventually, strong rule will guess correctly
+        while (kkt_failed) {
+            size_t i {0};
+            // use active-set if p > n ("helps when p >> n")
+            if (x.n_cols > x.n_rows) {
+                is_active = is_active_strong;
+                size_t ii {0};
+                while (i < max_iter) {
+                    // cycles over the active set
+                    while (ii < max_iter) {
+                        regularized_fit_update(beta, is_active,
+                                               strong_rhs, true);
+                        if (rel_l2_norm(beta, beta0) < rel_tol) {
+                            break;
+                        }
+                        beta0 = beta;
+                        ii++;
+                    }
+                    is_active_stored = is_active;
+                    // run a full cycle over the converged beta
+                    is_active = is_active_strong;
                     regularized_fit_update(beta, is_active,
-                                           b_vec, penalty, true);
-                    if (Intsurv::isAlmostEqual(Intsurv::l2_norm(beta), 0) ||
-                        Intsurv::rel_l2_norm(beta, beta0) < rel_tol) {
+                                           strong_rhs, true);
+                    // check two active sets coincide
+                    if (arma::sum(arma::abs(is_active - is_active_stored))) {
+                        // if different, repeat this process
+                        ii = 0;
+                        i++;
+                    } else {
+                        break;
+                    }
+                }
+            } else {
+                // regular coordinate descent
+                while (i < max_iter) {
+                    regularized_fit_update(beta, is_active_strong,
+                                           strong_rhs, false);
+                    if (rel_l2_norm(beta, beta0) < rel_tol) {
                         break;
                     }
                     beta0 = beta;
-                    ii++;
-                }
-                is_active_stored = is_active;
-                // run a full cycle over the converged beta
-                is_active = arma::ones<arma::uvec>(x.n_cols);
-                regularized_fit_update(beta, is_active,
-                                       b_vec, penalty, true);
-                // check two active sets coincide
-                if (arma::sum(arma::abs(is_active - is_active_stored)) > 0) {
-                    // if different, repeat this process
-                    ii = 0;
                     i++;
-                } else {
-                    break;
                 }
             }
-        } else {
-            // regular coordinate descent
-            while (i < max_iter) {
-                regularized_fit_update(beta, is_active,
-                                       b_vec, penalty, false);
-                if (Intsurv::isAlmostEqual(Intsurv::l2_norm(beta), 0) ||
-                    Intsurv::rel_l2_norm(beta, beta0) < rel_tol) {
-                    break;
+            // check kkt condition
+            for (size_t j {1}; j < n_predictor + 1; ++j) {
+                if (is_active_strong(j)) {
+                    continue;
                 }
-                beta0 = beta;
-                i++;
+                if (std::abs(this->gradient(beta, j)) / this->x.n_rows >
+                    strong_rhs(j)) {
+                    // update active set
+                    is_active_strong_new(j) = 1;
+                }
+            }
+            if (arma::sum(arma::abs(is_active_strong - is_active_strong_new))) {
+                is_active_strong = is_active_strong_new;
+            } else {
+                kkt_failed = false;
             }
         }
         this->coef0 = beta;
         // rescale coef back
         this->rescale_coef();
+    }
+
+
+    // for a sequence of lambda's
+    inline void LogisticReg::regularized_fit(
+        arma::vec lambda = 0,
+        const unsigned int& nlambda = 100,
+        double lambda_min_ratio = 1e-4,
+        const arma::vec& penalty_factor = 0,
+        const unsigned int& max_iter = 1000,
+        const double& rel_tol = 1e-6
+        )
+    {
+        // set penalty terms
+        unsigned int int_intercept { static_cast<unsigned int>(intercept) };
+        unsigned int n_predictor { x.n_cols - int_intercept };
+        if (n_predictor < 1) {
+            throw std::range_error("Predictors not found.");
+        }
+        arma::vec penalty { arma::ones(n_predictor) };
+        if (penalty_factor.n_elem == penalty.n_elem) {
+            penalty = penalty_factor * x.n_cols / arma::sum(penalty_factor);
+        }
+
+        // construct lambda sequence
+        arma::vec beta0 { arma::zeros(x.n_cols) }, beta { beta0 };
+        arma::vec grad_zero { arma::abs(this->gradient(beta0)) };
+        double lambda_max {
+            arma::max(grad_zero.tail(penalty.n_elem) /
+                      penalty) / this->x.n_rows
+        };
+        double log_lambda_max { std::log(lambda_max) };
+        if (this->x.n_cols > this->x.n_rows) {
+            lambda_min_ratio = std::sqrt(lambda_min_ratio);
+        }
+        // take unique lambda and sort descendingly
+        lambda = arma::reverse(arma::unique(lambda));
+        arma::vec lambda_seq {
+            arma::zeros(std::max(nlambda, lambda.n_elem))
+                };
+        if (lambda.n_elem == 1 && nlambda > 1) {
+            lambda_seq = arma::exp(
+                arma::linspace(log_lambda_max,
+                               log_lambda_max + std::log(lambda_min_ratio),
+                               nlambda)
+                );
+        } else {
+            lambda_seq = lambda;
+        }
+        this->reg_lambda = lambda_seq;
+
+        // update penalty for intercept
+        if (this->intercept) {
+            penalty = arma::join_vert(arma::zeros(1), penalty);
+        }
+
+        // set up the estimate matrix
+        arma::mat beta_mat { arma::zeros(x.n_cols, lambda_seq.n_elem) };
+        arma::vec grad_beta { grad_zero }, strong_rhs { grad_zero };
+
+        // for active set
+        arma::uvec is_active { arma::zeros<arma::uvec>(x.n_cols) };
+        arma::uvec is_active_stored { is_active };
+        arma::uvec is_active_strong { is_active };
+        arma::uvec is_active_strong_new { is_active };
+
+        // get solution of lambda_max for a warm start
+        if (this->intercept) {
+            // only needs to estimate intercept
+            is_active(0) = 1;
+            regularized_fit_update(beta, is_active,
+                                   penalty * lambda_max, false);
+        }
+        this->coef0 = beta;
+        // rescale coef back
+        this->rescale_coef();
+
+        // for the lambda sequence
+        for (size_t k {0}; k < lambda_seq.n_elem; ++k) {
+            // early exit for large lambda greater than lambda_max
+            if (lambda_seq(k) >= lambda_max) {
+                beta_mat.col(k) = this->coef;
+                continue;
+            }
+            // update acitve set by strong rule (for lambda < lamda_max)
+            grad_beta = arma::abs(this->gradient(beta)) / this->x.n_rows;
+            if (k == 0) {
+                // use lambda_max
+                strong_rhs = (2 * lambda_seq(k) - lambda_max) * penalty;
+            } else {
+                // use the last lambda
+                strong_rhs = (2 * lambda_seq(k) - lambda_seq(k - 1)) * penalty;
+            }
+            for (size_t j {1}; j < n_predictor + 1; ++j) {
+                if (grad_beta(j) > strong_rhs(j)) {
+                    is_active(j) = 1;
+                } else {
+                    beta(j) = 0;
+                    beta0(j) = 0;
+                }
+            }
+            is_active_strong = is_active;
+            is_active_strong_new = is_active;
+
+            strong_rhs = lambda_seq(k) * penalty;
+            bool kkt_failed { true };
+            // eventually, strong rule will guess correctly
+            while (kkt_failed) {
+                size_t i {0};
+                // use active-set if p > n ("helps when p >> n")
+                if (x.n_cols > x.n_rows) {
+                    size_t ii {0};
+                    while (i < max_iter) {
+                        // cycles over the active set
+                        while (ii < max_iter) {
+                            regularized_fit_update(beta, is_active,
+                                                   strong_rhs, true);
+                            if (rel_l2_norm(beta, beta0) < rel_tol) {
+                                break;
+                            }
+                            beta0 = beta;
+                            ii++;
+                        }
+                        is_active_stored = is_active;
+                        // run a full cycle over the converged beta
+                        is_active = is_active_strong;
+                        regularized_fit_update(beta, is_active,
+                                               strong_rhs, true);
+                        // check two active sets coincide
+                        if (arma::sum(arma::abs(is_active -
+                                                is_active_stored))) {
+                            // if different, repeat this process
+                            ii = 0;
+                            i++;
+                        } else {
+                            break;
+                        }
+                    }
+                } else {
+                    // regular coordinate descent
+                    while (i < max_iter) {
+                        regularized_fit_update(beta, is_active_strong,
+                                               strong_rhs, false);
+                        if (rel_l2_norm(beta, beta0) < rel_tol) {
+                            break;
+                        }
+                        beta0 = beta;
+                        i++;
+                    }
+                }
+                // check kkt condition
+                grad_beta = arma::abs(this->gradient(beta)) / this->x.n_rows;
+                for (size_t j {1}; j < n_predictor + 1; ++j) {
+                    if (is_active_strong(j)) {
+                        continue;
+                    }
+                    if (grad_beta(j) > strong_rhs(j)) {
+                        // update active set
+                        is_active_strong_new(j) = 1;
+                    }
+                }
+                if (arma::sum(arma::abs(is_active_strong -
+                                        is_active_strong_new))) {
+                    is_active_strong = is_active_strong_new;
+                } else {
+                    kkt_failed = false;
+                }
+            }
+            this->coef0 = beta;
+            // rescale coef back
+            this->rescale_coef();
+            beta_mat.col(k) = this->coef;
+        }
+        this->reg_coef = beta_mat;
     }
 
 }
