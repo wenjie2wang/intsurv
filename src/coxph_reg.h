@@ -187,10 +187,8 @@ namespace Intsurv {
                     offset = offset.elem(des_event_ind);
                     offset = offset.elem(asc_time_ind);
                 }
-            } else if (offset.is_empty()) {
-                offset = arma::zeros(time.n_elem);
             } else {
-                throw std::length_error("Failed to set 'offset'.");
+                offset = arma::zeros(time.n_elem);
             }
         }
 
@@ -520,20 +518,36 @@ namespace Intsurv {
         )
     {
         // declarations
-        arma::vec beta0 { arma::zeros(x.n_cols) };
-        if (start.n_elem == x.n_cols) {
-            beta0 = start;
-        }
-        arma::vec beta { beta0 };
-        arma::uvec is_active { arma::ones<arma::uvec>(x.n_cols) };
-        arma::uvec is_active_stored { is_active };
-
         arma::vec penalty { arma::ones(x.n_cols) };
         if (penalty_factor.n_elem == x.n_cols) {
             // re-scale so that sum(factor) = number of predictors
             penalty = penalty_factor * x.n_cols / arma::sum(penalty_factor);
         }
         penalty *= lambda;
+
+        // the maximum (large enough) lambda that results in all-zero estimates
+        arma::vec beta0 { arma::zeros(x.n_cols) };
+        double lambda_max {
+            arma::max(arma::abs(this->gradient(beta0)) /
+                      penalty) / this->x.n_rows
+        };
+        // early exit for large lambda greater than lambda_max
+        if (lambda > lambda_max) {
+            this->coef0 = beta0;
+            // no need to rescale
+            this->coef = beta0;
+            return;
+        }
+
+        // use the input starting value
+        if (start.n_elem == x.n_cols) {
+            beta0 = start;
+        }
+        arma::vec beta { beta0 };
+
+        // for active set
+        arma::uvec is_active { arma::ones<arma::uvec>(x.n_cols) };
+        arma::uvec is_active_stored { is_active };
 
         // the lower bound for second derivative in cmd
         arma::vec d_vec { cmd_lowerbound() };
@@ -582,7 +596,6 @@ namespace Intsurv {
         this->coef0 = beta;
         this->rescale_coef();
     }
-
 
 }
 

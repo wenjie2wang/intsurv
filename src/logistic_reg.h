@@ -306,13 +306,6 @@ namespace Intsurv {
         const double& rel_tol = 1e-6
         )
     {
-        arma::vec beta0 { arma::zeros(x.n_cols) };
-        if (start.n_elem == x.n_cols) {
-            beta0 = start;
-        }
-        arma::vec beta { beta0 };
-        arma::uvec is_active { arma::ones<arma::uvec>(x.n_cols) };
-        arma::uvec is_active_stored { is_active };
         // set penalty terms
         unsigned int int_intercept { static_cast<unsigned int>(intercept) };
         arma::vec penalty { arma::ones(x.n_cols - int_intercept) };
@@ -320,13 +313,46 @@ namespace Intsurv {
             penalty = penalty_factor * x.n_cols / arma::sum(penalty_factor);
         }
         penalty *= lambda;
+
+        // for active set
+        arma::uvec is_active { arma::ones<arma::uvec>(x.n_cols) };
+        arma::uvec is_active_stored { is_active };
+
+        arma::vec beta0 { arma::zeros(x.n_cols) };
+        arma::vec grad_zero { arma::abs(this->gradient(beta0)) };
+        double lambda_max {
+            arma::max(grad_zero.tail(penalty.n_elem) /
+                      penalty) / this->x.n_rows
+        };
+
         if (this->intercept) {
             penalty = arma::join_vert(arma::zeros(1), penalty);
         }
+
+        if (start.n_elem == x.n_cols) {
+            beta0 = start;
+        }
+        arma::vec beta { beta0 };
+
         // compute lowerbound vector used in CMD algorithm
         this->compute_cmd_lowerbound();
         arma::rowvec b_vec { this->cmd_lowerbound };
         size_t i {0};
+
+        // early exit for large lambda greater than lambda_max
+        if (lambda > lambda_max) {
+            beta = arma::zeros(x.n_cols);
+            if (this->intercept) {
+                // only needs to estimate intercept
+                is_active(0) = 1;
+                regularized_fit_update(beta, is_active,
+                                       b_vec, penalty, false);
+            }
+            this->coef0 = beta;
+            // rescale coef back
+            this->rescale_coef();
+            return;
+        }
 
         // use active-set if p > n ("helps when p >> n")
         if (x.n_cols > x.n_rows) {
