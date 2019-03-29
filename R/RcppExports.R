@@ -22,8 +22,8 @@ coxph_cure <- function(time, event, cox_x, cure_x, cure_intercept = TRUE, cox_st
     .Call('_intsurv_coxph_cure', PACKAGE = 'intsurv', time, event, cox_x, cure_x, cure_intercept, cox_start, cure_start, em_max_iter, em_rel_tol, cox_mstep_max_iter, cox_mstep_rel_tol, cure_mstep_max_iter, cure_mstep_rel_tol)
 }
 
-coxph_cure_reg <- function(time, event, cox_x, cure_x, cure_intercept = TRUE, cox_lambda = 0L, cox_nlambda = 1L, cox_lambda_min_ratio = 1e-4, cox_penalty_factor = 0L, cure_lambda = 0L, cure_nlambda = 1L, cure_lambda_min_ratio = 1e-4, cure_penalty_factor = 0L, cox_start = 0L, cure_start = 0L, em_max_iter = 200L, em_rel_tol = 1e-4, cox_mstep_max_iter = 10L, cox_mstep_rel_tol = 1e-2, cure_mstep_max_iter = 10L, cure_mstep_rel_tol = 1e-2) {
-    .Call('_intsurv_coxph_cure_reg', PACKAGE = 'intsurv', time, event, cox_x, cure_x, cure_intercept, cox_lambda, cox_nlambda, cox_lambda_min_ratio, cox_penalty_factor, cure_lambda, cure_nlambda, cure_lambda_min_ratio, cure_penalty_factor, cox_start, cure_start, em_max_iter, em_rel_tol, cox_mstep_max_iter, cox_mstep_rel_tol, cure_mstep_max_iter, cure_mstep_rel_tol)
+coxph_cure_reg <- function(time, event, cox_x, cure_x, cure_intercept = TRUE, cox_lambda = 0L, cox_nlambda = 1L, cox_lambda_min_ratio = 1e-4, cox_penalty_factor = 0L, cure_lambda = 0L, cure_nlambda = 1L, cure_lambda_min_ratio = 1e-4, cure_penalty_factor = 0L, cox_start = 0L, cure_start = 0L, em_max_iter = 200L, em_rel_tol = 1e-4, cox_mstep_max_iter = 10L, cox_mstep_rel_tol = 1e-2, cure_mstep_max_iter = 10L, cure_mstep_rel_tol = 1e-2, verbose = FALSE) {
+    .Call('_intsurv_coxph_cure_reg', PACKAGE = 'intsurv', time, event, cox_x, cure_x, cure_intercept, cox_lambda, cox_nlambda, cox_lambda_min_ratio, cox_penalty_factor, cure_lambda, cure_nlambda, cure_lambda_min_ratio, cure_penalty_factor, cox_start, cure_start, em_max_iter, em_rel_tol, cox_mstep_max_iter, cox_mstep_rel_tol, cure_mstep_max_iter, cure_mstep_rel_tol, verbose)
 }
 
 aggregateSum <- function(x, indices, simplify = TRUE, cumulative = FALSE, reversely = FALSE) {

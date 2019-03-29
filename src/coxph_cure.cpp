@@ -168,7 +168,8 @@ Rcpp::List coxph_cure_reg(
     const unsigned int& cox_mstep_max_iter = 10,
     const double& cox_mstep_rel_tol = 1e-2,
     const unsigned int& cure_mstep_max_iter = 10,
-    const double& cure_mstep_rel_tol = 1e-2
+    const double& cure_mstep_rel_tol = 1e-2,
+    bool verbose = false
     )
 {
     // initialize
@@ -282,8 +283,19 @@ Rcpp::List coxph_cure_reg(
             obs_ell = 0;
             mat_idx = l1 * cure_lambda_seq.n_elem + l2;
 
+            if (verbose) {
+                Rcpp::Rcout << "\n cox_lambda(" << l1 << "): "
+                            << cox_lambda_seq(l1) << std::endl;
+                Rcpp::Rcout << "cure_lambda(" << l2 << "): "
+                            << cure_lambda_seq(l2) << std::endl;
+            }
+
             // main loop of EM algorithm
             while (true) {
+
+                if (verbose) {
+                    Rcpp::Rcout << "EM iteration: " << i << std::endl;
+                }
 
                 // E-step: compute v vector
                 for (size_t j: case2_ind) {
