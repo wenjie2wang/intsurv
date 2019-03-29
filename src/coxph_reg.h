@@ -37,6 +37,7 @@ namespace Intsurv {
         bool standardize;          // is x standardized
         arma::rowvec x_center;     // the column center of x
         arma::rowvec x_scale;      // the scale of x
+        arma::vec coef0;           // coef before scaling
 
         bool hasTies {false};      // if there exists ties on event times
 
@@ -63,7 +64,6 @@ namespace Intsurv {
         arma::vec cmd_lowerbound;
 
     public:
-        arma::vec coef0;           // coef before scaling
         arma::vec coef;            // covariate coefficient estimates
         double neg_logL {0};   // partial log-likelihood
 
@@ -585,6 +585,91 @@ namespace Intsurv {
 
     // fitting regularized Cox model with coordinate-majorizatio-descent
     // algorithm that allows non-integer "event" and tied events
+    // for a perticular lambda
+    inline void CoxphReg::regularized_fit(
+        const double& lambda = 0,
+        const arma::vec& penalty_factor = 0,
+        const arma::vec& start = 0,
+        const unsigned int& max_iter = 1000,
+        const double& rel_tol = 1e-6
+        )
+    {
+        // set penalty terms
+        arma::vec penalty { arma::ones(x.n_cols) };
+        if (penalty_factor.n_elem == x.n_cols) {
+            // re-scale so that sum(factor) = number of predictors
+            penalty = penalty_factor * x.n_cols / arma::sum(penalty_factor);
+        }
+
+        // the maximum (large enough) lambda that results in all-zero estimates
+        arma::vec beta { arma::zeros(x.n_cols) };
+        arma::vec grad_beta { beta }, strong_rhs { beta };
+        double lambda_max {
+            arma::max(arma::abs(this->gradient(beta)) /
+                      penalty) / this->x.n_rows
+        };
+
+        // early exit for large lambda greater than lambda_max
+        this->coef0 = beta;
+        this->coef = beta;
+        if (lambda > lambda_max) {
+            // no need to rescale all-zero coef
+            return;
+        }
+
+        // use the input starting value
+        if (start.n_elem == x.n_cols) {
+            beta = start;
+        }
+
+        // for active set
+        arma::uvec is_active_strong { arma::zeros<arma::uvec>(x.n_cols) };
+        // update active set by strong rule
+        grad_beta = arma::abs(this->gradient(this->coef0)) / this->x.n_rows;
+        strong_rhs = (2 * lambda - lambda_max) * penalty;
+        for (size_t j {0}; j < x.n_cols; ++j) {
+            if (grad_beta(j) > strong_rhs(j)) {
+                is_active_strong(j) = 1;
+            } else {
+                beta(j) = 0;
+            }
+        }
+        arma::uvec is_active_strong_new { is_active_strong };
+
+        // optim with varying active set when p > n
+        bool varying_active_set { false };
+        if (x.n_cols > x.n_rows) {
+            varying_active_set = true;
+        }
+
+        strong_rhs = lambda * penalty;
+        bool kkt_failed { true };
+        // eventually, strong rule will guess correctly
+        while (kkt_failed) {
+            // update beta
+            reg_active_fit(beta, is_active_strong, strong_rhs,
+                           varying_active_set, max_iter, rel_tol);
+            // check kkt condition
+            for (size_t j {0}; j < x.n_cols; ++j) {
+                if (is_active_strong(j)) {
+                    continue;
+                }
+                if (std::abs(this->gradient(beta, j)) / this->x.n_rows >
+                    strong_rhs(j)) {
+                    // update active set
+                    is_active_strong_new(j) = 1;
+                }
+            }
+            if (arma::sum(arma::abs(is_active_strong - is_active_strong_new))) {
+                is_active_strong = is_active_strong_new;
+            } else {
+                kkt_failed = false;
+            }
+        }
+        this->coef0 = beta;
+        this->rescale_coef();
+    }
+
     // for a sequence of lambda's
     inline void CoxphReg::regularized_fit(
         arma::vec lambda = 0,
