@@ -372,115 +372,10 @@ namespace Intsurv {
     }
 
     // regularized logistic model by coordinate-majorization-descent algorithm
-    // for a perticular lambda
-    inline void LogisticReg::regularized_fit(
-        const double& lambda = 0,
-        const arma::vec& penalty_factor = 0,
-        const arma::vec& start = 0,
-        const unsigned int& max_iter = 1000,
-        const double& rel_tol = 1e-6
-        )
-    {
-        // set penalty terms
-        unsigned int int_intercept { static_cast<unsigned int>(intercept) };
-        unsigned int n_predictor { x.n_cols - int_intercept };
-        if (n_predictor < 1) {
-            throw std::range_error("Predictors not found.");
-        }
-        arma::vec penalty { arma::ones(n_predictor) };
-        if (penalty_factor.n_elem == penalty.n_elem) {
-            penalty = penalty_factor * x.n_cols / arma::sum(penalty_factor);
-        }
-
-        arma::vec beta { arma::zeros(x.n_cols) };
-        arma::vec grad_zero { arma::abs(this->gradient(beta)) };
-        arma::vec grad_beta { grad_zero }, strong_rhs { grad_beta };
-
-        // large enough lambda for all-zero coef (except intercept)
-        double lambda_max {
-            arma::max(grad_zero.tail(n_predictor) /
-                      penalty) / this->x.n_rows
-        };
-
-        if (this->intercept) {
-            penalty = arma::join_vert(arma::zeros(1), penalty);
-        }
-
-        // get solution of lambda_max for a warm start
-        arma::uvec is_active_strong { arma::zeros<arma::uvec>(x.n_cols) };
-        if (this->intercept) {
-            // only needs to estimate intercept
-            is_active_strong(0) = 1;
-            regularized_fit_update(beta, is_active_strong,
-                                   penalty * lambda_max, false);
-        }
-        this->coef0 = beta;
-        // rescale coef back
-        this->rescale_coef();
-
-        // early exit for lambda greater than lambda_max
-        if (lambda >= lambda_max) {
-            return;
-        }
-
-        // use the input start if correctly specified
-        if (start.n_elem == x.n_cols) {
-            beta = start;
-        }
-
-        // update active set by strong rule
-        grad_beta = arma::abs(this->gradient(this->coef0)) / this->x.n_rows;
-        strong_rhs = (2 * lambda - lambda_max) * penalty;
-
-        for (size_t j {1}; j < n_predictor + 1; ++j) {
-            if (grad_beta(j) > strong_rhs(j)) {
-                is_active_strong(j) = 1;
-            } else {
-                beta(j) = 0;
-            }
-        }
-        arma::uvec is_active_strong_new { is_active_strong };
-
-        // optim with varying active set when p > n
-        bool varying_active_set { false };
-        if (x.n_cols > x.n_rows) {
-            varying_active_set = true;
-        }
-
-        strong_rhs = lambda * penalty;
-        bool kkt_failed { true };
-        // eventually, strong rule will guess correctly
-        while (kkt_failed) {
-            // update beta
-            reg_active_fit(beta, is_active_strong, strong_rhs,
-                           varying_active_set, max_iter, rel_tol);
-            // check kkt condition
-            for (size_t j {1}; j < n_predictor + 1; ++j) {
-                if (is_active_strong(j)) {
-                    continue;
-                }
-                if (std::abs(this->gradient(beta, j)) / this->x.n_rows >
-                    strong_rhs(j)) {
-                    // update active set
-                    is_active_strong_new(j) = 1;
-                }
-            }
-            if (arma::sum(arma::abs(is_active_strong - is_active_strong_new))) {
-                is_active_strong = is_active_strong_new;
-            } else {
-                kkt_failed = false;
-            }
-        }
-        this->coef0 = beta;
-        // rescale coef back
-        this->rescale_coef();
-    }
-
-
     // for a sequence of lambda's
     inline void LogisticReg::regularized_fit(
         arma::vec lambda = 0,
-        const unsigned int& nlambda = 100,
+        const unsigned int& nlambda = 1,
         double lambda_min_ratio = 1e-4,
         const arma::vec& penalty_factor = 0,
         const unsigned int& max_iter = 1000,
@@ -505,14 +400,14 @@ namespace Intsurv {
             arma::max(grad_zero.tail(penalty.n_elem) /
                       penalty) / this->x.n_rows
         };
-        double log_lambda_max { std::log(lambda_max) };
 
         // take unique lambda and sort descendingly
         lambda = arma::reverse(arma::unique(lambda));
         arma::vec lambda_seq {
             arma::zeros(std::max(nlambda, lambda.n_elem))
                 };
-        if (lambda.n_elem == 1 && nlambda > 1) {
+        if (nlambda > 1) {
+            double log_lambda_max { std::log(lambda_max) };
             if (this->x.n_cols > this->x.n_rows) {
                 lambda_min_ratio = std::sqrt(lambda_min_ratio);
             }
