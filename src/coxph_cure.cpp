@@ -163,12 +163,12 @@ Rcpp::List coxph_cure_reg(
     const arma::vec& cure_penalty_factor = 0,
     const arma::vec& cox_start = 0,
     const arma::vec& cure_start = 0,
-    const unsigned int& em_max_iter = 1000,
-    const double& em_rel_tol = 1e-3,
-    const unsigned int& cox_mstep_max_iter = 30,
-    const double& cox_mstep_rel_tol = 1e-3,
-    const unsigned int& cure_mstep_max_iter = 30,
-    const double& cure_mstep_rel_tol = 1e-6
+    const unsigned int& em_max_iter = 200,
+    const double& em_rel_tol = 1e-4,
+    const unsigned int& cox_mstep_max_iter = 10,
+    const double& cox_mstep_rel_tol = 1e-2,
+    const unsigned int& cure_mstep_max_iter = 10,
+    const double& cure_mstep_rel_tol = 1e-2
     )
 {
     // initialize
