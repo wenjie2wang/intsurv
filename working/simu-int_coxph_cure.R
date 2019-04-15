@@ -221,9 +221,7 @@ simuData <- function(nSubject = 1e3, beta0, xMat, censorMin = 0,
 ## simulate one by one
 simuIntCure <- function(nSubject = 1e3, shape = 2, scale = 0.001,
                         censorMin = 0, censorMax = 60,
-                        prob_cure_case3 = 0.5,
-                        prob_not_cure_case3 = 0.5,
-                        event_pi = 0.5,
+                        p1 = 0.5, p2 = 0.5, p3 = 0.5,
                         coxCoef, coxMat,
                         cureCoef, cureMat = coxMat,
                         type = c("weibull", "gompertz"),
@@ -240,53 +238,39 @@ simuIntCure <- function(nSubject = 1e3, shape = 2, scale = 0.001,
         ## 2.1 if cured
         if (cure_ind) {
             censorTime <- runif(1, min = censorMin, max = censorMax)
-            b2 <- rbinom(1, 1, prob_cure_case3)
-            if (b2) {
-                out <- data.frame(obs_time = censorTime, obs_event = NA,
-                                  oracle_event = 0, oracle_cure = 1,
-                                  case = "3_c")
-            } else {
-                out <- data.frame(obs_time = censorTime, obs_event = 0,
-                                  oracle_event = 0, oracle_cure = 1,
-                                  case = "2_b")
-            }
+            b2 <- rbinom(1, 1, p2)
+            oracle_case <- ifelse(b2, "2_b", "3_c")
+            obs_event <- ifelse(b2, 0, NA)
+            out <- data.frame(obs_time = censorTime, obs_event = NA,
+                              oracle_event = 0, oracle_cure = 1,
+                              case = "3_c")
             return(out)
         }
 
         ## 2.2 otherwise (not cured)
         expXbeta <- as.numeric(exp(coxMat[i, ] %*% coxCoef))
-        b2 <- rbinom(1, 1, prob_cure_case3)
-        if (b2) {
-            b3 <- rbinom(1, 1, event_pi)
-            if (b3) {
-                eventTime <- if (type == "gompertz") {
-                                 rGompertz(1, shape, scale * expXbeta)
-                             } else {
-                                 rWeibull(1, shape, scale * expXbeta)
-                             }
-                out <- data.frame(obs_time = eventTime, obs_event = NA,
-                                  oracle_event = 1, oracle_cure = 0,
-                                  case = "3_a")
-            } else {
-                censorTime <- runif(1, min = censorMin, max = censorMax)
-                out <- data.frame(obs_time = censorTime, obs_event = NA,
-                                  oracle_event = 0, oracle_cure = 0,
-                                  case = "3_b")
-            }
+        eventTime <- if (type == "gompertz") {
+                         rGompertz(1, shape, scale * expXbeta)
+                     } else {
+                         rWeibull(1, shape, scale * expXbeta)
+                     }
+        censorTime <- runif(1, min = censorMin, max = censorMax)
+        obsTime <- min(eventTime, censorTime)
+        obsEvent <- as.integer(eventTime < censorTime)
+        if (obsEvent) {
+            ## case 1 and case 3a
+            b1 <- rbinom(1, 1, p1)
+            oracle_case = ifelse(b1, "1", "3_a")
+            obs_event <- ifelse(b1, obsEvent, NA)
         } else {
-            eventTime <- if (type == "gompertz") {
-                             rGompertz(1, shape, scale * expXbeta)
-                         } else {
-                             rWeibull(1, shape, scale * expXbeta)
-                         }
-            censorTime <- runif(1, min = censorMin, max = censorMax)
-            obsTime <- min(eventTime, censorTime)
-            obsEvent <- as.integer(eventTime < censorTime)
-            out <- data.frame(obs_time = obsTime, obs_event = obsEvent,
-                              oracle_event = obsEvent, oracle_cure = 0,
-                              case = ifelse(obsEvent, "1", "2_a"))
-
+            ## case 2_a and case 3b
+            b3 <- rbinom(1, 1, p3)
+            oracle_case = ifelse(b3, "2_a", "3_b")
+            obs_event <- ifelse(b3, obsEvent, NA)
         }
+        out <- data.frame(obs_time = obsTime, obs_event = obsEvent,
+                          oracle_event = obsEvent, oracle_cure = 0,
+                          case = oracle_case)
         return(out)
     }
     res <- do.call(rbind, lapply(seq_len(nSubject), simuIntCureOne))
