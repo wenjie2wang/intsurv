@@ -24,7 +24,6 @@ vignettes/*.pdf
 
 # other directories
 testing/
-working/
 
 # ignore tags
 TAGS

@@ -115,34 +115,62 @@ Rcpp::List int_coxph_cure(
         w1_sum = 0;
         w2_sum = 0;
 
-        // Rcpp::Rcout << "\nS(t)\n" << cox_object.S_time << std::endl;
-        // Rcpp::Rcout << "\nh(t)\n" << cox_object.h_time << std::endl;
-        // Rcpp::Rcout << "\nS_c(t)\n" << cox_object.Sc_time << std::endl;
-        // Rcpp::Rcout << "\nh_c(t)\n" << cox_object.hc_time << std::endl;
-        // Rcpp::Rcout << "\np_j\n" << p_vec << std::endl;
+        // Rcpp::Rcout << "\nh0(t)\n"
+        //             << cox_object.h0_time << std::endl;
+        // Rcpp::Rcout << "\nS0(t)\n"
+        //             << cox_object.S0_time << std::endl;
+        // Rcpp::Rcout << "\nh_c(t)\n"
+        //             << cox_object.hc_time << std::endl;
+        // Rcpp::Rcout << "\nS_c(t)\n"
+        //             << cox_object.Sc_time << std::endl;
+
+        // Rcpp::Rcout << "\nS_c(t)\n"
+        //             << cox_object.Sc_time.elem(case3_ind) << std::endl;
+        // Rcpp::Rcout << "\nh_c(t)\n"
+        //             << cox_object.hc_time.elem(case3_ind) << std::endl;
+        // Rcpp::Rcout << "\np_j\n" << p_vec.elem(case3_ind) << std::endl;
+
+        arma::mat m123_mat { arma::zeros(case3_ind.n_elem, 3) };
+        arma::mat w123_mat { arma::zeros(case3_ind.n_elem, 3) };
+        size_t ii { 0 };
 
         // E-step: compute the w vector for case 3
         for (size_t j: case3_ind) {
+            // the Sc_time(j) is cancelled out
             m12_common = p_vec(j) * cox_object.S_time(j);
             m1 = prob_event * cox_object.h_time(j) * m12_common;
-            // m1 = prob_event * m12_common;
-            m2 = (1 - prob_event) * cox_object.hc_time(j) * m12_common;
-            // m2 = (1 - prob_event) * m12_common;
+            m2 = (1 - prob_event) * cox_object.hc_time(j);
             m3 = (1 - p_vec(j)) * cox_object.hc_time(j);
-            // m3 = 1 - p_vec(j);
+
             w1 = 1 / ((m2 + m3) / m1 + 1);
             w1_sum += w1;
             w2 = 1 / ((m1 + m3) / m2 + 1);
             w2_sum += w2;
             estep_m(j) = w1 + w2;
             s_event(j) = w1;
-        }
-        log_m = arma::log(estep_m);
 
-        // Rcpp::Rcout << "\nM_j\n" << estep_m << std::endl;
-        // Rcpp::Rcout << "\nevent\n" << s_event << std::endl;
+            m123_mat(ii, 0) = cox_object.h_time(j) * cox_object.S_time(j);
+            m123_mat(ii, 1) = cox_object.hc_time(j) * cox_object.Sc_time(j);
+            m123_mat(ii, 2) = m3;
+
+            w123_mat(ii, 0) = w1;
+            w123_mat(ii, 1) = w2;
+            w123_mat(ii, 2) = 1 / ((m1 + m2) / m3 + 1);;
+
+            ++ii;
+        }
+
+        // Rcpp::Rcout << "\nm123_mat\n" << m123_mat << std::endl;
+        // Rcpp::Rcout << "\ncol_sum_m123\n" << arma::sum(m123_mat) << std::endl;
+
+        // Rcpp::Rcout << "\nw123_mat\n" << w123_mat << std::endl;
+        // Rcpp::Rcout << "\ncol_sum_w123\n" << arma::sum(w123_mat) << std::endl;
+
+        // Rcpp::Rcout << "\nM_j\n" << estep_m.elem(case3_ind) << std::endl;
+        // Rcpp::Rcout << "\nevent\n" << s_event.elem(case3_ind) << std::endl;
 
         // M-step for the survival layer
+        log_m = arma::log(estep_m);
         cox_object.set_offset(log_m);
         cox_object.update_event_weight(s_event);
         cox_object.fit(cox_beta, cox_mstep_max_iter, cox_mstep_rel_tol);
@@ -150,6 +178,8 @@ Rcpp::List int_coxph_cure(
         // M-step for the cure rate layer
         cure_object.update_y(estep_m);
         cure_object.fit(cure_beta, cure_mstep_max_iter, cure_mstep_rel_tol);
+
+        // Rcpp::Rcout << w1_sum + w2_sum << std::endl;
 
         // M-step for prob_event
         prob_event_new = 1 / (w2_sum / w1_sum + 1);
