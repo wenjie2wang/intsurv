@@ -2,18 +2,21 @@ Rcpp::sourceCpp("../src/int_coxph_cure.cpp")
 
 source("simu-data.R")
 
-set.seed(123)
+set.seed(808)
 
-nSubject <- 200
-coxMat <- cbind(rnorm(nSubject), rbinom(nSubject, size = 1, prob = 0.5))
-cureMat <- cbind(1, rnorm(nSubject),
-                 rbinom(nSubject, size = 1, prob = 0.5) - 0.5)
+nSubject <- 300
+coxMat <- cbind(rnorm(nSubject), rnorm(nSubject))
+cureMat <- cbind(1, rnorm(nSubject), rnorm(nSubject))
 
-testDat <- simuIntCure(nSubject = nSubject, shape = 1, scale = 0.8,
+testDat <- simuIntCure(nSubject = nSubject, shape = 1, scale = 0.4,
                        censorMin = 1, censorMax = 10, event_pi = 0.5,
                        p1 = 0.5, p2 = 0.5, p3 = 0.5,
                        coxCoef = c(0.5, 0.3), coxMat = coxMat,
-                       cureCoef = c(0.1, 1, - 1), cureMat = cureMat)
+                       cureCoef = c(0, 0.5, - 0.5), cureMat = cureMat)
+
+testDat$case <- factor(testDat$case,
+                       levels = sort(unique(as.character(testDat$case))))
+table(testDat$case)
 
 testDat$obs_event2 <- testDat$obs_event
 testDat$obs_event2[is.na(testDat$obs_event2)] <- 0.5
@@ -26,17 +29,17 @@ table(testDat$obs_time2[testDat$obs_event == 0])
 table(testDat$obs_time2[testDat$obs_event == 1])
 
 tmp <- with(testDat,
-            int_coxph_cure(obs_time2, obs_event2,
+            int_coxph_cure(obs_time, obs_event2,
                            cbind(x1, x2), cbind(z2, z3),
-                           cox_mstep_rel_tol = 1e-6,
+                           cox_mstep_rel_tol = 1e-4,
                            cox_mstep_max_iter = 100,
-                           cure_mstep_rel_tol = 1e-6,
+                           cure_mstep_rel_tol = 1e-4,
                            cure_mstep_max_iter = 100,
                            prob_event_start = 0.5,
                            cox_start = c(0, 0),
                            cure_start = c(0.1, 1, - 1),
-                           em_max_iter = 50,
-                           em_rel_tol = 1e-8))
+                           em_max_iter = 1000,
+                           em_rel_tol = 1e-4))
 
 
 ## 2. simulate some right censoring data
@@ -53,7 +56,7 @@ with(testDat, table(event, time2))
 table(testDat$event)
 
 idx <- sample(which(testDat$event > 0), size = 30)
-testDat$event[idx] <- 0.8
+testDat$event[idx] <- 0.5
 table(testDat$event)
 with(testDat, table(event, time2))
 
@@ -65,6 +68,9 @@ tmp <- with(testDat,
                            cure_mstep_max_iter = 100,
                            prob_event_start = 0.5,
                            cox_start = c(0, 0),
-                           cure_start = c(0, 0, 0),
+                           cure_start = c(0, 0, 0, 0),
                            em_max_iter = 30,
                            em_rel_tol = 1e-4))
+
+
+## stepwise debug

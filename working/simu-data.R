@@ -243,7 +243,7 @@ simuIntCure <- function(nSubject = 1e3, shape = 2, scale = 0.001,
             obs_event <- ifelse(b2, 0, NA)
             out <- data.frame(obs_time = censorTime, obs_event = obs_event,
                               oracle_event = 0, oracle_cure = 1,
-                              case = "3_c")
+                              case = oracle_case)
             return(out)
         }
 
