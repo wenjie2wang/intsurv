@@ -114,7 +114,7 @@ namespace Intsurv {
         // here beta is coef vector for non-standardized data
         inline arma::vec predict(const arma::vec& beta) const;
 
-        inline double objective(const arma::vec& beta) const;
+        inline double objective() const;
 
         inline arma::vec gradient(const arma::vec& beta) const;
 
@@ -205,12 +205,16 @@ namespace Intsurv {
     }
 
     // define objective function (negative log-likehood function)
-    inline double LogisticReg::objective(const arma::vec& beta) const
+    inline double LogisticReg::objective() const
     {
-        arma::vec x_beta { x * beta };
-        arma::vec exp_x_beta { arma::exp(x_beta) };
-        arma::vec y_x_beta { y % x_beta };
-        return arma::as_scalar(arma::sum(arma::log(1 + exp_x_beta) - y_x_beta));
+        double res { 0 };
+        arma::vec tmp { arma::zeros(2) };
+        for (size_t i { 0 }; i < x.n_rows; ++i) {
+            double x_beta { arma::as_scalar(x.row(i) * this->coef0) };
+            tmp[1] = x_beta;
+            res += - log_sum_exp(tmp) + y(i) * x_beta;
+        }
+        return res;
     }
 
     // define gradient function
