@@ -18,7 +18,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <algorithm>            // std::max
+#include <algorithm>            // std::max, std::set_union, etc.
 #include <cmath>                // std::pow and std::sqrt, etc.
 #include <limits>
 #include <stdexcept>
@@ -115,6 +115,18 @@ namespace Intsurv {
         std::set_intersection(a.begin(), a.end(), b.begin(), b.end(),
                               std::back_inserter(res));
         std::reverse(res.begin(), res.end());
+        return arma::sort(arma::conv_to<ARMA_VEC_TYPE<T>>::from(res));
+    }
+
+    // set union for vector a and vector b
+    template <typename T, template <typename> class ARMA_VEC_TYPE>
+    inline ARMA_VEC_TYPE<T> vec_union(const ARMA_VEC_TYPE<T>& a,
+                                      const ARMA_VEC_TYPE<T>& b)
+    {
+        std::vector<T> res;
+        std::set_union(a.begin(), a.end(),
+                       b.begin(), b.end(),
+                       std::inserter(res, res.begin()));
         return arma::sort(arma::conv_to<ARMA_VEC_TYPE<T>>::from(res));
     }
 
@@ -491,6 +503,20 @@ namespace Intsurv {
             res.col(i) = cum_min(mat2vec(x.col(i)), reversely);
         }
         return res;
+    }
+
+    // log of sum of exponentials
+    inline double log_sum_exp(const arma::vec& x)
+    {
+        if (x.n_elem == 1) {
+            return x(0);
+        }
+        double max_x { x.max() };
+        double res { 0 };
+        for (size_t i {0}; i < x.n_elem; ++i) {
+            res += std::exp(x(i) - max_x);
+        }
+        return std::log(res) + max_x;
     }
 
 }

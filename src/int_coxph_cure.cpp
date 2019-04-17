@@ -21,6 +21,7 @@
 
 #include "coxph_reg.h"
 #include "logistic_reg.h"
+#include "nonparametric.h"
 #include "utils.h"
 
 // #include "../working/debug_arma.h"
@@ -48,15 +49,18 @@ Rcpp::List int_coxph_cure(
     Intsurv::CoxphReg cox_object { Intsurv::CoxphReg(time, event, cox_x) };
     arma::uvec cox_sort_ind { cox_object.get_sort_index() };
 
-    arma::mat cure_xx { cure_x.rows(cox_sort_ind) };
-    arma::vec s_event { event.elem(cox_sort_ind) };
+    arma::vec s_event { cox_object.get_event() };
+    arma::vec s_time { cox_object.get_time() };
+    arma::mat s_cox_x { cox_object.get_x() };
 
     arma::uvec case1_ind { arma::find(s_event == 1) };
     arma::uvec case2_ind { arma::find(s_event == 0) };
+    arma::uvec case12_ind { Intsurv::vec_union(case1_ind, case2_ind) };
     arma::uvec case13_ind { arma::find(s_event > 0) };
     arma::uvec case23_ind { arma::find(s_event < 1) };
     arma::uvec case3_ind { Intsurv::vec_intersection(case13_ind, case23_ind) };
 
+    arma::mat cure_xx { cure_x.rows(cox_sort_ind) };
     Intsurv::LogisticReg cure_object {
         Intsurv::LogisticReg(cure_xx, s_event, cure_intercept)
     };
@@ -64,31 +68,50 @@ Rcpp::List int_coxph_cure(
         // add intercept to the design matrix for cure rate model
         cure_xx = arma::join_horiz(arma::ones(cure_xx.n_rows), cure_xx);
     }
-    arma::vec cox_beta { arma::zeros(cox_x.n_cols) };
-    arma::vec cure_beta { arma::zeros(cure_xx.n_cols) };
 
+    arma::vec cox_beta { arma::zeros(cox_x.n_cols) };
     if (cox_start.n_elem == cox_x.n_cols) {
         cox_beta = cox_start;
     } else {
-        arma::uvec tmp_idx { arma::find(event == 1) };
         Intsurv::CoxphReg tmp_object {
-            Intsurv::CoxphReg(time.elem(tmp_idx),
-                              event.elem(tmp_idx),
-                              cox_x.rows(tmp_idx))
+            Intsurv::CoxphReg(s_time.elem(case1_ind),
+                              s_event.elem(case1_ind),
+                              s_cox_x.rows(case1_ind))
         };
         tmp_object.fit(cox_beta, cox_mstep_max_iter, cox_mstep_rel_tol);
         cox_beta = tmp_object.coef;
     }
+    arma::vec cox_exp_x_beta = arma::exp(s_cox_x * cox_beta);
+
+    arma::vec cure_beta { arma::zeros(cure_xx.n_cols) };
     if (cure_start.n_elem == cure_xx.n_cols) {
         cure_beta = cure_start;
     } else {
         cure_object.fit(cure_beta, cure_mstep_max_iter, cure_mstep_rel_tol);
         cure_beta = cure_object.coef;
     }
-
     arma::vec p_vec { cure_object.predict(cure_beta) };
-    cox_object.compute_haz_surv_time(cox_beta);
-    cox_object.compute_censor_haz_surv_time();
+
+    // initialize baseline hazard functions
+    // for events
+    Intsurv::NelsonAalen nelen_event {
+        Intsurv::NelsonAalen(s_time.elem(case12_ind),
+                             s_event.elem(case12_ind))
+    };
+    cox_object.h0_time = nelen_event.step_inst_rate(s_time);
+    cox_object.h_time = cox_object.h0_time % cox_exp_x_beta;
+    cox_object.H0_time = nelen_event.step_cum_rate(s_time);
+    cox_object.H_time = cox_object.H0_time % cox_exp_x_beta;
+    cox_object.S0_time = arma::exp(- cox_object.H0_time);
+    cox_object.S_time = arma::exp(- cox_object.H_time);
+    // for censoring
+    Intsurv::NelsonAalen nelen_censor {
+        Intsurv::NelsonAalen(s_time.elem(case12_ind),
+                             1 - s_event.elem(case12_ind))
+    };
+    cox_object.hc_time = nelen_censor.step_inst_rate(s_time);
+    cox_object.Hc_time = nelen_censor.step_cum_rate(s_time);
+    cox_object.Sc_time = arma::exp(- cox_object.Hc_time);
 
     size_t i {0};
     double numer_j {0};
@@ -139,7 +162,7 @@ Rcpp::List int_coxph_cure(
             // the Sc_time(j) is cancelled out
             m12_common = p_vec(j) * cox_object.S_time(j);
             m1 = prob_event * cox_object.h_time(j) * m12_common;
-            m2 = (1 - prob_event) * cox_object.hc_time(j);
+            m2 = (1 - prob_event) * cox_object.hc_time(j) * m12_common;
             m3 = (1 - p_vec(j)) * cox_object.hc_time(j);
 
             w1 = 1 / ((m2 + m3) / m1 + 1);

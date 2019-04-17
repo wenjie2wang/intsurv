@@ -231,7 +231,7 @@ namespace Intsurv {
         // helper function to access some private members
         inline arma::vec get_time() const { return time; }
         inline arma::vec get_event() const { return event; }
-        inline arma::vec get_x() const { return x; }
+        inline arma::mat get_x() const { return x; }
 
         // fit regular Cox model
         inline void fit(const arma::vec& start,
