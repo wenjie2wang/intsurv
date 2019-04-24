@@ -287,6 +287,165 @@ simuIntCure <- function(nSubject = 1e3, shape = 2, scale = 0.001,
 }
 
 
+## simulate case 1 and case 2 one by one
+simuIntCure_case12 <- function(nSubject = 1e3,
+                               event_shape = 2, event_scale = 0.001,
+                               censor_shape = 1, censor_scale = 0.001,
+                               coxCoef, coxMat,
+                               cureCoef, cureMat = coxMat,
+                               type = c("weibull", "gompertz"))
+{
+    type <- match.arg(type)
+    colnames(coxMat) <- paste0("x", seq_len(ncol(coxMat)))
+    colnames(cureMat) <- paste0("z", seq_len(ncol(cureMat)))
+
+    simuIntCureOne <- function(i)
+    {
+        ## 1. generate cure indicator for each subject based on logistics model.
+        not_cure_p <- 1 / (1 + exp(- as.numeric(cureMat[i, ] %*% cureCoef)))
+        is_cure <- 1 - rbinom(1, size = 1, prob = not_cure_p)
+
+        ## 2.1 if cured
+        if (is_cure) {
+            censorTime <- if (type == "gompertz") {
+                              rGompertz(1, censor_shape, censor_scale)
+                          } else {
+                              rWeibull(1, censor_shape, censor_scale)
+                          }
+            out <- data.frame(obs_time = censorTime,
+                              obs_event = 0,
+                              oracle_event = 0,
+                              oracle_cure = 1,
+                              case = "2_b",
+                              coxMat[i, , drop = FALSE],
+                              cureMat[i, , drop = FALSE])
+            return(out)
+        }
+
+        ## 2.2 otherwise (not cured)
+        expXbeta <- as.numeric(exp(coxMat[i, ] %*% coxCoef))
+        if (type == "gompertz") {
+            eventTime <- rGompertz(1, event_shape, event_scale * expXbeta)
+            censorTime <- rGompertz(1, censor_shape, censor_scale)
+        } else {
+            eventTime <- rWeibull(1, event_shape, event_scale * expXbeta)
+            censorTime <- rWeibull(1, censor_shape, censor_scale)
+        }
+        obsTime <- min(eventTime, censorTime)
+        obsEvent <- as.integer(eventTime < censorTime)
+        out <- data.frame(obs_time = obsTime,
+                          obs_event = obsEvent,
+                          oracle_event = obsEvent,
+                          oracle_cure = 0,
+                          case = ifelse(obsEvent, "1", "2_a"),
+                          coxMat[i, , drop = FALSE],
+                          cureMat[i, , drop = FALSE])
+        return(out)
+    }
+    do.call(rbind, lapply(seq_len(nSubject), simuIntCureOne))
+}
+
+
+## simulate one by one from mixture density of event and censoring
+simuIntCure_case3 <- function(nSubject = 1e3,
+                              event_shape = 2, event_scale = 0.001,
+                              censor_shape = 1, censor_scale = 0.001,
+                              prob_event = 0.5,
+                              coxCoef, coxMat,
+                              cureCoef, cureMat = coxMat,
+                              type = c("weibull", "gompertz"))
+{
+    type <- match.arg(type)
+    colnames(coxMat) <- paste0("x", seq_len(ncol(coxMat)))
+    colnames(cureMat) <- paste0("z", seq_len(ncol(cureMat)))
+
+    simuIntCureOne <- function(i)
+    {
+        ## 1. generate cure indicator for each subject based on logistics model.
+        not_cure_p <- 1 / (1 + exp(- as.numeric(cureMat[i, ] %*% cureCoef)))
+        is_cure <- 1 - rbinom(1, size = 1, prob = not_cure_p)
+
+        ## 2.1 if cured
+        if (is_cure) {
+            censorTime <- if (type == "gompertz") {
+                              rGompertz(1, censor_shape, censor_scale)
+                          } else {
+                              rWeibull(1, censor_shape, censor_scale)
+                          }
+            out <- data.frame(obs_time = censorTime,
+                              obs_event = NA,
+                              oracle_event = 0,
+                              oracle_cure = 1,
+                              case = "3_c",
+                              coxMat[i, , drop = FALSE],
+                              cureMat[i, , drop = FALSE])
+            return(out)
+        }
+
+        ## 2.2 otherwise (not cured)
+        expXbeta <- as.numeric(exp(coxMat[i, ] %*% coxCoef))
+        is_event <- rbinom(1, 1, prob_event)
+
+        obsTime <- if (is_event) {
+                       if (type == "gompertz") {
+                           rGompertz(1, event_shape, event_scale * expXbeta)
+                       } else {
+                           rWeibull(1, event_shape, event_scale * expXbeta)
+                       }
+                   } else {
+                       if (type == "gompertz") {
+                           rGompertz(1, censor_shape, censor_scale)
+                       } else {
+                           rWeibull(1, censor_shape, censor_scale)
+                       }
+                   }
+        out <- data.frame(obs_time = obsTime,
+                          obs_event = NA,
+                          oracle_event = is_event,
+                          oracle_cure = 0,
+                          case = ifelse(is_event, "3_a", "3_b"),
+                          coxMat[i, , drop = FALSE],
+                          cureMat[i, , drop = FALSE])
+        return(out)
+    }
+    do.call(rbind, lapply(seq_len(nSubject), simuIntCureOne))
+}
+
+
+simuIntCure_all <- function(nSubject_case12 = 800,
+                            nSubject_case3 = 200,
+                            event_shape = 2, event_scale = 0.001,
+                            censor_shape = 1, censor_scale = 0.001,
+                            prob_event = 0.5,
+                            coxCoef, coxMat, cureCoef, cureMat = coxMat,
+                            type = c("weibull", "gompertz"))
+{
+    call_list <- list(event_shape = event_shape,
+                      event_scale = event_scale,
+                      censor_shape = censor_shape,
+                      censor_scale = censor_scale,
+                      coxCoef = coxCoef,
+                      cureCoef = cureCoef,
+                      type = type)
+
+    call_list_case12 <- list(
+        nSubject = nSubject_case12,
+        coxMat = coxMat[seq_len(nSubject_case12), , drop = FALSE],
+        cureMat = cureMat[seq_len(nSubject_case12), , drop = FALSE]
+    )
+    dat_case12 <- do.call(simuIntCure_case12, c(call_list, call_list_case12))
+
+    row_idx <- nSubject_case12 + seq_len(nSubject_case3)
+    call_list_case3 <- list(
+        nSubject = nSubject_case3,
+        coxMat = coxMat[row_idx, , drop = FALSE],
+        cureMat = cureMat[row_idx, , drop = FALSE],
+        prob_event = prob_event
+        )
+    dat_case3 <- do.call(simuIntCure_case3, c(call_list, call_list_case3))
+
+    rbind(dat_case12, dat_case3)
+}
 
 
 ### internal function ==========================================================

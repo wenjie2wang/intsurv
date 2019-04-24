@@ -26,6 +26,23 @@
 
 // #include "../working/debug_arma.h"
 
+// [[Rcpp::export]]
+arma::vec oracle_d0(const arma::vec& time,
+                    double shape, double scale)
+{
+    arma::vec a { scale * shape * arma::pow(time, shape - 1) };
+    arma::vec b { scale * arma::pow(time, shape) };
+    return a % arma::exp(- b);
+}
+double oracle_d0_double(const double& time,
+                        double shape, double scale)
+{
+    double a { scale * shape * std::pow(time, shape - 1) };
+    double b { scale * std::pow(time, shape) };
+    return a * std::exp(- b);
+}
+
+
 // integrative Cox cure rate model by EM algorithm
 // [[Rcpp::export]]
 Rcpp::List int_coxph_cure(
@@ -119,9 +136,17 @@ Rcpp::List int_coxph_cure(
     double prob_event { prob_event_start }, prob_event_new { prob_event };
     double m1 {0}, m2 {0}, m3 {0};
     double w1 {0}, w2 {0}, w1_sum {0}, w2_sum {0};
-    double m12_common {0};
     arma::vec estep_m { s_event }, log_m { 0 };
     double obs_ell {0};
+
+    arma::mat m123_mat { arma::zeros(case3_ind.n_elem, 3) };
+    arma::mat w123_mat { arma::zeros(case3_ind.n_elem, 3) };
+    arma::mat prob_event_vec { arma::zeros(case3_ind.n_elem) };
+
+    // oracle value for testing
+    arma::vec oracle_d_time { oracle_d0(s_time, 2, 0.1) };
+    arma::vec oracle_dc_time { oracle_d0(s_time, 2.5, 0.001) };
+    bool update_pi { true };
 
     // main loop of EM algorithm
     while (true) {
@@ -153,17 +178,24 @@ Rcpp::List int_coxph_cure(
         //             << cox_object.hc_time.elem(case3_ind) << std::endl;
         // Rcpp::Rcout << "\np_j\n" << p_vec.elem(case3_ind) << std::endl;
 
-        arma::mat m123_mat { arma::zeros(case3_ind.n_elem, 3) };
-        arma::mat w123_mat { arma::zeros(case3_ind.n_elem, 3) };
         size_t ii { 0 };
 
         // E-step: compute the w vector for case 3
         for (size_t j: case3_ind) {
-            // the Sc_time(j) is cancelled out
-            m12_common = p_vec(j) * cox_object.S_time(j);
-            m1 = prob_event * cox_object.h_time(j) * m12_common;
-            m2 = (1 - prob_event) * cox_object.hc_time(j) * m12_common;
-            m3 = (1 - p_vec(j)) * cox_object.hc_time(j);
+
+            double tmp_oracle_den {
+                oracle_d0_double(s_time(j), 2, 0.1 * cox_exp_x_beta(j))
+            };
+
+            m1 = p_vec(j) * prob_event *
+                cox_object.h_time(j) * cox_object.S_time(j);
+                // tmp_oracle_den;
+            m2 = p_vec(j) * (1 - prob_event) *
+                cox_object.hc_time(j) * cox_object.Sc_time(j);
+                // oracle_dc_time(j);
+            m3 = (1 - p_vec(j)) *
+                cox_object.hc_time(j) * cox_object.Sc_time(j);
+                // oracle_dc_time(j);
 
             w1 = 1 / ((m2 + m3) / m1 + 1);
             w1_sum += w1;
@@ -183,15 +215,6 @@ Rcpp::List int_coxph_cure(
             ++ii;
         }
 
-        // Rcpp::Rcout << "\nm123_mat\n" << m123_mat << std::endl;
-        // Rcpp::Rcout << "\ncol_sum_m123\n" << arma::sum(m123_mat) << std::endl;
-
-        // Rcpp::Rcout << "\nw123_mat\n" << w123_mat << std::endl;
-        // Rcpp::Rcout << "\ncol_sum_w123\n" << arma::sum(w123_mat) << std::endl;
-
-        // Rcpp::Rcout << "\nM_j\n" << estep_m.elem(case3_ind) << std::endl;
-        // Rcpp::Rcout << "\nevent\n" << s_event.elem(case3_ind) << std::endl;
-
         // M-step for the survival layer
         log_m = arma::log(estep_m);
         cox_object.set_offset(log_m);
@@ -201,8 +224,6 @@ Rcpp::List int_coxph_cure(
         // M-step for the cure rate layer
         cure_object.update_y(estep_m);
         cure_object.fit(cure_beta, cure_mstep_max_iter, cure_mstep_rel_tol);
-
-        // Rcpp::Rcout << w1_sum + w2_sum << std::endl;
 
         // M-step for prob_event
         prob_event_new = 1 / (w2_sum / w1_sum + 1);
@@ -218,10 +239,30 @@ Rcpp::List int_coxph_cure(
         // update to last estimates
         cox_beta = cox_object.coef;
         cure_beta = cure_object.coef;
-        prob_event = prob_event_new;
+
+        if ((! update_pi) &&
+            (tol1 < std::sqrt(em_rel_tol) && tol2 < std::sqrt(em_rel_tol))) {
+            Rcpp::Rcout << "started updating prob_event" << std::endl;
+            update_pi = true;
+        }
+        if (update_pi) {
+            prob_event = prob_event_new;
+        }
+
         cox_object.compute_haz_surv_time();
         cox_object.compute_censor_haz_surv_time();
         p_vec = cure_object.predict(cure_beta);
+        cox_exp_x_beta = arma::exp(s_cox_x * cox_beta);
+
+        // Rcpp::Rcout << "\nm123_mat\n" << m123_mat << std::endl;
+        // Rcpp::Rcout << "\ncol_sum_m123\n" << arma::sum(m123_mat) << std::endl;
+
+        // Rcpp::Rcout << "\nw123_mat\n" << w123_mat << std::endl;
+        // Rcpp::Rcout << "\ncol_sum_w123\n" << arma::sum(w123_mat) << std::endl;
+
+        // Rcpp::Rcout << "\nM_j\n" << estep_m.elem(case3_ind) << std::endl;
+        // Rcpp::Rcout << "\nevent\n" << s_event.elem(case3_ind) << std::endl;
+        // Rcpp::Rcout << "\np_vec\n" << p_vec.elem(case3_ind) << std::endl;
 
         // compute the observed data log-likelihood
         // for case 1
@@ -240,12 +281,12 @@ Rcpp::List int_coxph_cure(
         }
         // for case 3
         for (size_t j: case3_ind) {
-            m1 = p_vec(j) * prob_event * cox_object.h_time(j) *
-                cox_object.S_time(j) * cox_object.Sc_time(j);
-            m2 = p_vec(j) * (1 - prob_event) * cox_object.S_time(j) *
+            m1 = p_vec(j) * prob_event *
+                cox_object.h_time(j) * cox_object.S_time(j);
+            m2 = p_vec(j) * (1 - prob_event) *
                 cox_object.hc_time(j) * cox_object.Sc_time(j);
-            m3 = (1 - p_vec(j)) * cox_object.hc_time(j) *
-                cox_object.Sc_time(j);
+            m3 = (1 - p_vec(j)) *
+                cox_object.hc_time(j) * cox_object.Sc_time(j);
             obs_ell += std::log(m1 + m2 + m3);
         }
 
@@ -259,9 +300,21 @@ Rcpp::List int_coxph_cure(
         // update iter
         ++i;
     }
+
+    // temp step
+    arma::vec p_vec_case3 { p_vec.elem(case3_ind) };
+
     return Rcpp::List::create(
         Rcpp::Named("cox_beta") = cox_beta,
         Rcpp::Named("cure_beta") = cure_beta,
+        Rcpp::Named("prob_not_cured") = p_vec,
+        Rcpp::Named("prob_not_cured_case3") = p_vec_case3,
+        Rcpp::Named("h0") = cox_object.h0_time,
+        Rcpp::Named("hc") = cox_object.hc_time,
+        Rcpp::Named("S0") = cox_object.S0_time,
+        Rcpp::Named("Sc") = cox_object.Sc_time,
+        Rcpp::Named("w_mat") = w123_mat,
+        Rcpp::Named("m_mat") = m123_mat,
         Rcpp::Named("prob_event") = prob_event,
         Rcpp::Named("obs_ell") = obs_ell
         );
