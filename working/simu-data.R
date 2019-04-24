@@ -228,22 +228,28 @@ simuIntCure <- function(nSubject = 1e3, shape = 2, scale = 0.001,
                         ...)
 {
     type <- match.arg(type)
+    colnames(coxMat) <- paste0("x", seq_len(ncol(coxMat)))
+    colnames(cureMat) <- paste0("z", seq_len(ncol(cureMat)))
 
     simuIntCureOne <- function(i)
     {
         ## 1. generate cure indicator for each subject based on logistics model.
-        cure_p <- 1 / (1 + exp(- as.numeric(cureMat[i, ] %*% cureCoef)))
-        cure_ind <- rbinom(1, size = 1, prob = cure_p) < 1
+        not_cure_p <- 1 / (1 + exp(- as.numeric(cureMat[i, ] %*% cureCoef)))
+        not_cure_idx <- rbinom(1, size = 1, prob = not_cure_p)
 
         ## 2.1 if cured
-        if (cure_ind) {
+        if (not_cure_idx) {
             censorTime <- runif(1, min = censorMin, max = censorMax)
             b2 <- rbinom(1, 1, p2)
             oracle_case <- ifelse(b2, "2_b", "3_c")
             obs_event <- ifelse(b2, 0, NA)
-            out <- data.frame(obs_time = censorTime, obs_event = obs_event,
-                              oracle_event = 0, oracle_cure = 1,
-                              case = oracle_case)
+            out <- data.frame(obs_time = censorTime,
+                              obs_event = obs_event,
+                              oracle_event = 0,
+                              oracle_cure = 1,
+                              case = oracle_case,
+                              coxMat[i, , drop = FALSE],
+                              cureMat[i, , drop = FALSE])
             return(out)
         }
 
@@ -260,23 +266,24 @@ simuIntCure <- function(nSubject = 1e3, shape = 2, scale = 0.001,
         if (obsEvent) {
             ## case 1 and case 3a
             b1 <- rbinom(1, 1, p1)
-            oracle_case = ifelse(b1, "1", "3_a")
+            oracle_case <- ifelse(b1, "1", "3_a")
             obs_event <- ifelse(b1, obsEvent, NA)
         } else {
             ## case 2_a and case 3b
             b3 <- rbinom(1, 1, p3)
-            oracle_case = ifelse(b3, "2_a", "3_b")
+            oracle_case <- ifelse(b3, "2_a", "3_b")
             obs_event <- ifelse(b3, obsEvent, NA)
         }
-        out <- data.frame(obs_time = obsTime, obs_event = obsEvent,
-                          oracle_event = obsEvent, oracle_cure = 0,
-                          case = oracle_case)
+        out <- data.frame(obs_time = obsTime,
+                          obs_event = obs_event,
+                          oracle_event = obs_event,
+                          oracle_cure = 0,
+                          case = oracle_case,
+                          coxMat[i, , drop = FALSE],
+                          cureMat[i, , drop = FALSE])
         return(out)
     }
-    res <- do.call(rbind, lapply(seq_len(nSubject), simuIntCureOne))
-    colnames(coxMat) <- paste0("x", seq_len(ncol(coxMat)))
-    colnames(cureMat) <- paste0("z", seq_len(ncol(cureMat)))
-    cbind(res, coxMat, cureMat)
+    do.call(rbind, lapply(seq_len(nSubject), simuIntCureOne))
 }
 
 
