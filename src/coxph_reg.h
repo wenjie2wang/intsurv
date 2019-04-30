@@ -20,6 +20,7 @@
 
 #include <RcppArmadillo.h>
 #include "utils.h"
+#include "splines.h"
 
 namespace Intsurv {
 

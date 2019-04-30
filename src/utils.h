@@ -21,6 +21,7 @@
 #include <algorithm>            // std::max, std::set_union, etc.
 #include <cmath>                // std::pow and std::sqrt, etc.
 #include <limits>
+#include <map>
 #include <stdexcept>
 #include <string>
 #include <unordered_set>
@@ -518,6 +519,45 @@ namespace Intsurv {
         }
         return std::log(res) + max_x;
     }
+
+    // repeat a number into a vector
+    inline arma::vec rep_double(const double& x, const unsigned int& n) {
+        return x * arma::ones(n);
+    }
+    inline arma::vec rep_each(const arma::vec& x, const unsigned int& n) {
+        arma::vec res { arma::ones(n * x.n_elem) };
+        for (size_t i {0}; i < res.n_elem; ++i) {
+            size_t ind { i / n };
+            res(i) = x(ind);
+        }
+        return res;
+    }
+
+    // step function
+    inline arma::vec step_fun(const arma::vec& x,
+                              const arma::vec& knots,
+                              const arma::vec& height)
+    {
+        // create a map for fast comparison
+        std::map<double, double> step_map;
+        for (size_t i {0}; i < knots.n_elem; ++i) {
+            step_map.insert(std::make_pair(knots(i), height(i + 1)));
+        }
+        arma::vec res { arma::zeros(x.n_elem) };
+        std::map<double, double>::iterator it;
+        for (size_t i {0}; i < x.n_elem; ++i) {
+            it = step_map.upper_bound(x(i));
+            if (it != step_map.begin()) {
+                --it;
+                res(i) = it->second;
+            } else {
+                res(i) = height(0);
+            }
+        }
+        return res;
+    }
+
+
 
 }
 
