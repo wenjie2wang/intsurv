@@ -110,28 +110,33 @@ Rcpp::List coxph_cure(
         // check convergence
         tol1 = Intsurv::rel_l2_norm(cox_object.coef, cox_beta);
         tol2 = Intsurv::rel_l2_norm(cure_object.coef, cure_beta);
+        Rcpp::Rcout << "i = " << i << std::endl;
         cox_beta = cox_object.coef;
         cure_beta = cure_object.coef;
+        Rcpp::Rcout << "cox_beta = " << cox_beta << std::endl;
+        Rcpp::Rcout << "cure_beta = " << cure_beta << std::endl;
 
         // update to last estimates
         cox_object.compute_haz_surv_time();
         p_vec = cure_object.predict(cure_beta);
 
+        // compute observed data likelihood
+        // for case 1
+        for (size_t j: case1_ind) {
+            obs_ell += std::log(p_vec(j)) +
+                std::log(cox_object.h_time(j)) +
+                std::log(cox_object.S_time(j));
+        }
+        // for case 2
+        for (size_t j: case2_ind) {
+            obs_ell += std::log(
+                p_vec(j) * cox_object.S_time(j) + (1 - p_vec(j))
+                );
+        }
+        Rcpp::Rcout << "avg_obs_ell: " << obs_ell / p_vec.n_elem << std::endl;
+
         if ((tol1 < em_rel_tol && tol2 < em_rel_tol) ||
             i > em_max_iter) {
-            // compute observed data likelihood
-            // for case 1
-            for (size_t j: case1_ind) {
-                obs_ell += std::log(p_vec(j)) +
-                    std::log(cox_object.h_time(j)) +
-                    std::log(cox_object.S_time(j));
-            }
-            // for case 2
-            for (size_t j: case2_ind) {
-                obs_ell += std::log(
-                    p_vec(j) * cox_object.S_time(j) + (1 - p_vec(j))
-                    );
-            }
             break;
         }
         // update iter
@@ -263,13 +268,12 @@ Rcpp::List coxph_cure_reg(
         cure_beta = cure_start;
     }
 
+    // save the starting value
+    arma::vec cox_beta0 { cox_beta };
+    arma::vec cure_beta0 { cure_beta };
+
     arma::vec p_vec { cure_object.predict(cure_beta) };
     cox_object.compute_haz_surv_time(cox_beta);
-
-    size_t i {0}, mat_idx {0};
-    arma::vec estep_v { s_event }, log_v {0};
-    double numer_j {0}, denom_j {0}, tol1 {0}, tol2 {0};
-    double obs_ell {0};
 
     // set up the estimate matrix
     unsigned int est_ncol { cox_lambda_seq.n_elem * cure_lambda_seq.n_elem};
@@ -277,24 +281,34 @@ Rcpp::List coxph_cure_reg(
     arma::mat cox_beta_mat { arma::zeros(cox_x.n_cols, est_ncol) };
     arma::mat cure_beta_mat { arma::zeros(cure_xx.n_cols, est_ncol) };
 
-    for (size_t l1 {0}; l1 < cox_lambda_seq.n_elem; ++l1) {
-        for (size_t l2 {0}; l2 < cure_lambda_seq.n_elem; ++l2) {
-            i = 0;
-            obs_ell = 0;
-            mat_idx = l1 * cure_lambda_seq.n_elem + l2;
+    for (size_t l1 {0}; l1 < cure_lambda_seq.n_elem; ++l1) {
+        // reset starting values
+        cox_beta = cox_beta0;
+        cure_beta = cure_beta0;
+        for (size_t l2 {0}; l2 < cox_lambda_seq.n_elem; ++l2) {
+            // initialization
+            size_t i {0};
+            size_t mat_idx { l1 * cox_lambda_seq.n_elem + l2 };
+            arma::vec estep_v { s_event }, log_v {0};
+            double numer_j {0}, denom_j {0}, tol1 {0}, tol2 {0}, obs_ell {0};
 
             if (verbose) {
-                Rcpp::Rcout << "\n cox_lambda(" << l1 << "): "
-                            << cox_lambda_seq(l1) << std::endl;
-                Rcpp::Rcout << "cure_lambda(" << l2 << "): "
-                            << cure_lambda_seq(l2) << std::endl;
+                Rcpp::Rcout << "cure_lambda(" << l1 << "): "
+                            << cure_lambda_seq(l1) << std::endl;
+                Rcpp::Rcout << "\n cox_lambda(" << l2 << "): "
+                            << cox_lambda_seq(l2) << std::endl;
+                Rcpp::Rcout << "cox_beta" << cox_beta.t() << std::endl;
+                Rcpp::Rcout << "cure_beta" << cure_beta.t() << std::endl;
             }
 
             // main loop of EM algorithm
             while (true) {
+                Rcpp::checkUserInterrupt();
 
                 if (verbose) {
                     Rcpp::Rcout << "EM iteration: " << i << std::endl;
+                    Rcpp::Rcout << "cox_beta" << cox_beta.t() << std::endl;
+                    Rcpp::Rcout << "cure_beta" << cure_beta.t() << std::endl;
                 }
 
                 // E-step: compute v vector
@@ -308,7 +322,7 @@ Rcpp::List coxph_cure_reg(
                 // M-step for the survival layer
                 cox_object.set_offset(log_v);
                 cox_object.regularized_fit(
-                    cox_lambda_seq(l1), cox_penalty,
+                    cox_lambda_seq(l2), cox_penalty,
                     cox_beta, cox_mstep_max_iter,
                     cox_mstep_rel_tol
                     );
@@ -316,10 +330,16 @@ Rcpp::List coxph_cure_reg(
                 // M-step for the Cure layer
                 cure_object.update_y(estep_v);
                 cure_object.regularized_fit(
-                    cure_lambda_seq(l2), cure_penalty,
+                    cure_lambda_seq(l1), cure_penalty,
                     cure_beta, cure_mstep_max_iter,
                     cure_mstep_rel_tol
                     );
+
+                // early exit if has any `nan`
+                if (cox_beta.has_nan() || cure_beta.has_nan()) {
+                    obs_ell = - arma::datum::inf;
+                    break;
+                }
 
                 // check convergence
                 tol1 = Intsurv::rel_l2_norm(cox_object.coef, cox_beta);
@@ -327,12 +347,16 @@ Rcpp::List coxph_cure_reg(
                 cox_beta = cox_object.coef;
                 cure_beta = cure_object.coef;
 
+                // check if any coefficient estimate is exploded
+                unsigned int cox_boom { arma::sum(cox_beta > 30) };
+                unsigned int cure_boom { arma::sum(cure_beta > 30) };
+
                 // update to last estimates
                 cox_object.compute_haz_surv_time();
                 p_vec = cure_object.predict(cure_beta);
 
                 if ((tol1 < em_rel_tol && tol2 < em_rel_tol) ||
-                    i > em_max_iter) {
+                    i > em_max_iter || cox_boom || cure_boom) {
                     // compute observed data likelihood
                     // for case 1
                     for (size_t j: case1_ind) {
@@ -359,6 +383,8 @@ Rcpp::List coxph_cure_reg(
     return Rcpp::List::create(
         Rcpp::Named("cox_beta_mat") = cox_beta_mat,
         Rcpp::Named("cure_beta_mat") = cure_beta_mat,
+        Rcpp::Named("cox_lambda_seq") = cox_lambda_seq,
+        Rcpp::Named("cure_lambda_seq") = cure_lambda_seq,
         Rcpp::Named("obs_ell") = obs_ell_vec
         );
 }
