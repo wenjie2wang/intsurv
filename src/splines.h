@@ -223,6 +223,73 @@ namespace Intsurv {
         return res_mat;
     }
 
+    // get the placement of knots based on quantile
+    arma::vec get_boundary_knots(const arma::vec& x)
+    {
+        arma::vec probs { {0, 1} };
+        return arma_quantile(x, probs);
+    }
+    arma::vec get_internal_knots(const arma::vec& x,
+                                 const unsigned int& num_knots)
+    {
+        double prob { 1.0 / (static_cast<double>(num_knots) + 1.0) };
+        arma::vec probs { prob * arma::regspace(1, num_knots) };
+        return arma_quantile(x, probs);
+    }
+
+    // non-negative least square
+    arma::vec nnls(const arma::vec& y, const arma::mat& x,
+                   const double eps = 1e-4)
+    {
+        // reference: Lawson and Hanson (1974)
+        const unsigned int p { x.n_cols };
+        arma::uvec setP { arma::zeros<arma::uvec>(p) };
+        arma::uvec setR { arma::ones<arma::uvec>(p) };
+        arma::vec beta { arma::zeros(p) };
+        arma::vec w { mat2vec(x.t() * y) };
+
+        // main loop
+        while (arma::sum(setR) > 0 && w.max() > eps) {
+            arma::uvec idxR { arma_which(setR) };
+            size_t j { idxR(w.rows(idxR).index_max()) };
+            setP(j) = 1;
+            setR(j) = 0;
+            arma::uvec idxP { arma_which(setP) };
+            arma::mat xP { x.cols(idxP) };
+            arma::vec s { arma::zeros(p) };
+            arma::vec sP {
+                mat2vec(arma::inv_sympd(xP.t() * xP) * (xP.t() * y))
+            };
+            s.rows(idxP) = sP;
+            // inner loop
+            while (sP.min() <= 0) {
+                arma::uvec np_idx { arma::find(sP <= 0) };
+                arma::vec betaP { beta.elem(idxP) };
+                double alpha {
+                    arma::min(betaP.elem(np_idx) /
+                              (betaP.elem(np_idx) - sP.elem(np_idx)))
+                };
+                beta += alpha * (s - beta);
+                // move j in setP where beta(j) = 0 to setR
+                for (size_t i {0}; i < p; ++i) {
+                    if (setP(i) && isAlmostEqual(beta(i), 0)) {
+                        setP(i) = 0;
+                        setR(i) = 1;
+                    }
+                }
+                idxP = arma_which(setP);
+                xP = x.cols(idxP);
+                sP = mat2vec(arma::inv_sympd(xP.t() * xP) * (xP.t() * y));
+                s = arma::zeros(p);
+                s.rows(idxP) = sP;
+            }
+            beta = s;
+            w = mat2vec(x.t() * (y - x * beta));
+        }
+        return beta;
+    }
+
+
 }
 
 #endif

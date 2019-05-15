@@ -22,6 +22,7 @@
 #include <cmath>                // std::pow and std::sqrt, etc.
 #include <limits>
 #include <map>
+#include <math.h>
 #include <stdexcept>
 #include <string>
 #include <unordered_set>
@@ -557,6 +558,43 @@ namespace Intsurv {
         return res;
     }
 
+    // quantile function
+    // type 5 in quantile
+    // reference: Hyndman and Fan (1996)
+    inline double arma_quantile(const arma::vec& x, const double prob) {
+        const double alpha { 0.5 };
+        const unsigned int n { x.n_elem };
+        if (prob < (1 - alpha) / n) {
+            return x.min();
+        }
+        if (prob > (n - alpha) / n) {
+            return x.max();
+        }
+        arma::vec inc_x { arma::sort(x) };
+        int k { static_cast<int>(std::floor(n * prob + alpha)) };
+        double pk { (k - alpha) / n };
+        double w { (prob - pk) * n };
+        return (1 - w) * inc_x(k - 1) + w * inc_x(k);
+    }
+    inline arma::vec arma_quantile(const arma::vec& x, const arma::vec& probs) {
+        const double alpha { 0.5 };
+        const unsigned int n { x.n_elem };
+        arma::vec res { arma::zeros(probs.n_elem) };
+        arma::vec inc_x { arma::sort(x) };
+        for (size_t i {0}; i < probs.n_elem; ++i) {
+            if (probs(i) < (1 - alpha) / n) {
+                res(i) = x.min();
+            } else if (probs(i) > (n - alpha) / n) {
+                res(i) = x.max();
+            } else {
+                int k { static_cast<int>(std::floor(n * probs(i) + alpha)) };
+                double pk { (k - alpha) / n };
+                double w { (probs(i) - pk) * n };
+                res(i) = (1 - w) * inc_x(k - 1) + w * inc_x(k);
+            }
+        }
+        return res;
+    }
 
 
 }
