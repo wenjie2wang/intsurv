@@ -59,7 +59,11 @@ namespace Intsurv {
             standardize = standardize_;
             x = x_;
             if (standardize) {
-                x_center = arma::mean(x);
+                if (intercept) {
+                    x_center = arma::mean(x);
+                } else {
+                    x_center = arma::zeros<arma::rowvec>(x.n_cols);
+                }
                 x_scale = arma::stddev(x, 1);
                 for (size_t j {0}; j < x.n_cols; ++j) {
                     if (x_scale(j) > 0) {
@@ -90,9 +94,13 @@ namespace Intsurv {
                     this->coef[0] = coef0(0) -
                         arma::as_scalar((x_center / x_scale) *
                                         coef0.elem(non_int_ind));
-                }
-                for (size_t j {1}; j < coef0.n_elem; ++j) {
-                    this->coef[j] = coef0[j] / x_scale[j - 1];
+                    for (size_t j {1}; j < coef0.n_elem; ++j) {
+                        this->coef[j] = coef0[j] / x_scale[j - 1];
+                    }
+                } else {
+                    for (size_t j {0}; j < coef0.n_elem; ++j) {
+                        this->coef[j] = coef0[j] / x_scale[j];
+                    }
                 }
             }
         }
@@ -121,6 +129,12 @@ namespace Intsurv {
         inline double gradient(const arma::vec& beta,
                                const unsigned int k) const;
 
+        // Firth-type score function
+        inline arma::vec firth_score(const arma::vec& beta) const;
+
+        inline arma::vec firth_score(const arma::vec& beta,
+                                     const unsigned int k) const;
+
         inline double objective(const arma::vec& beta, arma::vec& grad) const;
 
         // compute iteration matrix in Bohning and Lindsay (1988)
@@ -130,6 +144,11 @@ namespace Intsurv {
         inline void fit(const arma::vec& start,
                         const unsigned int& max_iter,
                         const double& rel_tol);
+
+        // fit firth logistic regression model
+        inline void firth_fit(const arma::vec& start,
+                              const unsigned int& max_iter,
+                              const double& rel_tol);
 
         // compute cov lowerbound used in regularied model
         inline void compute_cmd_lowerbound(bool force_update);
@@ -229,6 +248,32 @@ namespace Intsurv {
         return arma::sum((linkinv(beta) - y) % x.col(k));
     }
 
+    // Firth-type score function
+    inline arma::vec LogisticReg::firth_score(const arma::vec& pi_vec) const
+    {
+        arma::mat b_mat {x};
+        for (size_t i {0}; i < x.n_rows; ++i) {
+            b_mat.row(i) *= std::sqrt(pi_vec(i) * (1 - pi_vec(i)));
+        }
+        // QR decomposition
+        arma::mat q_mat, r_mat;
+        arma::qr_econ(q_mat, r_mat, b_mat);
+        // compute diagonal of hat matrix
+        arma::vec hat_vec { arma::zeros(q_mat.n_rows) };
+        for (size_t i {0}; i < q_mat.n_rows; ++i) {
+            hat_vec(i) = arma::sum(arma::square(q_mat.row(i)));
+        }
+        // compute score function
+        arma::vec res { arma::zeros(x.n_cols) };
+        for (size_t i {0}; i < x.n_rows; ++i) {
+            arma::rowvec tmp {
+                (y(i) - pi_vec(i) + hat_vec(i) * (0.5 - pi_vec(i))) * x.row(i)
+            };
+            res += tmp.t();
+        }
+        return res;
+    }
+
     // define objective function and overwrites graidient
     inline double LogisticReg::objective(const arma::vec& beta,
                                          arma::vec& grad) const
@@ -247,7 +292,7 @@ namespace Intsurv {
     inline void LogisticReg::compute_bl_iter_mat(bool force_update = false)
     {
         if (force_update || this->bl_iter_mat.is_empty()) {
-            this->bl_iter_mat = 4 * arma::inv_sympd(x.t() * x) * x.t();
+            this->bl_iter_mat = 4 * arma::inv_sympd(x.t() * x);
         }
     }
 
@@ -266,10 +311,43 @@ namespace Intsurv {
         arma::vec eta { arma::zeros(y.n_elem) };
         arma::vec y_hat { eta };
         this->compute_bl_iter_mat();
+        arma::mat iter_mat { this->bl_iter_mat * x.t() };
         size_t i {0};
         while (i < max_iter) {
             y_hat = linkinv(beta0);
-            beta = beta0 + this->bl_iter_mat * (y - y_hat);
+            beta = beta0 + iter_mat * (y - y_hat);
+            if (rel_l2_norm(beta, beta0) < rel_tol) {
+                break;
+            }
+            // update beta
+            beta0 = beta;
+            i++;
+        }
+        this->coef0 = beta;
+        // rescale coef back
+        this->rescale_coef();
+    }
+
+    // fitting Firth logistic model with monotonic quadratic approximation
+    // algorithm;  non-integer y vector is allowed.
+    // reference: Bohning and Lindsay (1988) SIAM
+    inline void LogisticReg::firth_fit(const arma::vec& start = 0,
+                                       const unsigned int& max_iter = 1000,
+                                       const double& rel_tol = 1e-6)
+    {
+        arma::vec beta0 { arma::zeros(x.n_cols) };
+        if (start.n_elem == x.n_cols) {
+            beta0 = start;
+        }
+        arma::vec beta { beta0 }, score_vec { beta0 };
+        arma::vec eta { arma::zeros(y.n_elem) };
+        arma::vec y_hat { eta };
+        this->compute_bl_iter_mat();
+        size_t i {0};
+        while (i < max_iter) {
+            y_hat = linkinv(beta0);
+            score_vec = firth_score(y_hat);
+            beta = beta0 + this->bl_iter_mat * score_vec;
             if (rel_l2_norm(beta, beta0) < rel_tol) {
                 break;
             }
