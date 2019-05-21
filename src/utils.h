@@ -596,6 +596,11 @@ namespace Intsurv {
         return res;
     }
 
+    // convert arma vec type to Rcpp NumericVector
+    template <typename T>
+    Rcpp::NumericVector arma2rcppVec(const T& x) {
+        return Rcpp::NumericVector(x.begin(), x.end());
+    }
 
 }
 

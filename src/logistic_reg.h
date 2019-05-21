@@ -37,17 +37,25 @@ namespace Intsurv {
 
         // iteration matrix in Bohning and Lindsay (1988)
         arma::mat bl_iter_mat;
-        // for regularized regression
+        // for regularized coordinate majorization descent
         arma::rowvec cmd_lowerbound;
 
     public:
-        arma::vec coef;         // coef rescaled
-        double neg_LogL;        // negative likelihood
+        arma::vec coef;         // coef (rescaled for origin x)
+        double negLogL;         // negative log-likelihood
 
-        // regularized
-        arma::mat reg_coef;     // coef rescaled
-        arma::vec reg_lambda;   // lambda sequence
-        arma::vec reg_neg_logL; // negative likelihood
+        // for a sinle lambda
+        double l1_lambda;            // tuning parameter for lasso penalty
+        double l2_lambda;            // tuning parameter for ridge penalty
+        arma::vec l1_penalty_factor; // adaptive weights for lasso penalty
+        arma::vec en_coef;           // (rescaled) elastic net estimates
+
+        // for lambda sequence
+        double alpha;           // tuning parameter
+        arma::vec lambda_vec;   // lambda sequence
+        arma::mat coef_mat;     // coef matrix (rescaled for origin x)
+        arma::mat en_coef_mat;  // elastic net estimates
+        arma::vec negLogL_vec;   // negative log-likelihood vector
 
         // constructors
         LogisticReg(const arma::mat& x_,
@@ -569,9 +577,19 @@ namespace Intsurv {
                 kkt_failed = false;
             }
         }
-        this->coef0 = beta;
-        // rescale coef back
+        // compute elastic net estimates, then rescale them back
+        this->coef0 = (1 + l2_lambda) * beta;
         this->rescale_coef();
+        this->en_coef = this->coef;
+        // overwrite the naive elastic net estimate
+        this->coef0 = beta;
+        this->rescale_coef();
+        // compute negative log-likelihood
+        this->negLogL = this->objective();
+        // record other inputs
+        this->l1_lambda = l1_lambda;
+        this->l2_lambda = l2_lambda;
+        this->l1_penalty_factor = l1_penalty;
     }
 
 
@@ -612,9 +630,7 @@ namespace Intsurv {
 
         // take unique lambda and sort descendingly
         lambda = arma::reverse(arma::unique(lambda));
-        arma::vec lambda_seq {
-            arma::zeros(std::max(nlambda, lambda.n_elem))
-                };
+        arma::vec lambda_seq;
         if (nlambda > 1) {
             double log_lambda_max { std::log(lambda_max) };
             if (this->x.n_cols > this->x.n_rows) {
@@ -628,7 +644,6 @@ namespace Intsurv {
         } else {
             lambda_seq = lambda;
         }
-        this->reg_lambda = lambda_seq;
 
         // update penalty for intercept
         if (this->intercept) {
@@ -637,7 +652,9 @@ namespace Intsurv {
 
         // set up the estimate matrix
         arma::mat beta_mat { arma::zeros(x.n_cols, lambda_seq.n_elem) };
+        arma::mat en_beta_mat { beta_mat };
         arma::vec grad_beta { grad_zero }, strong_rhs { grad_zero };
+        arma::vec nll { arma::zeros(lambda_seq.n_elem) };
 
         // for active set
         arma::uvec is_active_strong { arma::zeros<arma::uvec>(x.n_cols) };
@@ -714,12 +731,26 @@ namespace Intsurv {
                     kkt_failed = false;
                 }
             }
+            // compute elastic net estimates
+            this->coef0 = (1 + (1 - alpha) * lambda_seq(k) / 2) * beta;
+            this->rescale_coef();
+            en_beta_mat.col(k) = this->coef;
+
+            // compute naive elastic net estimates
             this->coef0 = beta;
-            // rescale coef back
             this->rescale_coef();
             beta_mat.col(k) = this->coef;
+
+            // compute negative log-likelihood
+            nll(k) = this->objective();
         }
-        this->reg_coef = beta_mat;
+        // prepare outputs
+        this->l1_penalty_factor = l1_penalty;
+        this->lambda_vec = lambda_seq;
+        this->alpha = alpha;
+        this->en_coef_mat = en_beta_mat;
+        this->coef_mat = beta_mat;
+        this->negLogL_vec = nll;
     }
 
 }
