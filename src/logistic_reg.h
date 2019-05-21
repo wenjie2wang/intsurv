@@ -41,21 +41,21 @@ namespace Intsurv {
         arma::rowvec cmd_lowerbound;
 
     public:
+        arma::vec l1_penalty_factor; // adaptive weights for lasso penalty
+
+        // for a sinle l1_lambda and l2_lambda
+        double l1_lambda;       // tuning parameter for lasso penalty
+        double l2_lambda;       // tuning parameter for ridge penalty
         arma::vec coef;         // coef (rescaled for origin x)
+        arma::vec en_coef;      // (rescaled) elastic net estimates
         double negLogL;         // negative log-likelihood
 
-        // for a sinle lambda
-        double l1_lambda;            // tuning parameter for lasso penalty
-        double l2_lambda;            // tuning parameter for ridge penalty
-        arma::vec l1_penalty_factor; // adaptive weights for lasso penalty
-        arma::vec en_coef;           // (rescaled) elastic net estimates
-
-        // for lambda sequence
+        // for a lambda sequence
         double alpha;           // tuning parameter
         arma::vec lambda_vec;   // lambda sequence
         arma::mat coef_mat;     // coef matrix (rescaled for origin x)
         arma::mat en_coef_mat;  // elastic net estimates
-        arma::vec negLogL_vec;   // negative log-likelihood vector
+        arma::vec negLogL_vec;  // negative log-likelihood vector
 
         // constructors
         LogisticReg(const arma::mat& x_,
@@ -340,11 +340,12 @@ namespace Intsurv {
         this->coef0 = beta;
         // rescale coef back
         this->rescale_coef();
+        // compute negative log-likelihood
+        this->negLogL = this->objective();
     }
 
     // fitting Firth logistic model with monotonic quadratic approximation
     // algorithm;  non-integer y vector is allowed.
-    // reference: Bohning and Lindsay (1988) SIAM
     inline void LogisticReg::firth_fit(const arma::vec& start = 0,
                                        const unsigned int& max_iter = 1000,
                                        const double& rel_tol = 1e-6)
@@ -372,6 +373,8 @@ namespace Intsurv {
         this->coef0 = beta;
         // rescale coef back
         this->rescale_coef();
+        // compute negative log-likelihood
+        this->negLogL = this->objective();
     }
 
     // compute CMD lowerbound vector
@@ -496,6 +499,7 @@ namespace Intsurv {
             l1_penalty = l1_penalty_factor * x.n_cols /
                 arma::sum(l1_penalty_factor);
         }
+        this->l1_penalty_factor = l1_penalty;
 
         arma::vec beta { arma::zeros(x.n_cols) };
         arma::vec grad_zero { arma::abs(this->gradient(beta)) };
@@ -553,9 +557,9 @@ namespace Intsurv {
         }
 
         bool kkt_failed { true };
+        strong_rhs = l1_lambda * l1_penalty;
         // eventually, strong rule will guess correctly
         while (kkt_failed) {
-            strong_rhs = l1_lambda * l1_penalty;
             // update beta
             reg_active_fit(beta, is_active_strong, l1_lambda, l2_lambda,
                            l1_penalty, varying_active_set, max_iter, rel_tol);
@@ -589,7 +593,6 @@ namespace Intsurv {
         // record other inputs
         this->l1_lambda = l1_lambda;
         this->l2_lambda = l2_lambda;
-        this->l1_penalty_factor = l1_penalty;
     }
 
 
@@ -605,31 +608,35 @@ namespace Intsurv {
         const double& rel_tol = 1e-6
         )
     {
+        // check alpha
+        if ((alpha < 0) | (alpha > 1)) {
+            throw std::range_error("Alpha must be between 0 and 1.");
+        }
         // set penalty terms
         unsigned int int_intercept { static_cast<unsigned int>(intercept) };
         unsigned int n_predictor { x.n_cols - int_intercept };
         if (n_predictor < 1) {
             throw std::range_error("Predictors not found.");
         }
-        if ((alpha < 0) | (alpha > 1)) {
-            throw std::range_error("Alpha must be between 0 and 1.");
-        }
         arma::vec l1_penalty { arma::ones(n_predictor) };
         if (l1_penalty_factor.n_elem == l1_penalty.n_elem) {
             l1_penalty = l1_penalty_factor * x.n_cols /
                 arma::sum(l1_penalty_factor);
         }
+        this->l1_penalty_factor = l1_penalty;
 
         // construct lambda sequence
         arma::vec beta { arma::zeros(x.n_cols) };
-        arma::vec grad_zero { arma::abs(this->gradient(beta)) };
+        arma::vec grad_beta { arma::abs(this->gradient(beta)) };
+        arma::vec strong_rhs { beta };
         double lambda_max {
-            arma::max(grad_zero.tail(l1_penalty.n_elem) / l1_penalty) /
+            arma::max(grad_beta.tail(l1_penalty.n_elem) / l1_penalty) /
             this->x.n_rows / std::max(alpha, 1e-10)
         };
 
         // take unique lambda and sort descendingly
         lambda = arma::reverse(arma::unique(lambda));
+        // construct lambda sequence
         arma::vec lambda_seq;
         if (nlambda > 1) {
             double log_lambda_max { std::log(lambda_max) };
@@ -653,7 +660,6 @@ namespace Intsurv {
         // set up the estimate matrix
         arma::mat beta_mat { arma::zeros(x.n_cols, lambda_seq.n_elem) };
         arma::mat en_beta_mat { beta_mat };
-        arma::vec grad_beta { grad_zero }, strong_rhs { grad_zero };
         arma::vec nll { arma::zeros(lambda_seq.n_elem) };
 
         // for active set
@@ -745,7 +751,6 @@ namespace Intsurv {
             nll(k) = this->objective();
         }
         // prepare outputs
-        this->l1_penalty_factor = l1_penalty;
         this->lambda_vec = lambda_seq;
         this->alpha = alpha;
         this->en_coef_mat = en_beta_mat;

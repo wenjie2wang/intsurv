@@ -26,8 +26,8 @@ namespace Intsurv {
     // define class for inputs and outputs
     class CoxphReg {
     private:
-        arma::uvec des_event_ind;  // index sorting events descendingly
-        arma::uvec asc_time_ind;   // index sorting times ascendingly
+        arma::uvec ord;            // index sorting the rows
+        arma::uvec rev_ord;        // index reverting the sorting
 
         // all the following results are sorted accordingly
         arma::vec time;            // (sorted) observed times
@@ -64,13 +64,21 @@ namespace Intsurv {
         arma::vec cmd_lowerbound;
 
     public:
-        arma::vec coef;            // covariate coefficient estimates
-        double neg_logL {0};   // partial log-likelihood
+        arma::vec l1_penalty_factor; // adaptive weights for lasso penalty
 
-        // regularized
-        arma::mat reg_coef;     // coef rescaled
-        arma::vec reg_lambda;   // lambda sequence
-        arma::vec reg_neg_logL; // negative likelihood
+        // for a single l1_lambda and l2_lambda
+        double l1_lambda;            // tuning parameter for lasso penalty
+        double l2_lambda;            // tuning parameter for ridge penalty
+        arma::vec coef;              // covariate coefficient estimates
+        arma::vec en_coef;           // (rescaled) elastic net estimates
+        double negLogL;              // partial negative log-likelihood
+
+        // for a lambda sequence
+        double alpha;           // tuning parameter
+        arma::vec lambda_vec;   // lambda sequence
+        arma::mat coef_mat;     // coef matrix (rescaled for origin x)
+        arma::mat en_coef_mat;  // elastic net estimates
+        arma::vec negLogL_vec;  // negative log-likelihood vector
 
         // baseline estimates at every time point (unique or not)
         arma::vec h0_time;
@@ -92,14 +100,17 @@ namespace Intsurv {
             // sort based on time and event
             // time: ascending order
             // event: events first, then censoring at the same time point
-            des_event_ind = arma::sort_index(event_, "descend");
-            time = time_.elem(des_event_ind);
-            event = event_.elem(des_event_ind);
-            x = x_.rows(des_event_ind);
-            asc_time_ind = arma::stable_sort_index(time, "ascend");
-            time = time.elem(asc_time_ind);
-            event = event.elem(asc_time_ind);
-            x = x.rows(asc_time_ind);
+            arma::uvec des_event_ind { arma::sort_index(event_, "descend") };
+            arma::uvec asc_time_ind {
+                arma::stable_sort_index(time_.elem(des_event_ind), "ascend")
+            };
+            ord = des_event_ind.elem(asc_time_ind);
+            rev_ord = arma::sort_index(ord);
+
+            // do actual sorting
+            time = time_.elem(ord);
+            event = event_.elem(ord);
+            x = x_.rows(ord);
 
             // standardize covariates
             standardize = standardize_;
@@ -166,8 +177,7 @@ namespace Intsurv {
         {
             event = event_;
             if (! is_sorted) {
-                event = event.elem(des_event_ind);
-                event = event.elem(asc_time_ind);
+                event = event.elem(ord);
             }
             // need to update delta_n and d_x
             delta_n = event.elem(event_ind);
@@ -191,8 +201,7 @@ namespace Intsurv {
                 offset = offset_;
                 if (! is_sorted) {
                     // update offset for appropriate input
-                    offset = offset.elem(des_event_ind);
-                    offset = offset.elem(asc_time_ind);
+                    offset = offset.elem(ord);
                 }
             } else {
                 offset = arma::zeros(time.n_elem);
@@ -205,7 +214,7 @@ namespace Intsurv {
         inline void compute_censor_haz_surv_time();
 
         // function that computes objective function only
-        inline double objective(const arma::vec& beta) const;
+        inline double objective() const;
 
         // function that computes gradients only
         inline arma::vec gradient(const arma::vec& beta) const;
@@ -232,6 +241,7 @@ namespace Intsurv {
         inline arma::vec get_time() const { return time; }
         inline arma::vec get_event() const { return event; }
         inline arma::mat get_x() const { return x; }
+        inline arma::uvec get_sort_index() { return this->ord; }
 
         // fit regular Cox model
         inline void fit(const arma::vec& start,
@@ -241,37 +251,37 @@ namespace Intsurv {
         // one-full cycle of coordinate-majorization-descent
         inline void regularized_fit_update(arma::vec& beta,
                                            arma::uvec& is_active,
-                                           const arma::vec& penalty,
+                                           const double& l1_lambda,
+                                           const double& l2_lambda,
+                                           const arma::vec& l1_penalty_factor,
                                            const bool& update_active);
 
         inline void reg_active_fit(arma::vec& beta,
                                    const arma::uvec& is_active,
-                                   const arma::vec& penalty,
+                                   const double& l1_lambda,
+                                   const double& l2_lambda,
+                                   const arma::vec& l1_penalty_factor,
                                    const bool& varying_active_set,
                                    const unsigned int& max_iter,
                                    const double& rel_tol);
 
         // fit regularized Cox model with adaptive lasso penalty
         // for a perticular lambda
-        inline void regularized_fit(const double& lambda,
-                                    const arma::vec& penalty_factor,
+        inline void regularized_fit(const double& l1_lambda,
+                                    const double& l2_lambda,
+                                    const arma::vec& l1_penalty_factor,
                                     const arma::vec& start,
                                     const unsigned int& max_iter,
                                     const double& rel_tol);
 
         // overload for a sequence of lambda's
         inline void regularized_fit(arma::vec lambda,
+                                    const double& alpha,
                                     const unsigned int& nlambda,
                                     double lambda_min_ratio,
-                                    const arma::vec& penalty_factor,
+                                    const arma::vec& l1_penalty_factor,
                                     const unsigned int& max_iter,
                                     const double& rel_tol);
-
-        // helper functions
-        inline arma::uvec get_sort_index()
-        {
-            return des_event_ind.elem(asc_time_ind);
-        }
 
     };
     // end of class definition
@@ -343,10 +353,10 @@ namespace Intsurv {
     }
 
     // the negative log-likelihood function based on the broslow's formula
-    inline double CoxphReg::objective(const arma::vec& beta) const
+    inline double CoxphReg::objective() const
     {
-        const arma::vec dx_beta {d_x * beta + d_offset};
-        const arma::vec exp_x_beta {arma::exp(x * beta + offset)};
+        const arma::vec dx_beta {d_x * this->coef0 + d_offset};
+        const arma::vec exp_x_beta {arma::exp(x * this->coef0 + offset)};
         const arma::vec h0_denom {cum_sum(exp_x_beta, true)};
         arma::vec log_h0_denom_event {arma::log(h0_denom.elem(uni_event_ind))};
         return - arma::sum(dx_beta - delta_n % log_h0_denom_event);
@@ -498,13 +508,16 @@ namespace Intsurv {
         }
         this->coef0 = beta;
         this->rescale_coef();
+        this->negLogL = this->objective();
     }
 
     // run one cycle of coordinate descent over a given active set
     inline void CoxphReg::regularized_fit_update(
         arma::vec& beta,
         arma::uvec& is_active,
-        const arma::vec& penalty,
+        const double& l1_lambda,
+        const double& l2_lambda,
+        const arma::vec& l1_penalty_factor,
         const bool& update_active = false
         )
     {
@@ -516,8 +529,11 @@ namespace Intsurv {
                 dlj = gradient(beta, j) / time.n_elem;
                 // update beta
                 beta[j] = soft_threshold(
-                    this->cmd_lowerbound[j] * beta[j] - dlj, penalty[j]) /
-                    this->cmd_lowerbound[j];
+                    this->cmd_lowerbound[j] * beta[j] - dlj,
+                    l1_penalty_factor[j] * l1_lambda
+                    ) /
+                    (this->cmd_lowerbound[j] +
+                     2 * l2_lambda * static_cast<double>(j > 0));
                 if (update_active) {
                     // check if it has been shrinkaged to zero
                     if (isAlmostEqual(beta[j], 0)) {
@@ -534,7 +550,9 @@ namespace Intsurv {
     inline void CoxphReg::reg_active_fit(
         arma::vec& beta,
         const arma::uvec& is_active,
-        const arma::vec& penalty,
+        const double& l1_lambda,
+        const double& l2_lambda,
+        const arma::vec& l1_penalty_factor,
         const bool& varying_active_set = false,
         const unsigned int& max_iter = 1000,
         const double& rel_tol = 1e-6
@@ -551,8 +569,8 @@ namespace Intsurv {
             while (i < max_iter) {
                 // cycles over the active set
                 while (ii < max_iter) {
-                    regularized_fit_update(beta, is_active_stored,
-                                           penalty, true);
+                    regularized_fit_update(beta, is_active_stored, l1_lambda,
+                                           l2_lambda, l1_penalty_factor, true);
                     if (rel_l2_norm(beta, beta0) < rel_tol) {
                         break;
                     }
@@ -560,7 +578,8 @@ namespace Intsurv {
                     ii++;
                 }
                 // run a full cycle over the converged beta
-                regularized_fit_update(beta, is_active_new, penalty, true);
+                regularized_fit_update(beta, is_active_new, l1_lambda,
+                                       l2_lambda, l1_penalty_factor, true);
                 // check two active sets coincide
                 if (arma::sum(arma::abs(is_active_new - is_active_stored))) {
                     // if different, repeat this process
@@ -573,7 +592,8 @@ namespace Intsurv {
         } else {
             // regular coordinate descent
             while (i < max_iter) {
-                regularized_fit_update(beta, is_active_stored, penalty, false);
+                regularized_fit_update(beta, is_active_stored, l1_lambda,
+                                       l2_lambda, l1_penalty_factor, false);
                 if (rel_l2_norm(beta, beta0) < rel_tol) {
                     break;
                 }
@@ -585,34 +605,38 @@ namespace Intsurv {
 
     // fitting regularized Cox model with coordinate-majorizatio-descent
     // algorithm that allows non-integer "event" and tied events
-    // for a perticular lambda
+    // for a perticular l1_lambda and l2_lambda
+    // lambda_1 * lasso + lambda_2 * ridge
     inline void CoxphReg::regularized_fit(
-        const double& lambda = 0,
-        const arma::vec& penalty_factor = 0,
+        const double& l1_lambda = 0,
+        const double& l2_lambda = 0,
+        const arma::vec& l1_penalty_factor = 0,
         const arma::vec& start = 0,
         const unsigned int& max_iter = 1000,
         const double& rel_tol = 1e-6
         )
     {
         // set penalty terms
-        arma::vec penalty { arma::ones(x.n_cols) };
-        if (penalty_factor.n_elem == x.n_cols) {
+        arma::vec l1_penalty { arma::ones(x.n_cols) };
+        if (l1_penalty_factor.n_elem == x.n_cols) {
             // re-scale so that sum(factor) = number of predictors
-            penalty = penalty_factor * x.n_cols / arma::sum(penalty_factor);
+            l1_penalty = l1_penalty_factor * x.n_cols /
+                arma::sum(l1_penalty_factor);
         }
+        this->l1_penalty_factor = l1_penalty;
 
         // the maximum (large enough) lambda that results in all-zero estimates
         arma::vec beta { arma::zeros(x.n_cols) };
         arma::vec grad_beta { beta }, strong_rhs { beta };
-        double lambda_max {
+        double l1_lambda_max {
             arma::max(arma::abs(this->gradient(beta)) /
-                      penalty) / this->x.n_rows
+                      l1_penalty) / this->x.n_rows
         };
 
         // early exit for large lambda greater than lambda_max
         this->coef0 = beta;
         this->coef = beta;
-        if (lambda > lambda_max) {
+        if (l1_lambda > l1_lambda_max) {
             // no need to rescale all-zero coef
             return;
         }
@@ -626,7 +650,7 @@ namespace Intsurv {
         arma::uvec is_active_strong { arma::zeros<arma::uvec>(x.n_cols) };
         // update active set by strong rule
         grad_beta = arma::abs(this->gradient(this->coef0)) / this->x.n_rows;
-        strong_rhs = (2 * lambda - lambda_max) * penalty;
+        strong_rhs = (2 * l1_lambda - l1_lambda_max) * l1_penalty;
         for (size_t j {0}; j < x.n_cols; ++j) {
             if (grad_beta(j) > strong_rhs(j)) {
                 is_active_strong(j) = 1;
@@ -642,13 +666,13 @@ namespace Intsurv {
             varying_active_set = true;
         }
 
-        strong_rhs = lambda * penalty;
         bool kkt_failed { true };
+        strong_rhs = l1_lambda * l1_penalty;
         // eventually, strong rule will guess correctly
         while (kkt_failed) {
             // update beta
-            reg_active_fit(beta, is_active_strong, strong_rhs,
-                           varying_active_set, max_iter, rel_tol);
+            reg_active_fit(beta, is_active_strong, l1_lambda, l2_lambda,
+                           l1_penalty, varying_active_set, max_iter, rel_tol);
             // check kkt condition
             for (size_t j {0}; j < x.n_cols; ++j) {
                 if (is_active_strong(j)) {
@@ -666,33 +690,53 @@ namespace Intsurv {
                 kkt_failed = false;
             }
         }
+        // compute elastic net estimates, then rescale them back
+        this->coef0 = (1 + l2_lambda) * beta;
+        this->rescale_coef();
+        this->en_coef = this->coef;
+        // overwrite the naive elastic net estimate
         this->coef0 = beta;
         this->rescale_coef();
+        // compute negative log-likelihood
+        this->negLogL = this->objective();
+        // record other inputs
+        this->l1_lambda = l1_lambda;
+        this->l2_lambda = l2_lambda;
     }
 
     // for a sequence of lambda's
+    // lambda * (penalty_factor * alpha * lasso + (1 - alpha) / 2 * ridge)
     inline void CoxphReg::regularized_fit(
         arma::vec lambda = 0,
+        const double& alpha = 1,
         const unsigned int& nlambda = 1,
         double lambda_min_ratio = 1e-4,
-        const arma::vec& penalty_factor = 0,
+        const arma::vec& l1_penalty_factor = 0,
         const unsigned int& max_iter = 1000,
         const double& rel_tol = 1e-6
         )
     {
-        // set penalty terms
-        arma::vec penalty { arma::ones(x.n_cols) };
-        if (penalty_factor.n_elem == x.n_cols) {
-            // re-scale so that sum(factor) = number of predictors
-            penalty = penalty_factor * x.n_cols / arma::sum(penalty_factor);
+        // check alpha
+        if ((alpha < 0) | (alpha > 1)) {
+            throw std::range_error("Alpha must be between 0 and 1.");
         }
+        // set penalty terms
+        arma::vec l1_penalty { arma::ones(x.n_cols) };
+        if (l1_penalty_factor.n_elem == x.n_cols) {
+            // re-scale so that sum(factor) = number of predictors
+            l1_penalty = l1_penalty_factor * x.n_cols /
+                arma::sum(l1_penalty_factor);
+        }
+        this->l1_penalty_factor = l1_penalty;
+
         // the maximum (large enough) lambda that results in all-zero estimates
         arma::vec beta { arma::zeros(x.n_cols) };
         arma::vec grad_beta { beta }, strong_rhs { beta };
         double lambda_max {
-            arma::max(arma::abs(this->gradient(beta)) /
-                      penalty) / this->x.n_rows
+            arma::max(arma::abs(this->gradient(beta)) / l1_penalty) /
+            this->x.n_rows / std::max(alpha, 1e-10)
         };
+
         // take unique lambda and sort descendingly
         lambda = arma::reverse(arma::unique(lambda));
         // construct lambda sequence
@@ -712,10 +756,13 @@ namespace Intsurv {
         } else {
             lambda_seq = lambda;
         }
-        this->reg_lambda = lambda_seq;
 
         // set up the estimate matrix
         arma::mat beta_mat { arma::zeros(x.n_cols, lambda_seq.n_elem) };
+        arma::mat en_beta_mat { beta_mat };
+        arma::vec nll { arma::zeros(lambda_seq.n_elem) };
+
+        // start values
         this->coef0 = beta;
         this->coef = beta;
 
@@ -731,7 +778,7 @@ namespace Intsurv {
         // outer loop for the lambda sequence
         for (size_t k {0}; k < lambda_seq.n_elem; ++k) {
             // early exit for large lambda greater than lambda_max
-            if (lambda_seq(k) >= lambda_max) {
+            if (alpha * lambda_seq(k) >= lambda_max) {
                 beta_mat.col(k) = this->coef;
                 continue;
             }
@@ -739,10 +786,12 @@ namespace Intsurv {
             grad_beta = arma::abs(this->gradient(beta)) / this->x.n_rows;
             if (k == 0) {
                 // use lambda_max
-                strong_rhs = (2 * lambda_seq(k) - lambda_max) * penalty;
+                strong_rhs = alpha *
+                    (2 * lambda_seq(k) - lambda_max) * l1_penalty;
             } else {
                 // use the last lambda
-                strong_rhs = (2 * lambda_seq(k) - lambda_seq(k - 1)) * penalty;
+                strong_rhs = alpha *
+                    (2 * lambda_seq(k) - lambda_seq(k - 1)) * l1_penalty;
             }
             for (size_t j {0}; j < this->x.n_cols; ++j) {
                 if (grad_beta(j) > strong_rhs(j)) {
@@ -752,11 +801,12 @@ namespace Intsurv {
                 }
             }
             arma::uvec is_active_strong_new { is_active_strong };
-            strong_rhs = lambda_seq(k) * penalty;
+            strong_rhs = alpha * lambda_seq(k) * l1_penalty;
             bool kkt_failed { true };
             // eventually, strong rule will guess correctly
             while (kkt_failed) {
-                reg_active_fit(beta, is_active_strong, strong_rhs,
+                reg_active_fit(beta, is_active_strong, lambda_seq(k) * alpha,
+                               lambda_seq(k) * (1 - alpha) / 2, l1_penalty,
                                varying_active_set, max_iter, rel_tol);
                 // check kkt condition
                 for (size_t j {0}; j < x.n_cols; ++j) {
@@ -776,11 +826,25 @@ namespace Intsurv {
                     kkt_failed = false;
                 }
             }
+            // compute elastic net estimates
+            this->coef0 = (1 + (1 - alpha) * lambda_seq(k) / 2) * beta;
+            this->rescale_coef();
+            en_beta_mat.col(k) = this->coef;
+
+            // compute naive elastic net estimates
             this->coef0 = beta;
             this->rescale_coef();
             beta_mat.col(k) = this->coef;
+
+            // compute negative log-likelihood
+            nll(k) = this->objective();
         }
-        this->reg_coef = beta_mat;
+        // prepare outputs
+        this->lambda_vec = lambda_seq;
+        this->alpha = alpha;
+        this->en_coef_mat = en_beta_mat;
+        this->coef_mat = beta_mat;
+        this->negLogL_vec = nll;
     }
 
 }
