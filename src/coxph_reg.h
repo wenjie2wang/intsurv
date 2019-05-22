@@ -82,7 +82,7 @@ namespace Intsurv {
         arma::mat en_coef_mat;  // elastic net estimates
         arma::vec negLogL_vec;  // negative log-likelihood vector
 
-        // baseline estimates at every time point (unique or not)
+        // hazard and survival estimates at every time point (unique or not)
         arma::vec h0_time;
         arma::vec S0_time;
         arma::vec H0_time;
@@ -92,6 +92,15 @@ namespace Intsurv {
         arma::vec hc_time;
         arma::vec Hc_time;
         arma::vec Sc_time;
+
+        // baseline estimates at unique times only
+        arma::vec unique_time;
+        arma::vec h0_est;
+        arma::vec H0_est;
+        arma::vec S0_est;
+        arma::vec hc_est;
+        arma::vec Hc_est;
+        arma::vec Sc_est;
 
         // default constructor
         CoxphReg() {}
@@ -218,6 +227,9 @@ namespace Intsurv {
         inline void compute_haz_surv_time(const arma::vec& beta);
         inline void compute_haz_surv_time();
         inline void compute_censor_haz_surv_time();
+
+        // prepare hazard and survival estimates on unique time points
+        inline void est_haz_surv();
 
         // function that computes objective function only
         inline double objective() const;
@@ -356,6 +368,20 @@ namespace Intsurv {
         }
         this->Hc_time = cum_sum(this->Hc_time);
         this->Sc_time = arma::exp(- this->Hc_time);
+    }
+
+    // prepare hazard and survival estimates on unique time points
+    // should be used after compute_haz_surv_time() and
+    // compute_censor_haz_surv_time()
+    inline void CoxphReg::est_haz_surv()
+    {
+        this->unique_time = this->time.elem(this->uni_time_ind);
+        this->h0_est = this->h0_time.elem(this->uni_time_ind);
+        this->H0_est = this->H0_time.elem(this->uni_time_ind);
+        this->S0_est = this->S0_time.elem(this->uni_time_ind);
+        this->hc_est = this->hc_time.elem(this->uni_time_ind);
+        this->Hc_est = this->Hc_time.elem(this->uni_time_ind);
+        this->Sc_est = this->Sc_time.elem(this->uni_time_ind);
     }
 
     // the negative log-likelihood function based on the broslow's formula
