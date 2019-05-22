@@ -41,7 +41,9 @@ namespace Intsurv {
         arma::rowvec cmd_lowerbound;
 
     public:
+        unsigned int nObs;           // number of observations
         arma::vec l1_penalty_factor; // adaptive weights for lasso penalty
+        double l1_lambda_max;   // the "big enough" lambda => zero coef
 
         // for a sinle l1_lambda and l2_lambda
         double l1_lambda;       // tuning parameter for lasso penalty
@@ -57,6 +59,9 @@ namespace Intsurv {
         arma::mat en_coef_mat;  // elastic net estimates
         arma::vec negLogL_vec;  // negative log-likelihood vector
 
+        // default constructor
+        LogisticReg() {}
+
         // constructors
         LogisticReg(const arma::mat& x_,
                     const arma::vec& y_,
@@ -66,6 +71,7 @@ namespace Intsurv {
             intercept = intercept_;
             standardize = standardize_;
             x = x_;
+            this->nObs = x.n_rows;
             if (standardize) {
                 if (intercept) {
                     x_center = arma::mean(x);
@@ -478,7 +484,7 @@ namespace Intsurv {
 
     // regularized logistic model by coordinate-majorization-descent algorithm
     // for perticular lambda's for lasso penalty and ridge penalty
-    // lambda_1 * lasso + lambda_2 * ridge
+    // lambda_1 * factor * lasso + lambda_2 * ridge
     inline void LogisticReg::regularized_fit(
         const double& l1_lambda = 0,
         const double& l2_lambda = 0,
@@ -506,10 +512,9 @@ namespace Intsurv {
         arma::vec grad_beta { grad_zero }, strong_rhs { grad_beta };
 
         // large enough lambda for all-zero coef (except intercept)
-        double l1_lambda_max {
+        this->l1_lambda_max =
             arma::max(grad_zero.tail(n_predictor) /
-                      l1_penalty) / this->x.n_rows
-        };
+                      l1_penalty) / this->x.n_rows;
 
         if (this->intercept) {
             l1_penalty = arma::join_vert(arma::zeros(1), l1_penalty);
@@ -520,7 +525,7 @@ namespace Intsurv {
         if (this->intercept) {
             // only needs to estimate intercept
             is_active_strong(0) = 1;
-            regularized_fit_update(beta, is_active_strong, l1_lambda_max,
+            regularized_fit_update(beta, is_active_strong, this->l1_lambda_max,
                                    l2_lambda, l1_penalty, false);
         }
         this->coef0 = beta;
@@ -528,7 +533,7 @@ namespace Intsurv {
         this->rescale_coef();
 
         // early exit for lambda greater than lambda_max
-        if (l1_lambda >= l1_lambda_max) {
+        if (l1_lambda >= this->l1_lambda_max) {
             return;
         }
 
@@ -539,7 +544,7 @@ namespace Intsurv {
 
         // update active set by strong rule
         grad_beta = arma::abs(this->gradient(this->coef0)) / this->x.n_rows;
-        strong_rhs = (2 * l1_lambda - l1_lambda_max) * l1_penalty;
+        strong_rhs = (2 * l1_lambda - this->l1_lambda_max) * l1_penalty;
 
         for (size_t j { int_intercept }; j < n_predictor + int_intercept; ++j) {
             if (grad_beta(j) > strong_rhs(j)) {
@@ -609,7 +614,7 @@ namespace Intsurv {
         )
     {
         // check alpha
-        if ((alpha < 0) | (alpha > 1)) {
+        if ((alpha < 0) || (alpha > 1)) {
             throw std::range_error("Alpha must be between 0 and 1.");
         }
         // set penalty terms
@@ -629,17 +634,16 @@ namespace Intsurv {
         arma::vec beta { arma::zeros(x.n_cols) };
         arma::vec grad_beta { arma::abs(this->gradient(beta)) };
         arma::vec strong_rhs { beta };
-        double lambda_max {
+        l1_lambda_max =
             arma::max(grad_beta.tail(l1_penalty.n_elem) / l1_penalty) /
-            this->x.n_rows / std::max(alpha, 1e-10)
-        };
+            this->x.n_rows / std::max(alpha, 1e-10);
 
         // take unique lambda and sort descendingly
         lambda = arma::reverse(arma::unique(lambda));
         // construct lambda sequence
         arma::vec lambda_seq;
         if (nlambda > 1) {
-            double log_lambda_max { std::log(lambda_max) };
+            double log_lambda_max { std::log(this->l1_lambda_max) };
             if (this->x.n_cols > this->x.n_rows) {
                 lambda_min_ratio = std::sqrt(lambda_min_ratio);
             }
@@ -669,9 +673,10 @@ namespace Intsurv {
         if (this->intercept) {
             // only needs to estimate intercept
             is_active_strong(0) = 1;
-            regularized_fit_update(beta, is_active_strong, lambda_max * alpha,
-                                   lambda_max * (1 - alpha) / 2,
-                                   l1_penalty, false);
+            regularized_fit_update(
+                beta, is_active_strong, this->l1_lambda_max * alpha,
+                this->l1_lambda_max * (1 - alpha) / 2, l1_penalty, false
+                );
         }
         this->coef0 = beta;
         // rescale coef back
@@ -686,7 +691,7 @@ namespace Intsurv {
         // outer loop for the lambda sequence
         for (size_t k {0}; k < lambda_seq.n_elem; ++k) {
             // early exit for large lambda greater than lambda_max
-            if (alpha * lambda_seq(k) >= lambda_max) {
+            if (alpha * lambda_seq(k) >= this->l1_lambda_max) {
                 beta_mat.col(k) = this->coef;
                 continue;
             }
@@ -695,7 +700,7 @@ namespace Intsurv {
             if (k == 0) {
                 // use lambda_max
                 strong_rhs = alpha *
-                    (2 * lambda_seq(k) - lambda_max) * l1_penalty;
+                    (2 * lambda_seq(k) - this->l1_lambda_max) * l1_penalty;
             } else {
                 // use the last lambda
                 strong_rhs = alpha *

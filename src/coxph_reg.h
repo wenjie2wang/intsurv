@@ -64,7 +64,9 @@ namespace Intsurv {
         arma::vec cmd_lowerbound;
 
     public:
+        unsigned int nObs;           // number of observations
         arma::vec l1_penalty_factor; // adaptive weights for lasso penalty
+        double l1_lambda_max;        // the "big enough" lambda => zero coef
 
         // for a single l1_lambda and l2_lambda
         double l1_lambda;            // tuning parameter for lasso penalty
@@ -91,6 +93,9 @@ namespace Intsurv {
         arma::vec Hc_time;
         arma::vec Sc_time;
 
+        // default constructor
+        CoxphReg() {}
+
         // constructors
         CoxphReg(const arma::vec& time_,
                  const arma::vec& event_,
@@ -111,6 +116,7 @@ namespace Intsurv {
             time = time_.elem(ord);
             event = event_.elem(ord);
             x = x_.rows(ord);
+            this->nObs = x.n_rows;
 
             // standardize covariates
             standardize = standardize_;
@@ -628,15 +634,14 @@ namespace Intsurv {
         // the maximum (large enough) lambda that results in all-zero estimates
         arma::vec beta { arma::zeros(x.n_cols) };
         arma::vec grad_beta { beta }, strong_rhs { beta };
-        double l1_lambda_max {
+        this->l1_lambda_max =
             arma::max(arma::abs(this->gradient(beta)) /
-                      l1_penalty) / this->x.n_rows
-        };
+                      l1_penalty) / this->x.n_rows;
 
         // early exit for large lambda greater than lambda_max
         this->coef0 = beta;
         this->coef = beta;
-        if (l1_lambda > l1_lambda_max) {
+        if (l1_lambda > this->l1_lambda_max) {
             // no need to rescale all-zero coef
             return;
         }
@@ -650,7 +655,7 @@ namespace Intsurv {
         arma::uvec is_active_strong { arma::zeros<arma::uvec>(x.n_cols) };
         // update active set by strong rule
         grad_beta = arma::abs(this->gradient(this->coef0)) / this->x.n_rows;
-        strong_rhs = (2 * l1_lambda - l1_lambda_max) * l1_penalty;
+        strong_rhs = (2 * l1_lambda - this->l1_lambda_max) * l1_penalty;
         for (size_t j {0}; j < x.n_cols; ++j) {
             if (grad_beta(j) > strong_rhs(j)) {
                 is_active_strong(j) = 1;
@@ -717,7 +722,7 @@ namespace Intsurv {
         )
     {
         // check alpha
-        if ((alpha < 0) | (alpha > 1)) {
+        if ((alpha < 0) || (alpha > 1)) {
             throw std::range_error("Alpha must be between 0 and 1.");
         }
         // set penalty terms
@@ -732,10 +737,9 @@ namespace Intsurv {
         // the maximum (large enough) lambda that results in all-zero estimates
         arma::vec beta { arma::zeros(x.n_cols) };
         arma::vec grad_beta { beta }, strong_rhs { beta };
-        double lambda_max {
+        this->l1_lambda_max =
             arma::max(arma::abs(this->gradient(beta)) / l1_penalty) /
-            this->x.n_rows / std::max(alpha, 1e-10)
-        };
+            this->x.n_rows / std::max(alpha, 1e-10);
 
         // take unique lambda and sort descendingly
         lambda = arma::reverse(arma::unique(lambda));
@@ -744,7 +748,7 @@ namespace Intsurv {
             arma::zeros(std::max(nlambda, lambda.n_elem))
         };
         if (nlambda > 1) {
-            double log_lambda_max { std::log(lambda_max) };
+            double log_lambda_max { std::log(this->l1_lambda_max) };
             if (this->x.n_cols > this->x.n_rows) {
                 lambda_min_ratio = std::sqrt(lambda_min_ratio);
             }
@@ -778,7 +782,7 @@ namespace Intsurv {
         // outer loop for the lambda sequence
         for (size_t k {0}; k < lambda_seq.n_elem; ++k) {
             // early exit for large lambda greater than lambda_max
-            if (alpha * lambda_seq(k) >= lambda_max) {
+            if (alpha * lambda_seq(k) >= this->l1_lambda_max) {
                 beta_mat.col(k) = this->coef;
                 continue;
             }
@@ -787,7 +791,7 @@ namespace Intsurv {
             if (k == 0) {
                 // use lambda_max
                 strong_rhs = alpha *
-                    (2 * lambda_seq(k) - lambda_max) * l1_penalty;
+                    (2 * lambda_seq(k) - this->l1_lambda_max) * l1_penalty;
             } else {
                 // use the last lambda
                 strong_rhs = alpha *
