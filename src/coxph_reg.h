@@ -74,6 +74,7 @@ namespace Intsurv {
         arma::vec coef;              // covariate coefficient estimates
         arma::vec en_coef;           // (rescaled) elastic net estimates
         double negLogL;              // partial negative log-likelihood
+        unsigned int coef_df;        // number of non-zero coef estimates
 
         // for a lambda sequence
         double alpha;           // tuning parameter
@@ -81,6 +82,7 @@ namespace Intsurv {
         arma::mat coef_mat;     // coef matrix (rescaled for origin x)
         arma::mat en_coef_mat;  // elastic net estimates
         arma::vec negLogL_vec;  // negative log-likelihood vector
+        arma::uvec coef_df_vec; // coef df vector
 
         // hazard and survival estimates at every time point (unique or not)
         arma::vec h0_time;
@@ -541,6 +543,7 @@ namespace Intsurv {
         this->coef0 = beta;
         this->rescale_coef();
         this->negLogL = this->objective();
+        this->coef_df = beta.n_elem;
     }
 
     // run one cycle of coordinate descent over a given active set
@@ -669,6 +672,8 @@ namespace Intsurv {
         this->coef = beta;
         if (l1_lambda > this->l1_lambda_max) {
             // no need to rescale all-zero coef
+            this->en_coef = this->coef;
+            this->coef_df = 0;
             return;
         }
 
@@ -733,7 +738,9 @@ namespace Intsurv {
         // record other inputs
         this->l1_lambda = l1_lambda;
         this->l2_lambda = l2_lambda;
+        this->coef_df = get_coef_df(beta);
     }
+
 
     // for a sequence of lambda's
     // lambda * (penalty_factor * alpha * lasso + (1 - alpha) / 2 * ridge)
@@ -751,6 +758,8 @@ namespace Intsurv {
         if ((alpha < 0) || (alpha > 1)) {
             throw std::range_error("Alpha must be between 0 and 1.");
         }
+        this->alpha = alpha;
+
         // set penalty terms
         arma::vec l1_penalty { arma::ones(x.n_cols) };
         if (l1_penalty_factor.n_elem == x.n_cols) {
@@ -786,11 +795,13 @@ namespace Intsurv {
         } else {
             lambda_seq = lambda;
         }
+        this->lambda_vec = lambda_seq;
 
-        // set up the estimate matrix
-        arma::mat beta_mat { arma::zeros(x.n_cols, lambda_seq.n_elem) };
-        arma::mat en_beta_mat { beta_mat };
-        arma::vec nll { arma::zeros(lambda_seq.n_elem) };
+        // initialize the estimate matrix
+        this->coef_mat = arma::zeros(x.n_cols, lambda_seq.n_elem);
+        this->en_coef_mat = this->coef_mat;
+        this->negLogL_vec = arma::zeros(lambda_seq.n_elem);
+        this->coef_df_vec = arma::zeros<arma::uvec>(lambda_seq.n_elem);
 
         // start values
         this->coef0 = beta;
@@ -809,7 +820,7 @@ namespace Intsurv {
         for (size_t k {0}; k < lambda_seq.n_elem; ++k) {
             // early exit for large lambda greater than lambda_max
             if (alpha * lambda_seq(k) >= this->l1_lambda_max) {
-                beta_mat.col(k) = this->coef;
+                this->coef_mat.col(k) = this->coef;
                 continue;
             }
             // update acitve set by strong rule (for lambda < lamda_max)
@@ -859,22 +870,18 @@ namespace Intsurv {
             // compute elastic net estimates
             this->coef0 = (1 + (1 - alpha) * lambda_seq(k) / 2) * beta;
             this->rescale_coef();
-            en_beta_mat.col(k) = this->coef;
+            this->en_coef_mat.col(k) = this->coef;
 
             // compute naive elastic net estimates
             this->coef0 = beta;
             this->rescale_coef();
-            beta_mat.col(k) = this->coef;
+            this->coef_mat.col(k) = this->coef;
 
             // compute negative log-likelihood
-            nll(k) = this->objective();
+            this->negLogL_vec(k) = this->objective();
+            this->coef_df_vec(k) = get_coef_df(beta);
         }
-        // prepare outputs
-        this->lambda_vec = lambda_seq;
-        this->alpha = alpha;
-        this->en_coef_mat = en_beta_mat;
-        this->coef_mat = beta_mat;
-        this->negLogL_vec = nll;
+        // end of regularized fit
     }
 
 }

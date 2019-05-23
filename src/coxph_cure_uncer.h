@@ -93,7 +93,7 @@ namespace Intsurv {
             arma::vec s_event { event0na.elem(cox_sort_ind) };
             this->case1_ind = arma::find(s_event > const4na);
             this->case2_ind = arma::find(s_event < const4na);
-            this->cer_ind = Intsurv::vec_union(case1_ind, case2_ind);
+            this->cer_ind = vec_union(case1_ind, case2_ind);
             this->case3_ind = arma::find(s_event == const4na);
 
             // create the LogisticReg object
@@ -170,10 +170,10 @@ namespace Intsurv {
         if (cox_start.n_elem == this->cox_p) {
             cox_beta = cox_start;
         } else {
-            Intsurv::CoxphReg tmp_object {
-                Intsurv::CoxphReg(time.elem(case1_ind),
-                                  event.elem(case1_ind),
-                                  cox_x.rows(case1_ind))
+            CoxphReg tmp_object {
+                CoxphReg(time.elem(case1_ind),
+                         event.elem(case1_ind),
+                         cox_x.rows(case1_ind))
             };
             tmp_object.fit(cox_beta, cox_mstep_max_iter, cox_mstep_rel_tol);
             cox_beta = tmp_object.coef;
@@ -200,9 +200,9 @@ namespace Intsurv {
         cox_obj.h0_time = nelen_event.step_inst_rate(time);
         cox_obj.H0_time = nelen_event.step_cum_rate(time);
         // for censoring
-        Intsurv::NelsonAalen nelen_censor {
-            Intsurv::NelsonAalen(time.elem(this->cer_ind),
-                                 1 - event.elem(this->cer_ind))
+        NelsonAalen nelen_censor {
+            NelsonAalen(time.elem(this->cer_ind),
+                        1 - event.elem(this->cer_ind))
         };
         cox_obj.hc_time = nelen_censor.step_inst_rate(time);
         cox_obj.Hc_time = nelen_censor.step_cum_rate(time);
@@ -303,8 +303,8 @@ namespace Intsurv {
             cure_obj.fit(cure_beta, cure_mstep_max_iter, cure_mstep_rel_tol);
 
             // check convergence
-            tol1 = Intsurv::rel_l2_norm(cox_obj.coef, cox_beta);
-            tol2 = Intsurv::rel_l2_norm(cure_obj.coef, cure_beta);
+            tol1 = rel_l2_norm(cox_obj.coef, cox_beta);
+            tol2 = rel_l2_norm(cure_obj.coef, cure_beta);
 
             // update to last estimates
             cox_beta = cox_obj.coef;

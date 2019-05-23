@@ -36,6 +36,7 @@ Rcpp::List rcpp_coxph(const arma::vec& time,
     object.fit(start, max_iter, rel_tol);
     object.compute_haz_surv_time();
     object.compute_censor_haz_surv_time();
+    object.est_haz_surv();
     return Rcpp::List::create(
         Rcpp::Named("coef") = Intsurv::arma2rvec(object.coef),
         Rcpp::Named("negLogL") = object.negLogL,
@@ -68,15 +69,27 @@ Rcpp::List rcpp_reg_coxph1(const arma::vec& time,
     Intsurv::CoxphReg object { Intsurv::CoxphReg(time, event, x) };
     object.regularized_fit(l1_lambda, l2_lambda, l1_penalty_factor,
                            start, max_iter, rel_tol);
+    object.compute_haz_surv_time();
+    object.compute_censor_haz_surv_time();
+    object.est_haz_surv();
     return Rcpp::List::create(
-        Rcpp::Named("coef") = object.coef,
+        Rcpp::Named("coef") = Intsurv::arma2rvec(object.coef),
         Rcpp::Named("en_coef") = Intsurv::arma2rvec(object.en_coef),
         Rcpp::Named("negLogL") = object.negLogL,
         Rcpp::Named("nObs") = object.nObs,
+        Rcpp::Named("coef_df") = object.coef_df,
         Rcpp::Named("l1_lambda_max") = object.l1_lambda_max,
         Rcpp::Named("l1_lambda") = object.l1_lambda,
         Rcpp::Named("l2_lambda") = object.l2_lambda,
-        Rcpp::Named("l1_penalty_factor") = object.l1_penalty_factor
+        Rcpp::Named("l1_penalty_factor") =
+        Intsurv::arma2rvec(object.l1_penalty_factor),
+        Rcpp::Named("unique_time") = Intsurv::arma2rvec(object.unique_time),
+        Rcpp::Named("h0") = Intsurv::arma2rvec(object.h0_est),
+        Rcpp::Named("H0") = Intsurv::arma2rvec(object.H0_est),
+        Rcpp::Named("S0") = Intsurv::arma2rvec(object.S0_est),
+        Rcpp::Named("hc") = Intsurv::arma2rvec(object.hc_est),
+        Rcpp::Named("Hc") = Intsurv::arma2rvec(object.Hc_est),
+        Rcpp::Named("Sc") = Intsurv::arma2rvec(object.Sc_est)
         );
 }
 
@@ -102,9 +115,11 @@ Rcpp::List rcpp_reg_coxph2(const arma::vec& time,
         Rcpp::Named("en_coef") = object.en_coef_mat,
         Rcpp::Named("negLogL") = Intsurv::arma2rvec(object.negLogL_vec),
         Rcpp::Named("nObs") = object.nObs,
+        Rcpp::Named("coef_df_vec") = Intsurv::arma2rvec(object.coef_df_vec),
         Rcpp::Named("lambda_max") = object.l1_lambda_max,
         Rcpp::Named("lambda") = Intsurv::arma2rvec(object.lambda_vec),
         Rcpp::Named("alpha") = object.alpha,
-        Rcpp::Named("l1_penalty_factor") = object.l1_penalty_factor
+        Rcpp::Named("l1_penalty_factor") =
+        Intsurv::arma2rvec(object.l1_penalty_factor)
         );
 }

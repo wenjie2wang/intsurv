@@ -51,6 +51,7 @@ namespace Intsurv {
         arma::vec coef;         // coef (rescaled for origin x)
         arma::vec en_coef;      // (rescaled) elastic net estimates
         double negLogL;         // negative log-likelihood
+        unsigned int coef_df;   // number of non-zero coef estimates
 
         // for a lambda sequence
         double alpha;           // tuning parameter
@@ -58,6 +59,7 @@ namespace Intsurv {
         arma::mat coef_mat;     // coef matrix (rescaled for origin x)
         arma::mat en_coef_mat;  // elastic net estimates
         arma::vec negLogL_vec;  // negative log-likelihood vector
+        arma::uvec coef_df_vec; // coef df vector
 
         // default constructor
         LogisticReg() {}
@@ -251,7 +253,7 @@ namespace Intsurv {
         for (size_t i { 0 }; i < x.n_rows; ++i) {
             double x_beta { arma::as_scalar(x.row(i) * this->coef0) };
             tmp[1] = x_beta;
-            res += - log_sum_exp(tmp) + y(i) * x_beta;
+            res += log_sum_exp(tmp) - y(i) * x_beta;
         }
         return res;
     }
@@ -348,6 +350,7 @@ namespace Intsurv {
         this->rescale_coef();
         // compute negative log-likelihood
         this->negLogL = this->objective();
+        this->coef_df = beta.n_elem;
     }
 
     // fitting Firth logistic model with monotonic quadratic approximation
@@ -381,6 +384,7 @@ namespace Intsurv {
         this->rescale_coef();
         // compute negative log-likelihood
         this->negLogL = this->objective();
+        this->coef_df = beta.n_elem;
     }
 
     // compute CMD lowerbound vector
@@ -534,6 +538,8 @@ namespace Intsurv {
 
         // early exit for lambda greater than lambda_max
         if (l1_lambda >= this->l1_lambda_max) {
+            this->en_coef = this->coef;
+            this->coef_df = 0;
             return;
         }
 
@@ -595,6 +601,8 @@ namespace Intsurv {
         this->rescale_coef();
         // compute negative log-likelihood
         this->negLogL = this->objective();
+        // compute degree of freedom
+        this->coef_df = get_coef_df(beta);
         // record other inputs
         this->l1_lambda = l1_lambda;
         this->l2_lambda = l2_lambda;
@@ -617,6 +625,8 @@ namespace Intsurv {
         if ((alpha < 0) || (alpha > 1)) {
             throw std::range_error("Alpha must be between 0 and 1.");
         }
+        this->alpha = alpha;
+
         // set penalty terms
         unsigned int int_intercept { static_cast<unsigned int>(intercept) };
         unsigned int n_predictor { x.n_cols - int_intercept };
@@ -655,16 +665,18 @@ namespace Intsurv {
         } else {
             lambda_seq = lambda;
         }
+        this->lambda_vec = lambda_seq;
 
         // update penalty for intercept
         if (this->intercept) {
             l1_penalty = arma::join_vert(arma::zeros(1), l1_penalty);
         }
 
-        // set up the estimate matrix
-        arma::mat beta_mat { arma::zeros(x.n_cols, lambda_seq.n_elem) };
-        arma::mat en_beta_mat { beta_mat };
-        arma::vec nll { arma::zeros(lambda_seq.n_elem) };
+        // initialize the estimate matrix
+        this->coef_mat = arma::zeros(x.n_cols, lambda_seq.n_elem);
+        this->en_coef_mat = this->coef_mat;
+        this->negLogL_vec = arma::zeros(lambda_seq.n_elem);
+        this->coef_df_vec = arma::zeros<arma::uvec>(lambda_seq.n_elem);
 
         // for active set
         arma::uvec is_active_strong { arma::zeros<arma::uvec>(x.n_cols) };
@@ -692,7 +704,7 @@ namespace Intsurv {
         for (size_t k {0}; k < lambda_seq.n_elem; ++k) {
             // early exit for large lambda greater than lambda_max
             if (alpha * lambda_seq(k) >= this->l1_lambda_max) {
-                beta_mat.col(k) = this->coef;
+                this->coef_mat.col(k) = this->coef;
                 continue;
             }
             // update acitve set by strong rule (for lambda < lamda_max)
@@ -745,22 +757,18 @@ namespace Intsurv {
             // compute elastic net estimates
             this->coef0 = (1 + (1 - alpha) * lambda_seq(k) / 2) * beta;
             this->rescale_coef();
-            en_beta_mat.col(k) = this->coef;
-
+            this->en_coef_mat.col(k) = this->coef;
             // compute naive elastic net estimates
             this->coef0 = beta;
             this->rescale_coef();
-            beta_mat.col(k) = this->coef;
-
+            this->coef_mat.col(k) = this->coef;
             // compute negative log-likelihood
-            nll(k) = this->objective();
+            this->negLogL_vec(k) = this->objective();
+            // compute degree of freedom
+            this->coef_df_vec(k) = get_coef_df(beta);
         }
         // prepare outputs
-        this->lambda_vec = lambda_seq;
-        this->alpha = alpha;
-        this->en_coef_mat = en_beta_mat;
-        this->coef_mat = beta_mat;
-        this->negLogL_vec = nll;
+
     }
 
 }

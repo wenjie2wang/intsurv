@@ -39,6 +39,7 @@ namespace Intsurv {
         arma::vec cure_coef;
         double negLogL;
         unsigned int nObs;        // number of observations
+        unsigned int coef_df;     // degree of freedom of coef estimates
         unsigned int num_iter;    // number of iterations
 
         // the "big enough" L1 lambda => zero coef
@@ -46,8 +47,8 @@ namespace Intsurv {
         double cure_l1_lambda_max;
 
         // regularized by particular lambdas
-        arma::vec en_cox_coef;  // elastic net estimates
-        arma::vec en_cure_coef; // elastic net estimates
+        arma::vec cox_en_coef;  // elastic net estimates
+        arma::vec cure_en_coef; // elastic net estimates
         double cox_l1_lambda;
         double cox_l2_lambda;
         arma::vec cox_l1_penalty_factor;
@@ -140,10 +141,10 @@ namespace Intsurv {
             arma::vec tmp_time { cox_obj.get_time() };
             arma::vec tmp_event { cox_obj.get_event() };
             arma::uvec tmp_idx { arma::find(tmp_event > 0) };
-            Intsurv::CoxphReg tmp_object {
-                Intsurv::CoxphReg(tmp_time.elem(tmp_idx),
-                                  tmp_event.elem(tmp_idx),
-                                  tmp_cox_x.rows(tmp_idx))
+            CoxphReg tmp_object {
+                CoxphReg(tmp_time.elem(tmp_idx),
+                         tmp_event.elem(tmp_idx),
+                         tmp_cox_x.rows(tmp_idx))
             };
             tmp_object.fit(cox_beta, cox_mstep_max_iter, cox_mstep_rel_tol);
             cox_beta = tmp_object.coef;
@@ -184,8 +185,8 @@ namespace Intsurv {
             cure_obj.fit(cure_beta, cure_mstep_max_iter, cure_mstep_rel_tol);
 
             // check convergence
-            tol1 = Intsurv::rel_l2_norm(cox_obj.coef, cox_beta);
-            tol2 = Intsurv::rel_l2_norm(cure_obj.coef, cure_beta);
+            tol1 = rel_l2_norm(cox_obj.coef, cox_beta);
+            tol2 = rel_l2_norm(cure_obj.coef, cure_beta);
 
             // update to last estimates
             cox_beta = cox_obj.coef;
@@ -227,9 +228,10 @@ namespace Intsurv {
             ++i;
         } // end of the EM algorithm
         // prepare outputs
-        this->cox_coef = cox_beta;
-        this->cure_coef = cure_beta;
+        this->cox_coef = cox_obj.coef;
+        this->cure_coef = cure_obj.coef;
         this->negLogL = - obs_ell;
+        this->coef_df = cox_obj.coef_df + cure_obj.coef_df;
         this->num_iter = i;
     }
 
@@ -336,8 +338,8 @@ namespace Intsurv {
             Rcpp::checkUserInterrupt();
 
             // check convergence
-            tol1 = Intsurv::rel_l2_norm(cox_obj.coef, cox_beta);
-            tol2 = Intsurv::rel_l2_norm(cure_obj.coef, cure_beta);
+            tol1 = rel_l2_norm(cox_obj.coef, cox_beta);
+            tol2 = rel_l2_norm(cure_obj.coef, cure_beta);
             cox_beta = cox_obj.coef;
             cure_beta = cure_obj.coef;
 
@@ -365,11 +367,12 @@ namespace Intsurv {
             ++i;
         } // end of the EM algorithm
         // prepare outputs
-        this->cox_coef = cox_beta;
-        this->cure_coef = cure_beta;
-        this->en_cox_coef = cox_obj.en_coef;
-        this->en_cure_coef = cure_obj.en_coef;
+        this->cox_coef = cox_obj.coef;
+        this->cure_coef = cure_obj.coef;
+        this->cox_en_coef = cox_obj.en_coef;
+        this->cure_en_coef = cure_obj.en_coef;
         this->negLogL = - obs_ell;
+        this->coef_df = cox_obj.coef_df + cure_obj.coef_df;
         this->cox_l1_lambda = cox_l1_lambda;
         this->cox_l2_lambda = cox_l2_lambda;
         this->cure_l1_lambda = cure_l1_lambda;

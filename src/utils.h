@@ -602,6 +602,26 @@ namespace Intsurv {
         return Rcpp::NumericVector(x.begin(), x.end());
     }
 
+    // count non-zero coef estimates
+    unsigned int get_coef_df(const arma::vec& x) {
+        unsigned int res {0};
+        for (size_t i {0}; i < x.n_elem; ++i) {
+            if (! isAlmostEqual(x(i), 0)) {
+                res++;
+            }
+        }
+        return res;
+    }
+
+    // compute regular BIC for given negLogL and df
+    double get_bic(const double negLogL, const unsigned int coef_df,
+                   const unsigned int nObs) {
+        return std::log(static_cast<double>(nObs)) *
+            static_cast<double>(coef_df) + 2 * negLogL;
+    }
+
+
+
 }
 
 #endif

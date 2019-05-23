@@ -55,6 +55,7 @@ Rcpp::List coxph_cure(
         Rcpp::Named("cure_coef") = Intsurv::arma2rvec(obj.cure_coef),
         Rcpp::Named("negLogL") = obj.negLogL,
         Rcpp::Named("nObs") = obj.nObs,
+        Rcpp::Named("coef_df") = obj.coef_df,
         Rcpp::Named("num_iter") = obj.num_iter
         );
 }
@@ -99,11 +100,12 @@ Rcpp::List coxph_cure_reg(
     return Rcpp::List::create(
         Rcpp::Named("cox_coef") = Intsurv::arma2rvec(obj.cox_coef),
         Rcpp::Named("cure_coef") = Intsurv::arma2rvec(obj.cure_coef),
-        Rcpp::Named("en_cox_coef") = Intsurv::arma2rvec(obj.en_cox_coef),
-        Rcpp::Named("en_cure_coef") = Intsurv::arma2rvec(obj.en_cure_coef),
+        Rcpp::Named("cox_en_coef") = Intsurv::arma2rvec(obj.cox_en_coef),
+        Rcpp::Named("cure_en_coef") = Intsurv::arma2rvec(obj.cure_en_coef),
 
         Rcpp::Named("negLogL") = obj.negLogL,
         Rcpp::Named("nObs") = obj.nObs,
+        Rcpp::Named("coef_df") = obj.coef_df,
         Rcpp::Named("num_iter") = obj.num_iter,
 
         Rcpp::Named("cox_l1_lambda_max") = obj.cox_l1_lambda_max,
