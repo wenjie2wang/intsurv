@@ -4,13 +4,13 @@ citEntry(
     entry = "Manual",
     title = "{intsurv}: {I}ntegrative Survival Models",
     author = personList(as.person("Wenjie Wang")),
-    note = "{R} package version 0.1.0.9009",
+    note = "{R} package version 0.1.0.9010",
     year = "2019",
     url = "https://github.com/wenjie2wang/intsurv",
     textVersion = paste(
         "Wang, W. (2019). intsurv:",
         "{I}ntegrative Survival Models.",
-        "R package version 0.1.0.9009",
+        "R package version 0.1.0.9010",
         "https://github.com/wenjie2wang/intsurv"
     )
 )

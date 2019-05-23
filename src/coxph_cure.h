@@ -35,14 +35,15 @@ namespace Intsurv {
         arma::uvec case2_ind;
 
     public:
-        unsigned int nObs;        // number of observations
-        // the "big enough" L1 lambda => zero coef
-        double cox_l1_lambda_max;
-        double cure_l1_lambda_max;
-
         arma::vec cox_coef;
         arma::vec cure_coef;
         double negLogL;
+        unsigned int nObs;        // number of observations
+        unsigned int num_iter;    // number of iterations
+
+        // the "big enough" L1 lambda => zero coef
+        double cox_l1_lambda_max;
+        double cure_l1_lambda_max;
 
         // regularized by particular lambdas
         arma::vec en_cox_coef;  // elastic net estimates
@@ -62,9 +63,9 @@ namespace Intsurv {
                   const arma::vec& event,
                   const arma::mat& cox_x,
                   const arma::mat& cure_x,
-                  const bool cure_intercept = true,
-                  const bool cox_standardize = true,
-                  const bool cure_standardize = true)
+                  const bool& cure_intercept = true,
+                  const bool& cox_standardize = true,
+                  const bool& cure_standardize = true)
         {
             // create the CoxphReg object
             this->cox_obj = CoxphReg(time, event, cox_x, cox_standardize);
@@ -72,6 +73,7 @@ namespace Intsurv {
             this->cox_p = cox_x.n_cols;
             this->cure_p = cure_x.n_cols +
                 static_cast<unsigned int>(cure_intercept);
+            this->nObs = cox_x.n_rows;
             arma::uvec cox_sort_ind { cox_obj.get_sort_index() };
             arma::mat cure_xx { cure_x.rows(cox_sort_ind) };
             arma::vec s_event { event.elem(cox_sort_ind) };
@@ -96,7 +98,7 @@ namespace Intsurv {
             );
 
         // fit regularized Cox cure model with adaptive elastic net penalty
-        // for a perticular lambda
+        // for perticular lambda's
         inline void regularized_fit(
             const double& cox_l1_lambda,
             const double& cox_l2_lambda,
@@ -114,25 +116,24 @@ namespace Intsurv {
             const double& cure_mstep_rel_tol
             );
 
-    };
-    // end of class definition
+    };                          // end of class definition
 
 
     // fit the Cox cure mode by EM algorithm
     inline void CoxphCure::fit(
-        const arma::vec& cox_start,
-        const arma::vec& cure_start,
-        const unsigned int& em_max_iter,
-        const double& em_rel_tol,
-        const unsigned int& cox_mstep_max_iter,
-        const double& cox_mstep_rel_tol,
-        const unsigned int& cure_mstep_max_iter,
-        const double& cure_mstep_rel_tol
+        const arma::vec& cox_start = 0,
+        const arma::vec& cure_start = 0,
+        const unsigned int& em_max_iter = 500,
+        const double& em_rel_tol = 1e-5,
+        const unsigned int& cox_mstep_max_iter = 100,
+        const double& cox_mstep_rel_tol = 1e-3,
+        const unsigned int& cure_mstep_max_iter = 100,
+        const double& cure_mstep_rel_tol = 1e-3
         )
     {
         // initialize cox_beta
-        arma::vec cox_beta { arma::zeros(cox_p) };
-        if (cox_start.n_elem == cox_p) {
+        arma::vec cox_beta { arma::zeros(this->cox_p) };
+        if (cox_start.n_elem == this->cox_p) {
             cox_beta = cox_start;
         } else {
             arma::mat tmp_cox_x { cox_obj.get_x() };
@@ -148,8 +149,8 @@ namespace Intsurv {
             cox_beta = tmp_object.coef;
         }
         // initialize cure_beta
-        arma::vec cure_beta { arma::zeros(cure_p) };
-        if (cure_start.n_elem == cure_p) {
+        arma::vec cure_beta { arma::zeros(this->cure_p) };
+        if (cure_start.n_elem == this->cure_p) {
             cure_beta = cure_start;
         } else {
             cure_obj.fit(cure_beta, cure_mstep_max_iter,
@@ -164,13 +165,13 @@ namespace Intsurv {
         // main loop of EM algorithm
         while (true) {
             arma::vec estep_v { cox_obj.get_event() };
-            double numer_j {0}, denom_j {0}, tol1 {0}, tol2 {0};
+            double numer_j {0}, tol1 {0}, tol2 {0};
 
             // E-step: compute v vector
             for (size_t j: case2_ind) {
                 numer_j = p_vec(j) * cox_obj.S_time(j);
-                denom_j = numer_j + 1 - p_vec(j);
-                estep_v(j) = numer_j / denom_j;
+                // more numerically robust
+                estep_v(j) = 1 / ((1 - p_vec(j)) / numer_j + 1);
             }
             arma::vec log_v { arma::log(estep_v) };
 
@@ -185,13 +186,27 @@ namespace Intsurv {
             // check convergence
             tol1 = Intsurv::rel_l2_norm(cox_obj.coef, cox_beta);
             tol2 = Intsurv::rel_l2_norm(cure_obj.coef, cure_beta);
+
+            // update to last estimates
             cox_beta = cox_obj.coef;
             cure_beta = cure_obj.coef;
 
-            // update to last estimates
+            // early exit if has any `nan`
+            if (cox_beta.has_nan() || cure_beta.has_nan()) {
+                obs_ell = - arma::datum::inf;
+                throw std::range_error(
+                    "The negative log-likelihood function went to infinite."
+                    );
+                break;
+            }
+            // allow users to stop the main loop
+            Rcpp::checkUserInterrupt();
+
+            // prepare the E-step for next iteration
             cox_obj.compute_haz_surv_time();
             p_vec = cure_obj.predict(cure_beta);
 
+            // check convergence
             if ((tol1 < em_rel_tol && tol2 < em_rel_tol) || i > em_max_iter) {
                 // compute observed data likelihood
                 // for case 1
@@ -215,26 +230,27 @@ namespace Intsurv {
         this->cox_coef = cox_beta;
         this->cure_coef = cure_beta;
         this->negLogL = - obs_ell;
+        this->num_iter = i;
     }
 
     // fit regularized Cox cure model with adaptive elastic net penalty
     // for a perticular lambda
     // lambda_1 * lasso * factors + lambda_2 * ridge
     inline void CoxphCure::regularized_fit(
-        const double& cox_l1_lambda,
-        const double& cox_l2_lambda,
-        const double& cure_l1_lambda,
-        const double& cure_l2_lambda,
-        const arma::vec& cox_l1_penalty_factor,
-        const arma::vec& cure_l1_penalty_factor,
-        const arma::vec& cox_start,
-        const arma::vec& cure_start,
-        const unsigned int& em_max_iter,
-        const double& em_rel_tol,
-        const unsigned int& cox_mstep_max_iter,
-        const double& cox_mstep_rel_tol,
-        const unsigned int& cure_mstep_max_iter,
-        const double& cure_mstep_rel_tol
+        const double& cox_l1_lambda = 0,
+        const double& cox_l2_lambda = 0,
+        const double& cure_l1_lambda = 0,
+        const double& cure_l2_lambda = 0,
+        const arma::vec& cox_l1_penalty_factor = 0,
+        const arma::vec& cure_l1_penalty_factor = 0,
+        const arma::vec& cox_start = 0,
+        const arma::vec& cure_start = 0,
+        const unsigned int& em_max_iter = 500,
+        const double& em_rel_tol = 1e-5,
+        const unsigned int& cox_mstep_max_iter = 50,
+        const double& cox_mstep_rel_tol = 1e-3,
+        const unsigned int& cure_mstep_max_iter = 50,
+        const double& cure_mstep_rel_tol = 1e-3
         )
     {
         // L1 penalty factor for Cox model
@@ -261,11 +277,11 @@ namespace Intsurv {
         // compute the large enough lambdas that result in all-zero estimates
         arma::vec cox_grad_zero { arma::abs(cox_obj.gradient(cox_beta)) };
         this->cox_l1_lambda_max =
-            arma::max(cox_grad_zero / cox_l1_penalty) / cox_obj.nObs;
+            arma::max(cox_grad_zero / cox_l1_penalty) / this->nObs;
         arma::vec cure_grad_zero { arma::abs(cure_obj.gradient(cure_beta)) };
         this->cure_l1_lambda_max =
             arma::max(cure_grad_zero.tail(cure_l1_penalty.n_elem) /
-                      cure_l1_penalty) / cure_obj.nObs;
+                      cure_l1_penalty) / this->nObs;
 
         // set the start estimates
         if (cox_start.n_elem == cox_p) {
@@ -358,6 +374,7 @@ namespace Intsurv {
         this->cox_l2_lambda = cox_l2_lambda;
         this->cure_l1_lambda = cure_l1_lambda;
         this->cure_l2_lambda = cure_l2_lambda;
+        this->num_iter = i;
     }
 
 }

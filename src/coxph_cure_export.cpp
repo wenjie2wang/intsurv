@@ -34,10 +34,10 @@ Rcpp::List coxph_cure(
     const arma::vec& cox_start = 0,
     const arma::vec& cure_start = 0,
     const unsigned int& em_max_iter = 1000,
-    const double& em_rel_tol = 1e-3,
-    const unsigned int& cox_mstep_max_iter = 30,
-    const double& cox_mstep_rel_tol = 1e-3,
-    const unsigned int& cure_mstep_max_iter = 30,
+    const double& em_rel_tol = 1e-4,
+    const unsigned int& cox_mstep_max_iter = 200,
+    const double& cox_mstep_rel_tol = 1e-4,
+    const unsigned int& cure_mstep_max_iter = 200,
     const double& cure_mstep_rel_tol = 1e-6,
     const bool cox_standardize = true,
     const bool cure_standardize = true
@@ -51,10 +51,11 @@ Rcpp::List coxph_cure(
             cox_mstep_max_iter, cox_mstep_rel_tol,
             cure_mstep_max_iter, cure_mstep_rel_tol);
     return Rcpp::List::create(
-        Rcpp::Named("cox_coef") = obj.cox_coef,
-        Rcpp::Named("cure_coef") = obj.cure_coef,
+        Rcpp::Named("cox_coef") = Intsurv::arma2rvec(obj.cox_coef),
+        Rcpp::Named("cure_coef") = Intsurv::arma2rvec(obj.cure_coef),
         Rcpp::Named("negLogL") = obj.negLogL,
-        Rcpp::Named("nObs") = obj.nObs
+        Rcpp::Named("nObs") = obj.nObs,
+        Rcpp::Named("num_iter") = obj.num_iter
         );
 }
 
@@ -76,12 +77,12 @@ Rcpp::List coxph_cure_reg(
     const arma::vec& cure_l1_penalty_factor = 0,
     const arma::vec& cox_start = 0,
     const arma::vec& cure_start = 0,
-    const unsigned int& em_max_iter = 200,
-    const double& em_rel_tol = 1e-4,
-    const unsigned int& cox_mstep_max_iter = 30,
-    const double& cox_mstep_rel_tol = 1e-3,
-    const unsigned int& cure_mstep_max_iter = 30,
-    const double& cure_mstep_rel_tol = 1e-3
+    const unsigned int& em_max_iter = 500,
+    const double& em_rel_tol = 1e-5,
+    const unsigned int& cox_mstep_max_iter = 200,
+    const double& cox_mstep_rel_tol = 1e-4,
+    const unsigned int& cure_mstep_max_iter = 200,
+    const double& cure_mstep_rel_tol = 1e-4
     )
 {
     Intsurv::CoxphCure obj {
@@ -96,19 +97,25 @@ Rcpp::List coxph_cure_reg(
         cure_mstep_max_iter, cure_mstep_rel_tol
         );
     return Rcpp::List::create(
-        Rcpp::Named("cox_coef") = obj.cox_coef,
-        Rcpp::Named("cure_coef") = obj.cure_coef,
-        Rcpp::Named("en_cox_coef") = obj.en_cox_coef,
-        Rcpp::Named("en_cure_coef") = obj.en_cure_coef,
+        Rcpp::Named("cox_coef") = Intsurv::arma2rvec(obj.cox_coef),
+        Rcpp::Named("cure_coef") = Intsurv::arma2rvec(obj.cure_coef),
+        Rcpp::Named("en_cox_coef") = Intsurv::arma2rvec(obj.en_cox_coef),
+        Rcpp::Named("en_cure_coef") = Intsurv::arma2rvec(obj.en_cure_coef),
+
         Rcpp::Named("negLogL") = obj.negLogL,
         Rcpp::Named("nObs") = obj.nObs,
+        Rcpp::Named("num_iter") = obj.num_iter,
+
         Rcpp::Named("cox_l1_lambda_max") = obj.cox_l1_lambda_max,
         Rcpp::Named("cox_l1_lambda") = obj.cox_l1_lambda,
         Rcpp::Named("cox_l2_lambda") = obj.cox_l2_lambda,
-        Rcpp::Named("cox_l1_penalty_factor") = obj.cox_l1_penalty_factor,
+        Rcpp::Named("cox_l1_penalty_factor") =
+        Intsurv::arma2rvec(obj.cox_l1_penalty_factor),
+
         Rcpp::Named("cure_l1_lambda_max") = obj.cure_l1_lambda_max,
         Rcpp::Named("cure_l1_lambda") = obj.cure_l1_lambda,
         Rcpp::Named("cure_l2_lambda") = obj.cure_l2_lambda,
-        Rcpp::Named("cure_l1_penalty_factor") = obj.cure_l1_penalty_factor
+        Rcpp::Named("cure_l1_penalty_factor") =
+        Intsurv::arma2rvec(obj.cure_l1_penalty_factor)
         );
 }
