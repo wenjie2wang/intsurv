@@ -40,7 +40,8 @@ Rcpp::List coxph_cure(
     const unsigned int& cure_mstep_max_iter = 200,
     const double& cure_mstep_rel_tol = 1e-6,
     const bool cox_standardize = true,
-    const bool cure_standardize = true
+    const bool cure_standardize = true,
+    const bool verbose = false
     )
 {
     Intsurv::CoxphCure obj {
@@ -49,10 +50,14 @@ Rcpp::List coxph_cure(
     };
     obj.fit(cox_start, cure_start, em_max_iter, em_rel_tol,
             cox_mstep_max_iter, cox_mstep_rel_tol,
-            cure_mstep_max_iter, cure_mstep_rel_tol);
+            cure_mstep_max_iter, cure_mstep_rel_tol, verbose);
     return Rcpp::List::create(
         Rcpp::Named("cox_coef") = Intsurv::arma2rvec(obj.cox_coef),
         Rcpp::Named("cure_coef") = Intsurv::arma2rvec(obj.cure_coef),
+        Rcpp::Named("unique_time") = Intsurv::arma2rvec(obj.unique_time),
+        Rcpp::Named("h0_est") = Intsurv::arma2rvec(obj.h0_est),
+        Rcpp::Named("H0_est") = Intsurv::arma2rvec(obj.H0_est),
+        Rcpp::Named("S0_est") = Intsurv::arma2rvec(obj.S0_est),
         Rcpp::Named("negLogL") = obj.negLogL,
         Rcpp::Named("nObs") = obj.nObs,
         Rcpp::Named("coef_df") = obj.coef_df,
@@ -83,7 +88,8 @@ Rcpp::List coxph_cure_reg(
     const unsigned int& cox_mstep_max_iter = 200,
     const double& cox_mstep_rel_tol = 1e-4,
     const unsigned int& cure_mstep_max_iter = 200,
-    const double& cure_mstep_rel_tol = 1e-4
+    const double& cure_mstep_rel_tol = 1e-4,
+    const bool verbose = false
     )
 {
     Intsurv::CoxphCure obj {
@@ -95,13 +101,18 @@ Rcpp::List coxph_cure_reg(
         cox_l1_penalty_factor, cure_l1_penalty_factor,
         cox_start, cure_start, em_max_iter, em_rel_tol,
         cox_mstep_max_iter, cox_mstep_rel_tol,
-        cure_mstep_max_iter, cure_mstep_rel_tol
+        cure_mstep_max_iter, cure_mstep_rel_tol, verbose
         );
     return Rcpp::List::create(
         Rcpp::Named("cox_coef") = Intsurv::arma2rvec(obj.cox_coef),
         Rcpp::Named("cure_coef") = Intsurv::arma2rvec(obj.cure_coef),
         Rcpp::Named("cox_en_coef") = Intsurv::arma2rvec(obj.cox_en_coef),
         Rcpp::Named("cure_en_coef") = Intsurv::arma2rvec(obj.cure_en_coef),
+
+        Rcpp::Named("unique_time") = Intsurv::arma2rvec(obj.unique_time),
+        Rcpp::Named("h0_est") = Intsurv::arma2rvec(obj.h0_est),
+        Rcpp::Named("H0_est") = Intsurv::arma2rvec(obj.H0_est),
+        Rcpp::Named("S0_est") = Intsurv::arma2rvec(obj.S0_est),
 
         Rcpp::Named("negLogL") = obj.negLogL,
         Rcpp::Named("nObs") = obj.nObs,
