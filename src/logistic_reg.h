@@ -133,7 +133,8 @@ namespace Intsurv {
             return beta0;
         }
 
-        inline arma::vec linkinv(const arma::vec& eta) const;
+        inline arma::vec linkinv(const arma::vec& eta,
+                                 const double pmin) const;
 
         // here beta is coef vector for non-standardized data
         inline arma::vec predict(const arma::vec& beta) const;
@@ -232,9 +233,20 @@ namespace Intsurv {
     };
 
     // define inverse link function
-    inline arma::vec LogisticReg::linkinv(const arma::vec& beta) const
+    inline arma::vec LogisticReg::linkinv(const arma::vec& beta,
+                                          const double pmin = 1e-5) const
     {
-        return 1 / (1 + arma::exp(- mat2vec(x * beta)));
+        arma::vec p_vec { 1 / (1 + arma::exp(- mat2vec(x * beta))) };
+        // special care prevents coef diverging
+        // reference: Friedman, J., Hastie, T., & Tibshirani, R. (2010)
+        for (size_t i {0}; i < p_vec.n_elem; ++i) {
+            if (p_vec(i) < pmin) {
+                p_vec(i) = pmin;
+            } else if (p_vec(i) > 1 - pmin) {
+                p_vec(i) = 1 - pmin;
+            }
+        }
+        return p_vec;
     }
     inline arma::vec LogisticReg::predict(const arma::vec& beta) const
     {
