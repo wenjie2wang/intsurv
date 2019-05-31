@@ -466,6 +466,13 @@ namespace Intsurv {
                 while (ii < max_iter) {
                     regularized_fit_update(beta, is_active_stored, l1_lambda,
                                            l2_lambda, l1_penalty_factor, true);
+                    // double d_tol {
+                    //     arma::max(cmd_lowerbound.t() %
+                    //               arma::pow(beta - beta0, 2))
+                    // };
+                    // if (d_tol < rel_tol * rel_tol) {
+                    //     break;
+                    // }
                     if (rel_l2_norm(beta, beta0) < rel_tol) {
                         break;
                     }
@@ -489,6 +496,13 @@ namespace Intsurv {
             while (i < max_iter) {
                 regularized_fit_update(beta, is_active_stored, l1_lambda,
                                        l2_lambda, l1_penalty_factor, false);
+                // double d_tol {
+                //     arma::max(cmd_lowerbound.t() %
+                //               arma::pow(beta - beta0, 2))
+                // };
+                // if (d_tol < rel_tol * rel_tol) {
+                //     break;
+                // }
                 if (rel_l2_norm(beta, beta0) < rel_tol) {
                     break;
                 }
@@ -565,7 +579,7 @@ namespace Intsurv {
         strong_rhs = (2 * l1_lambda - this->l1_lambda_max) * l1_penalty;
 
         for (size_t j { int_intercept }; j < n_predictor + int_intercept; ++j) {
-            if (grad_beta(j) > strong_rhs(j)) {
+            if (grad_beta(j) >= strong_rhs(j)) {
                 is_active_strong(j) = 1;
             } else {
                 beta(j) = 0;
@@ -575,7 +589,7 @@ namespace Intsurv {
 
         // optim with varying active set when p > n
         bool varying_active_set { false };
-        if (x.n_cols > x.n_rows) {
+        if (x.n_cols > x.n_rows || x.n_cols > 50) {
             varying_active_set = true;
         }
 

@@ -378,17 +378,18 @@ namespace Intsurv {
     inline void CoxphReg::est_haz_surv()
     {
         this->unique_time = this->time.elem(this->uni_time_ind);
-        if (! this->h0_time.is_empty()) {
-            this->h0_est = this->h0_time.elem(this->uni_time_ind);
-            this->H0_est = this->H0_time.elem(this->uni_time_ind);
-            this->S0_est = this->S0_time.elem(this->uni_time_ind);
+        if (this->h0_time.is_empty()) {
+            this->compute_haz_surv_time();
         }
-        if (! this->hc_time.is_empty()) {
-            this->hc_est = this->hc_time.elem(this->uni_time_ind);
-            this->Hc_est = this->Hc_time.elem(this->uni_time_ind);
-            this->Sc_est = this->Sc_time.elem(this->uni_time_ind);
+        if (this->hc_time.is_empty()) {
+            this->compute_censor_haz_surv_time();
         }
-
+        this->h0_est = this->h0_time.elem(this->uni_time_ind);
+        this->H0_est = this->H0_time.elem(this->uni_time_ind);
+        this->S0_est = this->S0_time.elem(this->uni_time_ind);
+        this->hc_est = this->hc_time.elem(this->uni_time_ind);
+        this->Hc_est = this->Hc_time.elem(this->uni_time_ind);
+        this->Sc_est = this->Sc_time.elem(this->uni_time_ind);
     }
 
     // the negative log-likelihood function based on the broslow's formula
