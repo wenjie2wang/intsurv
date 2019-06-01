@@ -539,7 +539,7 @@ namespace Intsurv {
             b_new = this->bl_step_lowerbound(x, h_vec);
             alpha = - arma::as_scalar(crossprod(h_vec, grad_vec)) / b_new;
             beta = beta0 + alpha * h_vec;
-            if (rel_l2_norm(beta, beta0) < rel_tol) {
+            if (rel_l1_norm(beta, beta0) < rel_tol) {
                 break;
             }
             // update beta
@@ -565,6 +565,12 @@ namespace Intsurv {
         // compute lowerbound vector used in CMD algorithm
         compute_cmd_lowerbound();
         double dlj { 0 };
+
+        // arma::vec beta_old = beta;
+        // this->coef0 = beta;
+        // double ell { this->objective() };
+        // ell = ell / this->nObs + l1_lambda * arma::sum(arma::abs(beta));
+
         for (size_t j {0}; j < beta.n_elem; ++j) {
             if (is_active[j]) {
                 dlj = gradient(beta, j) / time.n_elem;
@@ -585,6 +591,23 @@ namespace Intsurv {
                 }
             }
         }
+        // this->coef0 = beta;
+        // double new_ell = this->objective();
+        // new_ell = new_ell / this->nObs + l1_lambda * arma::sum(arma::abs(beta));
+
+        // if (! isAlmostEqual(new_ell, ell) && new_ell > ell) {
+        //     Rcpp::Rcout.precision(12);
+        //     Rcpp::Rcout << "Warning: regularized objective somehow increased!"
+        //                 << std::endl;
+        //     Rcpp::Rcout << "old regularized objective function: "
+        //                 << std::fixed
+        //                 << ell
+        //                 << std::endl;
+        //     Rcpp::Rcout << "new regularized objective function: "
+        //                 << std::fixed
+        //                 << new_ell
+        //                 << std::endl;
+        // }
     }
 
     // run a complete cycle of CMD for a given active set and lambda
@@ -612,7 +635,7 @@ namespace Intsurv {
                 while (ii < max_iter) {
                     regularized_fit_update(beta, is_active_stored, l1_lambda,
                                            l2_lambda, l1_penalty_factor, true);
-                    if (rel_l2_norm(beta, beta0) < rel_tol) {
+                    if (rel_l1_norm(beta, beta0) < rel_tol) {
                         break;
                     }
                     beta0 = beta;
@@ -635,7 +658,7 @@ namespace Intsurv {
             while (i < max_iter) {
                 regularized_fit_update(beta, is_active_stored, l1_lambda,
                                        l2_lambda, l1_penalty_factor, false);
-                if (rel_l2_norm(beta, beta0) < rel_tol) {
+                if (rel_l1_norm(beta, beta0) < rel_tol) {
                     break;
                 }
                 beta0 = beta;

@@ -119,16 +119,18 @@ Rcpp::List coxph_cure_reg(
         Rcpp::Named("coef_df") = obj.coef_df,
         Rcpp::Named("num_iter") = obj.num_iter,
 
-        Rcpp::Named("cox_l1_lambda_max") = obj.cox_l1_lambda_max,
-        Rcpp::Named("cox_l1_lambda") = obj.cox_l1_lambda,
-        Rcpp::Named("cox_l2_lambda") = obj.cox_l2_lambda,
-        Rcpp::Named("cox_l1_penalty_factor") =
-        Intsurv::arma2rvec(obj.cox_l1_penalty_factor),
+        Rcpp::Named("penalty") = Rcpp::List::create(
+            Rcpp::Named("cox_l1_lambda_max") = obj.cox_l1_lambda_max,
+            Rcpp::Named("cox_l1_lambda") = obj.cox_l1_lambda,
+            Rcpp::Named("cox_l2_lambda") = obj.cox_l2_lambda,
+            Rcpp::Named("cox_l1_penalty_factor") =
+            Intsurv::arma2rvec(obj.cox_l1_penalty_factor),
 
-        Rcpp::Named("cure_l1_lambda_max") = obj.cure_l1_lambda_max,
-        Rcpp::Named("cure_l1_lambda") = obj.cure_l1_lambda,
-        Rcpp::Named("cure_l2_lambda") = obj.cure_l2_lambda,
-        Rcpp::Named("cure_l1_penalty_factor") =
-        Intsurv::arma2rvec(obj.cure_l1_penalty_factor)
+            Rcpp::Named("cure_l1_lambda_max") = obj.cure_l1_lambda_max,
+            Rcpp::Named("cure_l1_lambda") = obj.cure_l1_lambda,
+            Rcpp::Named("cure_l2_lambda") = obj.cure_l2_lambda,
+            Rcpp::Named("cure_l1_penalty_factor") =
+            Intsurv::arma2rvec(obj.cure_l1_penalty_factor)
+            )
         );
 }

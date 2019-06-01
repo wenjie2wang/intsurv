@@ -350,7 +350,7 @@ namespace Intsurv {
         while (i < max_iter) {
             y_hat = linkinv(beta0);
             beta = beta0 + iter_mat * (y - y_hat);
-            if (rel_l2_norm(beta, beta0) < rel_tol) {
+            if (rel_l1_norm(beta, beta0) < rel_tol) {
                 break;
             }
             // update beta
@@ -384,7 +384,7 @@ namespace Intsurv {
             y_hat = linkinv(beta0);
             score_vec = firth_score(y_hat);
             beta = beta0 + this->bl_iter_mat * score_vec;
-            if (rel_l2_norm(beta, beta0) < rel_tol) {
+            if (rel_l1_norm(beta, beta0) < rel_tol) {
                 break;
             }
             // update beta
@@ -473,7 +473,7 @@ namespace Intsurv {
                     // if (d_tol < rel_tol * rel_tol) {
                     //     break;
                     // }
-                    if (rel_l2_norm(beta, beta0) < rel_tol) {
+                    if (rel_l1_norm(beta, beta0) < rel_tol) {
                         break;
                     }
                     beta0 = beta;
@@ -503,7 +503,7 @@ namespace Intsurv {
                 // if (d_tol < rel_tol * rel_tol) {
                 //     break;
                 // }
-                if (rel_l2_norm(beta, beta0) < rel_tol) {
+                if (rel_l1_norm(beta, beta0) < rel_tol) {
                     break;
                 }
                 beta0 = beta;
