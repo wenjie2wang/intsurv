@@ -119,10 +119,12 @@ Rcpp::List coxph_cure_reg(
         Rcpp::Named("cox_en_coef") = Intsurv::arma2rvec(obj.cox_en_coef),
         Rcpp::Named("cure_en_coef") = Intsurv::arma2rvec(obj.cure_en_coef),
 
-        Rcpp::Named("unique_time") = Intsurv::arma2rvec(obj.unique_time),
-        Rcpp::Named("h0_est") = Intsurv::arma2rvec(obj.h0_est),
-        Rcpp::Named("H0_est") = Intsurv::arma2rvec(obj.H0_est),
-        Rcpp::Named("S0_est") = Intsurv::arma2rvec(obj.S0_est),
+        Rcpp::Named("surv") = Rcpp::List::create(
+            Rcpp::Named("unique_time") = Intsurv::arma2rvec(obj.unique_time),
+            Rcpp::Named("h0_est") = Intsurv::arma2rvec(obj.h0_est),
+            Rcpp::Named("H0_est") = Intsurv::arma2rvec(obj.H0_est),
+            Rcpp::Named("S0_est") = Intsurv::arma2rvec(obj.S0_est)
+            ),
 
         Rcpp::Named("negLogL") = obj.negLogL,
         Rcpp::Named("nObs") = obj.nObs,

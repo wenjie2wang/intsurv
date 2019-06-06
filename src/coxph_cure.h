@@ -40,9 +40,9 @@ namespace Intsurv {
     public:
         arma::vec cox_coef;
         arma::vec cure_coef;
+        unsigned int coef_df;     // degree of freedom of coef estimates
         double negLogL;
         unsigned int nObs;        // number of observations
-        unsigned int coef_df;     // degree of freedom of coef estimates
         unsigned int num_iter;    // number of iterations
 
         // hazard and survival function estimates at unique time
@@ -145,11 +145,11 @@ namespace Intsurv {
         const arma::vec& cox_start = 0,
         const arma::vec& cure_start = 0,
         const unsigned int& em_max_iter = 300,
-        const double& em_rel_tol = 1e-4,
-        const unsigned int& cox_mstep_max_iter = 100,
-        const double& cox_mstep_rel_tol = 1e-4,
-        const unsigned int& cure_mstep_max_iter = 100,
-        const double& cure_mstep_rel_tol = 1e-4,
+        const double& em_rel_tol = 1e-5,
+        const unsigned int& cox_mstep_max_iter = 200,
+        const double& cox_mstep_rel_tol = 1e-5,
+        const unsigned int& cure_mstep_max_iter = 200,
+        const double& cure_mstep_rel_tol = 1e-5,
         const double& pmin = 1e-5,
         const bool& early_stop = false,
         const bool& verbose_em = false,
@@ -232,33 +232,41 @@ namespace Intsurv {
                             << std::endl;
             }
 
+            bool early_exit { false };
             // early exit if has any `nan`
             if (cox_obj.coef.has_nan() || cure_obj.coef.has_nan()) {
                 obs_ell = - arma::datum::inf;
-                throw std::range_error(
-                    "The negative log-likelihood function went to infinite."
-                    );
+                Rcpp::Rcout << "Warning: Found NA's in coef. "
+                            << "The objective function went to infinite."
+                            << std::endl;
+                early_exit = true;
                 break;
             }
-
-            // early exit if negative log-likelihood increased
+            // early exit if the observed data log-likelihood decreased, which
+            // is technically impossible and thus can serve as a warning
             if (obs_ell < obs_ell_old) {
-                Rcpp::Rcout << "\nWarning: "
-                            << "The negative log-likelihood increased.\n";
+                if (verbose_em) {
+                    Rcpp::Rcout << "Warning: "
+                                << "The observed data log-likelihood decreased."
+                                << std::endl;
+                }
+                early_exit = early_stop;
+            }
+            // return the estimates from last step
+            if (early_exit) {
+                Rcpp::Rcout << "Ended the EM algorithm after iteration "
+                            << i
+                            << " with estimates from last step."
+                            << std::endl;
                 // take the estimates from the last step
                 cox_obj.coef = cox_beta;
                 cure_obj.coef = cure_beta;
-                // compute hazard and survival function estimates
+                // update hazard and survival function estimates
                 cox_obj.compute_haz_surv_time();
+                // cox_obj.compute_censor_haz_surv_time();
                 cox_obj.est_haz_surv();
                 // break here
-                if (early_stop) {
-                    Rcpp::Rcout << "Ended the EM algorithm after iteration "
-                                << i
-                                << "with estimates from last step."
-                                << std::endl;
-                    break;
-                }
+                break;
             }
 
             // check convergence
@@ -280,9 +288,13 @@ namespace Intsurv {
                 break;
             }
 
+            // allow users to stop the main loop
+            Rcpp::checkUserInterrupt();
+
             // record estimates from last step
             cox_beta = cox_obj.coef;
             cure_beta = cure_obj.coef;
+            obs_ell_old = obs_ell;
 
             // update iter for the next iteration
             ++i;
@@ -294,7 +306,6 @@ namespace Intsurv {
                 // more numerically robust
                 estep_v(j) = 1 / ((1 - p_vec(j)) / numer_j + 1);
             }
-            arma::vec log_v { arma::log(estep_v) };
 
             // allow users to stop the main loop
             Rcpp::checkUserInterrupt();
@@ -304,7 +315,7 @@ namespace Intsurv {
                 Rcpp::Rcout << "\n" << std::string(40, '-')
                             << "\nRunning M-step for the survival layer:";
             }
-            cox_obj.set_offset(log_v);
+            cox_obj.set_offset(arma::log(estep_v));
             cox_obj.fit(cox_beta, cox_mstep_max_iter, cox_mstep_rel_tol,
                         early_stop, verbose_cox);
             if (verbose_cox) {
@@ -338,13 +349,13 @@ namespace Intsurv {
         // prepare outputs
         this->cox_coef = cox_obj.coef;
         this->cure_coef = cure_obj.coef;
-        this->negLogL = - obs_ell;
-        this->coef_df = cox_obj.coef_df + cure_obj.coef_df;
-        this->num_iter = i;
         this->unique_time = cox_obj.unique_time;
         this->h0_est = cox_obj.h0_est;
         this->H0_est = cox_obj.H0_est;
         this->S0_est = cox_obj.S0_est;
+        this->negLogL = - obs_ell;
+        this->coef_df = cox_obj.coef_df + cure_obj.coef_df;
+        this->num_iter = i;
     }
 
 
@@ -362,10 +373,10 @@ namespace Intsurv {
         const arma::vec& cure_start = 0,
         const unsigned int& em_max_iter = 500,
         const double& em_rel_tol = 1e-5,
-        const unsigned int& cox_mstep_max_iter = 50,
-        const double& cox_mstep_rel_tol = 1e-3,
-        const unsigned int& cure_mstep_max_iter = 50,
-        const double& cure_mstep_rel_tol = 1e-3,
+        const unsigned int& cox_mstep_max_iter = 200,
+        const double& cox_mstep_rel_tol = 1e-5,
+        const unsigned int& cure_mstep_max_iter = 200,
+        const double& cure_mstep_rel_tol = 1e-5,
         const double& pmin = 1e-5,
         const bool& early_stop = false,
         const bool& verbose_em = false,
@@ -398,7 +409,9 @@ namespace Intsurv {
         arma::vec cox_grad_zero { arma::abs(cox_obj.gradient(cox_beta)) };
         this->cox_l1_lambda_max =
             arma::max(cox_grad_zero / cox_l1_penalty) / this->nObs;
-        arma::vec cure_grad_zero { arma::abs(cure_obj.gradient(cure_beta)) };
+        arma::vec cure_grad_zero {
+            arma::abs(cure_obj.gradient(cure_beta, pmin))
+        };
         this->cure_l1_lambda_max =
             arma::max(cure_grad_zero.tail(cure_l1_penalty.n_elem) /
                       cure_l1_penalty) / this->nObs;
@@ -529,9 +542,13 @@ namespace Intsurv {
                 break;
             }
 
+            // allow users to stop the main loop
+            Rcpp::checkUserInterrupt();
+
             // record estimates from last step
             cox_beta = cox_obj.coef;
             cure_beta = cure_obj.coef;
+            reg_obj_old = reg_obj;
 
             // update iter for the next iteration
             ++i;
@@ -543,7 +560,6 @@ namespace Intsurv {
                 double denom_j { numer_j + 1 - p_vec(j) };
                 estep_v(j) = numer_j / denom_j;
             }
-            arma::vec log_v { arma::log(estep_v) };
 
             // allow users to stop the main loop
             Rcpp::checkUserInterrupt();
@@ -554,10 +570,11 @@ namespace Intsurv {
                             << "\nRunning the M-step for the survival layer:"
                             << std::endl;
             }
-            cox_obj.set_offset(log_v);
+            cox_obj.set_offset(arma::log(estep_v));
             cox_obj.regularized_fit(
                 cox_l1_lambda, cox_l2_lambda, cox_l1_penalty_factor,
-                cox_beta, cox_mstep_max_iter, cox_mstep_rel_tol
+                cox_beta, cox_mstep_max_iter, cox_mstep_rel_tol,
+                early_stop, verbose_cox
                 );
             if (verbose_cox) {
                 Rcpp::Rcout << "\n" << std::string(40, '-')
@@ -576,7 +593,8 @@ namespace Intsurv {
             cure_obj.update_y(estep_v);
             cure_obj.regularized_fit(
                 cure_l1_lambda, cure_l2_lambda, cure_l1_penalty_factor,
-                cure_beta, cure_mstep_max_iter, cure_mstep_rel_tol
+                cure_beta, cure_mstep_max_iter, cure_mstep_rel_tol,
+                pmin, early_stop, verbose_cure
                 );
             if (verbose_cure) {
                 Rcpp::Rcout << std::string(40, '-')
@@ -594,10 +612,12 @@ namespace Intsurv {
         this->cure_coef = cure_obj.coef;
         this->cox_en_coef = cox_obj.en_coef;
         this->cure_en_coef = cure_obj.en_coef;
+
         this->unique_time = cox_obj.unique_time;
         this->h0_est = cox_obj.h0_est;
         this->H0_est = cox_obj.H0_est;
         this->S0_est = cox_obj.S0_est;
+
         this->negLogL = - obs_ell;
         this->coef_df = cox_obj.coef_df + cure_obj.coef_df;
         this->cox_l1_lambda = cox_l1_lambda;
