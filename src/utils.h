@@ -379,15 +379,22 @@ namespace Intsurv {
     }
 
     // function that computes L2-norm
+    inline double sum_of_square(const arma::vec& x)
+    {
+        return arma::as_scalar(crossprod(x));
+    }
+    inline double sum_of_square(const arma::vec& x, const arma::vec& y)
+    {
+        return arma::as_scalar(crossprod(x, y));
+    }
     inline double l2_norm(const arma::vec& x)
     {
-        return std::sqrt(arma::as_scalar(crossprod(x)));
+        return std::sqrt(sum_of_square(x));
     }
     inline double l2_norm(const arma::vec& x, const arma::vec& y)
     {
-        return std::sqrt(arma::as_scalar(crossprod(x, y)));
+        return std::sqrt(sum_of_square(x, y));
     }
-
     // function computing relateive tolerance based on l2-norm
     inline double rel_l2_norm(const arma::vec& x_old, const arma::vec& x_new)
     {

@@ -29,17 +29,20 @@
 Rcpp::List rcpp_logistic(
     const arma::mat& x,
     const arma::vec& y,
-    const bool intercept = true,
-    const bool standardize = true,
-    const arma::vec start = 0,
-    const unsigned int max_iter = 300,
-    const double rel_tol = 1e-6
+    const bool& intercept = true,
+    const bool& standardize = true,
+    const arma::vec& start = 0,
+    const unsigned int& max_iter = 300,
+    const double& rel_tol = 1e-6,
+    const double& pmin = 1e-5,
+    const bool& early_stop = false,
+    const bool& verbose = false
     )
 {
     Intsurv::LogisticReg object {
         Intsurv::LogisticReg(x, y, intercept, standardize)
     };
-    object.fit(start, max_iter, rel_tol);
+    object.fit(start, max_iter, rel_tol, pmin, early_stop, verbose);
     return Rcpp::List::create(
         Rcpp::Named("coef") = Intsurv::arma2rvec(object.coef),
         Rcpp::Named("negLogL") = object.negLogL,
@@ -84,12 +87,14 @@ Rcpp::List rcpp_reg_logistic1(const arma::mat& x,
                               const arma::vec& l1_penalty_factor = 0,
                               const arma::vec& start = 0,
                               const bool intercept = true,
-                              const unsigned int max_iter = 1000,
-                              const double rel_tol = 1e-6)
+                              const unsigned int max_iter = 300,
+                              const double rel_tol = 1e-5,
+                              const bool& early_stop = false,
+                              const bool& verbose = false)
 {
     Intsurv::LogisticReg object { Intsurv::LogisticReg(x, y, intercept) };
     object.regularized_fit(l1_lambda, l2_lambda, l1_penalty_factor,
-                           start, max_iter, rel_tol);
+                           start, max_iter, rel_tol, early_stop, verbose);
     return Rcpp::List::create(
         Rcpp::Named("coef") = Intsurv::arma2rvec(object.coef),
         Rcpp::Named("en_coef") = Intsurv::arma2rvec(object.en_coef),
@@ -115,12 +120,15 @@ Rcpp::List rcpp_reg_logistic2(const arma::mat& x,
                               double lambda_min_ratio = 1e-4,
                               const arma::vec& penalty_factor = 0,
                               const bool intercept = true,
-                              const unsigned int max_iter = 1000,
-                              const double rel_tol = 1e-6)
+                              const unsigned int max_iter = 300,
+                              const double rel_tol = 1e-5,
+                              const bool& early_stop = false,
+                              const bool& verbose = false)
 {
     Intsurv::LogisticReg object { Intsurv::LogisticReg(x, y, intercept) };
     object.regularized_fit(lambda, alpha, nlambda, lambda_min_ratio,
-                           penalty_factor, max_iter, rel_tol);
+                           penalty_factor, max_iter, rel_tol,
+                           early_stop, verbose);
     return Rcpp::List::create(
         Rcpp::Named("coef") = object.coef_mat,
         Rcpp::Named("en_coef") = object.en_coef_mat,

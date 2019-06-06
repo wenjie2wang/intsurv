@@ -29,11 +29,14 @@ Rcpp::List rcpp_coxph(const arma::vec& time,
                       const arma::vec& event,
                       const arma::mat& x,
                       const arma::vec& start = 0,
-                      const unsigned int max_iter = 300,
-                      const double rel_tol = 1e-5)
+                      const unsigned int& max_iter = 200,
+                      const double& rel_tol = 1e-5,
+                      const bool& early_stop = false,
+                      const bool& verbose = false
+    )
 {
     Intsurv::CoxphReg object { Intsurv::CoxphReg(time, event, x) };
-    object.fit(start, max_iter, rel_tol);
+    object.fit(start, max_iter, rel_tol, early_stop, verbose);
     object.compute_haz_surv_time();
     object.compute_censor_haz_surv_time();
     object.est_haz_surv();
@@ -59,16 +62,18 @@ Rcpp::List rcpp_coxph(const arma::vec& time,
 Rcpp::List rcpp_reg_coxph1(const arma::vec& time,
                            const arma::vec& event,
                            const arma::mat& x,
-                           const double l1_lambda = 0,
-                           const double l2_lambda = 0,
+                           const double& l1_lambda = 0,
+                           const double& l2_lambda = 0,
                            arma::vec l1_penalty_factor = 0,
                            const arma::vec& start = 0,
-                           const unsigned int max_iter = 1000,
-                           const double rel_tol = 1e-6)
+                           const unsigned int& max_iter = 200,
+                           const double& rel_tol = 1e-5,
+                           const bool& early_stop = false,
+                           const bool& verbose = false)
 {
     Intsurv::CoxphReg object { Intsurv::CoxphReg(time, event, x) };
     object.regularized_fit(l1_lambda, l2_lambda, l1_penalty_factor,
-                           start, max_iter, rel_tol);
+                           start, max_iter, rel_tol, early_stop, verbose);
     object.compute_haz_surv_time();
     object.compute_censor_haz_surv_time();
     object.est_haz_surv();
@@ -104,12 +109,16 @@ Rcpp::List rcpp_reg_coxph2(const arma::vec& time,
                            const unsigned int& nlambda = 1,
                            double lambda_min_ratio = 1e-4,
                            arma::vec l1_penalty_factor = 0,
-                           const unsigned int max_iter = 300,
-                           const double rel_tol = 1e-6)
+                           const unsigned int max_iter = 200,
+                           const double rel_tol = 1e-5,
+                           const bool& early_stop = false,
+                           const bool& verbose = false
+    )
 {
     Intsurv::CoxphReg object { Intsurv::CoxphReg(time, event, x) };
     object.regularized_fit(lambda, alpha, nlambda, lambda_min_ratio,
-                           l1_penalty_factor, max_iter, rel_tol);
+                           l1_penalty_factor, max_iter, rel_tol,
+                           early_stop, verbose);
     return Rcpp::List::create(
         Rcpp::Named("coef") = object.coef_mat,
         Rcpp::Named("en_coef") = object.en_coef_mat,
