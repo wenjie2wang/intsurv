@@ -39,9 +39,13 @@ Rcpp::List coxph_cure(
     const double& cox_mstep_rel_tol = 1e-4,
     const unsigned int& cure_mstep_max_iter = 200,
     const double& cure_mstep_rel_tol = 1e-6,
-    const bool cox_standardize = true,
-    const bool cure_standardize = true,
-    const bool verbose = false
+    const bool& cox_standardize = true,
+    const bool& cure_standardize = true,
+    const double& pmin = 1e-5,
+    const bool& early_stop = false,
+    const bool& verbose_em = false,
+    const bool& verbose_cox = false,
+    const bool& verbose_cure = false
     )
 {
     Intsurv::CoxphCure obj {
@@ -50,7 +54,8 @@ Rcpp::List coxph_cure(
     };
     obj.fit(cox_start, cure_start, em_max_iter, em_rel_tol,
             cox_mstep_max_iter, cox_mstep_rel_tol,
-            cure_mstep_max_iter, cure_mstep_rel_tol, verbose);
+            cure_mstep_max_iter, cure_mstep_rel_tol,
+            pmin, early_stop, verbose_em, verbose_cox, verbose_cure);
     return Rcpp::List::create(
         Rcpp::Named("cox_coef") = Intsurv::arma2rvec(obj.cox_coef),
         Rcpp::Named("cure_coef") = Intsurv::arma2rvec(obj.cure_coef),
@@ -89,7 +94,11 @@ Rcpp::List coxph_cure_reg(
     const double& cox_mstep_rel_tol = 1e-4,
     const unsigned int& cure_mstep_max_iter = 200,
     const double& cure_mstep_rel_tol = 1e-4,
-    const bool verbose = false
+    const double& pmin = 1e-5,
+    const bool& early_stop = false,
+    const bool& verbose_em = false,
+    const bool& verbose_cox = false,
+    const bool& verbose_cure = false
     )
 {
     Intsurv::CoxphCure obj {
@@ -101,7 +110,8 @@ Rcpp::List coxph_cure_reg(
         cox_l1_penalty_factor, cure_l1_penalty_factor,
         cox_start, cure_start, em_max_iter, em_rel_tol,
         cox_mstep_max_iter, cox_mstep_rel_tol,
-        cure_mstep_max_iter, cure_mstep_rel_tol, verbose
+        cure_mstep_max_iter, cure_mstep_rel_tol,
+        pmin, early_stop, verbose_em, verbose_cox, verbose_cure
         );
     return Rcpp::List::create(
         Rcpp::Named("cox_coef") = Intsurv::arma2rvec(obj.cox_coef),

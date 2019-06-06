@@ -139,7 +139,8 @@ namespace Intsurv {
                                  const double& pmin) const;
 
         // here beta is coef vector for non-standardized data
-        inline arma::vec predict(const arma::vec& beta) const;
+        inline arma::vec predict(const arma::vec& beta,
+                                 const double& pmin) const;
 
         inline double objective() const;
         inline double objective(const arma::vec& beta) const;
@@ -261,13 +262,14 @@ namespace Intsurv {
         }
         return p_vec;
     }
-    inline arma::vec LogisticReg::predict(const arma::vec& beta) const
+    inline arma::vec LogisticReg::predict(const arma::vec& beta,
+                                          const double& pmin = 1e-5) const
     {
         arma::vec beta0 { beta };
         if (this->standardize) {
             beta0 = rev_rescale_coef(beta0);
         }
-        return linkinv(beta0);
+        return linkinv(beta0, pmin);
     }
 
     // define objective function (negative log-likehood function)
@@ -363,7 +365,7 @@ namespace Intsurv {
         if (start.n_elem == x.n_cols) {
             beta0 = start;
         }
-        double ell { 0 };
+        double ell { arma::datum::inf };
         if (verbose) {
             Rcpp::Rcout << "\n" << std::string(40, '=')
                         << "\nStarting from\n"
