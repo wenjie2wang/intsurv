@@ -145,9 +145,11 @@ namespace Intsurv {
         inline double objective() const;
         inline double objective(const arma::vec& beta) const;
 
-        inline arma::vec gradient(const arma::vec& beta) const;
+        inline arma::vec gradient(const arma::vec& beta,
+                                  const double& pmin) const;
         inline double gradient(const arma::vec& beta,
-                               const unsigned int& k) const;
+                               const unsigned int& k,
+                               const double& pmin) const;
 
         inline double objective(const arma::vec& beta, arma::vec& grad) const;
 
@@ -183,6 +185,7 @@ namespace Intsurv {
                                            const double& l2_lambda,
                                            const arma::vec& l1_penalty_factor,
                                            const bool& update_active,
+                                           const double& pmin,
                                            const bool& early_stop,
                                            const bool& verbose);
 
@@ -194,6 +197,7 @@ namespace Intsurv {
                                    const bool& varying_active_set,
                                    const unsigned int& max_iter,
                                    const double& rel_tol,
+                                   const double& pmin,
                                    const bool& early_stop,
                                    const bool& verbose);
 
@@ -205,6 +209,7 @@ namespace Intsurv {
                                     const arma::vec& start,
                                     const unsigned int& max_iter,
                                     const double& rel_tol,
+                                    const double& pmin,
                                     const bool& early_stop,
                                     const bool& verbose);
 
@@ -216,6 +221,7 @@ namespace Intsurv {
                                     const arma::vec& l1_penalty_factor,
                                     const unsigned int& max_iter,
                                     const double& rel_tol,
+                                    const double& pmin,
                                     const bool& early_stop,
                                     const bool& verbose);
 
@@ -290,15 +296,17 @@ namespace Intsurv {
     }
 
     // define gradient function
-    inline arma::vec LogisticReg::gradient(const arma::vec& beta) const
+    inline arma::vec LogisticReg::gradient(const arma::vec& beta,
+                                           const double& pmin) const
     {
-        return x.t() * (linkinv(beta) - y);
+        return x.t() * (linkinv(beta, pmin) - y);
     }
     // define gradient function at k-th dimension
     inline double LogisticReg::gradient(const arma::vec& beta,
-                                        const unsigned int& k) const
+                                        const unsigned int& k,
+                                        const double& pmin) const
     {
-        return arma::sum((linkinv(beta) - y) % x.col(k));
+        return arma::sum((linkinv(beta, pmin) - y) % x.col(k));
     }
 
     // Firth-type score function
@@ -494,6 +502,7 @@ namespace Intsurv {
         const double& l2_lambda,
         const arma::vec& l1_penalty_factor,
         const bool& update_active = false,
+        const double& pmin = 1e-5,
         const bool& early_stop = false,
         const bool& verbose = false
         )
@@ -504,7 +513,7 @@ namespace Intsurv {
         arma::vec beta_old = beta;
         for (size_t j {0}; j < beta.n_elem; ++j) {
             if (is_active[j]) {
-                dlj = this->gradient(beta, j) / y.n_elem;
+                dlj = this->gradient(beta, j, pmin) / y.n_elem;
                 // update beta
                 beta[j] = soft_threshold(cmd_lowerbound[j] * beta[j] - dlj,
                                          l1_penalty_factor[j] * l1_lambda) /
@@ -560,6 +569,7 @@ namespace Intsurv {
         const bool& varying_active_set = false,
         const unsigned int& max_iter = 200,
         const double& rel_tol = 1e-5,
+        const double& pmin = 1e-5,
         const bool& early_stop = false,
         const bool& verbose = false
         )
@@ -577,7 +587,7 @@ namespace Intsurv {
                 while (ii < max_iter) {
                     regularized_fit_update(beta, is_active_stored, l1_lambda,
                                            l2_lambda, l1_penalty_factor, true,
-                                           early_stop, verbose);
+                                           pmin, early_stop, verbose);
                     if (rel_l1_norm(beta, beta0) < rel_tol) {
                         break;
                     }
@@ -587,7 +597,7 @@ namespace Intsurv {
                 // run a full cycle over the converged beta
                 regularized_fit_update(beta, is_active_new, l1_lambda,
                                        l2_lambda, l1_penalty_factor, true,
-                                       early_stop, verbose);
+                                       pmin, early_stop, verbose);
                 // check two active sets coincide
                 if (arma::sum(arma::abs(is_active_new - is_active_stored))) {
                     // if different, repeat this process
@@ -602,7 +612,7 @@ namespace Intsurv {
             while (i < max_iter) {
                 regularized_fit_update(beta, is_active_stored, l1_lambda,
                                        l2_lambda, l1_penalty_factor, false,
-                                       early_stop, verbose);
+                                       pmin, early_stop, verbose);
                 if (rel_l1_norm(beta, beta0) < rel_tol) {
                     break;
                 }
@@ -622,6 +632,7 @@ namespace Intsurv {
         const arma::vec& start = 0,
         const unsigned int& max_iter = 300,
         const double& rel_tol = 1e-5,
+        const double& pmin = 1e-5,
         const bool& early_stop = false,
         const bool& verbose = false
         )
@@ -639,7 +650,7 @@ namespace Intsurv {
         this->l1_penalty_factor = l1_penalty;
 
         arma::vec beta { arma::zeros(x.n_cols) };
-        arma::vec grad_zero { arma::abs(this->gradient(beta)) };
+        arma::vec grad_zero { arma::abs(this->gradient(beta, pmin)) };
         arma::vec grad_beta { grad_zero }, strong_rhs { grad_beta };
 
         // large enough lambda for all-zero coef (except intercept)
@@ -658,7 +669,7 @@ namespace Intsurv {
             is_active_strong(0) = 1;
             regularized_fit_update(beta, is_active_strong, this->l1_lambda_max,
                                    l2_lambda, l1_penalty, false,
-                                   early_stop, verbose);
+                                   pmin, early_stop, verbose);
         }
         this->coef0 = beta;
         // rescale coef back
@@ -677,7 +688,8 @@ namespace Intsurv {
         }
 
         // update active set by strong rule
-        grad_beta = arma::abs(this->gradient(this->coef0)) / this->x.n_rows;
+        grad_beta = arma::abs(this->gradient(this->coef0, pmin)) /
+            this->x.n_rows;
         strong_rhs = (2 * l1_lambda - this->l1_lambda_max) * l1_penalty;
 
         for (size_t j { int_intercept }; j < n_predictor + int_intercept; ++j) {
@@ -702,14 +714,14 @@ namespace Intsurv {
             // update beta
             reg_active_fit(beta, is_active_strong, l1_lambda, l2_lambda,
                            l1_penalty, varying_active_set, max_iter, rel_tol,
-                           early_stop, verbose);
+                           pmin, early_stop, verbose);
             // check kkt condition
             for (size_t j { int_intercept };
                  j < n_predictor + int_intercept; ++j) {
                 if (is_active_strong(j)) {
                     continue;
                 }
-                if (std::abs(this->gradient(beta, j)) / this->x.n_rows >
+                if (std::abs(this->gradient(beta, j, pmin)) / this->x.n_rows >
                     strong_rhs(j)) {
                     // update active set
                     is_active_strong_new(j) = 1;
@@ -746,8 +758,9 @@ namespace Intsurv {
         const unsigned int& nlambda = 1,
         double lambda_min_ratio = 1e-4,
         const arma::vec& l1_penalty_factor = 0,
-        const unsigned int& max_iter = 200,
-        const double& rel_tol = 1e-4,
+        const unsigned int& max_iter = 300,
+        const double& rel_tol = 1e-5,
+        const double& pmin = 1e-5,
         const bool& early_stop = false,
         const bool& verbose = false
         )
@@ -772,7 +785,7 @@ namespace Intsurv {
 
         // construct lambda sequence
         arma::vec beta { arma::zeros(x.n_cols) };
-        arma::vec grad_beta { arma::abs(this->gradient(beta)) };
+        arma::vec grad_beta { arma::abs(this->gradient(beta, pmin)) };
         arma::vec strong_rhs { beta };
         l1_lambda_max =
             arma::max(grad_beta.tail(l1_penalty.n_elem) / l1_penalty) /
@@ -818,7 +831,7 @@ namespace Intsurv {
             regularized_fit_update(
                 beta, is_active_strong, this->l1_lambda_max * alpha,
                 this->l1_lambda_max * (1 - alpha) / 2, l1_penalty, false,
-                early_stop, verbose
+                pmin, early_stop, verbose
                 );
         }
         this->coef0 = beta;
@@ -839,7 +852,7 @@ namespace Intsurv {
                 continue;
             }
             // update acitve set by strong rule (for lambda < lamda_max)
-            grad_beta = arma::abs(this->gradient(beta)) / this->x.n_rows;
+            grad_beta = arma::abs(this->gradient(beta, pmin)) / this->x.n_rows;
             if (k == 0) {
                 // use lambda_max
                 strong_rhs = alpha *
@@ -866,9 +879,10 @@ namespace Intsurv {
                 reg_active_fit(beta, is_active_strong, lambda_seq(k) * alpha,
                                lambda_seq(k) * (1 - alpha) / 2, l1_penalty,
                                varying_active_set, max_iter, rel_tol,
-                               early_stop, verbose);
+                               pmin, early_stop, verbose);
                 // check kkt condition
-                grad_beta = arma::abs(this->gradient(beta)) / this->x.n_rows;
+                grad_beta = arma::abs(this->gradient(beta, pmin)) /
+                    this->x.n_rows;
                 for (size_t j { int_intercept };
                      j < n_predictor + int_intercept; ++j) {
                     if (is_active_strong(j)) {
