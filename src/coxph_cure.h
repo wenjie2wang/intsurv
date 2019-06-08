@@ -303,8 +303,14 @@ namespace Intsurv {
             arma::vec estep_v { cox_obj.get_event() };
             for (size_t j: case2_ind) {
                 double numer_j { p_vec(j) * cox_obj.S_time(j) };
-                // more numerically robust
+                // hopefully more numerical stable
                 estep_v(j) = 1 / ((1 - p_vec(j)) / numer_j + 1);
+                // special care prevents coef diverging
+                if (estep_v(j) < pmin) {
+                    estep_v(j) = pmin;
+                } else if (estep_v(j) > 1 - pmin) {
+                    estep_v(j) = 1 - pmin;
+                }
             }
 
             // allow users to stop the main loop
@@ -557,8 +563,14 @@ namespace Intsurv {
             arma::vec estep_v { cox_obj.get_event() };
             for (size_t j: case2_ind) {
                 double numer_j { p_vec(j) * cox_obj.S_time(j) };
-                double denom_j { numer_j + 1 - p_vec(j) };
-                estep_v(j) = numer_j / denom_j;
+                // hopefully more numerical stable
+                estep_v(j) = 1 / ((1 - p_vec(j)) / numer_j + 1);
+                // special care prevents coef diverging
+                if (estep_v(j) < pmin) {
+                    estep_v(j) = pmin;
+                } else if (estep_v(j) > 1 - pmin) {
+                    estep_v(j) = 1 - pmin;
+                }
             }
 
             // allow users to stop the main loop

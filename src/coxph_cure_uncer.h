@@ -422,7 +422,14 @@ namespace Intsurv {
             arma::vec estep_m { event };
             for (size_t j: case2_ind) {
                 double numer_j { p_vec(j) * cox_obj.S_time(j) };
+                // hopefully more numerical stable
                 estep_m(j) = 1 / ((1 - p_vec(j)) / numer_j + 1);
+                // special care prevents coef diverging
+                if (estep_m(j) < pmin) {
+                    estep_m(j) = pmin;
+                } else if (estep_m(j) > 1 - pmin) {
+                    estep_m(j) = 1 - pmin;
+                }
             }
 
             // E-step: compute the w vector for case 3
@@ -441,6 +448,12 @@ namespace Intsurv {
                 double w1 { 1 / ((m2 + m3) / m1 + 1) };
                 double w2 { 1 / ((m1 + m3) / m2 + 1) };
                 estep_m(j) = w1 + w2;
+                // special care prevents coef diverging
+                if (estep_m(j) < pmin) {
+                    estep_m(j) = pmin;
+                } else if (estep_m(j) > 1 - pmin) {
+                    estep_m(j) = 1 - pmin;
+                }
                 event(j) = w1;
             }
 
@@ -810,7 +823,14 @@ namespace Intsurv {
             arma::vec estep_m { event };
             for (size_t j: case2_ind) {
                 double numer_j { p_vec(j) * cox_obj.S_time(j) };
+                // hopefully more numerical stable
                 estep_m(j) = 1 / ((1 - p_vec(j)) / numer_j + 1);
+                // special care prevents coef diverging
+                if (estep_m(j) < pmin) {
+                    estep_m(j) = pmin;
+                } else if (estep_m(j) > 1 - pmin) {
+                    estep_m(j) = 1 - pmin;
+                }
             }
 
             // E-step: compute the w vector for case 3
@@ -829,6 +849,12 @@ namespace Intsurv {
                 double w1 { 1 / ((m2 + m3) / m1 + 1) };
                 double w2 { 1 / ((m1 + m3) / m2 + 1) };
                 estep_m(j) = w1 + w2;
+                // special care prevents coef diverging
+                if (estep_m(j) < pmin) {
+                    estep_m(j) = pmin;
+                } else if (estep_m(j) > 1 - pmin) {
+                    estep_m(j) = 1 - pmin;
+                }
                 event(j) = w1;
             }
 
