@@ -39,10 +39,10 @@ Rcpp::List coxph_cure_uncer(
     const double& cure_mstep_rel_tol = 1e-5,
     const bool cox_standardize = true,
     const bool cure_standardize = true,
-    const unsigned int& tail_completion = 1,
     const bool& spline_start = false,
     const unsigned int& iSpline_num_knots = 3,
     const unsigned int& iSpline_degree = 2,
+    const unsigned int& tail_completion = 1,
     const double& pmin = 1e-5,
     const bool& early_stop = false,
     const bool& verbose_em = false,
@@ -56,9 +56,10 @@ Rcpp::List coxph_cure_uncer(
     };
     obj.fit(cox_start, cure_start, em_max_iter, em_rel_tol,
             cox_mstep_max_iter, cox_mstep_rel_tol,
-            cure_mstep_max_iter, cure_mstep_rel_tol, tail_completion,
+            cure_mstep_max_iter, cure_mstep_rel_tol,
             spline_start, iSpline_num_knots, iSpline_degree,
-            pmin, early_stop, verbose_em, verbose_cox, verbose_cure
+            tail_completion, pmin, early_stop,
+            verbose_em, verbose_cox, verbose_cure
         );
     return Rcpp::List::create(
         Rcpp::Named("cox_coef") = Intsurv::arma2rvec(obj.cox_coef),
@@ -105,10 +106,10 @@ Rcpp::List coxph_cure_uncer_reg(
     const double& cure_mstep_rel_tol = 1e-4,
     const bool cox_standardize = true,
     const bool cure_standardize = true,
-    const unsigned int& tail_completion = 1,
     const bool& spline_start = false,
     const unsigned int& iSpline_num_knots = 3,
     const unsigned int& iSpline_degree = 2,
+    const unsigned int& tail_completion = 1,
     const double& pmin = 1e-5,
     const bool& early_stop = false,
     const bool& verbose_em = false,
@@ -126,9 +127,10 @@ Rcpp::List coxph_cure_uncer_reg(
         cox_l1_penalty_factor, cure_l1_penalty_factor,
         cox_start, cure_start, em_max_iter, em_rel_tol,
         cox_mstep_max_iter, cox_mstep_rel_tol,
-        cure_mstep_max_iter, cure_mstep_rel_tol, tail_completion,
+        cure_mstep_max_iter, cure_mstep_rel_tol,
         spline_start, iSpline_num_knots, iSpline_degree,
-        pmin, early_stop, verbose_em, verbose_cox, verbose_cure
+        tail_completion, pmin, early_stop,
+        verbose_em, verbose_cox, verbose_cure
         );
     return Rcpp::List::create(
         Rcpp::Named("cox_coef") = Intsurv::arma2rvec(obj.cox_coef),
