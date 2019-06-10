@@ -75,6 +75,7 @@ namespace Intsurv {
         arma::vec en_coef;           // (rescaled) elastic net estimates
         double negLogL;              // partial negative log-likelihood
         unsigned int coef_df;        // number of non-zero coef estimates
+        arma::vec xBeta;             // x * coef
 
         // for a lambda sequence
         double alpha;           // tuning parameter
@@ -324,26 +325,25 @@ namespace Intsurv {
     // here beta is coef estimate for non-standardized data
     inline void CoxphReg::compute_haz_surv_time(const arma::vec& beta)
     {
-        arma::vec exp_x_beta { arma::ones(x.n_rows) };
         if (this->standardize) {
             if (! beta.is_empty() && beta.n_elem == x.n_cols) {
                 // re-scale the input beta
                 arma::vec beta0 { beta % x_scale.t() };
-                exp_x_beta = arma::exp(x * beta0 +
-                                       arma::as_scalar(x_center * beta));
+                this->xBeta = x * beta0 + arma::as_scalar(x_center * beta);
             } else {
                 // use estimated coef
-                exp_x_beta = arma::exp(x * this->coef0 +
-                                       arma::as_scalar(x_center * this->coef));
+                this->xBeta = x * this->coef0 +
+                    arma::as_scalar(x_center * this->coef);
             }
         } else {
             if (! beta.is_empty() && beta.n_elem == x.n_cols) {
-                exp_x_beta = arma::exp(x * beta);
+                this->xBeta = x * beta;
             } else {
                 // use estimated coef
-                exp_x_beta = arma::exp(x * this->coef);
+                this->xBeta = x * this->coef;
             }
         }
+        arma::vec exp_x_beta { arma::exp(this->xBeta) };
 
         // 1. hazard rate function
         arma::vec h0_numer { aggregate_sum(event, time, false) };

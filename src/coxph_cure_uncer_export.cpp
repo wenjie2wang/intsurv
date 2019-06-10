@@ -39,6 +39,7 @@ Rcpp::List coxph_cure_uncer(
     const double& cure_mstep_rel_tol = 1e-5,
     const bool cox_standardize = true,
     const bool cure_standardize = true,
+    const unsigned int& tail_completion = 1,
     const bool& spline_start = false,
     const unsigned int& iSpline_num_knots = 3,
     const unsigned int& iSpline_degree = 2,
@@ -55,7 +56,7 @@ Rcpp::List coxph_cure_uncer(
     };
     obj.fit(cox_start, cure_start, em_max_iter, em_rel_tol,
             cox_mstep_max_iter, cox_mstep_rel_tol,
-            cure_mstep_max_iter, cure_mstep_rel_tol,
+            cure_mstep_max_iter, cure_mstep_rel_tol, tail_completion,
             spline_start, iSpline_num_knots, iSpline_degree,
             pmin, early_stop, verbose_em, verbose_cox, verbose_cure
         );
@@ -104,6 +105,7 @@ Rcpp::List coxph_cure_uncer_reg(
     const double& cure_mstep_rel_tol = 1e-4,
     const bool cox_standardize = true,
     const bool cure_standardize = true,
+    const unsigned int& tail_completion = 1,
     const bool& spline_start = false,
     const unsigned int& iSpline_num_knots = 3,
     const unsigned int& iSpline_degree = 2,
@@ -124,7 +126,7 @@ Rcpp::List coxph_cure_uncer_reg(
         cox_l1_penalty_factor, cure_l1_penalty_factor,
         cox_start, cure_start, em_max_iter, em_rel_tol,
         cox_mstep_max_iter, cox_mstep_rel_tol,
-        cure_mstep_max_iter, cure_mstep_rel_tol,
+        cure_mstep_max_iter, cure_mstep_rel_tol, tail_completion,
         spline_start, iSpline_num_knots, iSpline_degree,
         pmin, early_stop, verbose_em, verbose_cox, verbose_cure
         );

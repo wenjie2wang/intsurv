@@ -39,6 +39,7 @@ namespace Intsurv {
         arma::uvec case2_ind;
         arma::uvec cer_ind;     // index of rows with correct event indicators
         arma::uvec case3_ind;
+        unsigned int max_event_time_ind; // index of the maximum event time
 
     public:
         arma::vec cox_coef;
@@ -107,7 +108,7 @@ namespace Intsurv {
             this->case2_ind = arma::find(s_event < const4na);
             this->cer_ind = vec_union(case1_ind, case2_ind);
             this->case3_ind = arma::find(s_event == const4na);
-
+            this->max_event_time_ind = arma::max(this->case1_ind);
             // create the LogisticReg object
             this->cure_obj = LogisticReg(cure_xx, s_event, cure_intercept,
                                          cure_standardize);
@@ -127,6 +128,7 @@ namespace Intsurv {
             const double& cox_mstep_rel_tol,
             const unsigned int& cure_mstep_max_iter,
             const double& cure_mstep_rel_tol,
+            const unsigned int& tail_completion,
             const bool& spline_start,
             const unsigned int& iSpline_num_knots,
             const unsigned int& iSpline_degree,
@@ -154,6 +156,7 @@ namespace Intsurv {
             const double& cox_mstep_rel_tol,
             const unsigned int& cure_mstep_max_iter,
             const double& cure_mstep_rel_tol,
+            const unsigned int& tail_completion,
             const bool& spline_start,
             const unsigned int& iSpline_num_knots,
             const unsigned int& iSpline_degree,
@@ -178,6 +181,7 @@ namespace Intsurv {
         const double& cox_mstep_rel_tol = 1e-3,
         const unsigned int& cure_mstep_max_iter = 50,
         const double& cure_mstep_rel_tol = 1e-3,
+        const unsigned int& tail_completion = 1,
         const bool& spline_start = false,
         const unsigned int& iSpline_num_knots = 3,
         const unsigned int& iSpline_degree = 2,
@@ -294,6 +298,9 @@ namespace Intsurv {
         size_t i {0};
         double obs_ell {0}, obs_ell_old { - arma::datum::inf };
         double tol1 { arma::datum::inf }, tol2 { tol1 };
+
+        // for exponential tail completion
+        double max_event_time { time(this->max_event_time_ind) };
 
         // allow users to stop here
         Rcpp::checkUserInterrupt();
@@ -421,9 +428,33 @@ namespace Intsurv {
             // E-step: compute the v vector for case 2
             arma::vec estep_m { event };
             for (size_t j: case2_ind) {
-                double numer_j { p_vec(j) * cox_obj.S_time(j) };
-                // hopefully more numerical stable
-                estep_m(j) = 1 / ((1 - p_vec(j)) / numer_j + 1);
+                double s_j { cox_obj.S_time(j) };
+                // tail completion for the conditional survival function
+                switch(tail_completion) {
+                    case 0:     // no tail completion
+                        break;
+                    case 1:     // zero-tail constraint
+                        if (time(j) > max_event_time) {
+                            s_j = 0;
+                        }
+                        break;
+                    case 2:     // exponential tail by Peng (2003)
+                        if (time(j) > max_event_time) {
+                            double s0_tau {
+                                cox_obj.S0_time(max_event_time_ind)
+                            };
+                            double etail_lambda {
+                                - std::log(s0_tau / max_event_time)
+                            };
+                            s_j = std::exp(
+                                - etail_lambda * time(j) *
+                                std::exp(cox_obj.xBeta(j))
+                                );
+                        }
+                        break;
+                }
+                double numer_j { p_vec(j) *  s_j};
+                estep_m(j) = numer_j / (1 - p_vec(j) + numer_j);
                 // special care prevents coef diverging
                 if (estep_m(j) < pmin) {
                     estep_m(j) = pmin;
@@ -531,6 +562,7 @@ namespace Intsurv {
         const double& cox_mstep_rel_tol = 1e-5,
         const unsigned int& cure_mstep_max_iter = 200,
         const double& cure_mstep_rel_tol = 1e-5,
+        const unsigned int& tail_completion = 1,
         const bool& spline_start = false,
         const unsigned int& iSpline_num_knots = 3,
         const unsigned int& iSpline_degree = 2,
@@ -678,6 +710,9 @@ namespace Intsurv {
         double reg_obj {0}, reg_obj_old { arma::datum::inf };
         double tol1 { arma::datum::inf }, tol2 { tol1 };
 
+        // for exponential tail completion
+        double max_event_time { time(this->max_event_time_ind) };
+
         // allow users to stop here
         Rcpp::checkUserInterrupt();
 
@@ -822,9 +857,33 @@ namespace Intsurv {
             // E-step: compute the v vector for case 2
             arma::vec estep_m { event };
             for (size_t j: case2_ind) {
-                double numer_j { p_vec(j) * cox_obj.S_time(j) };
-                // hopefully more numerical stable
-                estep_m(j) = 1 / ((1 - p_vec(j)) / numer_j + 1);
+                double s_j { cox_obj.S_time(j) };
+                // tail completion for the conditional survival function
+                switch(tail_completion) {
+                    case 0:     // no tail completion
+                        break;
+                    case 1:     // zero-tail constraint
+                        if (time(j) > max_event_time) {
+                            s_j = 0;
+                        }
+                        break;
+                    case 2:     // exponential tail by Peng (2003)
+                        if (time(j) > max_event_time) {
+                            double s0_tau {
+                                cox_obj.S0_time(max_event_time_ind)
+                            };
+                            double etail_lambda {
+                                - std::log(s0_tau / max_event_time)
+                            };
+                            s_j = std::exp(
+                                - etail_lambda * time(j) *
+                                std::exp(cox_obj.xBeta(j))
+                                );
+                        }
+                        break;
+                }
+                double numer_j { p_vec(j) *  s_j};
+                estep_m(j) = numer_j / (1 - p_vec(j) + numer_j);
                 // special care prevents coef diverging
                 if (estep_m(j) < pmin) {
                     estep_m(j) = pmin;

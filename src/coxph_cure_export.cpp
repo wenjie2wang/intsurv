@@ -31,6 +31,8 @@ Rcpp::List coxph_cure(
     const arma::mat& cox_x,
     const arma::mat& cure_x,
     const bool cure_intercept = true,
+    const bool& cox_standardize = true,
+    const bool& cure_standardize = true,
     const arma::vec& cox_start = 0,
     const arma::vec& cure_start = 0,
     const unsigned int& em_max_iter = 1000,
@@ -39,8 +41,8 @@ Rcpp::List coxph_cure(
     const double& cox_mstep_rel_tol = 1e-4,
     const unsigned int& cure_mstep_max_iter = 200,
     const double& cure_mstep_rel_tol = 1e-6,
-    const bool& cox_standardize = true,
-    const bool& cure_standardize = true,
+    const bool& firth = false,
+    const unsigned int& tail = 1,
     const double& pmin = 1e-5,
     const bool& early_stop = false,
     const bool& verbose_em = false,
@@ -54,7 +56,7 @@ Rcpp::List coxph_cure(
     };
     obj.fit(cox_start, cure_start, em_max_iter, em_rel_tol,
             cox_mstep_max_iter, cox_mstep_rel_tol,
-            cure_mstep_max_iter, cure_mstep_rel_tol,
+            cure_mstep_max_iter, cure_mstep_rel_tol, firth, tail,
             pmin, early_stop, verbose_em, verbose_cox, verbose_cure);
     return Rcpp::List::create(
         Rcpp::Named("cox_coef") = Intsurv::arma2rvec(obj.cox_coef),
@@ -94,6 +96,7 @@ Rcpp::List coxph_cure_reg(
     const double& cox_mstep_rel_tol = 1e-4,
     const unsigned int& cure_mstep_max_iter = 200,
     const double& cure_mstep_rel_tol = 1e-4,
+    const unsigned int& tail = 1,
     const double& pmin = 1e-5,
     const bool& early_stop = false,
     const bool& verbose_em = false,
@@ -110,7 +113,7 @@ Rcpp::List coxph_cure_reg(
         cox_l1_penalty_factor, cure_l1_penalty_factor,
         cox_start, cure_start, em_max_iter, em_rel_tol,
         cox_mstep_max_iter, cox_mstep_rel_tol,
-        cure_mstep_max_iter, cure_mstep_rel_tol,
+        cure_mstep_max_iter, cure_mstep_rel_tol, tail,
         pmin, early_stop, verbose_em, verbose_cox, verbose_cure
         );
     return Rcpp::List::create(
