@@ -49,6 +49,22 @@ namespace Intsurv {
             return false;
         }
     }
+    inline bool is_gt(double A, double B)
+    {
+        return (! isAlmostEqual(A, B)) && (A > B);
+    }
+    inline bool is_lt(double A, double B)
+    {
+        return (! isAlmostEqual(A, B)) && (A < B);
+    }
+    inline bool is_ge(double A, double B)
+    {
+        return ! is_lt(A, B);
+    }
+    inline bool is_le(double A, double B)
+    {
+        return ! is_gt(A, B);
+    }
 
     // function checking if there exists any duplicates
     inline bool any_duplicated(const arma::vec& x)

@@ -23,6 +23,20 @@
 
 using namespace Rcpp;
 
+// i_cIndex
+Rcpp::List i_cIndex(arma::vec time, arma::vec event, arma::vec risk_score, arma::vec weight);
+RcppExport SEXP _intsurv_i_cIndex(SEXP timeSEXP, SEXP eventSEXP, SEXP risk_scoreSEXP, SEXP weightSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type time(timeSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type event(eventSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type risk_score(risk_scoreSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type weight(weightSEXP);
+    rcpp_result_gen = Rcpp::wrap(i_cIndex(time, event, risk_score, weight));
+    return rcpp_result_gen;
+END_RCPP
+}
 // coxph_cure
 Rcpp::List coxph_cure(const arma::vec& time, const arma::vec& event, const arma::mat& cox_x, const arma::mat& cure_x, const bool cure_intercept, const bool& cox_standardize, const bool& cure_standardize, const arma::vec& cox_start, const arma::vec& cure_start, const unsigned int& em_max_iter, const double& em_rel_tol, const unsigned int& cox_mstep_max_iter, const double& cox_mstep_rel_tol, const unsigned int& cure_mstep_max_iter, const double& cure_mstep_rel_tol, const bool& firth, const unsigned int& tail_completion, const double& pmin, const bool& early_stop, const bool& verbose_em, const bool& verbose_cox, const bool& verbose_cure);
 RcppExport SEXP _intsurv_coxph_cure(SEXP timeSEXP, SEXP eventSEXP, SEXP cox_xSEXP, SEXP cure_xSEXP, SEXP cure_interceptSEXP, SEXP cox_standardizeSEXP, SEXP cure_standardizeSEXP, SEXP cox_startSEXP, SEXP cure_startSEXP, SEXP em_max_iterSEXP, SEXP em_rel_tolSEXP, SEXP cox_mstep_max_iterSEXP, SEXP cox_mstep_rel_tolSEXP, SEXP cure_mstep_max_iterSEXP, SEXP cure_mstep_rel_tolSEXP, SEXP firthSEXP, SEXP tail_completionSEXP, SEXP pminSEXP, SEXP early_stopSEXP, SEXP verbose_emSEXP, SEXP verbose_coxSEXP, SEXP verbose_cureSEXP) {
@@ -56,8 +70,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // coxph_cure_reg
-Rcpp::List coxph_cure_reg(const arma::vec& time, const arma::vec& event, const arma::mat& cox_x, const arma::mat& cure_x, const bool cure_intercept, const double& cox_l1_lambda, const double& cox_l2_lambda, const arma::vec& cox_l1_penalty_factor, const double& cure_l1_lambda, const double& cure_l2_lambda, const arma::vec& cure_l1_penalty_factor, const arma::vec& cox_start, const arma::vec& cure_start, const unsigned int& em_max_iter, const double& em_rel_tol, const unsigned int& cox_mstep_max_iter, const double& cox_mstep_rel_tol, const unsigned int& cure_mstep_max_iter, const double& cure_mstep_rel_tol, const unsigned int& tail_completion, const double& pmin, const bool& early_stop, const bool& verbose_em, const bool& verbose_cox, const bool& verbose_cure);
-RcppExport SEXP _intsurv_coxph_cure_reg(SEXP timeSEXP, SEXP eventSEXP, SEXP cox_xSEXP, SEXP cure_xSEXP, SEXP cure_interceptSEXP, SEXP cox_l1_lambdaSEXP, SEXP cox_l2_lambdaSEXP, SEXP cox_l1_penalty_factorSEXP, SEXP cure_l1_lambdaSEXP, SEXP cure_l2_lambdaSEXP, SEXP cure_l1_penalty_factorSEXP, SEXP cox_startSEXP, SEXP cure_startSEXP, SEXP em_max_iterSEXP, SEXP em_rel_tolSEXP, SEXP cox_mstep_max_iterSEXP, SEXP cox_mstep_rel_tolSEXP, SEXP cure_mstep_max_iterSEXP, SEXP cure_mstep_rel_tolSEXP, SEXP tail_completionSEXP, SEXP pminSEXP, SEXP early_stopSEXP, SEXP verbose_emSEXP, SEXP verbose_coxSEXP, SEXP verbose_cureSEXP) {
+Rcpp::List coxph_cure_reg(const arma::vec& time, const arma::vec& event, const arma::mat& cox_x, const arma::mat& cure_x, const bool cure_intercept, const double& cox_l1_lambda, const double& cox_l2_lambda, const arma::vec& cox_l1_penalty_factor, const double& cure_l1_lambda, const double& cure_l2_lambda, const arma::vec& cure_l1_penalty_factor, const arma::vec& cox_start, const arma::vec& cure_start, const unsigned int& em_max_iter, const double& em_rel_tol, const unsigned int& cox_mstep_max_iter, const double& cox_mstep_rel_tol, const unsigned int& cure_mstep_max_iter, const double& cure_mstep_rel_tol, const bool cox_standardize, const bool cure_standardize, const unsigned int& tail_completion, const double& pmin, const bool& early_stop, const bool& verbose_em, const bool& verbose_cox, const bool& verbose_cure);
+RcppExport SEXP _intsurv_coxph_cure_reg(SEXP timeSEXP, SEXP eventSEXP, SEXP cox_xSEXP, SEXP cure_xSEXP, SEXP cure_interceptSEXP, SEXP cox_l1_lambdaSEXP, SEXP cox_l2_lambdaSEXP, SEXP cox_l1_penalty_factorSEXP, SEXP cure_l1_lambdaSEXP, SEXP cure_l2_lambdaSEXP, SEXP cure_l1_penalty_factorSEXP, SEXP cox_startSEXP, SEXP cure_startSEXP, SEXP em_max_iterSEXP, SEXP em_rel_tolSEXP, SEXP cox_mstep_max_iterSEXP, SEXP cox_mstep_rel_tolSEXP, SEXP cure_mstep_max_iterSEXP, SEXP cure_mstep_rel_tolSEXP, SEXP cox_standardizeSEXP, SEXP cure_standardizeSEXP, SEXP tail_completionSEXP, SEXP pminSEXP, SEXP early_stopSEXP, SEXP verbose_emSEXP, SEXP verbose_coxSEXP, SEXP verbose_cureSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -80,13 +94,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const double& >::type cox_mstep_rel_tol(cox_mstep_rel_tolSEXP);
     Rcpp::traits::input_parameter< const unsigned int& >::type cure_mstep_max_iter(cure_mstep_max_iterSEXP);
     Rcpp::traits::input_parameter< const double& >::type cure_mstep_rel_tol(cure_mstep_rel_tolSEXP);
+    Rcpp::traits::input_parameter< const bool >::type cox_standardize(cox_standardizeSEXP);
+    Rcpp::traits::input_parameter< const bool >::type cure_standardize(cure_standardizeSEXP);
     Rcpp::traits::input_parameter< const unsigned int& >::type tail_completion(tail_completionSEXP);
     Rcpp::traits::input_parameter< const double& >::type pmin(pminSEXP);
     Rcpp::traits::input_parameter< const bool& >::type early_stop(early_stopSEXP);
     Rcpp::traits::input_parameter< const bool& >::type verbose_em(verbose_emSEXP);
     Rcpp::traits::input_parameter< const bool& >::type verbose_cox(verbose_coxSEXP);
     Rcpp::traits::input_parameter< const bool& >::type verbose_cure(verbose_cureSEXP);
-    rcpp_result_gen = Rcpp::wrap(coxph_cure_reg(time, event, cox_x, cure_x, cure_intercept, cox_l1_lambda, cox_l2_lambda, cox_l1_penalty_factor, cure_l1_lambda, cure_l2_lambda, cure_l1_penalty_factor, cox_start, cure_start, em_max_iter, em_rel_tol, cox_mstep_max_iter, cox_mstep_rel_tol, cure_mstep_max_iter, cure_mstep_rel_tol, tail_completion, pmin, early_stop, verbose_em, verbose_cox, verbose_cure));
+    rcpp_result_gen = Rcpp::wrap(coxph_cure_reg(time, event, cox_x, cure_x, cure_intercept, cox_l1_lambda, cox_l2_lambda, cox_l1_penalty_factor, cure_l1_lambda, cure_l2_lambda, cure_l1_penalty_factor, cox_start, cure_start, em_max_iter, em_rel_tol, cox_mstep_max_iter, cox_mstep_rel_tol, cure_mstep_max_iter, cure_mstep_rel_tol, cox_standardize, cure_standardize, tail_completion, pmin, early_stop, verbose_em, verbose_cox, verbose_cure));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -333,8 +349,9 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_intsurv_i_cIndex", (DL_FUNC) &_intsurv_i_cIndex, 4},
     {"_intsurv_coxph_cure", (DL_FUNC) &_intsurv_coxph_cure, 22},
-    {"_intsurv_coxph_cure_reg", (DL_FUNC) &_intsurv_coxph_cure_reg, 25},
+    {"_intsurv_coxph_cure_reg", (DL_FUNC) &_intsurv_coxph_cure_reg, 27},
     {"_intsurv_coxph_cure_uncer", (DL_FUNC) &_intsurv_coxph_cure_uncer, 24},
     {"_intsurv_coxph_cure_uncer_reg", (DL_FUNC) &_intsurv_coxph_cure_uncer_reg, 30},
     {"_intsurv_rcpp_coxph", (DL_FUNC) &_intsurv_rcpp_coxph, 8},

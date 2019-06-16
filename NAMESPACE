@@ -2,6 +2,7 @@
 
 export(Survi)
 export(bootSe)
+export(cIndex)
 export(iCoxph)
 export(simuWeibull)
 exportClasses(Survi)
