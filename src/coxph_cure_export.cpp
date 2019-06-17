@@ -70,8 +70,10 @@ Rcpp::List rcpp_coxph_cure(
             Rcpp::Named("cure_xBeta") = Intsurv::arma2rvec(obj.cure_xBeta),
             Rcpp::Named("susceptible_prob") =
             Intsurv::arma2rvec(obj.susceptible_prob),
-            Rcpp::Named("estep_cured") = obj.estep_cured,
-            Rcpp::Named("estep_susceptible") = obj.estep_susceptible
+            Rcpp::Named("estep_cured") =
+            Intsurv::arma2rvec(obj.estep_cured),
+            Rcpp::Named("estep_susceptible") =
+            Intsurv::arma2rvec(obj.estep_susceptible)
             ),
         Rcpp::Named("goodness") = Rcpp::List::create(
             Rcpp::Named("nObs") = obj.nObs,
@@ -151,8 +153,10 @@ Rcpp::List rcpp_coxph_cure_reg(
             Rcpp::Named("cure_xBeta") = Intsurv::arma2rvec(obj.cure_xBeta),
             Rcpp::Named("susceptible_prob") =
             Intsurv::arma2rvec(obj.susceptible_prob),
-            Rcpp::Named("estep_cured") = obj.estep_cured,
-            Rcpp::Named("estep_susceptible") = obj.estep_susceptible
+            Rcpp::Named("estep_cured") =
+            Intsurv::arma2rvec(obj.estep_cured),
+            Rcpp::Named("estep_susceptible") =
+            Intsurv::arma2rvec(obj.estep_susceptible)
             ),
         Rcpp::Named("goodness") = Rcpp::List::create(
             Rcpp::Named("nObs") = obj.nObs,

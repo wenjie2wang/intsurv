@@ -43,40 +43,56 @@ Rcpp::List coxph_cure_uncer(
     const unsigned int& iSpline_num_knots = 3,
     const unsigned int& iSpline_degree = 2,
     const unsigned int& tail_completion = 1,
+    double tail_tau = -1,
     const double& pmin = 1e-5,
-    const bool& early_stop = false,
-    const bool& verbose_em = false,
-    const bool& verbose_cox = false,
-    const bool& verbose_cure = false
+    const unsigned int& early_stop = 0,
+    const unsigned int& verbose = 0
     )
 {
     Intsurv::CoxphCureUncer obj {
         Intsurv::CoxphCureUncer(time, event, cox_x, cure_x, cure_intercept,
                                 cox_standardize, cure_standardize)
     };
-    obj.fit(cox_start, cure_start, em_max_iter, em_rel_tol,
+    obj.fit(cox_start, cure_start,
+            em_max_iter, em_rel_tol,
             cox_mstep_max_iter, cox_mstep_rel_tol,
             cure_mstep_max_iter, cure_mstep_rel_tol,
             spline_start, iSpline_num_knots, iSpline_degree,
-            tail_completion, pmin, early_stop,
-            verbose_em, verbose_cox, verbose_cure
+            tail_completion, tail_tau,
+            pmin, early_stop, verbose
         );
     return Rcpp::List::create(
         Rcpp::Named("cox_coef") = Intsurv::arma2rvec(obj.cox_coef),
         Rcpp::Named("cure_coef") = Intsurv::arma2rvec(obj.cure_coef),
-        Rcpp::Named("surv") = Rcpp::List::create(
-            Rcpp::Named("unique_time") = Intsurv::arma2rvec(obj.unique_time),
-            Rcpp::Named("h0_est") = Intsurv::arma2rvec(obj.h0_est),
-            Rcpp::Named("H0_est") = Intsurv::arma2rvec(obj.H0_est),
-            Rcpp::Named("S0_est") = Intsurv::arma2rvec(obj.S0_est),
-            Rcpp::Named("hc_est") = Intsurv::arma2rvec(obj.hc_est),
-            Rcpp::Named("Hc_est") = Intsurv::arma2rvec(obj.Hc_est),
-            Rcpp::Named("Sc_est") = Intsurv::arma2rvec(obj.Sc_est)
+        Rcpp::Named("baseline") = Rcpp::List::create(
+            Rcpp::Named("time") = Intsurv::arma2rvec(obj.unique_time),
+            Rcpp::Named("h0") = Intsurv::arma2rvec(obj.h0_est),
+            Rcpp::Named("H0") = Intsurv::arma2rvec(obj.H0_est),
+            Rcpp::Named("S0") = Intsurv::arma2rvec(obj.S0_est),
+            Rcpp::Named("hc") = Intsurv::arma2rvec(obj.hc_est),
+            Rcpp::Named("Hc") = Intsurv::arma2rvec(obj.Hc_est),
+            Rcpp::Named("Sc") = Intsurv::arma2rvec(obj.Sc_est)
             ),
-        Rcpp::Named("negLogL") = obj.negLogL,
-        Rcpp::Named("nObs") = obj.nObs,
-        Rcpp::Named("coef_df") = obj.coef_df,
-        Rcpp::Named("num_iter") = obj.num_iter
+        Rcpp::Named("prediction") = Rcpp::List::create(
+            Rcpp::Named("cox_xBeta") = Intsurv::arma2rvec(obj.cox_xBeta),
+            Rcpp::Named("cure_xBeta") = Intsurv::arma2rvec(obj.cure_xBeta),
+            Rcpp::Named("susceptible_prob") =
+            Intsurv::arma2rvec(obj.susceptible_prob),
+            Rcpp::Named("estep_cured") = Intsurv::arma2rvec(obj.estep_cured),
+            Rcpp::Named("estep_event") = Intsurv::arma2rvec(obj.estep_event),
+            Rcpp::Named("estep_censor") = Intsurv::arma2rvec(obj.estep_censor)
+            ),
+        Rcpp::Named("goodness") = Rcpp::List::create(
+            Rcpp::Named("nObs") = obj.nObs,
+            Rcpp::Named("coef_df") = obj.coef_df,
+            Rcpp::Named("negLogL") = obj.negLogL,
+            Rcpp::Named("c_index") = obj.c_index,
+            Rcpp::Named("bic1") = obj.bic1,
+            Rcpp::Named("bic2") = obj.bic2
+            ),
+        Rcpp::Named("convergence") = Rcpp::List::create(
+            Rcpp::Named("num_iter") = obj.num_iter
+            )
         );
 }
 
@@ -110,11 +126,10 @@ Rcpp::List coxph_cure_uncer_reg(
     const unsigned int& iSpline_num_knots = 3,
     const unsigned int& iSpline_degree = 2,
     const unsigned int& tail_completion = 1,
+    double tail_tau = -1,
     const double& pmin = 1e-5,
-    const bool& early_stop = false,
-    const bool& verbose_em = false,
-    const bool& verbose_cox = false,
-    const bool& verbose_cure = false
+    const unsigned int& early_stop = 0,
+    const unsigned int& verbose = 0
     )
 {
     Intsurv::CoxphCureUncer obj {
@@ -129,8 +144,8 @@ Rcpp::List coxph_cure_uncer_reg(
         cox_mstep_max_iter, cox_mstep_rel_tol,
         cure_mstep_max_iter, cure_mstep_rel_tol,
         spline_start, iSpline_num_knots, iSpline_degree,
-        tail_completion, pmin, early_stop,
-        verbose_em, verbose_cox, verbose_cure
+        tail_completion, tail_tau,
+        pmin, early_stop, verbose
         );
     return Rcpp::List::create(
         Rcpp::Named("cox_coef") = Intsurv::arma2rvec(obj.cox_coef),
@@ -138,21 +153,32 @@ Rcpp::List coxph_cure_uncer_reg(
         Rcpp::Named("cox_en_coef") = Intsurv::arma2rvec(obj.cox_en_coef),
         Rcpp::Named("cure_en_coef") = Intsurv::arma2rvec(obj.cure_en_coef),
 
-        Rcpp::Named("surv") = Rcpp::List::create(
-            Rcpp::Named("unique_time") = Intsurv::arma2rvec(obj.unique_time),
-            Rcpp::Named("h0_est") = Intsurv::arma2rvec(obj.h0_est),
-            Rcpp::Named("H0_est") = Intsurv::arma2rvec(obj.H0_est),
-            Rcpp::Named("S0_est") = Intsurv::arma2rvec(obj.S0_est),
-            Rcpp::Named("hc_est") = Intsurv::arma2rvec(obj.hc_est),
-            Rcpp::Named("Hc_est") = Intsurv::arma2rvec(obj.Hc_est),
-            Rcpp::Named("Sc_est") = Intsurv::arma2rvec(obj.Sc_est)
+        Rcpp::Named("baseline") = Rcpp::List::create(
+            Rcpp::Named("time") = Intsurv::arma2rvec(obj.unique_time),
+            Rcpp::Named("h0") = Intsurv::arma2rvec(obj.h0_est),
+            Rcpp::Named("H0") = Intsurv::arma2rvec(obj.H0_est),
+            Rcpp::Named("S0") = Intsurv::arma2rvec(obj.S0_est),
+            Rcpp::Named("hc") = Intsurv::arma2rvec(obj.hc_est),
+            Rcpp::Named("Hc") = Intsurv::arma2rvec(obj.Hc_est),
+            Rcpp::Named("Sc") = Intsurv::arma2rvec(obj.Sc_est)
             ),
-
-        Rcpp::Named("negLogL") = obj.negLogL,
-        Rcpp::Named("nObs") = obj.nObs,
-        Rcpp::Named("coef_df") = obj.coef_df,
-        Rcpp::Named("num_iter") = obj.num_iter,
-
+        Rcpp::Named("prediction") = Rcpp::List::create(
+            Rcpp::Named("cox_xBeta") = Intsurv::arma2rvec(obj.cox_xBeta),
+            Rcpp::Named("cure_xBeta") = Intsurv::arma2rvec(obj.cure_xBeta),
+            Rcpp::Named("susceptible_prob") =
+            Intsurv::arma2rvec(obj.susceptible_prob),
+            Rcpp::Named("estep_cured") = Intsurv::arma2rvec(obj.estep_cured),
+            Rcpp::Named("estep_event") = Intsurv::arma2rvec(obj.estep_event),
+            Rcpp::Named("estep_censor") = Intsurv::arma2rvec(obj.estep_censor)
+            ),
+        Rcpp::Named("goodness") = Rcpp::List::create(
+            Rcpp::Named("nObs") = obj.nObs,
+            Rcpp::Named("coef_df") = obj.coef_df,
+            Rcpp::Named("negLogL") = obj.negLogL,
+            Rcpp::Named("c_index") = obj.c_index,
+            Rcpp::Named("bic1") = obj.bic1,
+            Rcpp::Named("bic2") = obj.bic2
+            ),
         Rcpp::Named("penalty") = Rcpp::List::create(
             Rcpp::Named("cox_l1_lambda_max") = obj.cox_l1_lambda_max,
             Rcpp::Named("cox_l1_lambda") = obj.cox_l1_lambda,
@@ -165,6 +191,9 @@ Rcpp::List coxph_cure_uncer_reg(
             Rcpp::Named("cure_l2_lambda") = obj.cure_l2_lambda,
             Rcpp::Named("cure_l1_penalty_factor") =
             Intsurv::arma2rvec(obj.cure_l1_penalty_factor)
+            ),
+        Rcpp::Named("convergence") = Rcpp::List::create(
+            Rcpp::Named("num_iter") = obj.num_iter
             )
         );
 }

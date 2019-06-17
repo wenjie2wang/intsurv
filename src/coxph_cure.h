@@ -157,7 +157,7 @@ namespace Intsurv {
             this->bic1 = std::log(nObs) * coef_df + 2 * negLogL;
         }
         inline void compute_bic2() {
-            this->bic2 = std::log(arma::sum(cox_obj.get_event())) *
+            this->bic2 = std::log(case1_ind.n_elem) *
                 coef_df + 2 * negLogL;
         }
 
@@ -223,7 +223,7 @@ namespace Intsurv {
         double obs_ell {0}, obs_ell_old { - arma::datum::inf };
         double tol1 { arma::datum::inf }, tol2 { tol1 };
 
-        // for exponential tail completion
+        // prepare for tail completion
         double max_event_time { time(this->max_event_time_ind) };
         if (tail_tau < 0)
             tail_tau = arma::datum::inf;
@@ -526,7 +526,7 @@ namespace Intsurv {
         double reg_obj {0}, reg_obj_old { arma::datum::inf };
         double tol1 { arma::datum::inf }, tol2 { tol1 };
 
-        // for tail completion
+        // prepare for tail completion
         arma::vec time { cox_obj.get_time() };
         double max_event_time { time(this->max_event_time_ind) };
         if (tail_tau < 0)
