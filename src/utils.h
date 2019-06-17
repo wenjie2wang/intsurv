@@ -605,21 +605,9 @@ namespace Intsurv {
         return (1 - w) * inc_x(k - 1) + w * inc_x(k);
     }
     inline arma::vec arma_quantile(const arma::vec& x, const arma::vec& probs) {
-        const double alpha { 0.5 };
-        const unsigned int n { x.n_elem };
         arma::vec res { arma::zeros(probs.n_elem) };
-        arma::vec inc_x { arma::sort(x) };
         for (size_t i {0}; i < probs.n_elem; ++i) {
-            if (probs(i) < (1 - alpha) / n) {
-                res(i) = x.min();
-            } else if (probs(i) > (n - alpha) / n) {
-                res(i) = x.max();
-            } else {
-                int k { static_cast<int>(std::floor(n * probs(i) + alpha)) };
-                double pk { (k - alpha) / n };
-                double w { (probs(i) - pk) * n };
-                res(i) = (1 - w) * inc_x(k - 1) + w * inc_x(k);
-            }
+            res(i) = arma_quantile(x, probs(i));
         }
         return res;
     }

@@ -75,7 +75,8 @@ namespace Intsurv {
         arma::vec en_coef;           // (rescaled) elastic net estimates
         double negLogL;              // partial negative log-likelihood
         unsigned int coef_df;        // number of non-zero coef estimates
-        arma::vec xBeta;             // x * coef
+        arma::vec xBeta;             // sorted x * coef
+        double bic;                  // log(num_event) * coef_df + 2 * negLogL
 
         // for a lambda sequence
         double alpha;           // tuning parameter
@@ -84,6 +85,7 @@ namespace Intsurv {
         arma::mat en_coef_mat;  // elastic net estimates
         arma::vec negLogL_vec;  // negative log-likelihood vector
         arma::uvec coef_df_vec; // coef df vector
+        arma::vec bic_vec;      // log(num_event) * coef_df + 2 * negLogL
 
         // hazard and survival estimates at every time point (unique or not)
         arma::vec h0_time;
@@ -144,6 +146,9 @@ namespace Intsurv {
                             );
                     }
                 }
+            } else {
+                x_center = arma::zeros(x.n_cols);
+                x_scale = arma::ones(x.n_cols);
             }
 
             // binary event indicator
@@ -259,12 +264,16 @@ namespace Intsurv {
 
         // some simple functions
         inline unsigned int sample_size() const { return time.n_elem; }
+        inline void compute_bic() {
+            this->bic = std::log(arma::sum(event)) * coef_df + 2 * negLogL;
+        }
 
         // helper function to access some private members
         inline arma::vec get_time() const { return time; }
         inline arma::vec get_event() const { return event; }
         inline arma::mat get_x() const { return x; }
         inline arma::uvec get_sort_index() { return this->ord; }
+        inline arma::uvec get_rev_sort_index() { return this->rev_ord; }
 
         // fit regular Cox model
         inline void fit(const arma::vec& start,
@@ -556,6 +565,9 @@ namespace Intsurv {
         size_t i {0};
         double b_new {0}, alpha {0}, ell {0}, ell_old {arma::datum::inf};
         while (i <= max_iter) {
+            // allow users to stop the main loop
+            Rcpp::checkUserInterrupt();
+
             // compute negative log-likelihood function and update gradient
             ell = this->objective(beta, grad_vec);
             if (verbose) {
@@ -608,6 +620,7 @@ namespace Intsurv {
         this->rescale_coef();
         this->negLogL = ell;
         this->coef_df = beta.n_elem;
+        this->compute_bic();
     }
 
     // run one cycle of coordinate descent over a given active set
@@ -805,6 +818,9 @@ namespace Intsurv {
         strong_rhs = l1_lambda * l1_penalty;
         // eventually, strong rule will guess correctly
         while (kkt_failed) {
+            // allow users to stop the main loop
+            Rcpp::checkUserInterrupt();
+
             // update beta
             reg_active_fit(beta, is_active_strong, l1_lambda, l2_lambda,
                            l1_penalty, varying_active_set, max_iter, rel_tol,
@@ -839,6 +855,7 @@ namespace Intsurv {
         this->l1_lambda = l1_lambda;
         this->l2_lambda = l2_lambda;
         this->coef_df = get_coef_df(beta);
+        this->compute_bic();
     }
 
 
@@ -904,6 +921,7 @@ namespace Intsurv {
         this->en_coef_mat = this->coef_mat;
         this->negLogL_vec = arma::zeros(lambda_seq.n_elem);
         this->coef_df_vec = arma::zeros<arma::uvec>(lambda_seq.n_elem);
+        this->bic_vec = this->negLogL_vec;
 
         // start values
         this->coef0 = beta;
@@ -925,6 +943,9 @@ namespace Intsurv {
                 this->coef_mat.col(k) = this->coef;
                 continue;
             }
+            // allow users to stop the loop
+            Rcpp::checkUserInterrupt();
+
             // update acitve set by strong rule (for lambda < lamda_max)
             grad_beta = arma::abs(this->gradient(beta)) / this->x.n_rows;
             if (k == 0) {
@@ -948,6 +969,9 @@ namespace Intsurv {
             bool kkt_failed { true };
             // eventually, strong rule will guess correctly
             while (kkt_failed) {
+                // allow users to stop the loop
+                Rcpp::checkUserInterrupt();
+
                 reg_active_fit(beta, is_active_strong, lambda_seq(k) * alpha,
                                lambda_seq(k) * (1 - alpha) / 2, l1_penalty,
                                varying_active_set, max_iter, rel_tol,
@@ -983,6 +1007,10 @@ namespace Intsurv {
             // compute negative log-likelihood
             this->negLogL_vec(k) = this->objective();
             this->coef_df_vec(k) = get_coef_df(beta);
+            this->negLogL = this->negLogL_vec(k);
+            this->coef_df = this->coef_df_vec(k);
+            this->compute_bic();
+            this->bic_vec(k) = this->bic;
         }
         // end of regularized fit
     }

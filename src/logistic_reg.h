@@ -51,6 +51,8 @@ namespace Intsurv {
         double l2_lambda;       // tuning parameter for ridge penalty
         arma::vec coef;         // coef (rescaled for origin x)
         arma::vec en_coef;      // (rescaled) elastic net estimates
+        arma::vec xBeta;        // sorted x * coef
+        arma::vec prob_vec;     // sorted linkinv response
         double negLogL;         // negative log-likelihood
         unsigned int coef_df;   // number of non-zero coef estimates
 
@@ -442,6 +444,9 @@ namespace Intsurv {
         this->coef0 = beta;
         // rescale coef back
         this->rescale_coef();
+        // compute score and prob
+        this->xBeta = x * beta;
+        this->prob_vec = this->linkinv(beta);
         // compute negative log-likelihood
         this->negLogL = ell;
         this->coef_df = beta.n_elem;
@@ -478,6 +483,9 @@ namespace Intsurv {
         this->coef0 = beta;
         // rescale coef back
         this->rescale_coef();
+        // compute score and prob
+        this->xBeta = x * beta;
+        this->prob_vec = this->linkinv(beta);
         // compute negative log-likelihood
         this->negLogL = this->objective();
         this->coef_df = beta.n_elem;
@@ -740,6 +748,9 @@ namespace Intsurv {
         // overwrite the naive elastic net estimate
         this->coef0 = beta;
         this->rescale_coef();
+        // compute score and prob
+        this->xBeta = x * beta;
+        this->prob_vec = this->linkinv(beta);
         // compute negative log-likelihood
         this->negLogL = this->objective();
         // compute degree of freedom
