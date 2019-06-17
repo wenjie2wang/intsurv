@@ -20,6 +20,7 @@
 
 #include <RcppArmadillo.h>
 #include <string>
+#include "assessment.h"
 #include "coxph_reg.h"
 #include "logistic_reg.h"
 #include "utils.h"
@@ -42,9 +43,20 @@ namespace Intsurv {
         arma::vec cox_coef;
         arma::vec cure_coef;
         unsigned int coef_df;     // degree of freedom of coef estimates
-        double negLogL;
+        double negLogL;           // negative log-likelihood
         unsigned int nObs;        // number of observations
         unsigned int num_iter;    // number of iterations
+        double bic1;              // BIC: log(num_obs) * coef_df + 2 * negLogL
+        double bic2;              // BIC: log(num_event) * coef_df + 2 * negLogL
+        double c_index;           // weighted C-index
+
+        // for each subject and in the original order of X
+        arma::vec cox_xBeta;        // score from the survival layer
+        arma::vec cure_xBeta;       // score from the cure layer
+        arma::vec susceptible_prob; // probability of being susceptible
+        // values in the last E-step
+        arma::vec estep_cured;
+        arma::vec estep_susceptible;
 
         // hazard and survival function estimates at unique time
         arma::vec unique_time;
@@ -110,11 +122,10 @@ namespace Intsurv {
             const double& cure_mstep_rel_tol,
             const bool& firth,
             const unsigned int& tail_completion,
+            double tail_tau,
             const double& pmin,
-            const bool& early_stop,
-            const bool& verbose_em,
-            const bool& verbose_cox,
-            const bool& verbose_cure
+            const unsigned int& early_stop,
+            const unsigned int& verbose
             );
 
         // fit regularized Cox cure model with adaptive elastic net penalty
@@ -135,12 +146,20 @@ namespace Intsurv {
             const unsigned int& cure_mstep_max_iter,
             const double& cure_mstep_rel_tol,
             const unsigned int& tail_completion,
+            double tail_tau,
             const double& pmin,
-            const bool& early_stop,
-            const bool& verbose_em,
-            const bool& verbose_cox,
-            const bool& verbose_cure
+            const unsigned int& early_stop,
+            const unsigned int& verbose
             );
+
+        // compute BIC
+        inline void compute_bic1() {
+            this->bic1 = std::log(nObs) * coef_df + 2 * negLogL;
+        }
+        inline void compute_bic2() {
+            this->bic2 = std::log(arma::sum(cox_obj.get_event())) *
+                coef_df + 2 * negLogL;
+        }
 
     };                          // end of class definition
 
@@ -157,11 +176,10 @@ namespace Intsurv {
         const double& cure_mstep_rel_tol = 1e-5,
         const bool& firth = false,
         const unsigned int& tail_completion = 1,
+        double tail_tau = -1,
         const double& pmin = 1e-5,
-        const bool& early_stop = false,
-        const bool& verbose_em = false,
-        const bool& verbose_cox = false,
-        const bool& verbose_cure = false
+        const unsigned int& early_stop = 0,
+        const unsigned int& verbose = 0
         )
     {
         // initialize cox_beta
@@ -200,12 +218,15 @@ namespace Intsurv {
 
         // initialization
         arma::vec p_vec { arma::zeros(nObs) };
+        arma::vec estep_v { cox_obj.get_event() };
         size_t i {0};
         double obs_ell {0}, obs_ell_old { - arma::datum::inf };
         double tol1 { arma::datum::inf }, tol2 { tol1 };
 
         // for exponential tail completion
         double max_event_time { time(this->max_event_time_ind) };
+        if (tail_tau < 0)
+            tail_tau = arma::datum::inf;
 
         // allow users to stop the main loop
         Rcpp::checkUserInterrupt();
@@ -233,7 +254,7 @@ namespace Intsurv {
             }
 
             // if verbose
-            if (verbose_em) {
+            if (verbose) {
                 Rcpp::Rcout << "\n" << std::string(50, '=')
                             << "\niteration: " << i
                             << "\n  Cox coef: "
@@ -260,7 +281,7 @@ namespace Intsurv {
             // early exit if the observed data log-likelihood decreased, which
             // is technically impossible and thus can serve as a warning
             if (obs_ell < obs_ell_old) {
-                if (verbose_em) {
+                if (verbose) {
                     Rcpp::Rcout << "Warning: "
                                 << "The observed data log-likelihood decreased."
                                 << std::endl;
@@ -286,7 +307,7 @@ namespace Intsurv {
 
             // check convergence
             if ((tol1 < em_rel_tol && tol2 < em_rel_tol) || i >= em_max_iter) {
-                if (verbose_em) {
+                if (verbose) {
                     if (i < em_max_iter) {
                         Rcpp::Rcout << "\n" << std::string(50, '=') << "\n"
                                     << "reached convergence after " << i
@@ -314,56 +335,58 @@ namespace Intsurv {
             // update iter for the next iteration
             ++i;
 
-            // E-step: compute v vector
-            arma::vec estep_v { cox_obj.get_event() };
+            // E-step: compute v vector with tail completion
+            // prepare for exponential tail completion method
+            double s0_tau {0}, etail_lambda {0};
+            if (tail_completion == 2) {
+                s0_tau = cox_obj.S0_time(max_event_time_ind);
+                etail_lambda = - std::log(s0_tau / max_event_time);
+            }
             for (size_t j: case2_ind) {
                 double s_j { cox_obj.S_time(j) };
                 // tail completion for the conditional survival function
                 switch(tail_completion) {
-                    case 0:     // no tail completion
+                    case 0:
+                        // tail completion after the given tail_tau
+                        // by default, it means no tail completion
+                        if (time(j) > tail_tau) {
+                            s_j = 0;
+                        }
                         break;
-                    case 1:     // zero-tail constraint
+                    case 1:
+                        // zero-tail constraint
                         if (time(j) > max_event_time) {
                             s_j = 0;
                         }
                         break;
-                    case 2:     // exponential tail by Peng (2003)
+                    case 2:
+                        // exponential tail by Peng (2003)
                         if (time(j) > max_event_time) {
-                            double s0_tau {
-                                cox_obj.S0_time(max_event_time_ind)
-                            };
-                            double etail_lambda {
-                                - std::log(s0_tau / max_event_time)
-                            };
                             s_j = std::exp(
                                 - etail_lambda * time(j) *
                                 std::exp(cox_obj.xBeta(j))
                                 );
                         }
                         break;
+                    default:    // do nothing, otherwise
+                        break;
                 }
-                double numer_j { p_vec(j) *  s_j};
+                double numer_j { p_vec(j) * s_j };
                 estep_v(j) = numer_j / (1 - p_vec(j) + numer_j);
-                // special care prevents coef diverging
-                if (estep_v(j) < pmin) {
-                    estep_v(j) = pmin;
-                } else if (estep_v(j) > 1 - pmin) {
-                    estep_v(j) = 1 - pmin;
-                }
             }
 
             // allow users to stop the main loop
             Rcpp::checkUserInterrupt();
 
             // M-step for the survival layer
-            if (verbose_cox) {
+            if (verbose > 1) {
                 Rcpp::Rcout << "\n" << std::string(40, '-')
                             << "\nRunning M-step for the survival layer:";
             }
             cox_obj.set_offset(arma::log(estep_v));
             cox_obj.fit(cox_beta, cox_mstep_max_iter, cox_mstep_rel_tol,
-                        early_stop, verbose_cox);
-            if (verbose_cox) {
+                        early_stop, verbose > 2);
+            if (verbose > 1) {
                 Rcpp::Rcout << std::string(40, '-')
                             << "\nThe M-step for the survival layer was done."
                             << std::endl;
@@ -373,7 +396,7 @@ namespace Intsurv {
             Rcpp::checkUserInterrupt();
 
             // M-step for the Cure layer
-            if (verbose_cure) {
+            if (verbose > 1) {
                 Rcpp::Rcout << "\n" << std::string(40, '-')
                             << "\nRunning M-step for the cure layer:";
             }
@@ -383,9 +406,9 @@ namespace Intsurv {
                                    cure_mstep_rel_tol, pmin);
             } else {
                 cure_obj.fit(cure_beta, cure_mstep_max_iter, cure_mstep_rel_tol,
-                             pmin, early_stop, verbose_cure);
+                             pmin, early_stop, verbose > 2);
             }
-            if (verbose_cure) {
+            if (verbose > 1) {
                 Rcpp::Rcout << std::string(40, '-')
                             << "\nThe M-step for the cure layer was done."
                             << std::endl;
@@ -406,6 +429,25 @@ namespace Intsurv {
         this->negLogL = - obs_ell;
         this->coef_df = cox_obj.coef_df + cure_obj.coef_df;
         this->num_iter = i;
+        this->compute_bic1();
+        this->compute_bic2();
+        // prepare scores and prob in their original order
+        arma::uvec rev_ord { cox_obj.get_rev_sort_index() };
+        this->cox_xBeta = cox_obj.xBeta.elem(rev_ord);
+        this->cure_xBeta = cure_obj.xBeta.elem(rev_ord);
+        this->susceptible_prob = cure_obj.prob_vec.elem(rev_ord);
+        // compute posterior probabilities from E-step
+        for (size_t j: case2_ind) {
+            double numer_j { p_vec(j) * cox_obj.S_time(j) };
+            estep_v(j) = numer_j / (1 - p_vec(j) + numer_j);
+        }
+        this->estep_susceptible = estep_v.elem(rev_ord);
+        this->estep_cured = 1 - this->estep_susceptible;
+        // compute weighted c-index
+        this->c_index = Intsurv::Concordance(cox_obj.get_time(),
+                                             cox_obj.get_event(),
+                                             cox_obj.xBeta,
+                                             cure_obj.prob_vec).index;
     }
 
 
@@ -428,11 +470,10 @@ namespace Intsurv {
         const unsigned int& cure_mstep_max_iter = 200,
         const double& cure_mstep_rel_tol = 1e-5,
         const unsigned int& tail_completion = 1,
+        double tail_tau = -1,
         const double& pmin = 1e-5,
-        const bool& early_stop = false,
-        const bool& verbose_em = false,
-        const bool& verbose_cox = false,
-        const bool& verbose_cure = false
+        const unsigned int& early_stop = 0,
+        const unsigned int& verbose = 0
         )
     {
         // L1 penalty factor for Cox model
@@ -479,6 +520,7 @@ namespace Intsurv {
 
         // initialization
         arma::vec p_vec { arma::zeros(nObs) };
+        arma::vec estep_v { cox_obj.get_event() };
         size_t i {0};
         double obs_ell {0};
         double reg_obj {0}, reg_obj_old { arma::datum::inf };
@@ -487,6 +529,8 @@ namespace Intsurv {
         // for tail completion
         arma::vec time { cox_obj.get_time() };
         double max_event_time { time(this->max_event_time_ind) };
+        if (tail_tau < 0)
+            tail_tau = arma::datum::inf;
 
         // allow users to stop here
         Rcpp::checkUserInterrupt();
@@ -526,7 +570,7 @@ namespace Intsurv {
             reg_obj = - obs_ell / this->nObs + reg_cox + reg_cure;
 
             // verbose tracing for objective function
-            if (verbose_em) {
+            if (verbose) {
                 Rcpp::Rcout << "\n" << std::string(50, '=')
                             << "\niteration: " << i
                             << "\n  Cox coef: "
@@ -558,7 +602,7 @@ namespace Intsurv {
             // early exit if the regularized objective function increased, which
             // is technically impossible and thus can serve as a warning
             if (reg_obj > reg_obj_old) {
-                if (verbose_em) {
+                if (verbose) {
                     Rcpp::Rcout << "The objective function increased."
                                 << std::endl;
                 }
@@ -579,8 +623,8 @@ namespace Intsurv {
                 break;
             }
 
-            if ((tol1 < em_rel_tol && tol2 < em_rel_tol) || i > em_max_iter) {
-                if (verbose_em) {
+            if ((tol1 < em_rel_tol && tol2 < em_rel_tol) || i >= em_max_iter) {
+                if (verbose) {
                     if (i < em_max_iter) {
                         Rcpp::Rcout << "\n" << std::string(50, '=') << "\n"
                                     << "reached convergence after " << i
@@ -609,31 +653,39 @@ namespace Intsurv {
             ++i;
 
             // E-step: compute v vector
-            arma::vec estep_v { cox_obj.get_event() };
+            // prepare for exponential tail completion method
+            double s0_tau {0}, etail_lambda {0};
+            if (tail_completion == 2) {
+                s0_tau = cox_obj.S0_time(max_event_time_ind);
+                etail_lambda = - std::log(s0_tau / max_event_time);
+            }
             for (size_t j: case2_ind) {
                 double s_j { cox_obj.S_time(j) };
                 // tail completion for the conditional survival function
                 switch(tail_completion) {
-                    case 0:     // no tail completion
+                    case 0:
+                        // tail completion after the given tail_tau
+                        // by default, it means no tail completion
+                        if (time(j) > tail_tau) {
+                            s_j = 0;
+                        }
                         break;
-                    case 1:     // zero-tail constraint
+                    case 1:
+                        // zero-tail constraint
                         if (time(j) > max_event_time) {
                             s_j = 0;
                         }
                         break;
-                    case 2:     // exponential tail by Peng (2003)
+                    case 2:
+                        // exponential tail by Peng (2003)
                         if (time(j) > max_event_time) {
-                            double s0_tau {
-                                cox_obj.S0_time(max_event_time_ind)
-                            };
-                            double etail_lambda {
-                                - std::log(s0_tau / max_event_time)
-                            };
                             s_j = std::exp(
                                 - etail_lambda * time(j) *
                                 std::exp(cox_obj.xBeta(j))
                                 );
                         }
+                        break;
+                    default:    // do nothing, otherwise
                         break;
                 }
                 double numer_j { p_vec(j) *  s_j};
@@ -650,7 +702,7 @@ namespace Intsurv {
             Rcpp::checkUserInterrupt();
 
             // M-step for the survival layer
-            if (verbose_cox) {
+            if (verbose > 1) {
                 Rcpp::Rcout << "\n" << std::string(40, '-')
                             << "\nRunning the M-step for the survival layer:"
                             << std::endl;
@@ -659,9 +711,9 @@ namespace Intsurv {
             cox_obj.regularized_fit(
                 cox_l1_lambda, cox_l2_lambda, cox_l1_penalty_factor,
                 cox_beta, cox_mstep_max_iter, cox_mstep_rel_tol,
-                early_stop, verbose_cox
+                early_stop, verbose > 2
                 );
-            if (verbose_cox) {
+            if (verbose > 1) {
                 Rcpp::Rcout << "\n" << std::string(40, '-')
                             << "\nThe M-step for the survival layer was done."
                             << std::endl;
@@ -671,7 +723,7 @@ namespace Intsurv {
             Rcpp::checkUserInterrupt();
 
             // M-step for the Cure layer
-            if (verbose_cure) {
+            if (verbose > 1) {
                 Rcpp::Rcout << "\n" << std::string(40, '-')
                             << "\nRunning the M-step for the cure layer:";
             }
@@ -679,9 +731,9 @@ namespace Intsurv {
             cure_obj.regularized_fit(
                 cure_l1_lambda, cure_l2_lambda, cure_l1_penalty_factor,
                 cure_beta, cure_mstep_max_iter, cure_mstep_rel_tol,
-                pmin, early_stop, verbose_cure
+                pmin, early_stop, verbose > 2
                 );
-            if (verbose_cure) {
+            if (verbose > 1) {
                 Rcpp::Rcout << std::string(40, '-')
                             << "\nThe M-step for the cure layer was done."
                             << std::endl;
@@ -710,6 +762,27 @@ namespace Intsurv {
         this->cure_l1_lambda = cure_l1_lambda;
         this->cure_l2_lambda = cure_l2_lambda;
         this->num_iter = i;
+
+        // compute BIC
+        this->compute_bic1();
+        this->compute_bic2();
+        // prepare scores and prob in their original order
+        arma::uvec rev_ord { cox_obj.get_rev_sort_index() };
+        this->cox_xBeta = cox_obj.xBeta.elem(rev_ord);
+        this->cure_xBeta = cure_obj.xBeta.elem(rev_ord);
+        this->susceptible_prob = cure_obj.prob_vec.elem(rev_ord);
+        // compute posterior probabilities from E-step
+        for (size_t j: case2_ind) {
+            double numer_j { p_vec(j) * cox_obj.S_time(j) };
+            estep_v(j) = numer_j / (1 - p_vec(j) + numer_j);
+        }
+        this->estep_susceptible = estep_v.elem(rev_ord);
+        this->estep_cured = 1 - this->estep_susceptible;
+        // compute weight C-index
+        this->c_index = Intsurv::Concordance(cox_obj.get_time(),
+                                             cox_obj.get_event(),
+                                             cox_obj.xBeta,
+                                             cure_obj.prob_vec).index;
     }
 
 }

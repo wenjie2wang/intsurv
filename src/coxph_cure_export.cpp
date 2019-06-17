@@ -19,20 +19,18 @@
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::plugins(cpp11)]]
 
+#include "assessment.h"
 #include "coxph_cure.h"
-#include "utils.h"
 
 
 // fit regular Cox cure rate model by EM algorithm
 // [[Rcpp::export]]
-Rcpp::List coxph_cure(
+Rcpp::List rcpp_coxph_cure(
     const arma::vec& time,
     const arma::vec& event,
     const arma::mat& cox_x,
     const arma::mat& cure_x,
     const bool cure_intercept = true,
-    const bool& cox_standardize = true,
-    const bool& cure_standardize = true,
     const arma::vec& cox_start = 0,
     const arma::vec& cure_start = 0,
     const unsigned int& em_max_iter = 1000,
@@ -43,33 +41,49 @@ Rcpp::List coxph_cure(
     const double& cure_mstep_rel_tol = 1e-6,
     const bool& firth = false,
     const unsigned int& tail_completion = 1,
+    double tail_tau = -1,
     const double& pmin = 1e-5,
-    const bool& early_stop = false,
-    const bool& verbose_em = false,
-    const bool& verbose_cox = false,
-    const bool& verbose_cure = false
+    const unsigned int& early_stop = 0,
+    const unsigned int& verbose = 0
     )
 {
     Intsurv::CoxphCure obj {
-        Intsurv::CoxphCure(time, event, cox_x, cure_x, cure_intercept,
-                           cox_standardize, cure_standardize)
+        Intsurv::CoxphCure(time, event, cox_x, cure_x, cure_intercept)
     };
-    obj.fit(cox_start, cure_start, em_max_iter, em_rel_tol,
+    obj.fit(cox_start, cure_start,
+            em_max_iter, em_rel_tol,
             cox_mstep_max_iter, cox_mstep_rel_tol,
             cure_mstep_max_iter, cure_mstep_rel_tol,
-            firth, tail_completion, pmin, early_stop,
-            verbose_em, verbose_cox, verbose_cure);
+            firth, tail_completion, tail_tau,
+            pmin, early_stop, verbose);
     return Rcpp::List::create(
         Rcpp::Named("cox_coef") = Intsurv::arma2rvec(obj.cox_coef),
         Rcpp::Named("cure_coef") = Intsurv::arma2rvec(obj.cure_coef),
-        Rcpp::Named("unique_time") = Intsurv::arma2rvec(obj.unique_time),
-        Rcpp::Named("h0_est") = Intsurv::arma2rvec(obj.h0_est),
-        Rcpp::Named("H0_est") = Intsurv::arma2rvec(obj.H0_est),
-        Rcpp::Named("S0_est") = Intsurv::arma2rvec(obj.S0_est),
-        Rcpp::Named("negLogL") = obj.negLogL,
-        Rcpp::Named("nObs") = obj.nObs,
-        Rcpp::Named("coef_df") = obj.coef_df,
-        Rcpp::Named("num_iter") = obj.num_iter
+        Rcpp::Named("baseline") = Rcpp::List::create(
+            Rcpp::Named("time") = Intsurv::arma2rvec(obj.unique_time),
+            Rcpp::Named("h0") = Intsurv::arma2rvec(obj.h0_est),
+            Rcpp::Named("H0") = Intsurv::arma2rvec(obj.H0_est),
+            Rcpp::Named("S0") = Intsurv::arma2rvec(obj.S0_est)
+            ),
+        Rcpp::Named("prediction") = Rcpp::List::create(
+            Rcpp::Named("cox_xBeta") = Intsurv::arma2rvec(obj.cox_xBeta),
+            Rcpp::Named("cure_xBeta") = Intsurv::arma2rvec(obj.cure_xBeta),
+            Rcpp::Named("susceptible_prob") =
+            Intsurv::arma2rvec(obj.susceptible_prob),
+            Rcpp::Named("estep_cured") = obj.estep_cured,
+            Rcpp::Named("estep_susceptible") = obj.estep_susceptible
+            ),
+        Rcpp::Named("goodness") = Rcpp::List::create(
+            Rcpp::Named("nObs") = obj.nObs,
+            Rcpp::Named("coef_df") = obj.coef_df,
+            Rcpp::Named("negLogL") = obj.negLogL,
+            Rcpp::Named("c_index") = obj.c_index,
+            Rcpp::Named("bic1") = obj.bic1,
+            Rcpp::Named("bic2") = obj.bic2
+            ),
+        Rcpp::Named("convergence") = Rcpp::List::create(
+            Rcpp::Named("num_iter") = obj.num_iter
+            )
         );
 }
 
@@ -77,7 +91,7 @@ Rcpp::List coxph_cure(
 // fit regularized Cox cure rate model by EM algorithm,
 // where the M-step utilized CMD algoritm
 // [[Rcpp::export]]
-Rcpp::List coxph_cure_reg(
+Rcpp::List rcpp_coxph_cure_reg(
     const arma::vec& time,
     const arma::vec& event,
     const arma::mat& cox_x,
@@ -97,45 +111,57 @@ Rcpp::List coxph_cure_reg(
     const double& cox_mstep_rel_tol = 1e-4,
     const unsigned int& cure_mstep_max_iter = 200,
     const double& cure_mstep_rel_tol = 1e-4,
+    const bool cox_standardize = true,
+    const bool cure_standardize = true,
     const unsigned int& tail_completion = 1,
+    double tail_tau = -1,
     const double& pmin = 1e-5,
-    const bool& early_stop = false,
-    const bool& verbose_em = false,
-    const bool& verbose_cox = false,
-    const bool& verbose_cure = false
+    const unsigned int& early_stop = 0,
+    const unsigned int& verbose = 0
     )
 {
     Intsurv::CoxphCure obj {
-        Intsurv::CoxphCure(time, event, cox_x, cure_x, cure_intercept)
+        Intsurv::CoxphCure(time, event, cox_x, cure_x, cure_intercept,
+                           cox_standardize, cure_standardize)
     };
     obj.regularized_fit(
         cox_l1_lambda, cox_l2_lambda,
         cure_l1_lambda, cure_l2_lambda,
         cox_l1_penalty_factor, cure_l1_penalty_factor,
-        cox_start, cure_start, em_max_iter, em_rel_tol,
+        cox_start, cure_start,
+        em_max_iter, em_rel_tol,
         cox_mstep_max_iter, cox_mstep_rel_tol,
         cure_mstep_max_iter, cure_mstep_rel_tol,
-        tail_completion, pmin, early_stop,
-        verbose_em, verbose_cox, verbose_cure
+        tail_completion, tail_tau,
+        pmin, early_stop, verbose
         );
     return Rcpp::List::create(
         Rcpp::Named("cox_coef") = Intsurv::arma2rvec(obj.cox_coef),
         Rcpp::Named("cure_coef") = Intsurv::arma2rvec(obj.cure_coef),
         Rcpp::Named("cox_en_coef") = Intsurv::arma2rvec(obj.cox_en_coef),
         Rcpp::Named("cure_en_coef") = Intsurv::arma2rvec(obj.cure_en_coef),
-
-        Rcpp::Named("surv") = Rcpp::List::create(
-            Rcpp::Named("unique_time") = Intsurv::arma2rvec(obj.unique_time),
+        Rcpp::Named("baseline") = Rcpp::List::create(
+            Rcpp::Named("time") = Intsurv::arma2rvec(obj.unique_time),
             Rcpp::Named("h0_est") = Intsurv::arma2rvec(obj.h0_est),
             Rcpp::Named("H0_est") = Intsurv::arma2rvec(obj.H0_est),
             Rcpp::Named("S0_est") = Intsurv::arma2rvec(obj.S0_est)
             ),
-
-        Rcpp::Named("negLogL") = obj.negLogL,
-        Rcpp::Named("nObs") = obj.nObs,
-        Rcpp::Named("coef_df") = obj.coef_df,
-        Rcpp::Named("num_iter") = obj.num_iter,
-
+        Rcpp::Named("prediction") = Rcpp::List::create(
+            Rcpp::Named("cox_xBeta") = Intsurv::arma2rvec(obj.cox_xBeta),
+            Rcpp::Named("cure_xBeta") = Intsurv::arma2rvec(obj.cure_xBeta),
+            Rcpp::Named("susceptible_prob") =
+            Intsurv::arma2rvec(obj.susceptible_prob),
+            Rcpp::Named("estep_cured") = obj.estep_cured,
+            Rcpp::Named("estep_susceptible") = obj.estep_susceptible
+            ),
+        Rcpp::Named("goodness") = Rcpp::List::create(
+            Rcpp::Named("nObs") = obj.nObs,
+            Rcpp::Named("coef_df") = obj.coef_df,
+            Rcpp::Named("negLogL") = obj.negLogL,
+            Rcpp::Named("c_index") = obj.c_index,
+            Rcpp::Named("bic1") = obj.bic1,
+            Rcpp::Named("bic2") = obj.bic2
+            ),
         Rcpp::Named("penalty") = Rcpp::List::create(
             Rcpp::Named("cox_l1_lambda_max") = obj.cox_l1_lambda_max,
             Rcpp::Named("cox_l1_lambda") = obj.cox_l1_lambda,
@@ -148,6 +174,9 @@ Rcpp::List coxph_cure_reg(
             Rcpp::Named("cure_l2_lambda") = obj.cure_l2_lambda,
             Rcpp::Named("cure_l1_penalty_factor") =
             Intsurv::arma2rvec(obj.cure_l1_penalty_factor)
+            ),
+        Rcpp::Named("convergence") = Rcpp::List::create(
+            Rcpp::Named("num_iter") = obj.num_iter
             )
         );
 }

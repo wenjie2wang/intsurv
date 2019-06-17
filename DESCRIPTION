@@ -1,7 +1,7 @@
 Package: intsurv
 Title: Integrative Survival Modeling
-Version: 0.1.0.9016
-Date: 2019-06-15
+Version: 0.1.0.9017
+Date: 2019-06-16
 Authors@R: c(
     person(given = "Wenjie", family = "Wang",
            email = "wenjie.2.wang@uconn.edu",
@@ -32,6 +32,7 @@ Collate:
     'assessment.R'
     'bootSe.R'
     'coef.R'
+    'coxph.R'
     'iCoxph.R'
     'intsurv.R'
     'misc.R'
