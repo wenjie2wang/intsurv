@@ -687,6 +687,16 @@ namespace Intsurv {
         if (l1_lambda >= this->l1_lambda_max) {
             this->en_coef = this->coef;
             this->coef_df = 0;
+            // compute score and prob
+            this->xBeta = x * beta;
+            this->prob_vec = this->linkinv(beta);
+            // compute negative log-likelihood
+            this->negLogL = this->objective();
+            // compute degree of freedom
+            this->coef_df = get_coef_df(beta);
+            // record other inputs
+            this->l1_lambda = l1_lambda;
+            this->l2_lambda = l2_lambda;
             return;
         }
 

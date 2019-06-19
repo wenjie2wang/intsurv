@@ -786,6 +786,13 @@ namespace Intsurv {
             // no need to rescale all-zero coef
             this->en_coef = this->coef;
             this->coef_df = 0;
+            // compute negative log-likelihood
+            this->negLogL = this->objective();
+            // record other inputs
+            this->l1_lambda = l1_lambda;
+            this->l2_lambda = l2_lambda;
+            this->coef_df = get_coef_df(beta);
+            this->compute_bic();
             return;
         }
 

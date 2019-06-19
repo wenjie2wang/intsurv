@@ -286,7 +286,7 @@ namespace Intsurv {
                                 << "The observed data log-likelihood decreased."
                                 << std::endl;
                 }
-                early_exit = early_stop;
+                early_exit = early_exit || early_stop;
             }
             // return the estimates from last step
             if (early_exit) {
@@ -606,7 +606,7 @@ namespace Intsurv {
                     Rcpp::Rcout << "The objective function increased."
                                 << std::endl;
                 }
-                early_exit = early_stop;
+                early_exit = early_exit || early_stop;
             }
             // return the estimates from last step
             if (early_exit) {

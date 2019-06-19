@@ -59,6 +59,8 @@ NULL
 ##' Approximation Algorithms. Annals of the Institute of Statistical
 ##' Mathematics, 40(4), 641--663.
 ##'
+##'
+##' @export
 coxph_fit <- function(time, event, x, start = rep(0, ncol(x)), max_iter = 200,
                       rel_tol = 1e-5, early_stop = TRUE, verbose = FALSE)
 {

@@ -403,7 +403,7 @@ namespace Intsurv {
                                 << "The observed data log-likelihood decreased."
                                 << std::endl;
                 }
-                early_exit = early_stop;
+                early_exit = early_exit || early_stop;
             }
             // return the estimates from last step
             if (early_exit) {
@@ -482,6 +482,7 @@ namespace Intsurv {
                                 - etail_lambda * time(j) *
                                 std::exp(cox_obj.xBeta(j))
                                 );
+                            if (s_j < pmin) s_j = pmin;
                         }
                         break;
                     default:    // do nothing, otherwise
@@ -499,13 +500,13 @@ namespace Intsurv {
                         // tail completion after the given tail_tau
                         // by default, it means no tail completion
                         if (time(j) > tail_tau) {
-                            s_j = 0;
+                            s_j = pmin;
                         }
                         break;
                     case 1:
                         // zero-tail constraint
                         if (time(j) > max_event_time) {
-                            s_j = 0;
+                            s_j = pmin;
                         }
                         break;
                     case 2:
@@ -515,6 +516,7 @@ namespace Intsurv {
                                 - etail_lambda * time(j) *
                                 std::exp(cox_obj.xBeta(j))
                                 );
+                            if (s_j < pmin) s_j = pmin;
                         }
                         break;
                     default:    // do nothing, otherwise
@@ -901,7 +903,7 @@ namespace Intsurv {
                                 << "The observed data log-likelihood decreased."
                                 << std::endl;
                 }
-                early_exit = early_stop;
+                early_exit = early_exit || early_stop;
             }
             // return the estimates from last step
             if (early_exit) {
@@ -980,6 +982,7 @@ namespace Intsurv {
                                 - etail_lambda * time(j) *
                                 std::exp(cox_obj.xBeta(j))
                                 );
+                            if (s_j < pmin) s_j = pmin;
                         }
                         break;
                     default:    // do nothing, otherwise
@@ -1004,13 +1007,13 @@ namespace Intsurv {
                         // tail completion after the given tail_tau
                         // by default, it means no tail completion
                         if (time(j) > tail_tau) {
-                            s_j = 0;
+                            s_j = pmin;
                         }
                         break;
                     case 1:
                         // zero-tail constraint
                         if (time(j) > max_event_time) {
-                            s_j = 0;
+                            s_j = pmin;
                         }
                         break;
                     case 2:
@@ -1020,6 +1023,7 @@ namespace Intsurv {
                                 - etail_lambda * time(j) *
                                 std::exp(cox_obj.xBeta(j))
                                 );
+                            if (s_j < pmin) s_j = pmin;
                         }
                         break;
                     default:    // do nothing, otherwise
