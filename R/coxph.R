@@ -21,14 +21,14 @@ NULL
 
 ##' Cox proportional hazard model
 ##'
-##' This function fits regular Cox proportional hazard model (Cox, 1972) by the
-##' monotonic quadratic approximation algorithm (Bohning and Lindsay, 1988).  It
-##' is not intended to replace \code{\link[survival]{coxph}} or
-##' \code{\link[survival]{coxph.fit}} for fitting regular Cox model.  However,
-##' it allows non-integer event indicator (between 0 and 1) when computing the
-##' partial likelihood (Cox, 1975) and the profiled baseline hazard function,
-##' which can be useful for some research problems where event indicators
-##' contain uncertainty.
+##' This function fits regular Cox proportional hazard model (Cox, 1972) for
+##' right-censored data by the monotonic quadratic approximation algorithm
+##' (Bohning and Lindsay, 1988).  It is not intended to replace
+##' \code{\link[survival]{coxph}} or \code{\link[survival]{coxph.fit}} for
+##' fitting regular Cox model.  However, it allows non-integer event indicator
+##' (between 0 and 1) when computing the partial likelihood (Cox, 1975) and the
+##' profiled baseline hazard function, which can be useful for some research
+##' problems where event indicators contain uncertainty.
 ##'
 ##' @param time A numeric vector for observed times.
 ##' @param event A numeric vector for event indicators
@@ -59,7 +59,6 @@ NULL
 ##' Approximation Algorithms. Annals of the Institute of Statistical
 ##' Mathematics, 40(4), 641--663.
 ##'
-##'
 ##' @export
 coxph_fit <- function(time, event, x, start = rep(0, ncol(x)), max_iter = 200,
                       rel_tol = 1e-5, early_stop = TRUE, verbose = FALSE)
@@ -70,15 +69,19 @@ coxph_fit <- function(time, event, x, start = rep(0, ncol(x)), max_iter = 200,
     }
     nObs <- length(time)
     if (length(event) != nObs) {
-        stop("The time and event must have the same length.")
+        stop("The time and event must have the same length.", call. = FALSE)
     }
     if (nrow(x) != nObs) {
         stop("The length of time must equal ",
-             "the number of rows of the design matrix.")
+             "the number of rows of the design matrix.", call. = FALSE)
     }
     if (length(start) != ncol(x)) {
-        stop("The length of starting values is inappropriate.")
+        stop("The length of starting values is inappropriate.", call. = FALSE)
     }
     ## call the routine
-    rcpp_coxph(time, event, x, start, max_iter, rel_tol, early_stop, verbose)
+    out <- rcpp_coxph(time, event, x, start,
+                      max_iter, rel_tol, early_stop, verbose)
+    ## return
+    class(out) <- "intsurv-coxph_fit"
+    out
 }
