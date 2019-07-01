@@ -34,14 +34,14 @@ be given along iterations for tracing the convergence.  The default
 value is \code{FALSE}.}
 }
 \description{
-This function fits regular Cox proportional hazard model (Cox, 1972) by the
-monotonic quadratic approximation algorithm (Bohning and Lindsay, 1988).  It
-is not intended to replace \code{\link[survival]{coxph}} or
-\code{\link[survival]{coxph.fit}} for fitting regular Cox model.  However,
-it allows non-integer event indicator (between 0 and 1) when computing the
-partial likelihood (Cox, 1975) and the profiled baseline hazard function,
-which can be useful for some research problems where event indicators
-contain uncertainty.
+This function fits regular Cox proportional hazard model (Cox, 1972) for
+right-censored data by the monotonic quadratic approximation algorithm
+(Bohning and Lindsay, 1988).  It is not intended to replace
+\code{\link[survival]{coxph}} or \code{\link[survival]{coxph.fit}} for
+fitting regular Cox model.  However, it allows non-integer event indicator
+(between 0 and 1) when computing the partial likelihood (Cox, 1975) and the
+profiled baseline hazard function, which can be useful for some research
+problems where event indicators contain uncertainty.
 }
 \references{
 Cox, D. R. (1972). Regression Models and Life-Tables. Journal of the Royal

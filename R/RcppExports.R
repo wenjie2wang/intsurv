@@ -66,6 +66,10 @@ rcpp_reg_logistic2 <- function(x, y, lambda = 0L, alpha = 1, nlambda = 1L, lambd
     .Call('_intsurv_rcpp_reg_logistic2', PACKAGE = 'intsurv', x, y, lambda, alpha, nlambda, lambda_min_ratio, penalty_factor, intercept, max_iter, rel_tol, early_stop, verbose)
 }
 
+rcpp_mcf_right <- function(time, event) {
+    .Call('_intsurv_rcpp_mcf_right', PACKAGE = 'intsurv', time, event)
+}
+
 aggregateSum <- function(x, indices, simplify = TRUE, cumulative = FALSE, reversely = FALSE) {
     .Call('_intsurv_aggregateSum', PACKAGE = 'intsurv', x, indices, simplify, cumulative, reversely)
 }

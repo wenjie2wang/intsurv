@@ -71,8 +71,6 @@ A \code{\link{iCoxph-class}} object, whose slots include
     \item \code{partLogL}: Partial log-likelihood function under complete
         data for covariate coefficients.
     \item \code{logL}: Log-likelihood under observed data after convergence.
-    \item \code{fisher}: Observed Fisher information matrix under complete
-        data after convergence.
 }
 }
 \description{
@@ -87,13 +85,27 @@ starting value of each parameter in the model. The valid named elements are
 given as follows:
 \itemize{
 
-\item \code{beta}: A numeric vector for starting values of coefficient
+\item \code{betaVec}: A numeric vector for starting values of coefficient
     estimates. The default values are the coefficient estimates from the
     regular Cox model only fitting on records without uncertainty.  If
     censoring rate among subjects having unique certain records is extremely
     high (> 0.99) or \code{\link[survival]{coxph}} returns any warning, such
     as perfect seperation problem between event indicator and one predictor,
     the starting values will be all zeros by default.
+
+\item \code{betaMat}: A numeric matrix that consists of additional starting
+    values of coefficient estimates in columns.  The default value is
+    \code{NULL}.
+
+\item \code{piVec}: A numeric vector specifying the prior probability of
+    each original record being true. The length of the vector has to be the
+    same with number of rows of the data input. The values should be between
+    0 and 1. By default, \code{censorRate} is used to generate appropriate
+    prior probabilities.
+
+\item \code{piMat}: A numeric matrix that consists of the specified prior
+    probability in of each original record being true in columns.  The
+    default value is \code{NULL}.
 
 \item \code{censorRate}: A positive numeric vector taking values between 0
     and 1. If a vector of length more than one is given, multiple starting
@@ -108,12 +120,7 @@ given as follows:
     not take possible censoring records into account.  If \code{multiStart =
     FALSE}, the default value of \code{censorRate} is the sample censoring
     rate among subjects having records without uncertainty.
-
-\item \code{piVec}: A numeric vector specifying the prior probability of
-    each original record being true. The length of the vector has to be the
-    same with number of rows of the data input. The values should be between
-    0 and 1. By default, \code{censorRate} is used to generate appropriate
-    prior probabilities.
+    If \code{parametricOnly}
 
 \item \code{multiStart}: A logical value specifying whether multiple
     starting values of \code{censorRate} is needed. The argument is ignored
@@ -141,8 +148,8 @@ The valid named elements are given as follows:
     relative step length for each CM step.  The default value is
     \code{1e-6}.
 
-\item \code{iterlim}: A positive integer specifying the maximum number of
-    iterations to be performed before each CM is terminated. The default
+\item \code{max_iter_CM}: A positive integer specifying the maximum number
+    of iterations to be performed before each CM is terminated. The default
     value is \code{1e2}.
 
 \item \code{steptol_ECM_beta}: A positive scalar that specifies the
@@ -153,25 +160,20 @@ The valid named elements are given as follows:
     maximum allowable relative step size between each ECM iteration.  The
     default value is \code{1e-4}.
 
-\item \code{iterlim_ECM}: A positive integer specifying the maximum number
+\item \code{max_iter_ECM}: A positive integer specifying the maximum number
     of iterations to be performed before the ECM algorithm is
     terminated. The default value is \code{1e2}.
-
-\item \code{commonCenRate}: If \code{TRUE}, the algorithm keeps a same
-    probability for all the uncertain censoring cases to be the truth; If
-    \code{FASLE}, it allows different probabilities for censoring cases to
-    be the truth.
 
 }
 Internally, the first four named elements are passed to function
 \code{\link[stats]{nlm}}.
 }
 \examples{
-## library(intsurv)
-## set.seed(1216)
-## simuDat <- simuWeibull(nSubject = 100)
-## fit <- iCoxph(Survi(ID, obsTime, eventInd) ~ x1 + x2 + x3 + x4, simuDat,
-##               control = list(noSE = TRUE))
+library(intsurv)
+set.seed(123)
+simuDat <- simuWeibull(nSubject = 100)
+fit <- iCoxph(Survi(ID, obsTime, eventInd) ~ x1 + x2 + x3 + x4, simuDat)
+
 }
 \references{
 Wang, W., Aseltine, R., Chen, K., & Yan, J. (2017+).  Integrative Survival

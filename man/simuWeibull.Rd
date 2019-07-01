@@ -2,7 +2,7 @@
 % Please edit documentation in R/simuData.R
 \name{simuWeibull}
 \alias{simuWeibull}
-\title{Generate Simulated Data from Cox Model}
+\title{Simulated Survival Data with Uncerfrom Event Times}
 \usage{
 simuWeibull(nSubject = 1000, beta0Vec, xMat, maxNum = 2,
   nRecordProb = c(0.9, 0.1), matchCensor = 0.1, matchEvent = 0.1,
@@ -75,9 +75,9 @@ A data frame with the following columns, \itemize{ \item \code{ID}:
     indicating the true recorods } and the corresponding covariates.
 }
 \description{
-This function generates simulated survival data with uncertain records.
-The baseline hazard function is parametric Weibull model
-and the censoring times follow uniform distribution.
+This function generates simulated survival data with uncertain records from
+Cox model.  The baseline hazard function is parametric Weibull model and the
+censoring times follow uniform distribution.
 }
 \examples{
 dat <- simuWeibull(nSubject = 100)

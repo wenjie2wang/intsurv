@@ -37,8 +37,6 @@ See ``Slots'' for details.
 \item{\code{partLogL}}{A numeric value.}
 
 \item{\code{logL}}{A numeric value.}
-
-\item{\code{fisher}}{A numeric matrix.}
 }}
 
 \seealso{

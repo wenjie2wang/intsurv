@@ -315,6 +315,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rcpp_mcf_right
+Rcpp::List rcpp_mcf_right(const arma::vec& time, const arma::vec& event);
+RcppExport SEXP _intsurv_rcpp_mcf_right(SEXP timeSEXP, SEXP eventSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::vec& >::type time(timeSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type event(eventSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_mcf_right(time, event));
+    return rcpp_result_gen;
+END_RCPP
+}
 // aggregateSum
 Rcpp::NumericVector aggregateSum(const arma::vec& x, const arma::vec& indices, const bool simplify, const bool cumulative, const bool reversely);
 RcppExport SEXP _intsurv_aggregateSum(SEXP xSEXP, SEXP indicesSEXP, SEXP simplifySEXP, SEXP cumulativeSEXP, SEXP reverselySEXP) {
@@ -355,6 +367,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_intsurv_rcpp_firth_logistic", (DL_FUNC) &_intsurv_rcpp_firth_logistic, 7},
     {"_intsurv_rcpp_reg_logistic1", (DL_FUNC) &_intsurv_rcpp_reg_logistic1, 11},
     {"_intsurv_rcpp_reg_logistic2", (DL_FUNC) &_intsurv_rcpp_reg_logistic2, 12},
+    {"_intsurv_rcpp_mcf_right", (DL_FUNC) &_intsurv_rcpp_mcf_right, 2},
     {"_intsurv_aggregateSum", (DL_FUNC) &_intsurv_aggregateSum, 5},
     {"_intsurv_revcumsum", (DL_FUNC) &_intsurv_revcumsum, 1},
     {NULL, NULL, 0}
