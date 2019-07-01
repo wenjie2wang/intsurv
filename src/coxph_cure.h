@@ -222,6 +222,7 @@ namespace Intsurv {
         size_t i {0};
         double obs_ell {0}, obs_ell_old { - arma::datum::inf };
         double tol1 { arma::datum::inf }, tol2 { tol1 };
+        arma::vec s0_wi_tail, s_wi_tail;
 
         // prepare for tail completion
         double max_event_time { time(this->max_event_time_ind) };
@@ -253,19 +254,24 @@ namespace Intsurv {
                         // by default, it means no tail completion
                         if (time(j) > tail_tau) {
                             cox_obj.S_time(j) = 0;
+                            cox_obj.S0_time(j) = 0;
                         }
                         break;
                     case 1:
                         // zero-tail constraint
                         if (time(j) > max_event_time) {
                             cox_obj.S_time(j) = 0;
+                            cox_obj.S0_time(j) = 0;
                         }
                         break;
                     case 2:
                         // exponential tail by Peng (2003)
                         if (time(j) > max_event_time) {
-                            cox_obj.S_time(j) = std::exp(
-                                - etail_lambda * time(j) *
+                            cox_obj.S0_time(j) = std::exp(
+                                - etail_lambda * time(j)
+                                );
+                            cox_obj.S_time(j) = std::pow(
+                                cox_obj.S0_time(j),
                                 std::exp(cox_obj.xBeta(j))
                                 );
                         }
@@ -336,6 +342,8 @@ namespace Intsurv {
                 cure_obj.coef = cure_beta;
                 // update hazard and survival function estimates
                 cox_obj.compute_haz_surv_time();
+                cox_obj.S0_time = s0_wi_tail;
+                cox_obj.S_time = s_wi_tail;
                 // cox_obj.compute_censor_haz_surv_time();
                 cox_obj.est_haz_surv();
                 // break here
@@ -368,6 +376,8 @@ namespace Intsurv {
             cox_beta = cox_obj.coef;
             cure_beta = cure_obj.coef;
             obs_ell_old = obs_ell;
+            s0_wi_tail = cox_obj.S0_time;
+            s_wi_tail = cox_obj.S_time;
 
             // update iter for the next iteration
             ++i;
@@ -528,6 +538,7 @@ namespace Intsurv {
         double obs_ell {0};
         double reg_obj {0}, reg_obj_old { arma::datum::inf };
         double tol1 { arma::datum::inf }, tol2 { tol1 };
+        arma::vec s0_wi_tail, s_wi_tail;
         bool verbose_mstep { verbose > 2 };
 
         // prepare for tail completion
@@ -561,19 +572,24 @@ namespace Intsurv {
                         // by default, it means no tail completion
                         if (time(j) > tail_tau) {
                             cox_obj.S_time(j) = 0;
+                            cox_obj.S0_time(j) = 0;
                         }
                         break;
                     case 1:
                         // zero-tail constraint
                         if (time(j) > max_event_time) {
                             cox_obj.S_time(j) = 0;
+                            cox_obj.S0_time(j) = 0;
                         }
                         break;
                     case 2:
                         // exponential tail by Peng (2003)
                         if (time(j) > max_event_time) {
-                            cox_obj.S_time(j) = std::exp(
-                                - etail_lambda * time(j) *
+                            cox_obj.S0_time(j) = std::exp(
+                                - etail_lambda * time(j)
+                                );
+                            cox_obj.S_time(j) = std::pow(
+                                cox_obj.S0_time(j),
                                 std::exp(cox_obj.xBeta(j))
                                 );
                         }
@@ -659,6 +675,8 @@ namespace Intsurv {
                 cox_obj.coef = cox_beta;
                 cure_obj.coef = cure_beta;
                 cox_obj.compute_censor_haz_surv_time();
+                cox_obj.S0_time = s0_wi_tail;
+                cox_obj.S_time = s_wi_tail;
                 cox_obj.est_haz_surv();
                 // break here
                 break;
@@ -689,6 +707,8 @@ namespace Intsurv {
             cox_beta = cox_obj.coef;
             cure_beta = cure_obj.coef;
             reg_obj_old = reg_obj;
+            s0_wi_tail = cox_obj.S0_time;
+            s_wi_tail = cox_obj.S_time;
 
             // update iter for the next iteration
             ++i;
