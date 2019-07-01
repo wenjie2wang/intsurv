@@ -31,13 +31,27 @@ NULL
 ##' given as follows:
 ##' \itemize{
 ##'
-##' \item \code{beta}: A numeric vector for starting values of coefficient
+##' \item \code{betaVec}: A numeric vector for starting values of coefficient
 ##'     estimates. The default values are the coefficient estimates from the
 ##'     regular Cox model only fitting on records without uncertainty.  If
 ##'     censoring rate among subjects having unique certain records is extremely
 ##'     high (> 0.99) or \code{\link[survival]{coxph}} returns any warning, such
 ##'     as perfect seperation problem between event indicator and one predictor,
 ##'     the starting values will be all zeros by default.
+##'
+##' \item \code{betaMat}: A numeric matrix that consists of additional starting
+##'     values of coefficient estimates in columns.  The default value is
+##'     \code{NULL}.
+##'
+##' \item \code{piVec}: A numeric vector specifying the prior probability of
+##'     each original record being true. The length of the vector has to be the
+##'     same with number of rows of the data input. The values should be between
+##'     0 and 1. By default, \code{censorRate} is used to generate appropriate
+##'     prior probabilities.
+##'
+##' \item \code{piMat}: A numeric matrix that consists of the specified prior
+##'     probability in of each original record being true in columns.  The
+##'     default value is \code{NULL}.
 ##'
 ##' \item \code{censorRate}: A positive numeric vector taking values between 0
 ##'     and 1. If a vector of length more than one is given, multiple starting
@@ -52,12 +66,7 @@ NULL
 ##'     not take possible censoring records into account.  If \code{multiStart =
 ##'     FALSE}, the default value of \code{censorRate} is the sample censoring
 ##'     rate among subjects having records without uncertainty.
-##'
-##' \item \code{piVec}: A numeric vector specifying the prior probability of
-##'     each original record being true. The length of the vector has to be the
-##'     same with number of rows of the data input. The values should be between
-##'     0 and 1. By default, \code{censorRate} is used to generate appropriate
-##'     prior probabilities.
+##'     If \code{parametricOnly}
 ##'
 ##' \item \code{multiStart}: A logical value specifying whether multiple
 ##'     starting values of \code{censorRate} is needed. The argument is ignored
@@ -85,8 +94,8 @@ NULL
 ##'     relative step length for each CM step.  The default value is
 ##'     \code{1e-6}.
 ##'
-##' \item \code{iterlim}: A positive integer specifying the maximum number of
-##'     iterations to be performed before each CM is terminated. The default
+##' \item \code{max_iter_CM}: A positive integer specifying the maximum number
+##'     of iterations to be performed before each CM is terminated. The default
 ##'     value is \code{1e2}.
 ##'
 ##' \item \code{steptol_ECM_beta}: A positive scalar that specifies the
@@ -97,14 +106,9 @@ NULL
 ##'     maximum allowable relative step size between each ECM iteration.  The
 ##'     default value is \code{1e-4}.
 ##'
-##' \item \code{iterlim_ECM}: A positive integer specifying the maximum number
+##' \item \code{max_iter_ECM}: A positive integer specifying the maximum number
 ##'     of iterations to be performed before the ECM algorithm is
 ##'     terminated. The default value is \code{1e2}.
-##'
-##' \item \code{commonCenRate}: If \code{TRUE}, the algorithm keeps a same
-##'     probability for all the uncertain censoring cases to be the truth; If
-##'     \code{FASLE}, it allows different probabilities for censoring cases to
-##'     be the truth.
 ##'
 ##' }
 ##' Internally, the first four named elements are passed to function
@@ -170,8 +174,6 @@ NULL
 ##'     \item \code{partLogL}: Partial log-likelihood function under complete
 ##'         data for covariate coefficients.
 ##'     \item \code{logL}: Log-likelihood under observed data after convergence.
-##'     \item \code{fisher}: Observed Fisher information matrix under complete
-##'         data after convergence.
 ##' }
 ##'
 ##'
@@ -185,11 +187,11 @@ NULL
 ##' Algorithm: A General Framework. \emph{Biometrika}, 80(2), 267--278.
 ##'
 ##' @examples
-##' ## library(intsurv)
-##' ## set.seed(1216)
-##' ## simuDat <- simuWeibull(nSubject = 100)
-##' ## fit <- iCoxph(Survi(ID, obsTime, eventInd) ~ x1 + x2 + x3 + x4, simuDat,
-##' ##               control = list(noSE = TRUE))
+##' library(intsurv)
+##' set.seed(123)
+##' simuDat <- simuWeibull(nSubject = 100)
+##' fit <- iCoxph(Survi(ID, obsTime, eventInd) ~ x1 + x2 + x3 + x4, simuDat)
+##'
 ##' @seealso
 ##' \code{\link{summary,iCoxph-method}} for summary of fitted model;
 ##' \code{\link{coef,iCoxph-method}} for estimated covariate coefficients;
@@ -197,8 +199,6 @@ NULL
 ##'
 ##' @importFrom stats na.fail na.omit na.exclude na.pass .getXlevels
 ##'     model.extract model.frame model.matrix nlm pnorm
-##' @importFrom survival coxph Surv
-##' @importFrom reda mcf
 ##' @export
 iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
                    start = list(), control = list(), ...)
@@ -294,13 +294,13 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
 
             incDat$piVec <- piVec <- piMat[, onePi]
             ## trace the log-likelihood for observed data
-            logL <- rep(NA, control$iterlim_ECM)
+            logL <- rep(NA, control$max_iter_ECM)
             ## trace beta estimates from each iteration of ECM
-            betaMat <- matrix(NA, nrow = control$iterlim_ECM + 1L, ncol = nBeta)
+            betaMat <- matrix(NA, nrow = control$max_iter_ECM + 1L, ncol = nBeta)
             betaMat[1L, ] <- start$betaMat[, oneBeta]
             tol_update <- sqrt(control$steptol_ECM_beta)
 
-            for (iter in seq_len(control$iterlim_ECM)) {
+            for (iter in seq_len(control$max_iter_ECM)) {
                 oneFit <- ic_oneECMstep(betaHat = betaMat[iter, ],
                                         h0Dat = h0Dat,
                                         h_cDat = h_cDat,
@@ -328,7 +328,7 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
                 if (tol_beta < control$steptol_ECM_beta &&
                     tol_pi < control$steptol_ECM_pi) {
                     break
-                } else if (iter == control$iterlim_ECM) {
+                } else if (iter == control$max_iter_ECM) {
                     warning("Reached the maximum number of ECM iterations!")
                 }
             }
@@ -372,44 +372,15 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
     betaEst <- oneFit0$betaEst
     betaHat <- as.numeric(betaEst$estimate)
 
-    ## approximation of I_oc fisher information matrix
-    I_oc <- betaEst$hessian
-
-    se_prem <- NA
-    if (! control$noSE) {
-        ## dm matrix
-        ## incDat$piVec <- ic_initPi(censorRate0, dat = incDat, equally = FALSE)
-        ## tmpRes <- ic_oneECMstep(betaHat, h0Dat = h0Dat, h_cDat = h_cDat,
-        ##                        dat = incDat, xMat = xMat, tied = tied,
-        ##                        control = control)
-        ## incDat$piVec <- tmpRes$piVec
-        dmMat <- ic_dmECM(betaEst = betaHat, h0Dat = h0Dat, h_cDat = h_cDat,
-                          dat = incDat, xMat = xMat, tied = tied,
-                          control = control)
-
-        ## variance-covariance matrix by SECM
-        invI_oc <- solve(I_oc)
-        secmVar <- invI_oc + invI_oc %*% dmMat %*% solve(diag(1, nBeta) - dmMat)
-        secmVar <- (secmVar + t(secmVar)) / 2
-        ## secmVar <- solve((diag(1, nBeta) - dmMat) %*% I_oc)
-
-        ## se estimatation by PRES, FIXME
-        ## I_oMat <- I_o(betaEst = betaHat, h0Dat = h0Dat, h_cDat = h_cDat,
-        ##               dat = incDat, xMat = xMat, tied = tied,
-        ##               control = control)
-        ## invI_o <- solve(I_oMat)
-        se_prem <- as.numeric(sqrt(diag(secmVar)))
-    }
-
     ## estimates for beta
     est_beta <- matrix(NA, nrow = nBeta, ncol = 5L)
     colnames(est_beta) <- c("coef", "exp(coef)", "se(coef)", "z", "Pr(>|z|)")
     rownames(est_beta) <- covar_names
-    est_beta[, 1L] <- betaHat
-    est_beta[, 2L] <- exp(est_beta[, "coef"])
-    est_beta[, 3L] <- se_prem
-    est_beta[, 4L] <- est_beta[, "coef"] / est_beta[, "se(coef)"]
-    est_beta[, 5L] <- 2 * stats::pnorm(- abs(est_beta[, "z"]))
+    est_beta[, "coef"] <- betaHat
+    est_beta[, "exp(coef)"] <- exp(est_beta[, "coef"])
+    est_beta[, "se(coef)"] <- NA_real_
+    est_beta[, "z"] <- est_beta[, "coef"] / est_beta[, "se(coef)"]
+    est_beta[, "Pr(>|z|)"] <- 2 * stats::pnorm(- abs(est_beta[, "z"]))
 
     ## output: processed data frame
     dat$ID <- factor(dat$ID, levels = unique(dat$ID),
@@ -448,45 +419,11 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
                  contrasts = contrasts,
                  convergCode = betaEst$code,
                  partLogL = - betaEst$minimum,
-                 logL = logL0,
-                 fisher = betaEst$hessian)
+                 logL = logL0)
 }
 
 
 ### internal functions =========================================================
-## one iteration for one row of DM matrix
-ic_oneRowDM <- function(ind, betaEst, h0Dat, h_cDat, dat, xMat, tied, control)
-{
-    h <- control$h
-    nBeta <- length(betaEst)
-    baseVec <- rep(0, nBeta)
-    baseVec[ind] <- h
-    theta1 <- betaEst - 2 * baseVec
-    theta2 <- betaEst - baseVec
-    theta3 <- betaEst + baseVec
-    theta4 <- betaEst + 2 * baseVec
-    oneFit1 <- ic_oneECMstep(theta1, h0Dat, h_cDat, dat, xMat, tied, control)
-    oneFit2 <- ic_oneECMstep(theta2, h0Dat, h_cDat, dat, xMat, tied, control)
-    oneFit3 <- ic_oneECMstep(theta3, h0Dat, h_cDat, dat, xMat, tied, control)
-    oneFit4 <- ic_oneECMstep(theta4, h0Dat, h_cDat, dat, xMat, tied, control)
-    beta1 <- oneFit1$betaEst$estimate
-    beta2 <- oneFit2$betaEst$estimate
-    beta3 <- oneFit3$betaEst$estimate
-    beta4 <- oneFit4$betaEst$estimate
-    (beta1 - beta4 + 8 * (beta3 - beta2)) / (12 * h)
-}
-
-
-## DM matrix for ECM by PREM
-ic_dmECM <- function(betaEst, h0Dat, h_cDat, dat, xMat, tied, control)
-{
-    dmList <- lapply(seq_along(betaEst), ic_oneRowDM,
-                     betaEst = betaEst, h0Dat = h0Dat, h_cDat = h_cDat,
-                     dat = dat,  xMat = xMat, tied = tied, control = control)
-    do.call(rbind, dmList)
-}
-
-
 ## perform one step of EM algorithm
 ic_oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, tied, control)
 {
@@ -543,13 +480,15 @@ ic_oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, tied, control)
 
     ## update beta
     betaEst <- stats::nlm(ic_logLbeta, p = betaHat, dat = dat, xMat = xMat,
-                          tied = tied, hessian = TRUE, check.analyticals = TRUE,
-                          gradtol = control$gradtol, stepmax = control$stepmax,
-                          steptol = control$steptol, iterlim = control$iterlim)
+                          tied = tied,
+                          hessian = FALSE, check.analyticals = FALSE,
+                          gradtol = control$gradtol,
+                          stepmax = control$stepmax,
+                          steptol = control$steptol,
+                          iterlim = control$max_iter_CM)
 
     ## log-likelihood function under observed data
     logL <- sum(log(dat$p_jk_denom))
-
 
     ## update h0_jk and h_c_jk with previous (or initial) estimates of beta
     ## h0Vec <- ic_h0t(dat, tied)
@@ -747,15 +686,15 @@ ic_initPi2 <- function(pi0, dat, randomly = FALSE, ...)
     piVec
 }
 
-
+## take care of start values
 iCoxph_start <- function(betaVec = NULL,
                          betaMat = NULL,
                          piVec = NULL,
                          piMat = NULL,
                          censorRate = NULL,
                          semiparametric = c(FALSE, TRUE),
-                         parametric = c(FALSE, FALSE),
-                         parametricOnly = FALSE,
+                         ## parametric = c(FALSE, FALSE),
+                         semiparametric_only = TRUE,
                          multiStart = FALSE,
                          randomly = FALSE,
                          ...,
@@ -779,76 +718,76 @@ iCoxph_start <- function(betaVec = NULL,
         step_by <- 0.02
         censorRate <- if (multiStart)
                           seq.int(0, 1, step_by)
-                      else if (parametricOnly)
+                      else if (semiparametric_only)
                           NA_real_
                       else
                           censorRate0
 
-    } else if (any(censorRate > 1 | censorRate < 0))
+    } else if (any(censorRate > 1 | censorRate < 0)) {
         stop("Starting prob. of censoring case being true",
-             "should between 0 and 1.")
+             "should between 0 and 1.", call. = FALSE)
+    }
 
     ## use parametric estimate as starting values
-    if (any(parametric)) {
-        event_funs <- ic_parametric_start(uniDat$time, uniDat$event, uni_xMat)
-        cen_funs <- ic_parametric_start(uniDat$time, 1 - uniDat$event)
-        hVec <- event_funs$haz_fun(dat_$time, xMat)
-        sVec <- event_funs$surv_fun(dat_$time, xMat)
-        h_cVec <- cen_funs$haz_fun(dat_$time)
-        G_cVec <- cen_funs$surv_fun(dat_$time)
-
-        ## following the equations derived
-        log_w_jk_1 <- ifelse(
-            dat_$event > 0,
-            log(hVec) + log(sVec) + log(G_cVec),
-            log(h_cVec) + log(G_cVec) + log(sVec)
-        )
-        w_jk_1 <- exp(log_w_jk_1)
-        p_jk_denom_1 <- aggregateSum(w_jk_1, dat_$ID, simplify = FALSE)
-        pi_par_1 <- ifelse(dupIdx, w_jk_1 / p_jk_denom_1, 1)
-
-        ## if hazard estimates is not reliable
-        log_w_jk_2 <- log(sVec) + log(G_cVec)
-        w_jk_2 <- exp(log_w_jk_2)
-        p_jk_denom_2 <- aggregateSum(w_jk_2, dat_$ID, simplify = FALSE)
-        pi_par_2 <- ifelse(dupIdx, w_jk_2 / p_jk_denom_2, 1)
-
-        if (parametric[1])
-            piMat <- cbind(piMat, pi_par_1)
-        if (length(parametric) > 1 && parametric[2])
-            piMat <- cbind(piMat, pi_par_2)
-    }
+    ## if (any(parametric)) {
+    ##     event_funs <- ic_parametric_start(uniDat$time, uniDat$event, uni_xMat)
+    ##     cen_funs <- ic_parametric_start(uniDat$time, 1 - uniDat$event)
+    ##     hVec <- event_funs$haz_fun(dat_$time, xMat)
+    ##     sVec <- event_funs$surv_fun(dat_$time, xMat)
+    ##     h_cVec <- cen_funs$haz_fun(dat_$time)
+    ##     G_cVec <- cen_funs$surv_fun(dat_$time)
+    ##     if (parametric[1L]) {
+    ##         ## following the equations derived
+    ##         log_w_jk_1 <- ifelse(
+    ##             dat_$event > 0,
+    ##             log(hVec) + log(sVec) + log(G_cVec),
+    ##             log(h_cVec) + log(G_cVec) + log(sVec)
+    ##         )
+    ##         w_jk_1 <- exp(log_w_jk_1)
+    ##         p_jk_denom_1 <- aggregateSum(w_jk_1, dat_$ID, simplify = FALSE)
+    ##         pi_par_1 <- ifelse(dupIdx, w_jk_1 / p_jk_denom_1, 1)
+    ##         piMat <- cbind(piMat, pi_par_1)
+    ##     }
+    ##     if (length(parametric) > 1L && parametric[2L]) {
+    ##         ## if hazard estimates is not reliable
+    ##         log_w_jk_2 <- log(sVec) + log(G_cVec)
+    ##         w_jk_2 <- exp(log_w_jk_2)
+    ##         p_jk_denom_2 <- aggregateSum(w_jk_2, dat_$ID, simplify = FALSE)
+    ##         pi_par_2 <- ifelse(dupIdx, w_jk_2 / p_jk_denom_2, 1)
+    ##         piMat <- cbind(piMat, pi_par_2)
+    ##     }
+    ## }
 
     ## use non/semi-parametric estimates
     if (any(semiparametric)) {
-        event_funs <- ic_semi_parametric_start(uniDat$time,
-                                               uniDat$event, uni_xMat)
+        event_funs <- ic_semi_parametric_start(
+            uniDat$time, uniDat$event, uni_xMat
+        )
         cen_funs <- ic_semi_parametric_start(uniDat$time, 1 - uniDat$event)
         hVec <- event_funs$haz_fun(dat_$time, xMat)
         sVec <- event_funs$surv_fun(dat_$time, xMat)
         h_cVec <- cen_funs$haz_fun(dat_$time)
         G_cVec <- cen_funs$surv_fun(dat_$time)
-
-        ## following the equations derived
-        log_w_jk_3 <- ifelse(
-            dat_$event > 0,
-            log(hVec) + log(sVec) + log(G_cVec),
-            log(h_cVec) + log(G_cVec) + log(sVec)
-        )
-        w_jk_3 <- exp(log_w_jk_3)
-        p_jk_denom_3 <- aggregateSum(w_jk_3, dat_$ID, simplify = FALSE)
-        pi_par_3 <- ifelse(dupIdx, w_jk_3 / p_jk_denom_3, 1)
-
-        ## what if the baseline hazard estimates is not available
-        log_w_jk_4 <- log(sVec) + log(G_cVec)
-        w_jk_4 <- exp(log_w_jk_4)
-        p_jk_denom_4 <- aggregateSum(w_jk_4, dat_$ID, simplify = FALSE)
-        pi_par_4 <- ifelse(dupIdx, w_jk_4 / p_jk_denom_4, 1)
-
-        if (semiparametric[1])
+        if (semiparametric[1L]) {
+            ## following the equations derived
+            log_w_jk_3 <- ifelse(
+                dat_$event > 0,
+                log(hVec) + log(sVec) + log(G_cVec),
+                log(h_cVec) + log(G_cVec) + log(sVec)
+            )
+            w_jk_3 <- exp(log_w_jk_3)
+            p_jk_denom_3 <- aggregateSum(w_jk_3, dat_$ID, simplify = FALSE)
+            pi_par_3 <- ifelse(dupIdx, w_jk_3 / p_jk_denom_3, 1)
             piMat <- cbind(piMat, pi_par_3)
-        if (length(semiparametric) > 1 && semiparametric[2])
+        }
+        if (length(semiparametric) > 1L && semiparametric[2L]) {
+            ## what if the baseline hazard estimates is not available
+            log_w_jk_4 <- log(sVec) + log(G_cVec)
+            w_jk_4 <- exp(log_w_jk_4)
+            p_jk_denom_4 <- aggregateSum(w_jk_4, dat_$ID, simplify = FALSE)
+            pi_par_4 <- ifelse(dupIdx, w_jk_4 / p_jk_denom_4, 1)
             piMat <- cbind(piMat, pi_par_4)
+        }
     }
 
     ## initialize covariate coefficient: beta
@@ -859,16 +798,18 @@ iCoxph_start <- function(betaVec = NULL,
         } else {
             uniDat$eventIdx <- NULL
             tmp <- tryCatch(
-                survival::coxph(survival::Surv(time, event) ~ uni_xMat,
-                                data = uniDat),
+                with(uniDat, coxph_fit(time, event, uni_xMat)),
                 warning = function(w) {
                     warning(w)
+                    return(NULL)
+                }, error = function(e) {
+                    warning(e)
                     return(NULL)
                 })
             beta <- if (is.null(tmp)) {
                         rep(0, nBeta_)
                     } else {
-                        as.numeric(tmp$coefficients)
+                        as.numeric(tmp$coef)
                     }
             betaVec <- as.matrix(beta)
         }
@@ -877,7 +818,7 @@ iCoxph_start <- function(betaVec = NULL,
     ## some quick checks on beta
     if (nrow(betaMat) != nBeta_)
         stop(wrapMessages(
-            "Number of starting values for coefficients of",
+            "The number of starting values for coefficients of",
             "covariates does not match with the specified formula."
         ), call. = FALSE)
     ## some quick checks on pi
@@ -894,138 +835,131 @@ iCoxph_start <- function(betaVec = NULL,
          censorRate = censorRate,
          censorRate0 = censorRate0,
          semiparametric = semiparametric,
-         parametric = parametric,
-         parametricOnly = parametricOnly,
+         semiparametric_only = semiparametric_only,
          multiStart = multiStart,
          randomly = randomly)
 }
 
 
-iCoxph_control <- function(gradtol = 1e-6, stepmax = 1e2,
-                           steptol = 1e-6, iterlim = 1e2,
+iCoxph_control <- function(gradtol = 1e-6,
+                           stepmax = 1e2,
+                           steptol = 1e-6,
                            steptol_ECM_beta = 1e-6,
                            steptol_ECM_pi = 1e-8,
-                           iterlim_ECM = 2e2,
-                           noSE = TRUE, h = sqrt(steptol_ECM_beta),
+                           max_iter_CM = 1e2,
+                           max_iter_ECM = 2e2,
                            ...,
                            alwaysUpdatePi = NULL,
                            censorRate0_)
 {
     ## controls for function stats::nlm
     if (! is.numeric(gradtol) || gradtol <= 0)
-        stop("value of 'gradtol' must be > 0.")
+        stop("The value of 'gradtol' must be > 0.", call. = FALSE)
     if (! is.numeric(stepmax) || stepmax <= 0)
-        stop("value of 'stepmax' must be > 0.")
+        stop("The value of 'stepmax' must be > 0.", call. = FALSE)
     if (! is.numeric(steptol) || steptol <= 0)
-        stop("value of 'steptol' must be > 0.")
-    if (! is.numeric(iterlim) || iterlim <= 0)
-        stop("maximum number of iterations must be > 0.")
+        stop("The value of 'steptol' must be > 0.", call. = FALSE)
+    if (! is.numeric(max_iter_CM) || max_iter_CM <= 0)
+        stop("The maximum number of iterations in the CM step must be > 0.",
+             call. = FALSE)
 
     ## determining convergence of EM
     if (! is.numeric(steptol_ECM_beta) || steptol_ECM_beta <= 0)
-        stop("value of 'steptol_ECM_beta' must be > 0.")
+        stop("The value of 'steptol_ECM_beta' must be positive.", call. = FALSE)
     if (! is.numeric(steptol_ECM_pi) || steptol_ECM_pi <= 0)
-        stop("value of 'steptol_ECM_pi' must be > 0.")
-    if (! is.numeric(iterlim_ECM) || iterlim_ECM <= 0)
-        stop("maximum number of iterations for EM must be > 0.")
-
-    ## determining the computation of DM matrix
-    if (! is.numeric(h) || h < 0)
-        stop("'h' has to be a positive number.")
+        stop("The value of 'steptol_ECM_pi' must be positive.", call. = FALSE)
+    if (! is.numeric(max_iter_ECM) || max_iter_ECM <= 0)
+        stop("The maximum number of ECM iterations must be positive.",
+             call. = FALSE)
 
     ## automatically determine whether always update pi's
     if (is.null(alwaysUpdatePi))
         alwaysUpdatePi <- ifelse(censorRate0_ < 0.8, TRUE, FALSE)
 
     ## return
-    list(gradtol = gradtol, stepmax = stepmax,
-         steptol = steptol, iterlim = iterlim,
+    list(gradtol = gradtol,
+         stepmax = stepmax,
+         steptol = steptol,
          steptol_ECM_beta = steptol_ECM_beta,
          steptol_ECM_pi = steptol_ECM_pi,
-         iterlim_ECM = iterlim_ECM,
-         h = h,
-         alwaysUpdatePi = alwaysUpdatePi,
-         noSE = noSE)
+         max_iter_CM = max_iter_CM,
+         max_iter_ECM = max_iter_ECM,
+         alwaysUpdatePi = alwaysUpdatePi)
 }
 
-## return parametric hazard function and survival function
-ic_parametric_start <- function(time, event, xMat = NULL)
-{
-    ## transform estimates from AFT form to PH form for Weibull model
-    transCoef <- function(survRegObj) {
-        shape <- 1 / survRegObj$scale
-        betaEst <- survRegObj$coefficients
-        lambda0 <- exp(- shape * betaEst[1])
-        names(lambda0) <- NULL
-        betaEst <- - shape * betaEst[- 1]
-        list(beta = betaEst, lambda0 = lambda0)
-    }
 
-    ## fitting with survreg
-    fm <- if (is.null(xMat)) {
-              survival::Surv(time, event) ~ 1
-          } else {
-              survival::Surv(time, event) ~ xMat
-          }
-    fit <- survival::survreg(fm)
-    shape <- 1 / fit$scale
-    fit_list <- transCoef(fit)
-    betaHat <- fit_list$beta
-    lambda0 <- fit_list$lambda0
+### return parametric hazard function and survival function
+## ic_parametric_start <- function(time, event, xMat = NULL)
+## {
+##     ## transform estimates from AFT form to PH form for Weibull model
+##     transCoef <- function(survRegObj) {
+##         shape <- 1 / survRegObj$scale
+##         betaEst <- survRegObj$coefficients
+##         lambda0 <- exp(- shape * betaEst[1])
+##         names(lambda0) <- NULL
+##         betaEst <- - shape * betaEst[- 1]
+##         list(beta = betaEst, lambda0 = lambda0)
+##     }
+##     ## fitting with survreg
+##     fm <- if (is.null(xMat)) {
+##               survival::Surv(time, event) ~ 1
+##           } else {
+##               survival::Surv(time, event) ~ xMat
+##           }
+##     fit <- survival::survreg(fm)
+##     shape <- 1 / fit$scale
+##     fit_list <- transCoef(fit)
+##     betaHat <- fit_list$beta
+##     lambda0 <- fit_list$lambda0
+##     ## (baseline) hazard function and survival function
+##     haz_fun <- function(time, xMat = NULL) {
+##         betaX <- if (! is.null(xMat)) {
+##                      as.numeric(xMat %*% betaHat)
+##                  } else {
+##                      0
+##                  }
+##         exp(log(lambda0) + log(shape) +
+##             (shape - 1) * log(time) + betaX)
+##     }
+##     surv_fun <- function(time, xMat = NULL) {
+##         betaX <- if (! is.null(xMat)) {
+##                      as.numeric(xMat %*% betaHat)
+##                  } else {
+##                      0
+##                  }
+##         HVec <- exp(log(lambda0) + shape * log(time) + betaX)
+##         exp(- HVec)
+##     }
+##     ## return
+##     list(haz_fun = haz_fun,
+##          surv_fun = surv_fun)
+## }
 
-    ## (baseline) hazard function and survival function
-    haz_fun <- function(time, xMat = NULL) {
-        betaX <- if (! is.null(xMat)) {
-                     as.numeric(xMat %*% betaHat)
-                 } else {
-                     0
-                 }
-        exp(log(lambda0) + log(shape) +
-            (shape - 1) * log(time) + betaX)
-    }
-    surv_fun <- function(time, xMat = NULL) {
-        betaX <- if (! is.null(xMat)) {
-                     as.numeric(xMat %*% betaHat)
-                 } else {
-                     0
-                 }
-        HVec <- exp(log(lambda0) + shape * log(time) + betaX)
-        exp(- HVec)
-    }
-    ## return
-    list(haz_fun = haz_fun,
-         surv_fun = surv_fun)
-}
 
-## return semi-parametric hazard function and survival function
+### return semi-parametric hazard function and survival function
 ic_semi_parametric_start <- function(time, event, xMat = NULL)
 {
     ## set default value
     fit <- NULL
     ## try fitting with survival::coxph
     if (! is.null(xMat)) {
-        fm <- survival::Surv(time, event) ~ xMat
         ## fitting may fail in bootstrap samples
-        fit <- tryCatch(survival::coxph(fm),
+        fit <- tryCatch(coxph_fit(time, event, xMat),
                         warning = function(w) {
+                            return(NULL)
+                        },
+                        error = function(e) {
                             return(NULL)
                         })
     }
-
     if (is.null(fit)) {
-        betaHat <- rep(0, NCOL(xMat))
-        repNum <- ifelse(event > 0, 2, 1)
-        re_time <- rep(time, times = repNum)
-        re_id <- rep(seq_along(time), times = repNum)
-        re_event <- rep(event, times = repNum)
-        re_event[duplicated(re_id)] <- 0
-        haz0 <- reda::mcf(reda::Survr(ID = re_id, time = re_time,
-                                      event = re_event) ~ 1,
-                          variance = "Poisson")
-        haz0 <- data.frame(time = haz0@MCF$time, hazard = haz0@MCF$MCF)
+        haz0 <- rcpp_mcf_right(time, event)
+        haz0 <- data.frame(time = haz0$time,
+                           hazard = haz0$cum_rate)
     } else {
-        betaHat <- as.numeric(fit$coefficients)
-        haz0 <- survival::basehaz(fit, centered = FALSE)
+        betaHat <- as.numeric(fit$coef)
+        haz0 <- data.frame(time = fit$baseline$time,
+                           hazard = fit$baseline$h0)
     }
 
     ## stepfun hazard function

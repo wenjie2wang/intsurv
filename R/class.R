@@ -48,7 +48,6 @@ setClass("Survi", contains = "matrix",
 ##' @slot convergCode A nonnegative integer.
 ##' @slot partLogL A numeric value.
 ##' @slot logL A numeric value.
-##' @slot fisher A numeric matrix.
 ##' @aliases iCoxph-class
 ##' @seealso \code{\link{iCoxph}} for details of slots.
 ##' @export
@@ -65,8 +64,7 @@ setClass(Class = "iCoxph",
                    contrasts = "list",
                    convergCode = "integer",
                    partLogL = "numeric",
-                   logL = "numeric",
-                   fisher = "matrix"))
+                   logL = "numeric"))
 
 
 ##' An S4 Class to Represent Summary of a Fitted Model

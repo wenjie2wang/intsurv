@@ -15,11 +15,11 @@
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 ##
 
-##' Generate Simulated Data from Cox Model
+##' Simulated Survival Data with Uncerfrom Event Times
 ##'
-##' This function generates simulated survival data with uncertain records.
-##' The baseline hazard function is parametric Weibull model
-##' and the censoring times follow uniform distribution.
+##' This function generates simulated survival data with uncertain records from
+##' Cox model.  The baseline hazard function is parametric Weibull model and the
+##' censoring times follow uniform distribution.
 ##'
 ##' @param nSubject Number of subjects
 ##' @param beta0Vec Time-invariant covariate coefficients.
