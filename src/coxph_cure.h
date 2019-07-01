@@ -238,6 +238,43 @@ namespace Intsurv {
             p_vec = cure_obj.predict(cure_obj.coef, pmin);
             cox_obj.compute_haz_surv_time();
 
+            // prepare for exponential tail completion method
+            double s0_tau {0}, etail_lambda {0};
+            if (tail_completion == 2) {
+                s0_tau = cox_obj.S0_time(max_event_time_ind);
+                etail_lambda = - std::log(s0_tau / max_event_time);
+            }
+            // tail completion for case 2
+            for (size_t j: case2_ind) {
+                // tail completion for the conditional survival function
+                switch(tail_completion) {
+                    case 0:
+                        // tail completion after the given tail_tau
+                        // by default, it means no tail completion
+                        if (time(j) > tail_tau) {
+                            cox_obj.S_time(j) = 0;
+                        }
+                        break;
+                    case 1:
+                        // zero-tail constraint
+                        if (time(j) > max_event_time) {
+                            cox_obj.S_time(j) = 0;
+                        }
+                        break;
+                    case 2:
+                        // exponential tail by Peng (2003)
+                        if (time(j) > max_event_time) {
+                            cox_obj.S_time(j) = std::exp(
+                                - etail_lambda * time(j) *
+                                std::exp(cox_obj.xBeta(j))
+                                );
+                        }
+                        break;
+                    default:    // do nothing, otherwise
+                        break;
+                }
+            }
+
             // compute observed log-likelihood
             obs_ell = 0;
             // for case 1
@@ -335,43 +372,9 @@ namespace Intsurv {
             // update iter for the next iteration
             ++i;
 
-            // E-step: compute v vector with tail completion
-            // prepare for exponential tail completion method
-            double s0_tau {0}, etail_lambda {0};
-            if (tail_completion == 2) {
-                s0_tau = cox_obj.S0_time(max_event_time_ind);
-                etail_lambda = - std::log(s0_tau / max_event_time);
-            }
+            // E-step: compute v vector
             for (size_t j: case2_ind) {
-                double s_j { cox_obj.S_time(j) };
-                // tail completion for the conditional survival function
-                switch(tail_completion) {
-                    case 0:
-                        // tail completion after the given tail_tau
-                        // by default, it means no tail completion
-                        if (time(j) > tail_tau) {
-                            s_j = 0;
-                        }
-                        break;
-                    case 1:
-                        // zero-tail constraint
-                        if (time(j) > max_event_time) {
-                            s_j = 0;
-                        }
-                        break;
-                    case 2:
-                        // exponential tail by Peng (2003)
-                        if (time(j) > max_event_time) {
-                            s_j = std::exp(
-                                - etail_lambda * time(j) *
-                                std::exp(cox_obj.xBeta(j))
-                                );
-                        }
-                        break;
-                    default:    // do nothing, otherwise
-                        break;
-                }
-                double numer_j { p_vec(j) * s_j };
+                double numer_j { p_vec(j) * cox_obj.S_time(j) };
                 estep_v(j) = numer_j / (1 - p_vec(j) + numer_j);
             }
 
@@ -387,7 +390,7 @@ namespace Intsurv {
             cox_obj.fit(cox_beta, cox_mstep_max_iter, cox_mstep_rel_tol,
                         early_stop, verbose > 2);
             if (verbose > 1) {
-                Rcpp::Rcout << std::string(40, '-')
+                Rcpp::Rcout << "\n" << std::string(40, '-')
                             << "\nThe M-step for the survival layer was done."
                             << std::endl;
             }
@@ -409,7 +412,7 @@ namespace Intsurv {
                              pmin, early_stop, verbose > 2);
             }
             if (verbose > 1) {
-                Rcpp::Rcout << std::string(40, '-')
+                Rcpp::Rcout << "\n" << std::string(40, '-')
                             << "\nThe M-step for the cure layer was done."
                             << std::endl;
             }
@@ -525,6 +528,7 @@ namespace Intsurv {
         double obs_ell {0};
         double reg_obj {0}, reg_obj_old { arma::datum::inf };
         double tol1 { arma::datum::inf }, tol2 { tol1 };
+        bool verbose_mstep { verbose > 2 };
 
         // prepare for tail completion
         arma::vec time { cox_obj.get_time() };
@@ -541,6 +545,43 @@ namespace Intsurv {
             // update to the latest estimates
             p_vec = cure_obj.predict(cure_obj.coef, pmin);
             cox_obj.compute_haz_surv_time();
+
+            // prepare for exponential tail completion method
+            double s0_tau {0}, etail_lambda {0};
+            if (tail_completion == 2) {
+                s0_tau = cox_obj.S0_time(max_event_time_ind);
+                etail_lambda = - std::log(s0_tau / max_event_time);
+            }
+            // tail completion
+            for (size_t j: case2_ind) {
+                // tail completion for the conditional survival function
+                switch(tail_completion) {
+                    case 0:
+                        // tail completion after the given tail_tau
+                        // by default, it means no tail completion
+                        if (time(j) > tail_tau) {
+                            cox_obj.S_time(j) = 0;
+                        }
+                        break;
+                    case 1:
+                        // zero-tail constraint
+                        if (time(j) > max_event_time) {
+                            cox_obj.S_time(j) = 0;
+                        }
+                        break;
+                    case 2:
+                        // exponential tail by Peng (2003)
+                        if (time(j) > max_event_time) {
+                            cox_obj.S_time(j) = std::exp(
+                                - etail_lambda * time(j) *
+                                std::exp(cox_obj.xBeta(j))
+                                );
+                        }
+                        break;
+                    default:    // do nothing, otherwise
+                        break;
+                }
+            }
 
             // compute observed log-likelihood
             obs_ell = 0;
@@ -653,42 +694,8 @@ namespace Intsurv {
             ++i;
 
             // E-step: compute v vector
-            // prepare for exponential tail completion method
-            double s0_tau {0}, etail_lambda {0};
-            if (tail_completion == 2) {
-                s0_tau = cox_obj.S0_time(max_event_time_ind);
-                etail_lambda = - std::log(s0_tau / max_event_time);
-            }
             for (size_t j: case2_ind) {
-                double s_j { cox_obj.S_time(j) };
-                // tail completion for the conditional survival function
-                switch(tail_completion) {
-                    case 0:
-                        // tail completion after the given tail_tau
-                        // by default, it means no tail completion
-                        if (time(j) > tail_tau) {
-                            s_j = 0;
-                        }
-                        break;
-                    case 1:
-                        // zero-tail constraint
-                        if (time(j) > max_event_time) {
-                            s_j = 0;
-                        }
-                        break;
-                    case 2:
-                        // exponential tail by Peng (2003)
-                        if (time(j) > max_event_time) {
-                            s_j = std::exp(
-                                - etail_lambda * time(j) *
-                                std::exp(cox_obj.xBeta(j))
-                                );
-                        }
-                        break;
-                    default:    // do nothing, otherwise
-                        break;
-                }
-                double numer_j { p_vec(j) *  s_j};
+                double numer_j { p_vec(j) *  cox_obj.S_time(j)};
                 estep_v(j) = numer_j / (1 - p_vec(j) + numer_j);
                 // special care prevents coef diverging
                 if (estep_v(j) < pmin) {
@@ -704,14 +711,13 @@ namespace Intsurv {
             // M-step for the survival layer
             if (verbose > 1) {
                 Rcpp::Rcout << "\n" << std::string(40, '-')
-                            << "\nRunning the M-step for the survival layer:"
-                            << std::endl;
+                            << "\nRunning the M-step for the survival layer:";
             }
             cox_obj.set_offset(arma::log(estep_v));
             cox_obj.regularized_fit(
                 cox_l1_lambda, cox_l2_lambda, cox_l1_penalty_factor,
                 cox_beta, cox_mstep_max_iter, cox_mstep_rel_tol,
-                early_stop, verbose > 2
+                early_stop, verbose_mstep
                 );
             if (verbose > 1) {
                 Rcpp::Rcout << "\n" << std::string(40, '-')
@@ -731,10 +737,10 @@ namespace Intsurv {
             cure_obj.regularized_fit(
                 cure_l1_lambda, cure_l2_lambda, cure_l1_penalty_factor,
                 cure_beta, cure_mstep_max_iter, cure_mstep_rel_tol,
-                pmin, early_stop, verbose > 2
+                pmin, early_stop, verbose_mstep
                 );
             if (verbose > 1) {
-                Rcpp::Rcout << std::string(40, '-')
+                Rcpp::Rcout << "\n" << std::string(40, '-')
                             << "\nThe M-step for the cure layer was done."
                             << std::endl;
             }

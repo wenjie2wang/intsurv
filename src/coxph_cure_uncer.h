@@ -324,6 +324,7 @@ namespace Intsurv {
         double tol1 { arma::datum::inf }, tol2 { tol1 };
 
         // prepare for tail completion
+        const arma::uvec case23_ind { vec_union(case2_ind, case3_ind) };
         double max_event_time { time(this->max_event_time_ind) };
         if (tail_tau < 0)
             tail_tau = arma::datum::inf;
@@ -338,6 +339,44 @@ namespace Intsurv {
             p_vec = cure_obj.predict(cure_obj.coef, pmin);
             cox_obj.compute_haz_surv_time();
             cox_obj.compute_censor_haz_surv_time();
+
+            // prepare for exponential tail completion method
+            double s0_tau {0}, etail_lambda {0};
+            if (tail_completion == 2) {
+                s0_tau = cox_obj.S0_time(max_event_time_ind);
+                etail_lambda = - std::log(s0_tau / max_event_time);
+            }
+            // tail completion for the conditional survival function
+            // for case 2 and case 3
+            for (size_t j: case23_ind) {
+                // tail completion for the conditional survival function
+                switch(tail_completion) {
+                    case 0:
+                        // tail completion after the given tail_tau
+                        // by default, it means no tail completion
+                        if (time(j) > tail_tau) {
+                            cox_obj.S_time(j) = 0;
+                        }
+                        break;
+                    case 1:
+                        // zero-tail constraint
+                        if (time(j) > max_event_time) {
+                            cox_obj.S_time(j) = 0;
+                        }
+                        break;
+                    case 2:
+                        // exponential tail by Peng (2003)
+                        if (time(j) > max_event_time) {
+                            cox_obj.S_time(j) = std::exp(
+                                - etail_lambda * time(j) *
+                                std::exp(cox_obj.xBeta(j))
+                                );
+                        }
+                        break;
+                    default:    // do nothing, otherwise
+                        break;
+                }
+            }
 
             // compute observed data log-likelihood
             obs_ell = 0;
@@ -357,14 +396,11 @@ namespace Intsurv {
             }
             // for case 3
             for (size_t j: case3_ind) {
-                double m1 {
-                    p_vec(j) * cox_obj.h_time(j) *
-                    cox_obj.S_time(j) * cox_obj.Sc_time(j)
+                double m12_common {
+                    p_vec(j) * cox_obj.S0_time(j) * cox_obj.Sc_time(j)
                 };
-                double m2 {
-                    p_vec(j) * cox_obj.hc_time(j) *
-                    cox_obj.Sc_time(j) * cox_obj.S_time(j)
-                };
+                double m1 { cox_obj.h_time(j) * m12_common };
+                double m2 { cox_obj.hc_time(j) * m12_common };
                 double m3 {
                     (1 - p_vec(j)) * cox_obj.hc_time(j) * cox_obj.Sc_time(j)
                 };
@@ -452,84 +488,18 @@ namespace Intsurv {
             ++i;
 
             // E-step: compute the v vector for case 2
-            // prepare for exponential tail completion method
-            double s0_tau {0}, etail_lambda {0};
-            if (tail_completion == 2) {
-                s0_tau = cox_obj.S0_time(max_event_time_ind);
-                etail_lambda = - std::log(s0_tau / max_event_time);
-            }
             for (size_t j: case2_ind) {
-                double s_j { cox_obj.S_time(j) };
-                // tail completion for the conditional survival function
-                switch(tail_completion) {
-                    case 0:
-                        // tail completion after the given tail_tau
-                        // by default, it means no tail completion
-                        if (time(j) > tail_tau) {
-                            s_j = 0;
-                        }
-                        break;
-                    case 1:
-                        // zero-tail constraint
-                        if (time(j) > max_event_time) {
-                            s_j = 0;
-                        }
-                        break;
-                    case 2:
-                        // exponential tail by Peng (2003)
-                        if (time(j) > max_event_time) {
-                            s_j = std::exp(
-                                - etail_lambda * time(j) *
-                                std::exp(cox_obj.xBeta(j))
-                                );
-                            if (s_j < pmin) s_j = pmin;
-                        }
-                        break;
-                    default:    // do nothing, otherwise
-                        break;
-                }
-                double numer_j { p_vec(j) *  s_j};
+                double numer_j { p_vec(j) * cox_obj.S_time(j)};
                 estep_m(j) = numer_j / (1 - p_vec(j) + numer_j);
             }
 
             // E-step: compute the w vector for case 3
             for (size_t j: case3_ind) {
-                double s_j { cox_obj.S_time(j) };
-                switch(tail_completion) {
-                    case 0:
-                        // tail completion after the given tail_tau
-                        // by default, it means no tail completion
-                        if (time(j) > tail_tau) {
-                            s_j = pmin;
-                        }
-                        break;
-                    case 1:
-                        // zero-tail constraint
-                        if (time(j) > max_event_time) {
-                            s_j = pmin;
-                        }
-                        break;
-                    case 2:
-                        // exponential tail by Peng (2003)
-                        if (time(j) > max_event_time) {
-                            s_j = std::exp(
-                                - etail_lambda * time(j) *
-                                std::exp(cox_obj.xBeta(j))
-                                );
-                            if (s_j < pmin) s_j = pmin;
-                        }
-                        break;
-                    default:    // do nothing, otherwise
-                        break;
-                }
-                double m1 {
-                    p_vec(j) * cox_obj.h_time(j) *
-                        s_j * cox_obj.Sc_time(j)
+                double m12_common {
+                    p_vec(j) * cox_obj.S_time(j) * cox_obj.Sc_time(j)
                 };
-                double m2 {
-                    p_vec(j) * cox_obj.hc_time(j) *
-                    cox_obj.Sc_time(j) * s_j
-                };
+                double m1 { cox_obj.h_time(j) * m12_common };
+                double m2 { cox_obj.hc_time(j) * m12_common };
                 double m3 {
                     (1 - p_vec(j)) * cox_obj.hc_time(j) * cox_obj.Sc_time(j)
                 };
@@ -610,14 +580,11 @@ namespace Intsurv {
             estep_m(j) = numer_j / (1 - p_vec(j) + numer_j);
         }
         for (size_t j: case3_ind) {
-            double m1 {
-                p_vec(j) * cox_obj.h_time(j) *
-                    cox_obj.S_time(j) * cox_obj.Sc_time(j)
-                    };
-            double m2 {
-                p_vec(j) * cox_obj.hc_time(j) *
-                cox_obj.Sc_time(j) * cox_obj.S_time(j)
+            double m12_common {
+                p_vec(j) * cox_obj.S_time(j) * cox_obj.Sc_time(j)
             };
+            double m1 { cox_obj.h_time(j) * m12_common };
+            double m2 { cox_obj.hc_time(j) * m12_common };
             double m3 {
                 (1 - p_vec(j)) * cox_obj.hc_time(j) * cox_obj.Sc_time(j)
             };
@@ -638,6 +605,7 @@ namespace Intsurv {
                                  cox_obj.xBeta.elem(cer_ind),
                                  cure_obj.prob_vec.elem(cer_ind)).index;
     }
+
 
     // fit regularized Cox cure model with uncertain events
     // with adaptive elastic net penalty for perticular lambda's
@@ -806,6 +774,7 @@ namespace Intsurv {
         double tol1 { arma::datum::inf }, tol2 { tol1 };
 
         // prepare for tail completion
+        const arma::uvec case23_ind { vec_union(case2_ind, case3_ind) };
         double max_event_time { time(this->max_event_time_ind) };
         if (tail_tau < 0)
             tail_tau = arma::datum::inf;
@@ -820,6 +789,43 @@ namespace Intsurv {
             p_vec = cure_obj.predict(cure_obj.coef, pmin);
             cox_obj.compute_haz_surv_time();
             cox_obj.compute_censor_haz_surv_time();
+
+            // prepare for exponential tail completion method
+            double s0_tau {0}, etail_lambda {0};
+            if (tail_completion == 2) {
+                s0_tau = cox_obj.S0_time(max_event_time_ind);
+                etail_lambda = - std::log(s0_tau / max_event_time);
+            }
+            // tail completion for the conditional survival function
+            // for case 2 and case 3
+            for (size_t j: case23_ind) {
+                switch(tail_completion) {
+                    case 0:
+                        // tail completion after the given tail_tau
+                        // by default, it means no tail completion
+                        if (time(j) > tail_tau) {
+                            cox_obj.S_time(j) = 0;
+                        }
+                        break;
+                    case 1:
+                        // zero-tail constraint
+                        if (time(j) > max_event_time) {
+                            cox_obj.S_time(j) = 0;
+                        }
+                        break;
+                    case 2:
+                        // exponential tail by Peng (2003)
+                        if (time(j) > max_event_time) {
+                            cox_obj.S_time(j) = std::exp(
+                                - etail_lambda * time(j) *
+                                std::exp(cox_obj.xBeta(j))
+                                );
+                        }
+                        break;
+                    default:    // do nothing, otherwise
+                        break;
+                }
+            }
 
             // compute observed data log-likelihood
             obs_ell = 0;
@@ -952,91 +958,18 @@ namespace Intsurv {
             ++i;
 
             // E-step: compute the v vector for case 2
-            // prepare for exponential tail completion method
-            double s0_tau {0}, etail_lambda {0};
-            if (tail_completion == 2) {
-                s0_tau = cox_obj.S0_time(max_event_time_ind);
-                etail_lambda = - std::log(s0_tau / max_event_time);
-            }
             for (size_t j: case2_ind) {
-                double s_j { cox_obj.S_time(j) };
-                // tail completion for the conditional survival function
-                switch(tail_completion) {
-                    case 0:
-                        // tail completion after the given tail_tau
-                        // by default, it means no tail completion
-                        if (time(j) > tail_tau) {
-                            s_j = 0;
-                        }
-                        break;
-                    case 1:
-                        // zero-tail constraint
-                        if (time(j) > max_event_time) {
-                            s_j = 0;
-                        }
-                        break;
-                    case 2:
-                        // exponential tail by Peng (2003)
-                        if (time(j) > max_event_time) {
-                            s_j = std::exp(
-                                - etail_lambda * time(j) *
-                                std::exp(cox_obj.xBeta(j))
-                                );
-                            if (s_j < pmin) s_j = pmin;
-                        }
-                        break;
-                    default:    // do nothing, otherwise
-                        break;
-                }
-                double numer_j { p_vec(j) *  s_j};
+                double numer_j { p_vec(j) * cox_obj.S_time(j)};
                 estep_m(j) = numer_j / (1 - p_vec(j) + numer_j);
-                // special care prevents coef diverging?
-                // if (estep_m(j) < pmin) {
-                //     estep_m(j) = pmin;
-                // } else if (estep_m(j) > 1 - pmin) {
-                //     estep_m(j) = 1 - pmin;
-                // }
             }
 
             // E-step: compute the w vector for case 3
             for (size_t j: case3_ind) {
-                double s_j { cox_obj.S_time(j) };
-                // tail completion for the conditional survival function
-                switch(tail_completion) {
-                    case 0:
-                        // tail completion after the given tail_tau
-                        // by default, it means no tail completion
-                        if (time(j) > tail_tau) {
-                            s_j = pmin;
-                        }
-                        break;
-                    case 1:
-                        // zero-tail constraint
-                        if (time(j) > max_event_time) {
-                            s_j = pmin;
-                        }
-                        break;
-                    case 2:
-                        // exponential tail by Peng (2003)
-                        if (time(j) > max_event_time) {
-                            s_j = std::exp(
-                                - etail_lambda * time(j) *
-                                std::exp(cox_obj.xBeta(j))
-                                );
-                            if (s_j < pmin) s_j = pmin;
-                        }
-                        break;
-                    default:    // do nothing, otherwise
-                        break;
-                }
-                double m1 {
-                    p_vec(j) * cox_obj.h_time(j) *
-                        s_j * cox_obj.Sc_time(j)
+                double m12_common {
+                    p_vec(j) * cox_obj.S0_time(j) * cox_obj.Sc_time(j)
                 };
-                double m2 {
-                    p_vec(j) * cox_obj.hc_time(j) *
-                    cox_obj.Sc_time(j) * s_j
-                };
+                double m1 { cox_obj.h_time(j) * m12_common };
+                double m2 { cox_obj.hc_time(j) * m12_common };
                 double m3 {
                     (1 - p_vec(j)) * cox_obj.hc_time(j) * cox_obj.Sc_time(j)
                 };
@@ -1136,14 +1069,11 @@ namespace Intsurv {
             estep_m(j) = numer_j / (1 - p_vec(j) + numer_j);
         }
         for (size_t j: case3_ind) {
-            double m1 {
-                p_vec(j) * cox_obj.h_time(j) *
-                    cox_obj.S_time(j) * cox_obj.Sc_time(j)
-                    };
-            double m2 {
-                p_vec(j) * cox_obj.hc_time(j) *
-                cox_obj.Sc_time(j) * cox_obj.S_time(j)
+            double m12_common {
+                p_vec(j) * cox_obj.S0_time(j) * cox_obj.Sc_time(j)
             };
+            double m1 { cox_obj.h_time(j) * m12_common };
+            double m2 { cox_obj.hc_time(j) * m12_common };
             double m3 {
                 (1 - p_vec(j)) * cox_obj.hc_time(j) * cox_obj.Sc_time(j)
             };
