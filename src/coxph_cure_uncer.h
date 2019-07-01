@@ -506,6 +506,10 @@ namespace Intsurv {
                 double m { m1 + m2 + m3 };
                 double w1 { m1 / m };
                 double w2 { m2 / m };
+                // some special care for subjects in case 3
+                // since event(j) cannot be either 0 or 1!
+                w1 = ge_le(w1, pmin, 1 - pmin);
+                w2 = ge_le(w2, pmin, 1 - pmin);
                 estep_m(j) = w1 + w2;
                 event(j) = w1;
             }
@@ -591,6 +595,8 @@ namespace Intsurv {
             double m { m1 + m2 + m3 };
             double w1 { m1 / m };
             double w2 { m2 / m };
+            w1 = ge_le(w1, pmin, 1 - pmin);
+            w2 = ge_le(w2, pmin, 1 - pmin);
             estep_m(j) = w1 + w2;
             event(j) = w1;
         }
@@ -976,13 +982,11 @@ namespace Intsurv {
                 double m { m1 + m2 + m3 };
                 double w1 { m1 / m };
                 double w2 { m2 / m };
+                // some special care for subjects in case 3
+                // since event(j) cannot be either 0 or 1!
+                w1 = ge_le(w1, pmin, 1 - pmin);
+                w2 = ge_le(w2, pmin, 1 - pmin);
                 estep_m(j) = w1 + w2;
-                // special care prevents coef diverging?
-                // if (estep_m(j) < pmin) {
-                //     estep_m(j) = pmin;
-                // } else if (estep_m(j) > 1 - pmin) {
-                //     estep_m(j) = 1 - pmin;
-                // }
                 event(j) = w1;
             }
 

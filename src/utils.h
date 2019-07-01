@@ -637,6 +637,13 @@ namespace Intsurv {
             static_cast<double>(coef_df) + 2 * negLogL;
     }
 
+    // set a value within [a, b]
+    inline double ge_le(const double x, const double a, const double b) {
+        if (x < a) return a;
+        if (x > b) return b;
+        return x;
+    }
+
 }
 
 #endif
