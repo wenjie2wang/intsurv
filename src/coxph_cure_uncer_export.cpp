@@ -356,47 +356,58 @@ Rcpp::List coxph_cure_uncer_vs(
     arma::vec coef_df { bic1 }, negLogL { bic1 };
     arma::mat lambda_mat { arma::zeros(n_lambda, 4) };
 
-    // warm start
-    arma::vec cox_warm_start { cox_start };
-    arma::vec cure_warm_start { cure_start };
+    // warm starts
+    arma::vec cox_warm_start0 { cox_start };
+    arma::vec cure_warm_start0 { cure_start };
+    arma::vec cox_warm_start;
+    arma::vec cure_warm_start;
 
     // for each lambda
-    unsigned int i {0}, j {0};
-    for (size_t iter {0}; iter < n_lambda; ++iter) {
+    unsigned int iter {0};
+    for (size_t i {0}; i < n_cox_lambda; ++i) {
         // get the specific lambda's
         double cox_l1_lambda { cox_lambda_seq(i) * cox_alpha };
         double cox_l2_lambda { cox_lambda_seq(i) * (1 - cox_alpha) / 2 };
-        double cure_l1_lambda { cure_lambda_seq(j) * cure_alpha };
-        double cure_l2_lambda { cure_lambda_seq(j) * (1 - cure_alpha) / 2 };
-        // model-fitting
-        obj.regularized_fit(
-            cox_l1_lambda, cox_l2_lambda,
-            cure_l1_lambda, cure_l2_lambda,
-            cox_l1_penalty_factor, cure_l1_penalty_factor,
-            cox_warm_start, cure_warm_start,
-            em_max_iter, em_rel_tol,
-            cox_mstep_max_iter, cox_mstep_rel_tol,
-            cure_mstep_max_iter, cure_mstep_rel_tol,
-            spline_start, iSpline_num_knots, iSpline_degree,
-            tail_completion, tail_tau,
-            pmin, early_stop, verbose
-            );
-        // update starting value
-        cox_warm_start = obj.cox_coef;
-        cure_warm_start = obj.cure_coef;
-        // store results
-        cox_coef_mat.col(iter) = obj.cox_coef;
-        cure_coef_mat.col(iter) = obj.cure_coef;
-        bic1(iter) = obj.bic1;
-        bic2(iter) = obj.bic2;
-        coef_df(iter) = obj.coef_df;
-        negLogL(iter) = obj.negLogL;
-        lambda_mat(iter, 0) = cox_l1_lambda;
-        lambda_mat(iter, 1) = cox_l2_lambda;
-        lambda_mat(iter, 2) = cure_l1_lambda;
-        lambda_mat(iter, 3) = cure_l2_lambda;
-        // update iterators
-        Intsurv::update_iter(i, j);
+        cox_warm_start = cox_warm_start0;
+        cure_warm_start = cure_warm_start0;
+        for (size_t j {0}; j < n_cure_lambda; ++j) {
+            double cure_l1_lambda { cure_lambda_seq(j) * cure_alpha };
+            double cure_l2_lambda { cure_lambda_seq(j) * (1 - cure_alpha) / 2 };
+            // model-fitting
+            obj.regularized_fit(
+                cox_l1_lambda, cox_l2_lambda,
+                cure_l1_lambda, cure_l2_lambda,
+                cox_l1_penalty_factor, cure_l1_penalty_factor,
+                cox_warm_start, cure_warm_start,
+                em_max_iter, em_rel_tol,
+                cox_mstep_max_iter, cox_mstep_rel_tol,
+                cure_mstep_max_iter, cure_mstep_rel_tol,
+                spline_start, iSpline_num_knots, iSpline_degree,
+                tail_completion, tail_tau,
+                pmin, early_stop, verbose
+                );
+            // update starting value
+            cox_warm_start = obj.cox_coef;
+            cure_warm_start = obj.cure_coef;
+            if (j == 0) {
+                // save starting value for next i
+                cox_warm_start0 = obj.cox_coef;
+                cure_warm_start0 = obj.cure_coef;
+            }
+            // store results
+            cox_coef_mat.col(iter) = obj.cox_coef;
+            cure_coef_mat.col(iter) = obj.cure_coef;
+            bic1(iter) = obj.bic1;
+            bic2(iter) = obj.bic2;
+            coef_df(iter) = obj.coef_df;
+            negLogL(iter) = obj.negLogL;
+            lambda_mat(iter, 0) = cox_l1_lambda;
+            lambda_mat(iter, 1) = cox_l2_lambda;
+            lambda_mat(iter, 2) = cure_l1_lambda;
+            lambda_mat(iter, 3) = cure_l2_lambda;
+            // update iterators
+            iter++;
+        }
     }
     // return results in a list
     return Rcpp::List::create(

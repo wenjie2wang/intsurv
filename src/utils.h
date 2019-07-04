@@ -659,33 +659,6 @@ namespace Intsurv {
         return out;
     }
 
-    // update iterators alternatively for possible warm start
-    template <typename int_T>
-    inline void update_iter(int_T& i, int_T& j) {
-        bool is_i_odd { i % 2 > 0 };
-        bool is_j_odd { j % 2 > 0 };
-        if (j == 0) {
-            if (is_i_odd) { i++; } else { j++; }
-            return;
-        }
-        if (i == 0) {
-            if (is_j_odd) { i++; } else { j++; }
-            return;
-        }
-        if (j == i) {
-            if (is_i_odd) { j--; } else { i--; }
-            return;
-        }
-        if (j < i) {
-            if (is_i_odd) { j--; } else { j++; }
-            return;
-        }
-        if (i < j) {
-            if (is_j_odd) { i++; } else { i--; }
-            return;
-        }
-    }
-
 }
 
 #endif
