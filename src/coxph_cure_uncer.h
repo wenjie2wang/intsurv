@@ -941,10 +941,12 @@ namespace Intsurv {
             }
             // return the estimates from last step
             if (early_exit) {
-                Rcpp::Rcout << "Ended the EM algorithm after iteration "
-                            << i
-                            << " with estimates from last step."
-                            << std::endl;
+                if (verbose) {
+                    Rcpp::Rcout << "Ended the EM algorithm after iteration "
+                                << i
+                                << " with estimates from last step."
+                                << std::endl;
+                }
                 // take the estimates from the last step
                 cox_obj.coef = cox_beta;
                 cure_obj.coef = cure_beta;
