@@ -363,7 +363,6 @@ namespace Intsurv {
         return out;
     }
 
-
     // inline handy functions
     inline arma::vec mat2vec(const arma::mat& x) {
         return arma::conv_to<arma::vec>::from(x);
@@ -612,10 +611,15 @@ namespace Intsurv {
         return res;
     }
 
-    // convert arma vec type to Rcpp NumericVector
+    // convert arma vector type to Rcpp vector type
     template <typename T>
     inline Rcpp::NumericVector arma2rvec(const T& x) {
         return Rcpp::NumericVector(x.begin(), x.end());
+    }
+    // convert Rcpp::NumericVector to arma::colvec
+    template <typename T>
+    inline arma::vec rvec2arma(const T& x) {
+        return arma::vec(x.begin(), x.size(), false);
     }
 
     // count non-zero coef estimates
@@ -642,6 +646,17 @@ namespace Intsurv {
         if (x < a) return a;
         if (x > b) return b;
         return x;
+    }
+
+    // get a boostrap sample with help of Rcpp sugar
+    inline arma::uvec bootstrap_sample(const arma::uvec& x) {
+        Rcpp::IntegerVector xx { Rcpp::IntegerVector(x.begin(), x.end()) };
+        Rcpp::IntegerVector ran_xx { Rcpp::sample(xx, xx.size(), true) };
+        arma::uvec out { x };
+        for (int i {0}; i < ran_xx.size(); ++i) {
+            out(i) = ran_xx(i);
+        }
+        return out;
     }
 
 }

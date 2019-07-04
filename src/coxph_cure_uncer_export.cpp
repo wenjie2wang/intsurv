@@ -29,6 +29,7 @@ Rcpp::List coxph_cure_uncer(
     const arma::mat& cox_x,
     const arma::mat& cure_x,
     const bool cure_intercept = true,
+    const unsigned int& bootstrap = 0,
     const arma::vec& cox_start = 0,
     const arma::vec& cure_start = 0,
     const unsigned int& em_max_iter = 300,
@@ -49,10 +50,12 @@ Rcpp::List coxph_cure_uncer(
     const unsigned int& verbose = 0
     )
 {
+    // define object
     Intsurv::CoxphCureUncer obj {
         Intsurv::CoxphCureUncer(time, event, cox_x, cure_x, cure_intercept,
                                 cox_standardize, cure_standardize)
     };
+    // model-fitting
     obj.fit(cox_start, cure_start,
             em_max_iter, em_rel_tol,
             cox_mstep_max_iter, cox_mstep_rel_tol,
@@ -61,6 +64,47 @@ Rcpp::List coxph_cure_uncer(
             tail_completion, tail_tau,
             pmin, early_stop, verbose
         );
+    // initialize bootstrap estimates
+    arma::mat boot_cox_coef_mat, boot_cure_coef_mat;
+    if (bootstrap > 0) {
+        boot_cox_coef_mat = arma::zeros(obj.cox_coef.n_elem, bootstrap);
+        boot_cure_coef_mat = arma::zeros(obj.cure_coef.n_elem, bootstrap);
+        arma::vec event0na { event };
+        const double const4na { 0.5 };
+        event0na.replace(arma::datum::nan, const4na);
+        arma::uvec case1_ind = arma::find(event0na > const4na);
+        arma::uvec case2_ind = arma::find(event0na < const4na);
+        arma::uvec case3_ind = arma::find(event0na == const4na);
+        for (size_t i {0}; i < bootstrap; ++i) {
+            // generate a bootstrap sample
+            arma::uvec boot_ind {
+                Intsurv::vec_union(
+                    Intsurv::bootstrap_sample(case1_ind),
+                    Intsurv::bootstrap_sample(case2_ind)
+                    )
+            };
+            boot_ind = Intsurv::vec_union(
+                boot_ind, Intsurv::bootstrap_sample(case3_ind));
+            Intsurv::CoxphCureUncer boot_obj {
+                Intsurv::CoxphCureUncer(time.elem(boot_ind),
+                                        event.elem(boot_ind),
+                                        cox_x.rows(boot_ind),
+                                        cure_x.rows(boot_ind),
+                                        cure_intercept,
+                                        cox_standardize,
+                                        cure_standardize)
+            };
+            boot_obj.fit(cox_start, cure_start,
+                         em_max_iter, em_rel_tol,
+                         cox_mstep_max_iter, cox_mstep_rel_tol,
+                         cure_mstep_max_iter, cure_mstep_rel_tol,
+                         spline_start, iSpline_num_knots, iSpline_degree,
+                         tail_completion, tail_tau,
+                         pmin, early_stop, 0);
+            boot_cox_coef_mat.col(i) = boot_obj.cox_coef;
+            boot_cure_coef_mat.col(i) = boot_obj.cure_coef;
+        }
+    }
     return Rcpp::List::create(
         Rcpp::Named("cox_coef") = Intsurv::arma2rvec(obj.cox_coef),
         Rcpp::Named("cure_coef") = Intsurv::arma2rvec(obj.cure_coef),
@@ -89,6 +133,11 @@ Rcpp::List coxph_cure_uncer(
             Rcpp::Named("c_index") = obj.c_index,
             Rcpp::Named("bic1") = obj.bic1,
             Rcpp::Named("bic2") = obj.bic2
+            ),
+        Rcpp::Named("bootstrap") = Rcpp::List::create(
+            Rcpp::Named("B") = bootstrap,
+            Rcpp::Named("cox_coef_mat") = boot_cox_coef_mat.t(),
+            Rcpp::Named("cure_coef_mat") = boot_cure_coef_mat.t()
             ),
         Rcpp::Named("convergence") = Rcpp::List::create(
             Rcpp::Named("num_iter") = obj.num_iter
