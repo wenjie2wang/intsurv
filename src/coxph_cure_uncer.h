@@ -135,6 +135,13 @@ namespace Intsurv {
 
 
         // function members
+        // helper functions
+        inline unsigned int get_cox_p() {
+            return this->cox_p;
+        }
+        inline unsigned int get_cure_p() {
+            return this->cure_p;
+        }
 
         // fit the Cox cure mode with uncertain events by EM algorithm
         inline void fit(
@@ -449,10 +456,12 @@ namespace Intsurv {
             }
             // return the estimates from last step
             if (early_exit) {
-                Rcpp::Rcout << "Ended the EM algorithm after iteration "
-                            << i
-                            << " with estimates from last step."
-                            << std::endl;
+                if (verbose) {
+                    Rcpp::Rcout << "Ended the EM algorithm after iteration "
+                                << i
+                                << " with estimates from last step."
+                                << std::endl;
+                }
                 // take the estimates from the last step
                 cox_obj.coef = cox_beta;
                 cure_obj.coef = cure_beta;
@@ -687,6 +696,11 @@ namespace Intsurv {
         this->cure_l1_lambda_max =
             arma::max(cure_grad_zero.tail(cure_l1_penalty.n_elem) /
                       cure_l1_penalty) / this->nObs;
+
+        // early stop if we want lambda_max by setting em_max_iter = 0
+        if (em_max_iter == 0) {
+            return;
+        }
 
         // initialize cox_beta
         if (cox_start.n_elem == this->cox_p) {

@@ -333,10 +333,12 @@ namespace Intsurv {
             }
             // return the estimates from last step
             if (early_exit) {
-                Rcpp::Rcout << "Ended the EM algorithm after iteration "
-                            << i
-                            << " with estimates from last step."
-                            << std::endl;
+                if (verbose) {
+                    Rcpp::Rcout << "Ended the EM algorithm after iteration "
+                                << i
+                                << " with estimates from last step."
+                                << std::endl;
+                }
                 // take the estimates from the last step
                 cox_obj.coef = cox_beta;
                 cure_obj.coef = cure_beta;
@@ -521,6 +523,11 @@ namespace Intsurv {
             arma::max(cure_grad_zero.tail(cure_l1_penalty.n_elem) /
                       cure_l1_penalty) / this->nObs;
 
+        // early stop: return lambda_max if em_max_iter = 0
+        if (em_max_iter == 0) {
+            return;
+        }
+
         // set the start estimates
         if (cox_start.n_elem == cox_p) {
             cox_beta = cox_start;
@@ -667,10 +674,12 @@ namespace Intsurv {
             }
             // return the estimates from last step
             if (early_exit) {
-                Rcpp::Rcout << "Ended the EM algorithm after iteration "
-                            << i
-                            << " with estimates from last step."
-                            << std::endl;
+                if (verbose) {
+                    Rcpp::Rcout << "Ended the EM algorithm after iteration "
+                                << i
+                                << " with estimates from last step."
+                                << std::endl;
+                }
                 // compute hazard and survival function estimates
                 cox_obj.coef = cox_beta;
                 cure_obj.coef = cure_beta;
