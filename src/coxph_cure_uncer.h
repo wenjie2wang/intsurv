@@ -706,22 +706,14 @@ namespace Intsurv {
         if (cox_start.n_elem == this->cox_p) {
             cox_beta = cox_start;
         } else {
-            CoxphReg tmp_object {
-                CoxphReg(time.elem(case1_ind),
-                         event.elem(case1_ind),
-                         cox_x.rows(case1_ind))
-            };
-            tmp_object.fit(cox_beta, cox_mstep_max_iter, cox_mstep_rel_tol);
-            cox_beta = tmp_object.coef;
+            cox_beta = arma::zeros(this->cox_p);
         }
         arma::vec cox_exp_x_beta = arma::exp(cox_obj.get_x() * cox_beta);
         // initialize cure_beta
         if (cure_start.n_elem == this->cure_p) {
             cure_beta = cure_start;
         } else {
-            cure_obj.fit(cure_beta, cure_mstep_max_iter,
-                         cure_mstep_rel_tol);
-            cure_beta = cure_obj.coef;
+            cure_beta = arma::zeros(this->cure_p);
         }
 
         // initialize coef estimates
