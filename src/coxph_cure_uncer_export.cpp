@@ -346,7 +346,6 @@ Rcpp::List coxph_cure_uncer_vs(
     const unsigned int n_cox_lambda { cox_lambda_seq.n_elem };
     const unsigned int n_cure_lambda { cure_lambda_seq.n_elem };
     const unsigned int n_lambda { n_cox_lambda * n_cure_lambda };
-    Rcpp::Rcout << n_lambda << std::endl;
 
     // initialize the coef matrices
     const unsigned int cox_p { obj.get_cox_p() };
