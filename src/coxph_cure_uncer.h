@@ -575,6 +575,10 @@ namespace Intsurv {
 
         } // end of the EM algorithm
 
+        // reset cox_obj and cure_obj in case of further usage
+        cox_obj.reset_offset();
+        cure_obj.update_y(cox_obj.get_event());
+
         // prepare outputs
         this->cox_coef = cox_beta;
         this->cure_coef = cure_beta;
@@ -1065,6 +1069,11 @@ namespace Intsurv {
             tol2 = rel_l2_norm(cure_obj.coef, cure_beta);
 
         } // end of the EM algorithm
+
+        // reset cox_obj and cure_obj in case of further usage
+        cox_obj.reset_offset();
+        cure_obj.update_y(cox_obj.get_event());
+
         // prepare outputs
         this->cox_coef = cox_obj.coef;
         this->cure_coef = cure_obj.coef;

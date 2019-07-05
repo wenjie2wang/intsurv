@@ -307,7 +307,6 @@ Rcpp::List coxph_cure_uncer_vs(
         tail_completion, tail_tau,
         pmin, early_stop, 0
         );
-    // get the large enough lambda's
     // already considered penalty factor
     const double cox_lambda_max {
         obj.cox_l1_lambda_max / std::max(cox_alpha, 1e-10)
@@ -335,7 +334,7 @@ Rcpp::List coxph_cure_uncer_vs(
         cure_lambda_seq = arma::exp(
             arma::linspace(log_lambda_max,
                            log_lambda_max + std::log(cure_lambda_min_ratio),
-                           cox_nlambda)
+                           cure_nlambda)
             );
     } else {
         // take unique lambda and sort descendingly
@@ -422,10 +421,12 @@ Rcpp::List coxph_cure_uncer_vs(
             ),
         Rcpp::Named("penalty") = Rcpp::List::create(
             Rcpp::Named("lambda_mat") = lambda_mat,
+            Rcpp::Named("cox_alpha") = cox_alpha,
+            Rcpp::Named("cure_alpha") = cure_alpha,
             Rcpp::Named("cox_l1_lambda_max") = obj.cox_l1_lambda_max,
+            Rcpp::Named("cure_l1_lambda_max") = obj.cure_l1_lambda_max,
             Rcpp::Named("cox_l1_penalty_factor") =
             Intsurv::arma2rvec(obj.cox_l1_penalty_factor),
-            Rcpp::Named("cure_l1_lambda_max") = obj.cure_l1_lambda_max,
             Rcpp::Named("cure_l1_penalty_factor") =
             Intsurv::arma2rvec(obj.cure_l1_penalty_factor)
             )

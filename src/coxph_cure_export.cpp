@@ -225,3 +225,180 @@ Rcpp::List rcpp_coxph_cure_reg(
             )
         );
 }
+
+
+// variable selection for Cox cure rate model by EM algorithm,
+// where the M-step utilized CMD algoritm
+// for a sequence of lambda's
+// lambda * (penalty_factor * alpha * lasso + (1 - alpha) / 2 * ridge)
+// [[Rcpp::export]]
+Rcpp::List rcpp_coxph_cure_vs(
+    const arma::vec& time,
+    const arma::vec& event,
+    const arma::mat& cox_x,
+    const arma::mat& cure_x,
+    const bool cure_intercept = true,
+    const arma::vec& cox_lambda = 0,
+    const double& cox_alpha = 1,
+    const unsigned int& cox_nlambda = 1,
+    const double& cox_lambda_min_ratio = 1e-4,
+    const arma::vec& cox_l1_penalty_factor = 0,
+    const arma::vec& cure_lambda = 0,
+    const double& cure_alpha = 1,
+    const unsigned int& cure_nlambda = 1,
+    const double& cure_lambda_min_ratio = 1e-4,
+    const arma::vec& cure_l1_penalty_factor = 0,
+    const arma::vec& cox_start = 0,
+    const arma::vec& cure_start = 0,
+    const unsigned int& em_max_iter = 500,
+    const double& em_rel_tol = 1e-4,
+    const unsigned int& cox_mstep_max_iter = 200,
+    const double& cox_mstep_rel_tol = 1e-4,
+    const unsigned int& cure_mstep_max_iter = 200,
+    const double& cure_mstep_rel_tol = 1e-4,
+    const bool cox_standardize = true,
+    const bool cure_standardize = true,
+    const unsigned int& tail_completion = 1,
+    double tail_tau = -1,
+    const double& pmin = 1e-5,
+    const unsigned int& early_stop = 0,
+    const unsigned int& verbose = 0
+    )
+{
+    // define object
+    Intsurv::CoxphCure obj {
+        Intsurv::CoxphCure(time, event, cox_x, cure_x, cure_intercept,
+                           cox_standardize, cure_standardize)
+    };
+    // get the maximum lambdas by setting em_max_iter = 0
+    obj.regularized_fit(0, 0, 0, 0,
+                        cox_l1_penalty_factor, cure_l1_penalty_factor,
+                        cox_start, cure_start,
+                        0, em_rel_tol,
+                        cox_mstep_max_iter, cox_mstep_rel_tol,
+                        cure_mstep_max_iter, cure_mstep_rel_tol,
+                        tail_completion, tail_tau,
+                        pmin, early_stop, verbose);
+    // already considered penalty factor
+    const double cox_lambda_max {
+        obj.cox_l1_lambda_max / std::max(cox_alpha, 1e-10)
+    };
+    const double cure_lambda_max {
+        obj.cure_l1_lambda_max / std::max(cure_alpha, 1e-10)
+    };
+    // construct lambda sequence
+    arma::vec cox_lambda_seq, cure_lambda_seq;
+    // if cox_nlambda is not default value, generate the lambda sequence
+    if (cox_nlambda > 1) {
+        double log_lambda_max { std::log(cox_lambda_max) };
+        cox_lambda_seq = arma::exp(
+            arma::linspace(log_lambda_max,
+                           log_lambda_max + std::log(cox_lambda_min_ratio),
+                           cox_nlambda)
+            );
+    } else {
+        // take unique lambda and sort descendingly
+        cox_lambda_seq = arma::reverse(arma::unique(cox_lambda));
+    }
+    // if cure_nlambda is not default value, generate the lambda sequence
+    if (cure_nlambda > 1) {
+        double log_lambda_max { std::log(cure_lambda_max) };
+        cure_lambda_seq = arma::exp(
+            arma::linspace(log_lambda_max,
+                           log_lambda_max + std::log(cure_lambda_min_ratio),
+                           cure_nlambda)
+            );
+    } else {
+        // take unique lambda and sort descendingly
+        cure_lambda_seq = arma::reverse(arma::unique(cure_lambda));
+    }
+    // get the length of lambdas
+    const unsigned int n_cox_lambda { cox_lambda_seq.n_elem };
+    const unsigned int n_cure_lambda { cure_lambda_seq.n_elem };
+    const unsigned int n_lambda { n_cox_lambda * n_cure_lambda };
+
+    // initialize the coef matrices
+    const unsigned int cox_p { obj.get_cox_p() };
+    const unsigned int cure_p { obj.get_cure_p() };
+    arma::mat cox_coef_mat { arma::zeros(cox_p, n_lambda) };
+    arma::mat cure_coef_mat { arma::zeros(cure_p, n_lambda) };
+    arma::vec bic1 { arma::zeros(n_lambda) }, bic2 { bic1 };
+    arma::vec coef_df { bic1 }, negLogL { bic1 };
+    arma::mat lambda_mat { arma::zeros(n_lambda, 4) };
+
+    // warm starts
+    arma::vec cox_warm_start0 { cox_start };
+    arma::vec cure_warm_start0 { cure_start };
+    arma::vec cox_warm_start;
+    arma::vec cure_warm_start;
+
+    // for each lambda
+    unsigned int iter {0};
+    for (size_t i {0}; i < n_cox_lambda; ++i) {
+        // get the specific lambda's
+        double cox_l1_lambda { cox_lambda_seq(i) * cox_alpha };
+        double cox_l2_lambda { cox_lambda_seq(i) * (1 - cox_alpha) / 2 };
+        cox_warm_start = cox_warm_start0;
+        cure_warm_start = cure_warm_start0;
+        for (size_t j {0}; j < n_cure_lambda; ++j) {
+            double cure_l1_lambda { cure_lambda_seq(j) * cure_alpha };
+            double cure_l2_lambda { cure_lambda_seq(j) * (1 - cure_alpha) / 2 };
+            // model-fitting
+            obj.regularized_fit(
+                cox_l1_lambda, cox_l2_lambda,
+                cure_l1_lambda, cure_l2_lambda,
+                cox_l1_penalty_factor, cure_l1_penalty_factor,
+                cox_warm_start, cure_warm_start,
+                em_max_iter, em_rel_tol,
+                cox_mstep_max_iter, cox_mstep_rel_tol,
+                cure_mstep_max_iter, cure_mstep_rel_tol,
+                tail_completion, tail_tau,
+                pmin, early_stop, verbose
+                );
+            // update starting value
+            cox_warm_start = obj.cox_coef;
+            cure_warm_start = obj.cure_coef;
+            if (j == 0) {
+                // save starting value for next i
+                cox_warm_start0 = obj.cox_coef;
+                cure_warm_start0 = obj.cure_coef;
+            }
+            // store results
+            cox_coef_mat.col(iter) = obj.cox_coef;
+            cure_coef_mat.col(iter) = obj.cure_coef;
+            bic1(iter) = obj.bic1;
+            bic2(iter) = obj.bic2;
+            coef_df(iter) = obj.coef_df;
+            negLogL(iter) = obj.negLogL;
+            lambda_mat(iter, 0) = cox_l1_lambda;
+            lambda_mat(iter, 1) = cox_l2_lambda;
+            lambda_mat(iter, 2) = cure_l1_lambda;
+            lambda_mat(iter, 3) = cure_l2_lambda;
+            // update iterators
+            iter++;
+        }
+    }
+    // return results in a list
+    return Rcpp::List::create(
+        Rcpp::Named("cox_coef") = cox_coef_mat.t(),
+        Rcpp::Named("cure_coef") = cure_coef_mat.t(),
+        Rcpp::Named("goodness") = Rcpp::List::create(
+            Rcpp::Named("nObs") = obj.nObs,
+            Rcpp::Named("coef_df") = Intsurv::arma2rvec(coef_df),
+            Rcpp::Named("negLogL") = Intsurv::arma2rvec(negLogL),
+            Rcpp::Named("bic1") = Intsurv::arma2rvec(bic1),
+            Rcpp::Named("bic2") = Intsurv::arma2rvec(bic2)
+            ),
+        Rcpp::Named("penalty") = Rcpp::List::create(
+            Rcpp::Named("lambda_mat") = lambda_mat,
+            Rcpp::Named("cox_alpha") = cox_alpha,
+            Rcpp::Named("cure_alpha") = cure_alpha,
+            Rcpp::Named("cox_l1_lambda_max") = obj.cox_l1_lambda_max,
+            Rcpp::Named("cure_l1_lambda_max") = obj.cure_l1_lambda_max,
+            Rcpp::Named("cox_l1_penalty_factor") =
+            Intsurv::arma2rvec(obj.cox_l1_penalty_factor),
+            Rcpp::Named("cure_l1_penalty_factor") =
+            Intsurv::arma2rvec(obj.cure_l1_penalty_factor)
+            )
+        );
+}

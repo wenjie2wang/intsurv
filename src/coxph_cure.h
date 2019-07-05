@@ -110,6 +110,14 @@ namespace Intsurv {
         }
 
         // function members
+        // helper functions
+        inline unsigned int get_cox_p() {
+            return this->cox_p;
+        }
+        inline unsigned int get_cure_p() {
+            return this->cure_p;
+        }
+
         // fit the Cox cure mode by EM algorithm
         inline void fit(
             const arma::vec& cox_start,
@@ -434,6 +442,11 @@ namespace Intsurv {
             tol2 = rel_l1_norm(cure_obj.coef, cure_beta);
 
         } // end of the EM algorithm
+
+        // reset cox_obj and cure_obj in case of further usage
+        cox_obj.reset_offset();
+        cure_obj.update_y(cox_obj.get_event());
+
         // prepare outputs
         this->cox_coef = cox_obj.coef;
         this->cure_coef = cure_obj.coef;
@@ -779,6 +792,11 @@ namespace Intsurv {
             tol2 = rel_l1_norm(cure_obj.coef, cure_beta);
 
         } // end of the EM algorithm
+
+        // reset cox_obj and cure_obj in case of further usage
+        cox_obj.reset_offset();
+        cure_obj.update_y(cox_obj.get_event());
+
         // prepare outputs
         this->cox_coef = cox_obj.coef;
         this->cure_coef = cure_obj.coef;

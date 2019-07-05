@@ -52,6 +52,7 @@ namespace Intsurv {
         arma::vec riskset_size_time;
 
         // at each unique event time point
+        arma::vec d_time0;         // event times
         arma::vec d_time;          // distinct event times
         arma::mat d_x;             // design matrix aggregated at d_time
         arma::vec d_offset;        // offset terms aggregated at d_time
@@ -154,7 +155,7 @@ namespace Intsurv {
             // binary event indicator
             event_ind = arma::find(event > 0);
             // check if there exists ties on event times
-            arma::vec d_time0 {time.elem(event_ind)};
+            d_time0 = time.elem(event_ind);
             hasTies = any_duplicated(d_time0);
             // default value when no tied event times
             uni_event_ind = event_ind;
@@ -165,9 +166,7 @@ namespace Intsurv {
                 d_x.col(j) = d_x.col(j) % delta_n;
             }
             // initialize offset
-            this->set_offset(arma::zeros(1));
-            this->d_offset = this->offset.elem(event_ind) % delta_n;
-
+            this->set_offset(arma::zeros(time.n_elem));
             uni_time_ind = find_first_unique(time);
             if (hasTies) {
                 // re-define uni_event_ind
@@ -176,7 +175,6 @@ namespace Intsurv {
                 // aggregate at distinct event times
                 delta_n = aggregate_sum(delta_n, d_time0);
                 d_x = aggregate_sum(d_x, d_time0);
-                d_offset = aggregate_sum(d_offset, d_time0);
             }
             riskset_size = arma::ones(time.n_elem);
             riskset_size = cum_sum(riskset_size, true).elem(uni_event_ind);
@@ -209,10 +207,9 @@ namespace Intsurv {
                 d_x.col(j) = d_x.col(j) % delta_n;
             }
             if (hasTies) {
-                arma::vec d_time0 {time.elem(event_ind)};
                 // aggregate at distinct event times
-                delta_n = aggregate_sum(delta_n, d_time0);
-                d_x = aggregate_sum(d_x, d_time0);
+                delta_n = aggregate_sum(delta_n, this->d_time0);
+                d_x = aggregate_sum(d_x, this->d_time0);
             }
         }
 
@@ -229,6 +226,14 @@ namespace Intsurv {
             } else {
                 offset = arma::zeros(time.n_elem);
             }
+            // update d_offset as well
+            d_offset = offset.elem(event_ind) % delta_n;
+            if (hasTies) {
+                d_offset = aggregate_sum(d_offset, this->d_time0);
+            }
+        }
+        inline void reset_offset() {
+            set_offset(arma::zeros(time.n_elem));
         }
 
         // function that computes baseline estimates
