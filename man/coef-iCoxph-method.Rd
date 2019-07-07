@@ -3,6 +3,7 @@
 \docType{methods}
 \name{coef,iCoxph-method}
 \alias{coef,iCoxph-method}
+\alias{coef.iCoxph}
 \title{Estimated Coefficients of Covariates}
 \usage{
 \S4method{coef}{iCoxph}(object, ...)
@@ -17,8 +18,8 @@ A named numeric vector.
 }
 \description{
 \code{coef,iCoxph-method} is an S4 class method that extracts covariate
-coefficient estimates from \code{\link{iCoxph-class}} object from
-function \code{\link{iCoxph}}.
+coefficient estimates from \code{\link{iCoxph-class}} object from function
+\code{\link{iCoxph}}.
 }
 \examples{
 ## See examples given in function iCoxph.

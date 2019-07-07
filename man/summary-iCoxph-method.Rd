@@ -3,6 +3,7 @@
 \docType{methods}
 \name{summary,iCoxph-method}
 \alias{summary,iCoxph-method}
+\alias{summary.iCoxph}
 \title{Summary of a Fitted Model}
 \usage{
 \S4method{summary}{iCoxph}(object, showCall = TRUE, ...)
@@ -17,11 +18,11 @@
 \item{...}{Other arguments for future usage.}
 }
 \value{
-\code{iCoxph.summary-class} class object.
+\code{summary.iCoxph} class object.
 }
 \description{
 For \code{\link{iCoxph}} object, the function returns a
-\code{\link{iCoxph.summary-class}} object whose slots include
+\code{\link{summary.iCoxph}} object whose slots include
 \itemize{
     \item \code{call}: Function call of model fitting.
     \item \code{coefMat}: Estimated covariate coefficients.

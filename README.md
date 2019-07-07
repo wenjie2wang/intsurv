@@ -5,7 +5,7 @@
 
 
 The R package **intsurv** mainly provides functions fitting integrative Cox
-proportional hazard model proposed by Wang (2017+) for uncertain survival data
+proportional hazard model proposed by Wang (2019+) for uncertain survival data
 from imperfect data integration.
 
 

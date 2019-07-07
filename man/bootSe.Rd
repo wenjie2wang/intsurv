@@ -4,13 +4,12 @@
 \alias{bootSe}
 \title{Standard Error Estimates through Bootstrapping Methods}
 \usage{
-bootSe(object, numBoot = 50, se = c("mad", "inter-quantile", "sd"),
-       start = list(), control = list(), ...)
+bootSe(object, B = 50, se = c("mad", "inter-quantile", "sd"), ...)
 }
 \arguments{
 \item{object}{\code{\link{iCoxph-class}} object.}
 
-\item{numBoot}{A positive integer specifying number of bootstrap samples
+\item{B}{A positive integer specifying number of bootstrap samples
 used for SE estimates.  A large number, such as 200, is often needed for
 a more reliable estimation in practice.}
 
@@ -21,19 +20,10 @@ normality of the bootstrap estimates and provids robust estimates for
 SE. The third method estimates SE by the standard deviation of the
 bootstrap estimates.}
 
-\item{start}{An optional list of starting values for the parameters to be
-estimated in the model.  See more in Section details.}
-
-\item{control}{A optional list that controls the model fitting process for
-bootstrap samples, or specifys the function to return coefficient
-estimates from the bootstrap samples. See the available options in
-Section Details.}
-
 \item{...}{Other arguments for future usage.}
 }
 \value{
-\code{\link{iCoxph-class}} object by default or a numeric matrix of
-    coefficient estimates from each bootstrap sample.
+\code{\link{iCoxph-class}} object.
 }
 \description{
 This function addes or updates standard error (SE) estimates through
@@ -57,5 +47,5 @@ bootstrap samples.
 ## See examples given in function 'iCoxph'
 }
 \seealso{
-\code{\link{iCoxph}} for fitting extended Cox model for uncertain records.
+\code{\link{iCoxph}} for fitting integerative Cox model.
 }

@@ -4,12 +4,12 @@
 \name{show-method}
 \alias{show-method}
 \alias{show,iCoxph-method}
-\alias{show,iCoxph.summary-method}
+\alias{show,summary.iCoxph-method}
 \title{Show Methods}
 \usage{
 \S4method{show}{iCoxph}(object)
 
-\S4method{show}{iCoxph.summary}(object)
+\S4method{show}{summary.iCoxph}(object)
 }
 \arguments{
 \item{object}{An object used to dispatch a method.}
@@ -26,7 +26,7 @@ S4 class methods that display or summarize certain objects.
 \item For \code{\link{iCoxph-class}} object, it prints out a brief summary
     of the fitted model.
 
-\item For \code{\link{iCoxph.summary-class}} object, it prints out summary
+\item For \code{\link{summary.iCoxph-class}} object, it prints out summary
       of a fitted model.
 
 }

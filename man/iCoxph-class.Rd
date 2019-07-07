@@ -3,11 +3,11 @@
 \docType{class}
 \name{iCoxph-class}
 \alias{iCoxph-class}
-\title{An S4 Class to Represent a Fitted Extended Cox Model}
+\title{An S4 Class to Represent a Fitted Integrative Cox Model}
 \description{
-\code{iCoxph-class} is an S4 class that represents a fitted model.
-Function \code{\link{iCoxph}} produces objects of this class.
-See ``Slots'' for details.
+The \code{iCoxph} class is an S4 class that represents a fitted model.
+Function \code{\link{iCoxph}} produces objects of this class.  See ``Slots''
+for details.
 }
 \section{Slots}{
 
@@ -22,9 +22,9 @@ See ``Slots'' for details.
 
 \item{\code{estimates}}{A list.}
 
-\item{\code{control}}{A list.}
-
 \item{\code{start}}{A list.}
+
+\item{\code{control}}{A list.}
 
 \item{\code{na.action}}{A length-one character vector.}
 
@@ -32,9 +32,7 @@ See ``Slots'' for details.
 
 \item{\code{contrasts}}{A list.}
 
-\item{\code{convergCode}}{A nonnegative integer.}
-
-\item{\code{partLogL}}{A numeric value.}
+\item{\code{convergeCode}}{A nonnegative integer.}
 
 \item{\code{logL}}{A numeric value.}
 }}

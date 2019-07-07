@@ -5,7 +5,7 @@
 \title{Integrative Cox Model for Uncertain Survival Data}
 \usage{
 iCoxph(formula, data, subset, na.action, contrasts = NULL,
-       start = list(), control = list(), ...)
+       start = iCoxph.start(), control = iCoxph.control(), ...)
 }
 \arguments{
 \item{formula}{\code{Survi} object specifying the covariates and response
@@ -33,16 +33,20 @@ names are the names of columns of data containing factors.  See
 \code{contrasts.arg} of \code{\link[stats]{model.matrix.default}} for
 details.}
 
-\item{start}{An optional list of starting values for the parameters to be
-estimated in the model.  See more in Section details.}
+\item{start}{A list returned by function \code{\link{iCoxph.start}}
+specifying starting values of the parameters to be estimated in the
+model. Please refer to the arguments of \code{\link{iCoxph.start}} for
+the available parameters.}
 
-\item{control}{An optional list of parameters to control the maximization
-process.  See more in Section details.}
+\item{control}{A list returned by function \code{\link{iCoxph.control}}
+specifying control parameters for the model estimation procedure.
+Please refer to the arguments of \code{\link{iCoxph.control}} for the
+available parameters.}
 
 \item{...}{Other arguments for future usage.}
 }
 \value{
-A \code{\link{iCoxph-class}} object, whose slots include
+An \code{\link{iCoxph-class}} object, whose slots include
 \itemize{
     \item \code{call}: Function call.
     \item \code{formula}: Formula used in the model fitting.
@@ -54,7 +58,9 @@ A \code{\link{iCoxph-class}} object, whose slots include
             \item \code{pi}: Estimated parameters in prior multinomial
                 distribution indicating the probabilities of corresponding
                 record being true.
-            \item \code{h0}: Estimated baseline hazard function.
+            \item \code{baseline}: A data frame that contains estimated
+                baseline hazard function with columns named \code{time} and
+                \code{h0}.
         }
     \item \code{control}: The control list specified for model fitting.
     \item \code{start}: The initial guess specified for the parameters
@@ -65,123 +71,37 @@ A \code{\link{iCoxph-class}} object, whose slots include
         each factor variable.
     \item \code{contrasts}: Contrasts specified and used for each
         factor variable.
-    \item \code{convergCode}: \code{code} returned by function
+    \item \code{convergeCode}: \code{code} returned by function
         \code{\link[stats]{nlm}}, which is an integer indicating why the
         optimization process terminated. \code{help(nlm)} for details.
-    \item \code{partLogL}: Partial log-likelihood function under complete
-        data for covariate coefficients.
-    \item \code{logL}: Log-likelihood under observed data after convergence.
+    \item \code{logL}: The Log-likelihood under observed data after
+        convergence.
 }
 }
 \description{
-The function fits the integrative Cox model proposed by Wang (2017+) for
-uncertain survival data due to imperfect data integration. The maximization
-of the observed-data likelihood function follows expectation conditional
-maximization (ECM) algorithm proposed by Meng (1993).
-}
-\details{
-The argument \code{start} is an optional list that allows users to specify
-starting value of each parameter in the model. The valid named elements are
-given as follows:
-\itemize{
-
-\item \code{betaVec}: A numeric vector for starting values of coefficient
-    estimates. The default values are the coefficient estimates from the
-    regular Cox model only fitting on records without uncertainty.  If
-    censoring rate among subjects having unique certain records is extremely
-    high (> 0.99) or \code{\link[survival]{coxph}} returns any warning, such
-    as perfect seperation problem between event indicator and one predictor,
-    the starting values will be all zeros by default.
-
-\item \code{betaMat}: A numeric matrix that consists of additional starting
-    values of coefficient estimates in columns.  The default value is
-    \code{NULL}.
-
-\item \code{piVec}: A numeric vector specifying the prior probability of
-    each original record being true. The length of the vector has to be the
-    same with number of rows of the data input. The values should be between
-    0 and 1. By default, \code{censorRate} is used to generate appropriate
-    prior probabilities.
-
-\item \code{piMat}: A numeric matrix that consists of the specified prior
-    probability in of each original record being true in columns.  The
-    default value is \code{NULL}.
-
-\item \code{censorRate}: A positive numeric vector taking values between 0
-    and 1. If a vector of length more than one is given, multiple starting
-    values on prior probabilities are applied. In each initialization,
-    individual value in the vector is taken as parameter in the multinomial
-    distribution indicating the prior probability of censoring record being
-    true.  The remaining probability mass is equally assigned to the
-    possible event records. For example, when \code{censorRate = 1} is
-    specified, the extended model reduces to the regular Cox model fitting
-    data before matching, which takes all the censoring records as true. On
-    the contrary, when \code{censorRate = 0} is specified, the model does
-    not take possible censoring records into account.  If \code{multiStart =
-    FALSE}, the default value of \code{censorRate} is the sample censoring
-    rate among subjects having records without uncertainty.
-    If \code{parametricOnly}
-
-\item \code{multiStart}: A logical value specifying whether multiple
-    starting values of \code{censorRate} is needed. The argument is ignored
-    when explicit \code{censorRate} or \code{piVec} is specified. The
-    default value is \code{FALSE} for less computation time. However,
-    enabling multiple starting values \code{multiStart = TRUE} is suggested
-    to reduce the influence of possible local maximizer. If \code{TRUE},
-    \code{censorRate} takes a grid from 0 to 1 with step 0.02 by default.
-
-}
-
-The argument \code{control} is an optional list that allows users to control
-the process of ECM algorithm and each conditional maximization (CM) step.
-The valid named elements are given as follows:
-\itemize{
-
-\item \code{gradtol}: A positive scalar giving the tolerance at which the
-    scaled gradient is considered close enough to zero to terminate each CM
-    step. The default value is \code{1e-6}.
-
-\item \code{stepmax}: A positive scalar that gives the maximum allowable
-    scaled step length for each CM step.  The default value is \code{1e2}.
-
-\item \code{steptol}: A positive scalar providing the minimum allowable
-    relative step length for each CM step.  The default value is
-    \code{1e-6}.
-
-\item \code{max_iter_CM}: A positive integer specifying the maximum number
-    of iterations to be performed before each CM is terminated. The default
-    value is \code{1e2}.
-
-\item \code{steptol_ECM_beta}: A positive scalar that specifies the
-    maximum allowable relative step size between each ECM iteration.  The
-    default value is \code{1e-4}.
-
-\item \code{steptol_ECM_pi}: A positive scalar that specifies the
-    maximum allowable relative step size between each ECM iteration.  The
-    default value is \code{1e-4}.
-
-\item \code{max_iter_ECM}: A positive integer specifying the maximum number
-    of iterations to be performed before the ECM algorithm is
-    terminated. The default value is \code{1e2}.
-
-}
-Internally, the first four named elements are passed to function
-\code{\link[stats]{nlm}}.
+The function fits the integrative Cox model proposed by Wang et al. (2019+)
+for uncertain survival data due to imperfect data integration.
 }
 \examples{
 library(intsurv)
+## generate simulated survival data with uncertain records
 set.seed(123)
-simuDat <- simuWeibull(nSubject = 100)
-fit <- iCoxph(Survi(ID, obsTime, eventInd) ~ x1 + x2 + x3 + x4, simuDat)
-
+simuDat <- simData4iCoxph(nSubject = 200)
+## fit the integertive Cox model
+fit <- iCoxph(Survi(ID, time, event) ~ x1 + x2 + x3 + x4,
+              data = simuDat, start = iCoxph.start(methods = "unit"),
+              control = iCoxph.control(tol_beta = 1e-5))
+## estimated covariate coefficients
+coef(fit)
+## get SE estimates by bootstrap
+fit <- bootSe(fit, B = 30)
+## summary of the fitted model
+summary(fit)
 }
 \references{
-Wang, W., Aseltine, R., Chen, K., & Yan, J. (2017+).  Integrative Survival
-Analysis with Uncertain Event Records from Imperfect Data Integration with
-Application in a Suicide Risk Study. (working in progress)
-
-Meng, X. & Rubin, D. (1993). Maximum Likelihood Estimation via the ECM
-Algorithm: A General Framework. \emph{Biometrika}, 80(2), 267--278.
+Wang, W., Aseltine, R., Chen, K., & Yan, J. (2019+).  Integrative Survival
+Analysis with Uncertain Event Times in Application to a Suicide Risk
+Study. (invited revision)
 }
 \seealso{
 \code{\link{summary,iCoxph-method}} for summary of fitted model;
