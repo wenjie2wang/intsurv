@@ -29,26 +29,27 @@ setClass("Survi", contains = "matrix",
                    event = "integer"))
 
 
-##' An S4 Class to Represent a Fitted Extended Cox Model
+##' An S4 Class to Represent a Fitted Integrative Cox Model
 ##'
-##' \code{iCoxph-class} is an S4 class that represents a fitted model.
-##' Function \code{\link{iCoxph}} produces objects of this class.
-##' See ``Slots'' for details.
+##' The \code{iCoxph} class is an S4 class that represents a fitted model.
+##' Function \code{\link{iCoxph}} produces objects of this class.  See ``Slots''
+##' for details.
 ##'
 ##' @slot call Function call.
 ##' @slot formula Formula.
 ##' @slot nObs A positive integer.
 ##' @slot data A data frame.
 ##' @slot estimates A list.
-##' @slot control A list.
 ##' @slot start A list.
+##' @slot control A list.
 ##' @slot na.action A length-one character vector.
 ##' @slot xlevels A list.
 ##' @slot contrasts A list.
-##' @slot convergCode A nonnegative integer.
-##' @slot partLogL A numeric value.
+##' @slot convergeCode A nonnegative integer.
 ##' @slot logL A numeric value.
+##'
 ##' @aliases iCoxph-class
+##'
 ##' @seealso \code{\link{iCoxph}} for details of slots.
 ##' @export
 setClass(Class = "iCoxph",
@@ -57,29 +58,31 @@ setClass(Class = "iCoxph",
                    data = "data.frame",
                    nObs = "integer",
                    estimates = "list",
-                   control = "list",
                    start = "list",
+                   control = "list",
                    na.action = "character",
                    xlevels = "list",
                    contrasts = "list",
-                   convergCode = "integer",
-                   partLogL = "numeric",
+                   convergeCode = "integer",
                    logL = "numeric"))
 
 
-##' An S4 Class to Represent Summary of a Fitted Model
+##' An S4 Class to Represent Summary of a fitted integerative Cox model
 ##'
-##' \code{iCoxph.summary-class} is an S4 class that represents a summarized
+##' The \code{summary.intsurv} class is an S4 class that represents a summarized
 ##' model.  Function \code{\link{summary,iCoxph-method}} produces objects of
 ##' this class.  See ``Slots'' for details.
 ##'
 ##' @slot call Function call.
 ##' @slot coefMat A matrix.
 ##' @slot logL A numeric value.
-##' @aliases iCoxph.summary-class
+##'
+##' @aliases summary.iCoxph-class
+##'
 ##' @seealso \code{\link{summary,iCoxph-method}} for meaning of slots.
+##'
 ##' @export
-setClass(Class = "iCoxph.summary",
+setClass(Class = "summary.iCoxph",
          slots = c(call = "call",
                    coefMat = "matrix",
                    logL = "numeric"))

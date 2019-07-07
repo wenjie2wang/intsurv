@@ -21,103 +21,15 @@ NULL
 
 ##' Integrative Cox Model for Uncertain Survival Data
 ##'
-##' The function fits the integrative Cox model proposed by Wang (2017+) for
-##' uncertain survival data due to imperfect data integration. The maximization
-##' of the observed-data likelihood function follows expectation conditional
-##' maximization (ECM) algorithm proposed by Meng (1993).
-##'
-##' The argument \code{start} is an optional list that allows users to specify
-##' starting value of each parameter in the model. The valid named elements are
-##' given as follows:
-##' \itemize{
-##'
-##' \item \code{betaVec}: A numeric vector for starting values of coefficient
-##'     estimates. The default values are the coefficient estimates from the
-##'     regular Cox model only fitting on records without uncertainty.  If
-##'     censoring rate among subjects having unique certain records is extremely
-##'     high (> 0.99) or \code{\link[survival]{coxph}} returns any warning, such
-##'     as perfect seperation problem between event indicator and one predictor,
-##'     the starting values will be all zeros by default.
-##'
-##' \item \code{betaMat}: A numeric matrix that consists of additional starting
-##'     values of coefficient estimates in columns.  The default value is
-##'     \code{NULL}.
-##'
-##' \item \code{piVec}: A numeric vector specifying the prior probability of
-##'     each original record being true. The length of the vector has to be the
-##'     same with number of rows of the data input. The values should be between
-##'     0 and 1. By default, \code{censorRate} is used to generate appropriate
-##'     prior probabilities.
-##'
-##' \item \code{piMat}: A numeric matrix that consists of the specified prior
-##'     probability in of each original record being true in columns.  The
-##'     default value is \code{NULL}.
-##'
-##' \item \code{censorRate}: A positive numeric vector taking values between 0
-##'     and 1. If a vector of length more than one is given, multiple starting
-##'     values on prior probabilities are applied. In each initialization,
-##'     individual value in the vector is taken as parameter in the multinomial
-##'     distribution indicating the prior probability of censoring record being
-##'     true.  The remaining probability mass is equally assigned to the
-##'     possible event records. For example, when \code{censorRate = 1} is
-##'     specified, the extended model reduces to the regular Cox model fitting
-##'     data before matching, which takes all the censoring records as true. On
-##'     the contrary, when \code{censorRate = 0} is specified, the model does
-##'     not take possible censoring records into account.  If \code{multiStart =
-##'     FALSE}, the default value of \code{censorRate} is the sample censoring
-##'     rate among subjects having records without uncertainty.
-##'     If \code{parametricOnly}
-##'
-##' \item \code{multiStart}: A logical value specifying whether multiple
-##'     starting values of \code{censorRate} is needed. The argument is ignored
-##'     when explicit \code{censorRate} or \code{piVec} is specified. The
-##'     default value is \code{FALSE} for less computation time. However,
-##'     enabling multiple starting values \code{multiStart = TRUE} is suggested
-##'     to reduce the influence of possible local maximizer. If \code{TRUE},
-##'     \code{censorRate} takes a grid from 0 to 1 with step 0.02 by default.
-##'
-##' }
-##'
-##' The argument \code{control} is an optional list that allows users to control
-##' the process of ECM algorithm and each conditional maximization (CM) step.
-##' The valid named elements are given as follows:
-##' \itemize{
-##'
-##' \item \code{gradtol}: A positive scalar giving the tolerance at which the
-##'     scaled gradient is considered close enough to zero to terminate each CM
-##'     step. The default value is \code{1e-6}.
-##'
-##' \item \code{stepmax}: A positive scalar that gives the maximum allowable
-##'     scaled step length for each CM step.  The default value is \code{1e2}.
-##'
-##' \item \code{steptol}: A positive scalar providing the minimum allowable
-##'     relative step length for each CM step.  The default value is
-##'     \code{1e-6}.
-##'
-##' \item \code{max_iter_CM}: A positive integer specifying the maximum number
-##'     of iterations to be performed before each CM is terminated. The default
-##'     value is \code{1e2}.
-##'
-##' \item \code{steptol_ECM_beta}: A positive scalar that specifies the
-##'     maximum allowable relative step size between each ECM iteration.  The
-##'     default value is \code{1e-4}.
-##'
-##' \item \code{steptol_ECM_pi}: A positive scalar that specifies the
-##'     maximum allowable relative step size between each ECM iteration.  The
-##'     default value is \code{1e-4}.
-##'
-##' \item \code{max_iter_ECM}: A positive integer specifying the maximum number
-##'     of iterations to be performed before the ECM algorithm is
-##'     terminated. The default value is \code{1e2}.
-##'
-##' }
-##' Internally, the first four named elements are passed to function
-##' \code{\link[stats]{nlm}}.
+##' The function fits the integrative Cox model proposed by Wang et al. (2019+)
+##' for uncertain survival data due to imperfect data integration.
 ##'
 ##' @usage
 ##' iCoxph(formula, data, subset, na.action, contrasts = NULL,
-##'        start = list(), control = list(), ...)
+##'        start = iCoxph.start(), control = iCoxph.control(), ...)
+##'
 ##' @aliases iCoxph
+##'
 ##' @param formula \code{Survi} object specifying the covariates and response
 ##'     variable in the model, such as \code{Survi(ID, time, event) ~ x1 + x2}.
 ##' @param data An optional data frame, list, or environment that contains the
@@ -138,14 +50,18 @@ NULL
 ##'     names are the names of columns of data containing factors.  See
 ##'     \code{contrasts.arg} of \code{\link[stats]{model.matrix.default}} for
 ##'     details.
-##' @param start An optional list of starting values for the parameters to be
-##'     estimated in the model.  See more in Section details.
-##' @param control An optional list of parameters to control the maximization
-##'     process.  See more in Section details.
+##' @param start A list returned by function \code{\link{iCoxph.start}}
+##'     specifying starting values of the parameters to be estimated in the
+##'     model. Please refer to the arguments of \code{\link{iCoxph.start}} for
+##'     the available parameters.
+##' @param control A list returned by function \code{\link{iCoxph.control}}
+##'     specifying control parameters for the model estimation procedure.
+##'     Please refer to the arguments of \code{\link{iCoxph.control}} for the
+##'     available parameters.
 ##' @param ... Other arguments for future usage.
 ##'
 ##' @return
-##' A \code{\link{iCoxph-class}} object, whose slots include
+##' An \code{\link{iCoxph-class}} object, whose slots include
 ##' \itemize{
 ##'     \item \code{call}: Function call.
 ##'     \item \code{formula}: Formula used in the model fitting.
@@ -157,7 +73,9 @@ NULL
 ##'             \item \code{pi}: Estimated parameters in prior multinomial
 ##'                 distribution indicating the probabilities of corresponding
 ##'                 record being true.
-##'             \item \code{h0}: Estimated baseline hazard function.
+##'             \item \code{baseline}: A data frame that contains estimated
+##'                 baseline hazard function with columns named \code{time} and
+##'                 \code{h0}.
 ##'         }
 ##'     \item \code{control}: The control list specified for model fitting.
 ##'     \item \code{start}: The initial guess specified for the parameters
@@ -168,29 +86,20 @@ NULL
 ##'         each factor variable.
 ##'     \item \code{contrasts}: Contrasts specified and used for each
 ##'         factor variable.
-##'     \item \code{convergCode}: \code{code} returned by function
+##'     \item \code{convergeCode}: \code{code} returned by function
 ##'         \code{\link[stats]{nlm}}, which is an integer indicating why the
 ##'         optimization process terminated. \code{help(nlm)} for details.
-##'     \item \code{partLogL}: Partial log-likelihood function under complete
-##'         data for covariate coefficients.
-##'     \item \code{logL}: Log-likelihood under observed data after convergence.
+##'     \item \code{logL}: The Log-likelihood under observed data after
+##'         convergence.
 ##' }
-##'
 ##'
 ##' @references
 ##'
-##' Wang, W., Aseltine, R., Chen, K., & Yan, J. (2017+).  Integrative Survival
-##' Analysis with Uncertain Event Records from Imperfect Data Integration with
-##' Application in a Suicide Risk Study. (working in progress)
+##' Wang, W., Aseltine, R., Chen, K., & Yan, J. (2019+).  Integrative Survival
+##' Analysis with Uncertain Event Times in Application to a Suicide Risk
+##' Study. (invited revision)
 ##'
-##' Meng, X. & Rubin, D. (1993). Maximum Likelihood Estimation via the ECM
-##' Algorithm: A General Framework. \emph{Biometrika}, 80(2), 267--278.
-##'
-##' @examples
-##' library(intsurv)
-##' set.seed(123)
-##' simuDat <- simuWeibull(nSubject = 100)
-##' fit <- iCoxph(Survi(ID, obsTime, eventInd) ~ x1 + x2 + x3 + x4, simuDat)
+##' @example inst/examples/iCoxph.R
 ##'
 ##' @seealso
 ##' \code{\link{summary,iCoxph-method}} for summary of fitted model;
@@ -199,9 +108,10 @@ NULL
 ##'
 ##' @importFrom stats na.fail na.omit na.exclude na.pass .getXlevels
 ##'     model.extract model.frame model.matrix nlm pnorm
+##'
 ##' @export
 iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
-                   start = list(), control = list(), ...)
+                   start = iCoxph.start(), control = iCoxph.control(), ...)
 {
     ## record the function call to return
     Call <- match.call()
@@ -212,8 +122,8 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
     if (missing(data))
         data <- environment(formula)
     dat0 <- with(data, eval(formula[[2L]]))
-    if (! is.Survi(dat0))
-        stop("Response in formula must be a 'Survi' object.")
+    if (! is_Survi(dat0))
+        stop("The formula response must be a 'Survi' object.")
     Call$formula <- formula
 
     ## Prepare data: ID, time, event ~ X(s)
@@ -242,13 +152,20 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
     nObs <- nrow(dat)
     nBeta <- ncol(dat) - 3L
 
-    ## start' values for 'nlm'
+    ## prepare start' values
+    if (! is_iCoxph.start(start)) {
+        stop("The 'start' must be specified through ",
+             "function 'iCoxph.start()'")
+    }
     startList <- c(start, list(nBeta_ = nBeta, dat_ = dat))
-    start <- do.call("iCoxph_start", startList)
+    start <- unclass(do.call("iCoxph_start", startList))
 
-    ## 'control' for 'nlm'
-    control <- c(control, list(censorRate0_ = start$censorRate0))
-    control <- do.call("iCoxph_control", control)
+    ## prepare 'control' parameters
+    if (! is_iCoxph.control(control)) {
+        stop("The 'control' must be specified through ",
+             "function 'iCoxph.control()'")
+    }
+    control <- unclass(control)
 
     ## sort by time and ID
     incDat <- dat[(orderInc <- with(dat, order(time, ID))), ]
@@ -261,30 +178,11 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
     incDat$firstIdx <- ! dupVec
     h0Dat <- h_cDat <- data.frame(time = incDat$time[incDat$firstIdx])
     xMat <- as.matrix(incDat[, 4L : (3L + nBeta)])
-
-    ## form different starting values of piVec
-    piMat <- if (! all(is.na(start$censorRate))) {
-                 start$censorRate <- rmNA(start$censorRate)
-                 matrix(
-                     sapply(start$censorRate, ic_initPi, dat = incDat),
-                     nrow = nObs
-                 )
-             }
-    pi0 <- NA
-    if (! is.null(start$piVec)) {
-        piMat_new <- matrix(
-            sapply(start$piVec, ic_initPi2, dat = dat,
-                   randomly = start$randomly)[orderInc, ],
-            nrow = nObs
-        )
-        piMat <- cbind(piMat, piMat_new)
-    }
-    if (! is.null(start$piMat))
-        piMat <- cbind(piMat, start$piMat[orderInc, , drop = FALSE])
+    piMat <- start$pi_mat[orderInc, , drop = FALSE]
 
     ## initialize log-likelihood
     logL_max0 <- - Inf
-    n_beta_start <- ncol(start$betaMat)
+    n_beta_start <- ncol(start$beta_mat)
     n_pi_start <- ncol(piMat)
     logL_max_vec <- rep(NA, n_beta_start * n_pi_start)
     beta_est_mat <- matrix(NA, nrow = n_beta_start * n_pi_start, ncol = nBeta)
@@ -294,13 +192,14 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
 
             incDat$piVec <- piVec <- piMat[, onePi]
             ## trace the log-likelihood for observed data
-            logL <- rep(NA, control$max_iter_ECM)
+            logL <- rep(NA, control$ecm_max_iter)
             ## trace beta estimates from each iteration of ECM
-            betaMat <- matrix(NA, nrow = control$max_iter_ECM + 1L, ncol = nBeta)
-            betaMat[1L, ] <- start$betaMat[, oneBeta]
-            tol_update <- sqrt(control$steptol_ECM_beta)
+            betaMat <- matrix(NA, nrow = control$ecm_max_iter + 1L,
+                               ncol = nBeta)
+            betaMat[1L, ] <- start$beta_mat[, oneBeta]
+            tol_update <- sqrt(control$tol_beta)
 
-            for (iter in seq_len(control$max_iter_ECM)) {
+            for (iter in seq_len(control$ecm_max_iter)) {
                 oneFit <- ic_oneECMstep(betaHat = betaMat[iter, ],
                                         h0Dat = h0Dat,
                                         h_cDat = h_cDat,
@@ -311,10 +210,8 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
                 ## log likehood
                 logL[iter] <- oneFit$logL
 
-                ## always update p_jk or not? maybe yes
-                if (control$alwaysUpdatePi ||
-                    (iter > 1 && tol_beta < tol_update))
-                    incDat$piVec <- oneFit$piVec
+                ## update pi estimates
+                incDat$piVec <- oneFit$piVec
 
                 ## update beta estimates
                 betaEst <- oneFit$betaEst
@@ -325,11 +222,11 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
                     L2norm(oneFit$piVec + incDat$piVec)
 
                 betaHat <- betaEst$estimate
-                if (tol_beta < control$steptol_ECM_beta &&
-                    tol_pi < control$steptol_ECM_pi) {
+                if (tol_beta < control$tol_beta &&
+                    tol_pi < control$tol_pi) {
                     break
-                } else if (iter == control$max_iter_ECM) {
-                    warning("Reached the maximum number of ECM iterations!")
+                } else if (iter == control$ecm_max_iter) {
+                    warning("Reached the maximum number of ECM iterations.")
                 }
             }
 
@@ -346,13 +243,7 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
                 oneFit0 <- oneFit
                 betaMat0 <- betaMat
                 piVec0 <- piVec
-                start$beta0 <- betaMat[1L, ]
-                if (onePi <= length(start$censorRate)) {
-                    start$censorRate0 <- start$censorRate[onePi]
-                } else {
-                    start["pi0"] <-
-                        list(start$piVec[onePi - length(start$censorRate)])
-                }
+                start$beta_start <- betaMat[1L, ]
             }
         }
     }
@@ -361,11 +252,12 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
     betaMat0 <- rmNA(betaMat0)
     ## prepare for outputs
     piEst <- oneFit0$piVec[(reOrderIdx <- order(orderInc))]
-    start$piEst <- piVec0[reOrderIdx]
-    start$logL_max_vec <- logL_max_vec
-    start$beta_est_mat <- beta_est_mat
+    start$pi_start <- piVec0[reOrderIdx]
+    start$logL_end <- logL_max_vec
+    start$beta_end <- beta_est_mat
     ## update results
     h0Dat$h0Vec <- oneFit0$h0Vec
+    colnames(h0Dat) <- c("time", "h0")
     h_cDat$h_cVec <- oneFit0$h_cVec
     incDat$xExp <- oneFit0$xExp
     incDat$piVec <- oneFit0$piVec
@@ -411,20 +303,164 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
                  data = dat,
                  estimates = list(beta = est_beta,
                                   pi = piEst,
-                                  h0 = h0Dat),
-                 control = control,
+                                  baseline = h0Dat),
                  start = start,
+                 control = control,
                  na.action = na.action,
                  xlevels = .getXlevels(mt, mf),
                  contrasts = contrasts,
-                 convergCode = betaEst$code,
-                 partLogL = - betaEst$minimum,
+                 convergeCode = betaEst$code,
                  logL = logL0)
 }
 
 
+##' Auxiliary for Controlling iCoxph fitting
+##'
+##' Auxiliary function for \code{\link{iCoxph}} that enable users to specify the
+##' control parameters of the model estimation procedure.  Internally, the
+##' arguments \code{cm_gradtol}, \code{cm_stepmax}, \code{cm_steptol}, and
+##' \code{cm_max_iter} are passed to function \code{\link[stats]{nlm}} as
+##' \code{gradtol}, \code{stepmax}, \code{steptol}, and \code{iterlim},
+##' respectively.
+##'
+##' @usage
+##' iCoxph.control(tol_beta = 1e-6, tol_pi = 1e-8, cm_gradtol = 1e-6,
+##'                cm_stepmax = 1e2, cm_steptol = 1e-6, cm_max_iter = 1e2,
+##'                ecm_max_iter = 2e2, ...)
+##'
+##' @param tol_beta A postive value specifying the tolerance that concludes the
+##'     convergence of the covariate coefficient estimates. The tolerance is
+##'     compared with the relative change between the estimates from two
+##'     consecutive iterations measured by ratio of L2-norm of their difference
+##'     to the L2-norm of their sum.  The default value is \code{1e-6}.
+##' @param tol_pi A postive value specifying the tolerance that concludes the
+##'     convergence of the probability estimates of uncertain records being
+##'     true.  The tolerance is compared with the relative change between the
+##'     estimates from two consecutive iterations measured by ratio of L2-norm
+##'     of their difference to the L2-norm of their sum.  The default value is
+##'     \code{1e-8}.
+##' @param cm_gradtol A positive scalar giving the tolerance at which the scaled
+##'     gradient is considered close enough to zero to terminate CM steps.  The
+##'     default value is \code{1e-6}.
+##' @param cm_stepmax A positive scalar that gives the maximum allowable scaled
+##'     step length in CM steps.  The default value is \code{1e2}.
+##' @param cm_steptol A positive scalar providing the minimum allowable relative
+##'     step length in CM step.  The default value is \code{1e-6}.
+##' @param cm_max_iter A positive integer specifying the maximum number of
+##'     iterations to be performed before each CM step is terminated. The
+##'     default value is \code{1e2}.
+##' @param ecm_max_iter A positive integer specifying the maximum number of
+##'     iterations to be performed before the ECM algorithm is terminated. The
+##'     default value is \code{2e2}.
+##' @param ... Other arguments for future usage.  A warning will be thrown if
+##'     any invalid argument is specified.
+##' @return A list of class \code{intsurv-iCoxph.control} containing all
+##'     specified control parameters.
+##' @export
+iCoxph.control <- function(tol_beta = 1e-6,
+                           tol_pi = 1e-8,
+                           cm_gradtol = 1e-6,
+                           cm_stepmax = 1e2,
+                           cm_steptol = 1e-6,
+                           cm_max_iter = 1e2,
+                           ecm_max_iter = 2e2,
+                           ...)
+{
+    ## controls for function stats::nlm
+    if (! is.numeric(cm_gradtol) || cm_gradtol <= 0)
+        stop("The value of 'cm_gradtol' must be > 0.", call. = FALSE)
+    if (! is.numeric(cm_stepmax) || cm_stepmax <= 0)
+        stop("The value of 'cm_stepmax' must be > 0.", call. = FALSE)
+    if (! is.numeric(cm_steptol) || cm_steptol <= 0)
+        stop("The value of 'cm_steptol' must be > 0.", call. = FALSE)
+    if (! is.numeric(cm_max_iter) || cm_max_iter <= 0)
+        stop("The maximum number of iterations in the CM step must be > 0.",
+             call. = FALSE)
+    ## determining convergence of ECM
+    if (! is.numeric(tol_beta) || tol_beta <= 0)
+        stop("The value of 'tol_beta' must be positive.", call. = FALSE)
+    if (! is.numeric(tol_pi) || tol_pi <= 0)
+        stop("The value of 'tol_pi' must be positive.", call. = FALSE)
+    if (! is.numeric(ecm_max_iter) || ecm_max_iter <= 0)
+        stop("The maximum number of ECM iterations must be positive.",
+             call. = FALSE)
+    ## throw warning if anything is captured by `...`
+    warn_dots(..., .fun_name = "iCoxph.control")
+    ## parameters in a list
+    out <- list(tol_beta = tol_beta,
+                tol_pi = tol_pi,
+                cm_gradtol = cm_gradtol,
+                cm_stepmax = cm_stepmax,
+                cm_steptol = cm_steptol,
+                cm_max_iter = cm_max_iter,
+                ecm_max_iter = ecm_max_iter)
+    ## add class for ease of checking
+    class(out) <- "iCoxph.control"
+    ## return
+    out
+}
+
+
+##' Auxiliary for Starting iCoxph fitting
+##'
+##' Auxiliary function for \code{\link{iCoxph}} that enable users
+##' to specify the starting values of the model estimation procedure.
+##'
+##'
+##' @usage
+##' iCoxph.start(beta_vec = NULL, beta_mat = NULL,
+##'              methods = c("nearest_hazard", "unit_hazard"), ...)
+##'
+##' @param beta_vec A numeric vector for starting values of coefficient
+##'     estimates. The default values are the coefficient estimates from the
+##'     regular Cox model only fitting on records without uncertainty.  If
+##'     censoring rate among subjects having unique certain records is extremely
+##'     high (> 99%) or \code{\link{coxph_fit}} returns any warning or error,
+##'     such as perfect seperation problem between event indicator and one
+##'     predictor, the starting values will be reset to be all zeros.
+##' @param beta_mat A numeric matrix that consists of additional starting values
+##'     of coefficient estimates in columns.  The default value is \code{NULL}.
+##' @param methods A character vector specifying the initialization methods for
+##'     probabilities of uncertain records being true.  The available methods
+##'     are \code{"nearest_hazard"} for initializing baseline hazard by nearest
+##'     (left) neighbor, and \code{"unit_hazard"} for initializing unit baseline
+##'     hazard.  Partial matching on method names is supported for ease of
+##'     typing.  By default, both methods are used.  See Wang et al. (2019+) for
+##'     details of the initialization methods.
+##' @param ... Other arguments for future usage.  A warning will be thrown if
+##'     any invalid argument is specified.
+##' @return A list of class \code{intsurv-iCoxph.start} containing all specified
+##'     starting values of the parameters to be estimated from the model.
+##'
+##' @references
+##'
+##' Wang, W., Aseltine, R., Chen, K., & Yan, J. (2019+).  Integrative Survival
+##' Analysis with Uncertain Event Times in Application to a Suicide Risk
+##' Study. (invited revision)
+##'
+##' @export
+iCoxph.start <- function(beta_vec = NULL,
+                         beta_mat = NULL,
+                         methods = c("nearest_hazard", "unit_hazard"),
+                         ...)
+{
+    ## match methods
+    methods <- match.arg(methods, several.ok = TRUE)
+    ## throw out warning if any invalid argument is captured by `...`
+    warn_dots(..., .fun_name = "iCoxph.start")
+    ## parameters in a list
+    out <- list(beta_vec = beta_vec,
+                beta_mat = beta_mat,
+                methods = methods)
+    ## add class for ease of checking
+    class(out) <- "iCoxph.start"
+    ## return
+    out
+}
+
+
 ### internal functions =========================================================
-## perform one step of EM algorithm
+## perform one step of ECM algorithm
 ic_oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, tied, control)
 {
     ## update results involving beta estimates
@@ -479,13 +515,15 @@ ic_oneECMstep <- function(betaHat, h0Dat, h_cDat, dat, xMat, tied, control)
     h_cDat$h_cVec <- ic_h_c(dat, tied = tied)
 
     ## update beta
-    betaEst <- stats::nlm(ic_logLbeta, p = betaHat, dat = dat, xMat = xMat,
+    betaEst <- stats::nlm(ic_logLbeta, p = betaHat,
+                          dat = dat, xMat = xMat,
                           tied = tied,
-                          hessian = FALSE, check.analyticals = FALSE,
-                          gradtol = control$gradtol,
-                          stepmax = control$stepmax,
-                          steptol = control$steptol,
-                          iterlim = control$max_iter_CM)
+                          hessian = FALSE,
+                          check.analyticals = FALSE,
+                          gradtol = control$cm_gradtol,
+                          stepmax = control$cm_stepmax,
+                          steptol = control$cm_steptol,
+                          iterlim = control$cm_max_iter)
 
     ## log-likelihood function under observed data
     logL <- sum(log(dat$p_jk_denom))
@@ -686,17 +724,36 @@ ic_initPi2 <- function(pi0, dat, randomly = FALSE, ...)
     piVec
 }
 
-## take care of start values
-iCoxph_start <- function(betaVec = NULL,
-                         betaMat = NULL,
-                         piVec = NULL,
-                         piMat = NULL,
-                         censorRate = NULL,
-                         semiparametric = c(FALSE, TRUE),
-                         ## parametric = c(FALSE, FALSE),
-                         semiparametric_only = TRUE,
-                         multiStart = FALSE,
-                         randomly = FALSE,
+
+## \item \code{censorRate}: A positive numeric vector taking values between 0
+##     and 1. If a vector of length more than one is given, multiple starting
+##     values on prior probabilities are applied. In each initialization,
+##     individual value in the vector is taken as parameter in the multinomial
+##     distribution indicating the prior probability of censoring record being
+##     true.  The remaining probability mass is equally assigned to the
+##     possible event records. For example, when \code{censorRate = 1} is
+##     specified, the extended model reduces to the regular Cox model fitting
+##     data before matching, which takes all the censoring records as true. On
+##     the contrary, when \code{censorRate = 0} is specified, the model does
+##     not take possible censoring records into account.  If \code{multiStart =
+##     FALSE}, the default value of \code{censorRate} is the sample censoring
+##     rate among subjects having records without uncertainty.
+##     If \code{parametricOnly}
+##
+## \item \code{multiStart}: A logical value specifying whether multiple
+##     starting values of \code{censorRate} is needed. The argument is ignored
+##     when explicit \code{censorRate} or \code{piVec} is specified. The
+##     default value is \code{FALSE} for less computation time. However,
+##     enabling multiple starting values \code{multiStart = TRUE} is suggested
+##     to reduce the influence of possible local maximizer. If \code{TRUE},
+##     \code{censorRate} takes a grid from 0 to 1 with step 0.02 by default.
+##
+## }
+##
+## take care of start values internally
+iCoxph_start <- function(beta_vec = NULL,
+                         beta_mat = NULL,
+                         methods = NULL,
                          ...,
                          nBeta_,
                          dat_)
@@ -710,23 +767,23 @@ iCoxph_start <- function(betaVec = NULL,
     uni_xMat <- as.matrix(uniDat[, - seq_len(3L)])
     xMat <- as.matrix(dat_[, - seq_len(3L)])
 
-    censorRate0 <- round(1 - mean(uniDat$event), 2)
-    if (is.null(censorRate)) {
-        ## set censorRate from sample truth data
-        ## if missing at random, the true censoring rate
-        ## can be estimated by true data of unique records
-        step_by <- 0.02
-        censorRate <- if (multiStart)
-                          seq.int(0, 1, step_by)
-                      else if (semiparametric_only)
-                          NA_real_
-                      else
-                          censorRate0
-
-    } else if (any(censorRate > 1 | censorRate < 0)) {
-        stop("Starting prob. of censoring case being true",
-             "should between 0 and 1.", call. = FALSE)
-    }
+    ## censorRate0 <- round(1 - mean(uniDat$event), 2)
+    ## if (is.null(censorRate)) {
+    ##     ## set censorRate from sample truth data
+    ##     ## if missing at random, the true censoring rate
+    ##     ## can be estimated by true data of unique records
+    ##     step_by <- 0.02
+    ##     censorRate <- if (multiStart) {
+    ##                       seq.int(0, 1, step_by)
+    ##                   } else if (semiparametric_only) {
+    ##                       NA_real_
+    ##                   } else {
+    ##                       censorRate0
+    ##                   }
+    ## } else if (any(censorRate > 1 | censorRate < 0)) {
+    ##     stop("Starting prob. of censoring case being true",
+    ##          "should between 0 and 1.", call. = FALSE)
+    ## }
 
     ## use parametric estimate as starting values
     ## if (any(parametric)) {
@@ -759,42 +816,46 @@ iCoxph_start <- function(betaVec = NULL,
     ## }
 
     ## use non/semi-parametric estimates
-    if (any(semiparametric)) {
-        event_funs <- ic_semi_parametric_start(
-            uniDat$time, uniDat$event, uni_xMat
+    if (is.null(methods)) {
+        stop("No iniliaization method was specified.", call. = FALSE)
+    }
+    pi_mat <- NULL
+    ## initialization of baseline functions
+    event_funs <- ic_semi_parametric_start(
+        uniDat$time, uniDat$event, uni_xMat
+    )
+    cen_funs <- ic_semi_parametric_start(uniDat$time, 1 - uniDat$event)
+    hVec <- event_funs$haz_fun(dat_$time, xMat)
+    sVec <- event_funs$surv_fun(dat_$time, xMat)
+    h_cVec <- cen_funs$haz_fun(dat_$time)
+    G_cVec <- cen_funs$surv_fun(dat_$time)
+    ## initialized baseline hazards with nearest (left) neighbor
+    if ("nearest_hazard" %in% methods) {
+        ## following the equations derived
+        log_w_jk_3 <- ifelse(
+            dat_$event > 0,
+            log(hVec) + log(sVec) + log(G_cVec),
+            log(h_cVec) + log(G_cVec) + log(sVec)
         )
-        cen_funs <- ic_semi_parametric_start(uniDat$time, 1 - uniDat$event)
-        hVec <- event_funs$haz_fun(dat_$time, xMat)
-        sVec <- event_funs$surv_fun(dat_$time, xMat)
-        h_cVec <- cen_funs$haz_fun(dat_$time)
-        G_cVec <- cen_funs$surv_fun(dat_$time)
-        if (semiparametric[1L]) {
-            ## following the equations derived
-            log_w_jk_3 <- ifelse(
-                dat_$event > 0,
-                log(hVec) + log(sVec) + log(G_cVec),
-                log(h_cVec) + log(G_cVec) + log(sVec)
-            )
-            w_jk_3 <- exp(log_w_jk_3)
-            p_jk_denom_3 <- aggregateSum(w_jk_3, dat_$ID, simplify = FALSE)
-            pi_par_3 <- ifelse(dupIdx, w_jk_3 / p_jk_denom_3, 1)
-            piMat <- cbind(piMat, pi_par_3)
-        }
-        if (length(semiparametric) > 1L && semiparametric[2L]) {
-            ## what if the baseline hazard estimates is not available
-            log_w_jk_4 <- log(sVec) + log(G_cVec)
-            w_jk_4 <- exp(log_w_jk_4)
-            p_jk_denom_4 <- aggregateSum(w_jk_4, dat_$ID, simplify = FALSE)
-            pi_par_4 <- ifelse(dupIdx, w_jk_4 / p_jk_denom_4, 1)
-            piMat <- cbind(piMat, pi_par_4)
-        }
+        w_jk_3 <- exp(log_w_jk_3)
+        p_jk_denom_3 <- aggregateSum(w_jk_3, dat_$ID, simplify = FALSE)
+        pi_par_3 <- ifelse(dupIdx, w_jk_3 / p_jk_denom_3, 1)
+        pi_mat <- cbind(pi_mat, "nearest_hazard" = pi_par_3)
+    }
+    ## use unit baseline hazards (or equivalently ignore them)
+    if ("unit_hazard" %in% methods) {
+        log_w_jk_4 <- log(sVec) + log(G_cVec)
+        w_jk_4 <- exp(log_w_jk_4)
+        p_jk_denom_4 <- aggregateSum(w_jk_4, dat_$ID, simplify = FALSE)
+        pi_par_4 <- ifelse(dupIdx, w_jk_4 / p_jk_denom_4, 1)
+        pi_mat <- cbind(pi_mat, "unit_hazard" = pi_par_4)
     }
 
     ## initialize covariate coefficient: beta
-    if (is.null(betaVec)) {
+    if (is.null(beta_vec)) {
         ## if high censoring for subjects having unique records
         if (mean(uniDat$event) < 0.01) {
-            betaVec <- matrix(rep(0, nBeta_), ncol = 1)
+            beta_vec <- matrix(rep(0, nBeta_), ncol = 1)
         } else {
             uniDat$eventIdx <- NULL
             tmp <- tryCatch(
@@ -811,80 +872,26 @@ iCoxph_start <- function(betaVec = NULL,
                     } else {
                         as.numeric(tmp$coef)
                     }
-            betaVec <- as.matrix(beta)
+            beta_vec <- as.matrix(beta)
         }
     }
-    betaMat <- cbind(betaMat, betaVec)
+    beta_mat <- cbind(beta_mat, beta_vec)
     ## some quick checks on beta
-    if (nrow(betaMat) != nBeta_)
+    if (nrow(beta_mat) != nBeta_)
         stop(wrapMessages(
             "The number of starting values for coefficients of",
             "covariates does not match with the specified formula."
         ), call. = FALSE)
     ## some quick checks on pi
-    if (! is.null(piMat)) {
-        if (nrow(piMat) != nrow(dat_))
-            stop("'piMat' must have same length with number of rows of data.")
-        if (any(piMat > 1 | piMat < 0))
-            stop("'piMat' has to be between 0 and 1.")
+    if (! is.null(pi_mat)) {
+        if (nrow(pi_mat) != nrow(dat_))
+            stop("'pi_mat' must have same length with number of rows of data.")
+        if (any(pi_mat > 1 | pi_mat < 0))
+            stop("'pi_mat' has to be between 0 and 1.")
     }
     ## return
-    list(betaMat = betaMat,
-         piVec = piVec,
-         piMat = piMat,
-         censorRate = censorRate,
-         censorRate0 = censorRate0,
-         semiparametric = semiparametric,
-         semiparametric_only = semiparametric_only,
-         multiStart = multiStart,
-         randomly = randomly)
-}
-
-
-iCoxph_control <- function(gradtol = 1e-6,
-                           stepmax = 1e2,
-                           steptol = 1e-6,
-                           steptol_ECM_beta = 1e-6,
-                           steptol_ECM_pi = 1e-8,
-                           max_iter_CM = 1e2,
-                           max_iter_ECM = 2e2,
-                           ...,
-                           alwaysUpdatePi = NULL,
-                           censorRate0_)
-{
-    ## controls for function stats::nlm
-    if (! is.numeric(gradtol) || gradtol <= 0)
-        stop("The value of 'gradtol' must be > 0.", call. = FALSE)
-    if (! is.numeric(stepmax) || stepmax <= 0)
-        stop("The value of 'stepmax' must be > 0.", call. = FALSE)
-    if (! is.numeric(steptol) || steptol <= 0)
-        stop("The value of 'steptol' must be > 0.", call. = FALSE)
-    if (! is.numeric(max_iter_CM) || max_iter_CM <= 0)
-        stop("The maximum number of iterations in the CM step must be > 0.",
-             call. = FALSE)
-
-    ## determining convergence of EM
-    if (! is.numeric(steptol_ECM_beta) || steptol_ECM_beta <= 0)
-        stop("The value of 'steptol_ECM_beta' must be positive.", call. = FALSE)
-    if (! is.numeric(steptol_ECM_pi) || steptol_ECM_pi <= 0)
-        stop("The value of 'steptol_ECM_pi' must be positive.", call. = FALSE)
-    if (! is.numeric(max_iter_ECM) || max_iter_ECM <= 0)
-        stop("The maximum number of ECM iterations must be positive.",
-             call. = FALSE)
-
-    ## automatically determine whether always update pi's
-    if (is.null(alwaysUpdatePi))
-        alwaysUpdatePi <- ifelse(censorRate0_ < 0.8, TRUE, FALSE)
-
-    ## return
-    list(gradtol = gradtol,
-         stepmax = stepmax,
-         steptol = steptol,
-         steptol_ECM_beta = steptol_ECM_beta,
-         steptol_ECM_pi = steptol_ECM_pi,
-         max_iter_CM = max_iter_CM,
-         max_iter_ECM = max_iter_ECM,
-         alwaysUpdatePi = alwaysUpdatePi)
+    list(beta_mat = beta_mat,
+         pi_mat = pi_mat)
 }
 
 

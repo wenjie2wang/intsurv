@@ -22,7 +22,7 @@ NULL
 ##' Summary of a Fitted Model
 ##'
 ##' For \code{\link{iCoxph}} object, the function returns a
-##' \code{\link{iCoxph.summary-class}} object whose slots include
+##' \code{\link{summary.iCoxph}} object whose slots include
 ##' \itemize{
 ##'     \item \code{call}: Function call of model fitting.
 ##'     \item \code{coefMat}: Estimated covariate coefficients.
@@ -35,8 +35,10 @@ NULL
 ##'     \code{iCoxph}.  Set \code{FALSE} for a more concise printout.
 ##' @param ... Other arguments for future usage.
 ##'
-##' @return \code{iCoxph.summary-class} class object.
-##' @aliases summary,iCoxph-method
+##' @return \code{summary.iCoxph} class object.
+##'
+##' @aliases summary.iCoxph summary,iCoxph-method
+##'
 ##' @examples
 ##' ## See examples given in function iCoxph
 ##' @seealso
@@ -51,7 +53,7 @@ setMethod(
         attr(Call, "show") <- showCall
         betaMat <- object@estimates$beta
         len_logL <- length(object@logL)
-        new("iCoxph.summary",
+        new("summary.iCoxph",
             call = Call,
             coefMat = betaMat,
             logL = object@logL[len_logL])

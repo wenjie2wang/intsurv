@@ -28,7 +28,7 @@ NULL
 ##' \item For \code{\link{iCoxph-class}} object, it prints out a brief summary
 ##'     of the fitted model.
 ##'
-##' \item For \code{\link{iCoxph.summary-class}} object, it prints out summary
+##' \item For \code{\link{summary.iCoxph-class}} object, it prints out summary
 ##'       of a fitted model.
 ##'
 ##' }
@@ -61,11 +61,11 @@ setMethod(
 
 
 ##' @rdname show-method
-##' @aliases show,iCoxph.summary-method
+##' @aliases show,summary.iCoxph-method
 ##' @importFrom stats printCoefmat
 ##' @export
 setMethod(
-    f = "show", signature = "iCoxph.summary",
+    f = "show", signature = "summary.iCoxph",
     definition = function(object)
     {
         ## function call

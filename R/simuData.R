@@ -15,11 +15,16 @@
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 ##
 
-##' Simulated Survival Data with Uncerfrom Event Times
+
+##' Simulated Survival Data with Uncertain Records
 ##'
-##' This function generates simulated survival data with uncertain records from
-##' Cox model.  The baseline hazard function is parametric Weibull model and the
-##' censoring times follow uniform distribution.
+##' This function generates simulated survival data with uncertain records.  An
+##' integrative Cox model can be fitted for the simulated data by function
+##' \code{\link{iCoxph}}.
+##'
+##' The event times are simulated from a Weibull proportional hazard model of
+##' given shape and baseline scale.  The censoring times follow uniform
+##' distribution of specified boundaries.
 ##'
 ##' @param nSubject Number of subjects
 ##' @param beta0Vec Time-invariant covariate coefficients.
@@ -60,32 +65,23 @@
 ##' @param ... Other arguments for future usage.
 ##'
 ##' @return A data frame with the following columns, \itemize{ \item \code{ID}:
-##'     subject ID \item \code{obsTime}: observed event times \item
-##'     \code{eventInd}: event indicators \item \code{latentInd}: latent label
-##'     indicating the true recorods } and the corresponding covariates.
-##'
-##' @references
-##'
-##' Bender, R., Augustin, T. and Blettner, M. (2005),
-##' Generating survival times to simulate Cox proportional hazards models.
-##' Statistics in Medicine, 24: 1713--1723. doi:10.1002/sim.2059.
-##'
-##' Nadarajah, S., & Kotz, S. (2006). R programs for truncated
-##' distributions. Journal of Statistical Software, 16(c02).
+##'     subject ID \item \code{time}: observed event times \item \code{event}:
+##'     event indicators \item \code{isTure}: latent labels indicating the true
+##'     recorods } and the corresponding covariates.
 ##'
 ##' @examples
-##' dat <- simuWeibull(nSubject = 100)
+##' ## See examples given in function iCoxph
 ##' @importFrom stats runif rnorm
 ##' @export
-simuWeibull <- function(nSubject = 1e3, beta0Vec, xMat, maxNum = 2,
-                        nRecordProb = c(0.9, 0.1),
-                        matchCensor = 0.1, matchEvent = 0.1,
-                        censorMin = 0.5, censorMax = 12.5,
-                        lambda = 0.005, rho = 0.7,
-                        fakeLambda1 = lambda * exp(- 3), fakeRho1 = rho,
-                        fakeLambda2 = lambda * exp(3), fakeRho2 = rho,
-                        mixture = 0.5, randomMiss = TRUE,
-                        eventOnly = FALSE, ...)
+simData4iCoxph <- function(nSubject = 1e3, beta0Vec, xMat, maxNum = 2,
+                           nRecordProb = c(0.9, 0.1),
+                           matchCensor = 0.1, matchEvent = 0.1,
+                           censorMin = 0.5, censorMax = 12.5,
+                           lambda = 0.005, rho = 0.7,
+                           fakeLambda1 = lambda * exp(- 3), fakeRho1 = rho,
+                           fakeLambda2 = lambda * exp(3), fakeRho2 = rho,
+                           mixture = 0.5, randomMiss = TRUE,
+                           eventOnly = FALSE, ...)
 {
     ## 1. Generate the true dataset with unique event time per subject and
     ## cencoring time. The censoring rate of the truth data set can be
@@ -131,30 +127,30 @@ simuWeibull <- function(nSubject = 1e3, beta0Vec, xMat, maxNum = 2,
     ## censoring times
     censorTime <- runif(n = nSubject, min = censorMin, max = censorMax)
 
-    eventInd <- censorTime > eventTime
-    obsTime <- ifelse(eventInd, eventTime, censorTime)
-    trueDat <- data.frame(ID = seq_len(nSubject), xMat, obsTime = obsTime,
+    event <- censorTime > eventTime
+    time <- ifelse(event, eventTime, censorTime)
+    trueDat <- data.frame(ID = seq_len(nSubject), xMat, time = time,
                           eventTime = eventTime, censorTime = censorTime,
-                          eventInd, latentInd = 1L)
+                          event, isTrue = 1L)
 
     ## match records for subjects actually having events
-    numSubFake1 <- round(matchEvent * sum(trueDat$eventInd))
+    numSubFake1 <- round(matchEvent * sum(trueDat$event))
     subIDfake1 <- if (randomMiss) {
-                      with(subset(trueDat, eventInd == 1L),
+                      with(subset(trueDat, event == 1L),
                            sample(ID, size = numSubFake1))
                   } else {
-                      with(subset(trueDat, eventInd == 1L),
+                      with(subset(trueDat, event == 1L),
                            sample(ID, size = numSubFake1,
                                   prob = eventTime))
                   }
 
     ## match records for censoring cases
-    numSubFake0 <- round(matchCensor * sum(! trueDat$eventInd))
+    numSubFake0 <- round(matchCensor * sum(! trueDat$event))
     subIDfake0 <- if (randomMiss) {
-                      with(subset(trueDat, eventInd == 0L),
+                      with(subset(trueDat, event == 0L),
                            sample(ID, size = numSubFake0))
                   } else {
-                      with(subset(trueDat, eventInd == 0L),
+                      with(subset(trueDat, event == 0L),
                            sample(ID, size = numSubFake0,
                                   prob = eventTime))
                   }
@@ -176,27 +172,27 @@ simuWeibull <- function(nSubject = 1e3, beta0Vec, xMat, maxNum = 2,
                       gen = TRUE)
 
     ## fake censored data for all selected subject with true event times
-    fakeCensor <- subset(trueDat, ID %in% subIDfake1 & eventInd)
+    fakeCensor <- subset(trueDat, ID %in% subIDfake1 & event)
     if (eventOnly || ! nrow(fakeCensor)) {
         fakeCensor <- NULL
     } else {
-        fakeCensor$obsTime <- fakeCensor$censorTime
-        fakeCensor$eventInd <- fakeCensor$latentInd <- 0L
+        fakeCensor$time <- fakeCensor$censorTime
+        fakeCensor$event <- fakeCensor$isTrue <- 0L
     }
 
     ## setup mixture of alternative density
     indDist1 <- runif(numFake)
-    fakeDat$obsTime <- ifelse(indDist1 < mixture, fakes1, fakes2)
-    fakeDat$eventInd <- 1L
-    fakeDat$latentInd <- 0L
+    fakeDat$time <- ifelse(indDist1 < mixture, fakes1, fakes2)
+    fakeDat$event <- 1L
+    fakeDat$isTrue <- 0L
 
     ## remove all fake events after censorTime
-    ## fakeDat <- subset(fakeDat, obsTime <= censorTime)
+    ## fakeDat <- subset(fakeDat, time <= censorTime)
     ## by using truncated distribution, no need to remove
 
     ## combine all parts as output
     outDat <- rbind(trueDat, fakeDat, fakeCensor)
-    outDat$eventInd <- as.integer(outDat$eventInd)
+    outDat$event <- as.integer(outDat$event)
     out <- outDat[order(outDat$ID), ]
     row.names(out) <- out$eventTime <- out$censorTime <- NULL
     out

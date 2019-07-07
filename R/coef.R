@@ -22,13 +22,13 @@ NULL
 ##' Estimated Coefficients of Covariates
 ##'
 ##' \code{coef,iCoxph-method} is an S4 class method that extracts covariate
-##' coefficient estimates from \code{\link{iCoxph-class}} object from
-##' function \code{\link{iCoxph}}.
+##' coefficient estimates from \code{\link{iCoxph-class}} object from function
+##' \code{\link{iCoxph}}.
 ##'
 ##' @param object \code{\link{iCoxph-class}} object.
 ##' @param ... Other arguments for future usage.
 ##' @return A named numeric vector.
-##' @aliases coef,iCoxph-method
+##' @aliases coef,iCoxph-method coef.iCoxph
 ##' @seealso
 ##' \code{\link{iCoxph}} for fitting integrative Cox model;
 ##' \code{\link{summary,iCoxph-method}} for summary of a fitted model.

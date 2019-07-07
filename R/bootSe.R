@@ -39,11 +39,10 @@ NULL
 ##' bootstrap samples.
 ##'
 ##' @usage
-##' bootSe(object, numBoot = 50, se = c("mad", "inter-quantile", "sd"),
-##'        start = list(), control = list(), ...)
+##' bootSe(object, B = 50, se = c("mad", "inter-quantile", "sd"), ...)
 ##'
 ##' @param object \code{\link{iCoxph-class}} object.
-##' @param numBoot A positive integer specifying number of bootstrap samples
+##' @param B A positive integer specifying number of bootstrap samples
 ##'     used for SE estimates.  A large number, such as 200, is often needed for
 ##'     a more reliable estimation in practice.
 ##' @param se A character value specifying the way computing SE from bootstrap
@@ -52,39 +51,30 @@ NULL
 ##'     normality of the bootstrap estimates and provids robust estimates for
 ##'     SE. The third method estimates SE by the standard deviation of the
 ##'     bootstrap estimates.
-##' @param start An optional list of starting values for the parameters to be
-##'     estimated in the model.  See more in Section details.
-##' @param control A optional list that controls the model fitting process for
-##'     bootstrap samples, or specifys the function to return coefficient
-##'     estimates from the bootstrap samples. See the available options in
-##'     Section Details.
 ##' @param ... Other arguments for future usage.
 ##'
-##' @return \code{\link{iCoxph-class}} object by default or a numeric matrix of
-##'     coefficient estimates from each bootstrap sample.
+##' @return \code{\link{iCoxph-class}} object.
 ##'
 ##' @examples
 ##' ## See examples given in function 'iCoxph'
 ##' @seealso
-##' \code{\link{iCoxph}} for fitting extended Cox model for uncertain records.
+##' \code{\link{iCoxph}} for fitting integerative Cox model.
 ##' @importFrom stats median pnorm qnorm quantile sd
 ##' @export
-bootSe <- function(object, numBoot = 50, se = c("mad", "inter-quantile", "sd"),
-                   start = list(), control = list(), ...)
+bootSe <- function(object,
+                   B = 50,
+                   se = c("mad", "inter-quantile", "sd"),
+                   ...)
 {
-    if (! inherits(object, "iCoxph"))
+    if (! is_iCoxph(object))
         stop("The 'object' has to be an 'iCoxph' class object.")
+    if (! is.integer(B))
+        B <- as.integer(B)
+    if (B <= 0)
+        stop("The number of bootstrap samples must be a postive integer.")
     se <- match.arg(se)
     cal <- object@call
-    ## update start list
-    start <- do.call(bootSe_start, c(start, list(start0 = object@start)))
-    cal$start <- start
-    ## update local control list
-    control <- do.call(bootSe_control, control)
-    ## add noSE = TRUE to the original control list
     fm <- object@formula
-    cal$control <- object@control
-    cal$control$noSE <- TRUE
     ## pre-processing data
     cal$data <- quote(bootDat)
     dat <- object@data
@@ -99,7 +89,7 @@ bootSe <- function(object, numBoot = 50, se = c("mad", "inter-quantile", "sd"),
     dupIdx <- id_string %in% dup_id_string
     uni_id_string <- id_string[! dupIdx]
     idTab <- table(id_string)
-    estMat <- replicate(numBoot, {
+    estMat <- replicate(B, {
         uni_sID <- sample(uni_id_string, replace = TRUE)
         dup_sID <- sample(dup_id_string, replace = TRUE)
         sID <- sort(c(uni_sID, dup_sID))
@@ -111,12 +101,12 @@ bootSe <- function(object, numBoot = 50, se = c("mad", "inter-quantile", "sd"),
         res <- eval(cal)
         as.numeric(res@estimates$beta[, "coef"])
     })
-    if (control$estOnly) {
-        nBeta <- NROW(estMat)
-        estMat <- t(estMat)
-        colnames(estMat) <- paste0("b", seq_len(nBeta))
-        return(estMat)
-    }
+    ## if (control$estOnly) {
+    ##     nBeta <- NROW(estMat)
+    ##     estMat <- t(estMat)
+    ##     colnames(estMat) <- paste0("b", seq_len(nBeta))
+    ##     return(estMat)
+    ## }
     ## some computing can be skipped but kept now for testing
     se_mad <- apply(estMat, 1L, function(a) {
             median(abs(a - median(a))) * 1.4826
@@ -134,56 +124,15 @@ bootSe <- function(object, numBoot = 50, se = c("mad", "inter-quantile", "sd"),
 
     ## save estMat for testing
     object@estimates$boostrap_beta <- estMat
-    object@estimates$boostrap_se <- cbind("mad" = se_mad,
-                                          "inter-quantile" = se_interQ,
-                                          "sd" = se_sd)
-
-    tmp <- object@estimates$beta[, "z"] <- object@estimates$beta[, "coef"] /
-        object@estimates$beta[, "se(coef)"]
+    object@estimates$boostrap_se <- cbind(
+        "mad" = se_mad,
+        "inter-quantile" = se_interQ,
+        "sd" = se_sd
+    )
+    tmp <- object@estimates$beta[, "z"] <-
+        object@estimates$beta[, "coef"] / object@estimates$beta[, "se(coef)"]
     object@estimates$beta[, "Pr(>|z|)"] <- 2 * stats::pnorm(- abs(tmp))
-    object
-}
-
-
-### internal functions =========================================================
-bootSe_start <- function(betaVec = NULL,
-                         betaMat = NULL,
-                         piVec = NULL,
-                         censorRate = NULL,
-                         ...,
-                         start0)
-{
-    if (is.null(betaVec))
-        betaVec <- start0$beta0
-    if (is.null(piVec))
-        piVec <- start0$piVec
-
-    censorRate0 <- start0$censorRate0
-    if (is.null(censorRate) && ! is.na(censorRate0)) {
-        censorRate <- if (start0$multiStart) {
-                          seq.int(max(0, censorRate0 - 0.2),
-                                  min(1, censorRate0 + 0.2), 0.05)
-                      } else {
-                          start0$censorRate
-                      }
-    }
 
     ## return
-    list(betaVec = betaVec,
-         betaMat = betaMat,
-         piVec = piVec,
-         censorRate = censorRate,
-         semiparametric = start0$semiparametric,
-         parametric = start0$parametric,
-         parametricOnly = start0$parametricOnly,
-         multiStart = start0$multiStart,
-         randomly = start0$randomly)
-}
-
-
-bootSe_control <- function(estOnly = FALSE, ...)
-{
-    if (! is.logical(estOnly))
-        stop("Argument 'estOnly' has to be a logical value.")
-    list(estOnly = estOnly)
+    object
 }

@@ -23,10 +23,22 @@ wrapMessages <- function(..., strwrap.args = list())
     paste(wrap_x, collapse = "\n")
 }
 
-## is `x` object of class `Survi`?
-is.Survi <- function(x)
+## is `x` object of class `foo`?
+is_Survi <- function(x)
 {
     inherits(x, "Survi")
+}
+is_iCoxph <- function(x)
+{
+    inherits(x, "iCoxph")
+}
+is_iCoxph.control <- function(x)
+{
+    inherits(x, "iCoxph.control")
+}
+is_iCoxph.start <- function(x)
+{
+    inherits(x, "iCoxph.start")
 }
 
 ## remove NA's from vector `x`
@@ -41,4 +53,18 @@ L2norm <- function(x) {
 }
 L2norm2 <- function(x) {
     sum(x ^ 2)
+}
+
+## throw warnings if `...` is specified by mistake
+warn_dots <- function(..., .fun_name = NULL) {
+    dotsList <- list(...)
+    if (length(dotsList) > 0) {
+        warning(
+            "Some arguments went into `...`",
+            if (! is.null(.fun_name)) sprintf(" of %s()", .fun_name),
+            ", which is however not used currently.",
+            call. = FALSE
+        )
+    }
+    invisible(NULL)
 }
