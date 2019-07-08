@@ -39,21 +39,30 @@ NULL
 ##' bootstrap samples.
 ##'
 ##' @usage
-##' bootSe(object, B = 50, se = c("mad", "inter-quantile", "sd"), ...)
+##' bootSe(object, B = 50, se = c("mad", "inter-quantile", "sd"),
+##'        return_beta = FALSE, ...)
 ##'
 ##' @param object \code{\link{iCoxph-class}} object.
-##' @param B A positive integer specifying number of bootstrap samples
-##'     used for SE estimates.  A large number, such as 200, is often needed for
-##'     a more reliable estimation in practice.
+##' @param B A positive integer specifying number of bootstrap samples used for
+##'     SE estimates.  A large number, such as 200, is often needed for a more
+##'     reliable estimation in practice.  If \code{B = 1} is specified, the
+##'     function will return the covariate coefficient estimates instead of a
+##'     \code{iCoxph-class} object.
 ##' @param se A character value specifying the way computing SE from bootstrap
 ##'     samples. The default method is based on median absolute deviation and
 ##'     the second method is based on inter-quantile, both of which are based on
 ##'     normality of the bootstrap estimates and provids robust estimates for
 ##'     SE. The third method estimates SE by the standard deviation of the
 ##'     bootstrap estimates.
+##' @param return_beta A logical value. If \code{TRUE}, the function returns the
+##'     covariate coefficient estimates from the given number of bootstrap
+##'     samples, which allows users to split this potentially computational
+##'     intensive step into small pieces that can be computed in a parallel
+##'     manner.  The default value is \code{FALSE}.
 ##' @param ... Other arguments for future usage.
 ##'
-##' @return \code{\link{iCoxph-class}} object.
+##' @return \code{\link{iCoxph-class}} object or a numeric matrix contains the
+##'     covariate coeffient estimates.
 ##'
 ##' @examples
 ##' ## See examples given in function 'iCoxph'
@@ -64,6 +73,7 @@ NULL
 bootSe <- function(object,
                    B = 50,
                    se = c("mad", "inter-quantile", "sd"),
+                   return_beta = FALSE,
                    ...)
 {
     if (! is_iCoxph(object))
@@ -101,12 +111,13 @@ bootSe <- function(object,
         res <- eval(cal)
         as.numeric(res@estimates$beta[, "coef"])
     })
-    ## if (control$estOnly) {
-    ##     nBeta <- NROW(estMat)
-    ##     estMat <- t(estMat)
-    ##     colnames(estMat) <- paste0("b", seq_len(nBeta))
-    ##     return(estMat)
-    ## }
+    ## return estimated beta only if B is 1
+    if (B == 1L || return_beta) {
+        nBeta <- NROW(estMat)
+        estMat <- t(estMat)
+        colnames(estMat) <- paste0("b", seq_len(nBeta))
+        return(estMat)
+    }
     ## some computing can be skipped but kept now for testing
     se_mad <- apply(estMat, 1L, function(a) {
             median(abs(a - median(a))) * 1.4826

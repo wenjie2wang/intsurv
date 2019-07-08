@@ -4,14 +4,17 @@
 \alias{bootSe}
 \title{Standard Error Estimates through Bootstrapping Methods}
 \usage{
-bootSe(object, B = 50, se = c("mad", "inter-quantile", "sd"), ...)
+bootSe(object, B = 50, se = c("mad", "inter-quantile", "sd"),
+       return_beta = FALSE, ...)
 }
 \arguments{
 \item{object}{\code{\link{iCoxph-class}} object.}
 
-\item{B}{A positive integer specifying number of bootstrap samples
-used for SE estimates.  A large number, such as 200, is often needed for
-a more reliable estimation in practice.}
+\item{B}{A positive integer specifying number of bootstrap samples used for
+SE estimates.  A large number, such as 200, is often needed for a more
+reliable estimation in practice.  If \code{B = 1} is specified, the
+function will return the covariate coefficient estimates instead of a
+\code{iCoxph-class} object.}
 
 \item{se}{A character value specifying the way computing SE from bootstrap
 samples. The default method is based on median absolute deviation and
@@ -20,10 +23,17 @@ normality of the bootstrap estimates and provids robust estimates for
 SE. The third method estimates SE by the standard deviation of the
 bootstrap estimates.}
 
+\item{return_beta}{A logical value. If \code{TRUE}, the function returns the
+covariate coefficient estimates from the given number of bootstrap
+samples, which allows users to split this potentially computational
+intensive step into small pieces that can be computed in a parallel
+manner.  The default value is \code{FALSE}.}
+
 \item{...}{Other arguments for future usage.}
 }
 \value{
-\code{\link{iCoxph-class}} object.
+\code{\link{iCoxph-class}} object or a numeric matrix contains the
+    covariate coeffient estimates.
 }
 \description{
 This function addes or updates standard error (SE) estimates through
