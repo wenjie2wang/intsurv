@@ -46,8 +46,8 @@ coxph_cure_uncer_vs <- function(time, event, cox_x, cure_x, cure_intercept = TRU
     .Call('_intsurv_coxph_cure_uncer_vs', PACKAGE = 'intsurv', time, event, cox_x, cure_x, cure_intercept, cox_lambda, cox_alpha, cox_nlambda, cox_lambda_min_ratio, cox_l1_penalty_factor, cure_lambda, cure_alpha, cure_nlambda, cure_lambda_min_ratio, cure_l1_penalty_factor, cox_start, cure_start, em_max_iter, em_rel_tol, cox_mstep_max_iter, cox_mstep_rel_tol, cure_mstep_max_iter, cure_mstep_rel_tol, cox_standardize, cure_standardize, spline_start, iSpline_num_knots, iSpline_degree, tail_completion, tail_tau, pmin, early_stop, verbose)
 }
 
-rcpp_coxph <- function(time, event, x, start = 0L, max_iter = 200L, rel_tol = 1e-5, early_stop = FALSE, verbose = FALSE) {
-    .Call('_intsurv_rcpp_coxph', PACKAGE = 'intsurv', time, event, x, start, max_iter, rel_tol, early_stop, verbose)
+rcpp_coxph <- function(time, event, x, offset = 0L, start = 0L, max_iter = 200L, rel_tol = 1e-5, early_stop = FALSE, verbose = FALSE) {
+    .Call('_intsurv_rcpp_coxph', PACKAGE = 'intsurv', time, event, x, offset, start, max_iter, rel_tol, early_stop, verbose)
 }
 
 rcpp_reg_coxph1 <- function(time, event, x, l1_lambda = 0, l2_lambda = 0, l1_penalty_factor = 0L, start = 0L, max_iter = 200L, rel_tol = 1e-5, early_stop = FALSE, verbose = FALSE) {

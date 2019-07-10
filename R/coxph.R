@@ -61,10 +61,6 @@ NULL
 ##'     value is \code{FALSE}.
 ##' @param ... Other arguments for future usage.
 ##'
-##' @return
-##'
-##'
-##'
 ##' @references
 ##'
 ##' Cox, D. R. (1972). Regression Models and Life-Tables. Journal of the Royal
@@ -120,12 +116,12 @@ coxph_fit <- function(time, event, x, offset = NULL,
 }
 
 
-##' Regularized Cox Proportional Hazard Model
-##'
-##' Fit regularized Cox model via penalized maximum likelihood.
-##'
-##'
-##'
+## Regularized Cox Proportional Hazard Model
+##
+## Fit regularized Cox model via penalized maximum likelihood.
+##
+##
+##
 coxnet_fit <- function(time, event, x, offset = NULL,
                        l1_lambda = 0, l2_lambda = 0,
                        l1_penalty_factor = NULL,

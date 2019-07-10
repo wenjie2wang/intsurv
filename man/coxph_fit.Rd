@@ -2,10 +2,11 @@
 % Please edit documentation in R/coxph.R
 \name{coxph_fit}
 \alias{coxph_fit}
-\title{Cox proportional hazard model}
+\title{Cox Proportional Hazard Model}
 \usage{
-coxph_fit(time, event, x, start = rep(0, ncol(x)), max_iter = 200,
-  rel_tol = 1e-05, early_stop = TRUE, verbose = FALSE)
+coxph_fit(time, event, x, offset = NULL, start = rep(0, ncol(x)),
+          max_iter = 200, rel_tol = 1e-5, early_stop = TRUE,
+          verbose = FALSE, ...)
 }
 \arguments{
 \item{time}{A numeric vector for observed times.}
@@ -14,15 +15,23 @@ coxph_fit(time, event, x, start = rep(0, ncol(x)), max_iter = 200,
 
 \item{x}{A numeric matrix for design matrix.}
 
-\item{start}{A numeric vector for starting values.  By default, an all-zeros
-vector with appropriate length (equal to the number of columns of the
-design matrix) will be used.}
+\item{offset}{An opotional offset term added to the linear predictor with
+fixed coefficient one.  The default value is \code{NULL} for no offset.
+The length of the specified offset must be either one or equal to the
+number of observations.}
+
+\item{start}{An optional numeric vector for starting values.  By default, an
+all-zeros vector with appropriate length (equal to the number of columns
+of the design matrix) will be used.}
 
 \item{max_iter}{A positive integer specifying the maximum number of
 iterations.}
 
-\item{rel_tol}{A positive number specifying the convergence tolence on the
-relative difference based on L1-norm.}
+\item{rel_tol}{A positive number specifying the tolence that determines the
+convergence of the covariate coefficient estimates.  The tolerance is
+compared with the relative change between estimates from two consecutive
+iterations that is measured by ratio of the L1-norm of their difference
+to the sum of their L1-norm.  The default value is \code{1e-5}.}
 
 \item{early_stop}{A boolean value specifying whether to stop the iteration
 once the negative log-likelihood unexpectedly increases, which may
@@ -32,16 +41,18 @@ implementation bugs.  The default value is \code{TRUE}.}
 \item{verbose}{A boolean value.  If \code{TRUE}, a verbose information will
 be given along iterations for tracing the convergence.  The default
 value is \code{FALSE}.}
+
+\item{...}{Other arguments for future usage.}
 }
 \description{
-This function fits regular Cox proportional hazard model (Cox, 1972) for
-right-censored data by the monotonic quadratic approximation algorithm
-(Bohning and Lindsay, 1988).  It is not intended to replace
-\code{\link[survival]{coxph}} or \code{\link[survival]{coxph.fit}} for
-fitting regular Cox model.  However, it allows non-integer event indicator
-(between 0 and 1) when computing the partial likelihood (Cox, 1975) and the
-profiled baseline hazard function, which can be useful for some research
-problems where event indicators contain uncertainty.
+Fit a regular Cox proportional hazard model (Cox, 1972) for right-censored
+data by the monotonic quadratic approximation algorithm (Bohning and
+Lindsay, 1988).  This function is not intended to replace \code{coxph} or
+\code{coxph.fit} in \pkg{survival} package for fitting Cox model.  However,
+it allows non-integer event indicator (between 0 and 1) when computing the
+partial likelihood (Cox, 1975) and the profiled baseline hazard function,
+which can be useful for some research problems where event indicators
+contain uncertainty.  The Breslow's method is used for tied survival times.
 }
 \references{
 Cox, D. R. (1972). Regression Models and Life-Tables. Journal of the Royal

@@ -75,9 +75,8 @@ A data frame with the following columns, \itemize{ \item \code{ID}:
     recorods } and the corresponding covariates.
 }
 \description{
-This function generates simulated survival data with uncertain records.  An
-integrative Cox model can be fitted for the simulated data by function
-\code{\link{iCoxph}}.
+Generate simulated survival data with uncertain records.  An integrative Cox
+model can be fitted for the simulated data by function \code{\link{iCoxph}}.
 }
 \details{
 The event times are simulated from a Weibull proportional hazard model of

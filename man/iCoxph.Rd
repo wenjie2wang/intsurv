@@ -43,7 +43,8 @@ specifying control parameters for the model estimation procedure.
 Please refer to the arguments of \code{\link{iCoxph.control}} for the
 available parameters.}
 
-\item{...}{Other arguments for future usage.}
+\item{...}{Other arguments for future usage.  A warning will be thrown if
+any invalid argument is specified.}
 }
 \value{
 An \code{\link{iCoxph-class}} object, whose slots include
@@ -79,8 +80,8 @@ An \code{\link{iCoxph-class}} object, whose slots include
 }
 }
 \description{
-The function fits the integrative Cox model proposed by Wang et al. (2019+)
-for uncertain survival data due to imperfect data integration.
+Fit an integrative Cox model proposed by Wang et al. (2019+) for uncertain
+survival data due to imperfect data integration.
 }
 \examples{
 library(intsurv)

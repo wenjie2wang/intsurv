@@ -260,20 +260,21 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_coxph
-Rcpp::List rcpp_coxph(const arma::vec& time, const arma::vec& event, const arma::mat& x, const arma::vec& start, const unsigned int& max_iter, const double& rel_tol, const bool& early_stop, const bool& verbose);
-RcppExport SEXP _intsurv_rcpp_coxph(SEXP timeSEXP, SEXP eventSEXP, SEXP xSEXP, SEXP startSEXP, SEXP max_iterSEXP, SEXP rel_tolSEXP, SEXP early_stopSEXP, SEXP verboseSEXP) {
+Rcpp::List rcpp_coxph(const arma::vec& time, const arma::vec& event, const arma::mat& x, const arma::vec& offset, const arma::vec& start, const unsigned int& max_iter, const double& rel_tol, const bool& early_stop, const bool& verbose);
+RcppExport SEXP _intsurv_rcpp_coxph(SEXP timeSEXP, SEXP eventSEXP, SEXP xSEXP, SEXP offsetSEXP, SEXP startSEXP, SEXP max_iterSEXP, SEXP rel_tolSEXP, SEXP early_stopSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::vec& >::type time(timeSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type event(eventSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type offset(offsetSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type start(startSEXP);
     Rcpp::traits::input_parameter< const unsigned int& >::type max_iter(max_iterSEXP);
     Rcpp::traits::input_parameter< const double& >::type rel_tol(rel_tolSEXP);
     Rcpp::traits::input_parameter< const bool& >::type early_stop(early_stopSEXP);
     Rcpp::traits::input_parameter< const bool& >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_coxph(time, event, x, start, max_iter, rel_tol, early_stop, verbose));
+    rcpp_result_gen = Rcpp::wrap(rcpp_coxph(time, event, x, offset, start, max_iter, rel_tol, early_stop, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -447,7 +448,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_intsurv_coxph_cure_uncer", (DL_FUNC) &_intsurv_coxph_cure_uncer, 24},
     {"_intsurv_coxph_cure_uncer_reg", (DL_FUNC) &_intsurv_coxph_cure_uncer_reg, 29},
     {"_intsurv_coxph_cure_uncer_vs", (DL_FUNC) &_intsurv_coxph_cure_uncer_vs, 33},
-    {"_intsurv_rcpp_coxph", (DL_FUNC) &_intsurv_rcpp_coxph, 8},
+    {"_intsurv_rcpp_coxph", (DL_FUNC) &_intsurv_rcpp_coxph, 9},
     {"_intsurv_rcpp_reg_coxph1", (DL_FUNC) &_intsurv_rcpp_reg_coxph1, 11},
     {"_intsurv_rcpp_reg_coxph2", (DL_FUNC) &_intsurv_rcpp_reg_coxph2, 12},
     {"_intsurv_rcpp_logistic", (DL_FUNC) &_intsurv_rcpp_logistic, 10},
