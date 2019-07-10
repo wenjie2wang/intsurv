@@ -18,9 +18,8 @@
 
 ##' Simulated Survival Data with Uncertain Records
 ##'
-##' This function generates simulated survival data with uncertain records.  An
-##' integrative Cox model can be fitted for the simulated data by function
-##' \code{\link{iCoxph}}.
+##' Generate simulated survival data with uncertain records.  An integrative Cox
+##' model can be fitted for the simulated data by function \code{\link{iCoxph}}.
 ##'
 ##' The event times are simulated from a Weibull proportional hazard model of
 ##' given shape and baseline scale.  The censoring times follow uniform

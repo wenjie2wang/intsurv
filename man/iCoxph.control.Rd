@@ -2,7 +2,7 @@
 % Please edit documentation in R/iCoxph.R
 \name{iCoxph.control}
 \alias{iCoxph.control}
-\title{Auxiliary for Controlling iCoxph fitting}
+\title{Auxiliary for Controlling iCoxph Fitting}
 \usage{
 iCoxph.control(tol_beta = 1e-6, tol_pi = 1e-8, cm_gradtol = 1e-6,
                cm_stepmax = 1e2, cm_steptol = 1e-6, cm_max_iter = 1e2,

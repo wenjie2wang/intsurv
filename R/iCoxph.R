@@ -21,8 +21,8 @@ NULL
 
 ##' Integrative Cox Model for Uncertain Survival Data
 ##'
-##' The function fits the integrative Cox model proposed by Wang et al. (2019+)
-##' for uncertain survival data due to imperfect data integration.
+##' Fit an integrative Cox model proposed by Wang et al. (2019+) for uncertain
+##' survival data due to imperfect data integration.
 ##'
 ##' @usage
 ##' iCoxph(formula, data, subset, na.action, contrasts = NULL,
@@ -58,7 +58,8 @@ NULL
 ##'     specifying control parameters for the model estimation procedure.
 ##'     Please refer to the arguments of \code{\link{iCoxph.control}} for the
 ##'     available parameters.
-##' @param ... Other arguments for future usage.
+##' @param ... Other arguments for future usage.  A warning will be thrown if
+##'     any invalid argument is specified.
 ##'
 ##' @return
 ##' An \code{\link{iCoxph-class}} object, whose slots include
@@ -115,6 +116,9 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
 {
     ## record the function call to return
     Call <- match.call()
+
+    ## warning on `...`
+    warn_dots(..., .fun_name = "iCoxph")
 
     ## arguments check
     if (missing(formula))
@@ -314,7 +318,7 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
 }
 
 
-##' Auxiliary for Controlling iCoxph fitting
+##' Auxiliary for Controlling iCoxph Fitting
 ##'
 ##' Auxiliary function for \code{\link{iCoxph}} that enable users to specify the
 ##' control parameters of the model estimation procedure.  Internally, the
@@ -331,8 +335,9 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
 ##' @param tol_beta A postive value specifying the tolerance that concludes the
 ##'     convergence of the covariate coefficient estimates. The tolerance is
 ##'     compared with the relative change between the estimates from two
-##'     consecutive iterations measured by ratio of L2-norm of their difference
-##'     to the L2-norm of their sum.  The default value is \code{1e-6}.
+##'     consecutive iterations that is measured by ratio of the L2-norm of their
+##'     difference to the sum of their L2-norm.  The default value is
+##'     \code{1e-6}.
 ##' @param tol_pi A postive value specifying the tolerance that concludes the
 ##'     convergence of the probability estimates of uncertain records being
 ##'     true.  The tolerance is compared with the relative change between the
@@ -401,11 +406,10 @@ iCoxph.control <- function(tol_beta = 1e-6,
 }
 
 
-##' Auxiliary for Starting iCoxph fitting
+##' Auxiliary for Starting iCoxph Fitting
 ##'
 ##' Auxiliary function for \code{\link{iCoxph}} that enable users
 ##' to specify the starting values of the model estimation procedure.
-##'
 ##'
 ##' @usage
 ##' iCoxph.start(beta_vec = NULL, beta_mat = NULL,
