@@ -28,6 +28,7 @@
 Rcpp::List rcpp_coxph(const arma::vec& time,
                       const arma::vec& event,
                       const arma::mat& x,
+                      const arma::vec& offset = 0,
                       const arma::vec& start = 0,
                       const unsigned int& max_iter = 200,
                       const double& rel_tol = 1e-5,
@@ -35,8 +36,17 @@ Rcpp::List rcpp_coxph(const arma::vec& time,
                       const bool& verbose = false
     )
 {
-    Intsurv::CoxphReg object { Intsurv::CoxphReg(time, event, x) };
+    // define object
+    Intsurv::CoxphReg object {
+        Intsurv::CoxphReg(time, event, x)
+    };
+    // set offset if it is not zero
+    if (! Intsurv::isAlmostEqual(arma::sum(arma::abs(offset)), 0.0)) {
+        object.set_offset(offset, false);
+    }
+    // model-fitting
     object.fit(start, max_iter, rel_tol, early_stop, verbose);
+    // compute baseline hazard and survival function
     object.compute_haz_surv_time();
     object.compute_censor_haz_surv_time();
     object.est_haz_surv();

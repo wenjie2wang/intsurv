@@ -165,8 +165,6 @@ namespace Intsurv {
             for (size_t j {0}; j < x.n_cols; ++j) {
                 d_x.col(j) = d_x.col(j) % delta_n;
             }
-            // initialize offset
-            this->set_offset(arma::zeros(time.n_elem));
             uni_time_ind = find_first_unique(time);
             if (hasTies) {
                 // re-define uni_event_ind
@@ -176,6 +174,8 @@ namespace Intsurv {
                 delta_n = aggregate_sum(delta_n, d_time0);
                 d_x = aggregate_sum(d_x, d_time0);
             }
+            // initialize offset
+            this->set_offset(arma::zeros(1));
             riskset_size = arma::ones(time.n_elem);
             riskset_size = cum_sum(riskset_size, true).elem(uni_event_ind);
         }
@@ -223,13 +223,18 @@ namespace Intsurv {
                     // update offset for appropriate input
                     offset = offset.elem(ord);
                 }
+                // update d_offset as well
+                d_offset = offset.elem(event_ind) % event.elem(event_ind);
+                if (hasTies) {
+                    d_offset = aggregate_sum(d_offset, this->d_time0);
+                }
             } else {
                 offset = arma::zeros(time.n_elem);
-            }
-            // update d_offset as well
-            d_offset = offset.elem(event_ind) % delta_n;
-            if (hasTies) {
-                d_offset = aggregate_sum(d_offset, this->d_time0);
+                if (hasTies) {
+                    d_offset = arma::zeros(d_time.n_elem);
+                } else {
+                    d_offset = arma::zeros(event_ind.n_elem);
+                }
             }
         }
         inline void reset_offset() {
