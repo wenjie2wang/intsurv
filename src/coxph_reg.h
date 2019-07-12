@@ -285,6 +285,36 @@ namespace Intsurv {
         inline arma::uvec get_sort_index() { return this->ord; }
         inline arma::uvec get_rev_sort_index() { return this->rev_ord; }
 
+        // additional methods for coxph_cure
+        // revserse the rescale process to get coef0 from a new coef
+        inline void rev_rescale_coef()
+        {
+            this->coef0 = this->coef;
+            if (this->standardize) {
+                for (size_t j {0}; j < coef.n_elem; ++j) {
+                    this->coef0[j] = coef[j] * x_scale[j];
+                }
+            }
+        }
+        // update coef0, en_coef, and coef_df from a new coef
+        inline void update_from_coef(const double& l2_lambda = 0) {
+            // update coef0
+            this->rev_rescale_coef();
+            arma::vec beta { this->coef0 };
+            // update en_coef
+            if (l2_lambda > 0) {
+                this->coef0 *= (1 + l2_lambda);
+                this->rescale_coef();
+                this->en_coef = this->coef;
+                // overwrite the naive elastic net estimate
+                this->coef0 = beta;
+                this->rescale_coef();
+            } else {
+                this->en_coef = this->coef;
+            }
+            this->coef_df = get_coef_df(beta);
+        }
+
         // fit regular Cox model
         inline void fit(const arma::vec& start,
                         const unsigned int& max_iter,

@@ -137,6 +137,26 @@ namespace Intsurv {
             return beta0;
         }
 
+        // additional methods for coxph_cure
+        // update coef0, en_coef, and coef_df from a new coef
+        inline void update_from_coef(const double& l2_lambda = 0) {
+            // update coef0
+            this->coef0 = this->rev_rescale_coef(this->coef);
+            arma::vec beta { this->coef0 };
+            // update en_coef
+            if (l2_lambda > 0) {
+                this->coef0 *= (1 + l2_lambda);
+                this->rescale_coef();
+                this->en_coef = this->coef;
+                // overwrite the naive elastic net estimate
+                this->coef0 = beta;
+                this->rescale_coef();
+            } else {
+                this->en_coef = this->coef;
+            }
+            this->coef_df = get_coef_df(beta);
+        }
+
         inline arma::vec linkinv(const arma::vec& eta,
                                  const double& pmin) const;
 

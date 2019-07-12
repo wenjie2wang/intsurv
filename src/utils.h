@@ -626,7 +626,7 @@ namespace Intsurv {
     inline unsigned int get_coef_df(const arma::vec& x) {
         unsigned int res {0};
         for (size_t i {0}; i < x.n_elem; ++i) {
-            if (! isAlmostEqual(x(i), 0)) {
+            if (! isAlmostEqual(x(i), 0.0)) {
                 res++;
             }
         }

@@ -696,6 +696,10 @@ namespace Intsurv {
                 // compute hazard and survival function estimates
                 cox_obj.coef = cox_beta;
                 cure_obj.coef = cure_beta;
+                // update coef_df and en_coef
+                cox_obj.update_from_coef(cox_l2_lambda);
+                cure_obj.update_from_coef(cure_l2_lambda);
+                // update hazard and survival function estimates
                 cox_obj.compute_censor_haz_surv_time();
                 cox_obj.S0_time = s0_wi_tail;
                 cox_obj.S_time = s_wi_tail;
