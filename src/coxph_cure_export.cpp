@@ -322,6 +322,8 @@ Rcpp::List rcpp_coxph_cure_vs(
     const unsigned int cure_p { obj.get_cure_p() };
     arma::mat cox_coef_mat { arma::zeros(cox_p, n_lambda) };
     arma::mat cure_coef_mat { arma::zeros(cure_p, n_lambda) };
+    arma::mat cox_en_coef_mat { arma::zeros(cox_p, n_lambda) };
+    arma::mat cure_en_coef_mat { arma::zeros(cure_p, n_lambda) };
     arma::vec bic1 { arma::zeros(n_lambda) }, bic2 { bic1 };
     arma::vec coef_df { bic1 }, negLogL { bic1 };
     arma::mat lambda_mat { arma::zeros(n_lambda, 4) };
@@ -366,6 +368,8 @@ Rcpp::List rcpp_coxph_cure_vs(
             // store results
             cox_coef_mat.col(iter) = obj.cox_coef;
             cure_coef_mat.col(iter) = obj.cure_coef;
+            cox_en_coef_mat.col(iter) = obj.cox_en_coef;
+            cure_en_coef_mat.col(iter) = obj.cure_en_coef;
             bic1(iter) = obj.bic1;
             bic2(iter) = obj.bic2;
             coef_df(iter) = obj.coef_df;
@@ -382,6 +386,8 @@ Rcpp::List rcpp_coxph_cure_vs(
     return Rcpp::List::create(
         Rcpp::Named("cox_coef") = cox_coef_mat.t(),
         Rcpp::Named("cure_coef") = cure_coef_mat.t(),
+        Rcpp::Named("cox_en_coef") = cox_en_coef_mat.t(),
+        Rcpp::Named("cure_en_coef") = cure_en_coef_mat.t(),
         Rcpp::Named("goodness") = Rcpp::List::create(
             Rcpp::Named("nObs") = obj.nObs,
             Rcpp::Named("coef_df") = Intsurv::arma2rvec(coef_df),
