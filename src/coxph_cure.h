@@ -356,6 +356,8 @@ namespace Intsurv {
                 cox_obj.S_time = s_wi_tail;
                 // cox_obj.compute_censor_haz_surv_time();
                 cox_obj.est_haz_surv();
+                // use old obs likelihood
+                obs_ell = obs_ell_old;
                 // break here
                 break;
             }
@@ -408,7 +410,7 @@ namespace Intsurv {
             }
             cox_obj.set_offset(arma::log(estep_v));
             cox_obj.fit(cox_beta, cox_mstep_max_iter, cox_mstep_rel_tol,
-                        early_stop, verbose > 2);
+                        early_stop == 1, verbose > 2);
             if (verbose > 1) {
                 Rcpp::Rcout << "\n" << std::string(40, '-')
                             << "\nThe M-step for the survival layer was done."
@@ -429,7 +431,7 @@ namespace Intsurv {
                                    cure_mstep_rel_tol, pmin);
             } else {
                 cure_obj.fit(cure_beta, cure_mstep_max_iter, cure_mstep_rel_tol,
-                             pmin, early_stop, verbose > 2);
+                             pmin, early_stop == 1, verbose > 2);
             }
             if (verbose > 1) {
                 Rcpp::Rcout << "\n" << std::string(40, '-')
@@ -550,13 +552,17 @@ namespace Intsurv {
         }
         cure_obj.coef = cure_beta;
         cox_obj.coef = cox_beta;
+        cure_obj.coef_df = get_coef_df(cure_beta);
+        cox_obj.coef_df = get_coef_df(cox_beta);
 
         // initialization
         arma::vec p_vec { arma::zeros(nObs) };
         arma::vec estep_v { cox_obj.get_event() };
         size_t i {0};
         double obs_ell {0};
-        double reg_obj {0}, reg_obj_old { arma::datum::inf };
+        double reg_obj {0};
+        double reg_obj_old { arma::datum::inf }, obs_ell_old { reg_obj_old };
+        double bic1_old { arma::datum::inf }, bic2_old { bic1_old };
         double tol1 { arma::datum::inf }, tol2 { tol1 };
         arma::vec s0_wi_tail, s_wi_tail;
         bool verbose_mstep { verbose > 2 };
@@ -646,6 +652,12 @@ namespace Intsurv {
             };
             reg_obj = - obs_ell / this->nObs + reg_cox + reg_cure;
 
+            // compute bic
+            this->negLogL = - obs_ell;
+            this->coef_df = cox_obj.coef_df + cure_obj.coef_df;
+            this->compute_bic1();
+            this->compute_bic2();
+
             // verbose tracing for objective function
             if (verbose) {
                 Rcpp::Rcout << "\n" << std::string(50, '=')
@@ -683,7 +695,15 @@ namespace Intsurv {
                     Rcpp::Rcout << "The objective function increased."
                                 << std::endl;
                 }
-                early_exit = early_exit || early_stop;
+                early_exit = early_exit || early_stop == 1;
+            }
+            // early exit if bic increased
+            if (this->bic1 > bic1_old && this->bic2 > bic2_old) {
+                if (verbose) {
+                    Rcpp::Rcout << "The BIC increased."
+                                << std::endl;
+                }
+                early_exit = early_exit || early_stop == 2;
             }
             // return the estimates from last step
             if (early_exit) {
@@ -704,6 +724,8 @@ namespace Intsurv {
                 cox_obj.S0_time = s0_wi_tail;
                 cox_obj.S_time = s_wi_tail;
                 cox_obj.est_haz_surv();
+                // convert back obs_ell
+                obs_ell = obs_ell_old;
                 // break here
                 break;
             }
@@ -732,7 +754,10 @@ namespace Intsurv {
             // record estimates from last step
             cox_beta = cox_obj.coef;
             cure_beta = cure_obj.coef;
+            obs_ell_old = obs_ell;
             reg_obj_old = reg_obj;
+            bic1_old = this->bic1;
+            bic2_old = this->bic2;
             s0_wi_tail = cox_obj.S0_time;
             s_wi_tail = cox_obj.S_time;
 
@@ -763,7 +788,7 @@ namespace Intsurv {
             cox_obj.regularized_fit(
                 cox_l1_lambda, cox_l2_lambda, cox_l1_penalty_factor,
                 cox_beta, cox_mstep_max_iter, cox_mstep_rel_tol,
-                early_stop, verbose_mstep
+                early_stop == 1, verbose_mstep
                 );
             if (verbose > 1) {
                 Rcpp::Rcout << "\n" << std::string(40, '-')
@@ -783,7 +808,7 @@ namespace Intsurv {
             cure_obj.regularized_fit(
                 cure_l1_lambda, cure_l2_lambda, cure_l1_penalty_factor,
                 cure_beta, cure_mstep_max_iter, cure_mstep_rel_tol,
-                pmin, early_stop, verbose_mstep
+                pmin, early_stop == 1, verbose_mstep
                 );
             if (verbose > 1) {
                 Rcpp::Rcout << "\n" << std::string(40, '-')
