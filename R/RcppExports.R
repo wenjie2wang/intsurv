@@ -22,8 +22,8 @@ rcpp_cIndex <- function(time, event, risk_score, weight) {
     .Call('_intsurv_rcpp_cIndex', PACKAGE = 'intsurv', time, event, risk_score, weight)
 }
 
-rcpp_coxph_cure <- function(time, event, cox_x, cure_x, cure_intercept = TRUE, cox_start = 0L, cure_start = 0L, bootstrap = 0L, em_max_iter = 1000L, em_rel_tol = 1e-4, cox_mstep_max_iter = 200L, cox_mstep_rel_tol = 1e-4, cure_mstep_max_iter = 200L, cure_mstep_rel_tol = 1e-6, firth = FALSE, tail_completion = 1L, tail_tau = -1, pmin = 1e-5, early_stop = 0L, verbose = 0L) {
-    .Call('_intsurv_rcpp_coxph_cure', PACKAGE = 'intsurv', time, event, cox_x, cure_x, cure_intercept, cox_start, cure_start, bootstrap, em_max_iter, em_rel_tol, cox_mstep_max_iter, cox_mstep_rel_tol, cure_mstep_max_iter, cure_mstep_rel_tol, firth, tail_completion, tail_tau, pmin, early_stop, verbose)
+rcpp_coxph_cure <- function(time, event, cox_x, cure_x, cure_intercept = TRUE, cox_start = 0L, cure_start = 0L, bootstrap = 0L, em_max_iter = 1000L, cox_standardize = TRUE, cure_standardize = TRUE, em_rel_tol = 1e-4, cox_mstep_max_iter = 200L, cox_mstep_rel_tol = 1e-4, cure_mstep_max_iter = 200L, cure_mstep_rel_tol = 1e-6, firth = FALSE, tail_completion = 1L, tail_tau = -1, pmin = 1e-5, early_stop = 0L, verbose = 0L) {
+    .Call('_intsurv_rcpp_coxph_cure', PACKAGE = 'intsurv', time, event, cox_x, cure_x, cure_intercept, cox_start, cure_start, bootstrap, em_max_iter, cox_standardize, cure_standardize, em_rel_tol, cox_mstep_max_iter, cox_mstep_rel_tol, cure_mstep_max_iter, cure_mstep_rel_tol, firth, tail_completion, tail_tau, pmin, early_stop, verbose)
 }
 
 rcpp_coxph_cure_reg <- function(time, event, cox_x, cure_x, cure_intercept = TRUE, cox_l1_lambda = 0, cox_l2_lambda = 0, cox_l1_penalty_factor = 0L, cure_l1_lambda = 0, cure_l2_lambda = 0, cure_l1_penalty_factor = 0L, cox_start = 0L, cure_start = 0L, em_max_iter = 500L, em_rel_tol = 1e-5, cox_mstep_max_iter = 200L, cox_mstep_rel_tol = 1e-4, cure_mstep_max_iter = 200L, cure_mstep_rel_tol = 1e-4, cox_standardize = TRUE, cure_standardize = TRUE, tail_completion = 1L, tail_tau = -1, pmin = 1e-5, early_stop = 0L, verbose = 0L) {

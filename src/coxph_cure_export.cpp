@@ -35,6 +35,8 @@ Rcpp::List rcpp_coxph_cure(
     const arma::vec& cure_start = 0,
     const unsigned int& bootstrap = 0,
     const unsigned int& em_max_iter = 1000,
+    const bool& cox_standardize = true,
+    const bool& cure_standardize = true,
     const double& em_rel_tol = 1e-4,
     const unsigned int& cox_mstep_max_iter = 200,
     const double& cox_mstep_rel_tol = 1e-4,
@@ -50,7 +52,8 @@ Rcpp::List rcpp_coxph_cure(
 {
     // define object
     Intsurv::CoxphCure obj {
-        Intsurv::CoxphCure(time, event, cox_x, cure_x, cure_intercept)
+        Intsurv::CoxphCure(time, event, cox_x, cure_x, cure_intercept,
+                           cox_standardize, cure_standardize)
     };
     // model-fitting
     obj.fit(cox_start, cure_start,

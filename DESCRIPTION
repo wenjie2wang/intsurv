@@ -1,7 +1,7 @@
 Package: intsurv
 Title: Integrative Survival Modeling
 Version: 0.2.0.9020
-Date: 2019-07-16
+Date: 2019-07-18
 Authors@R: c(
     person(given = "Wenjie", family = "Wang",
            email = "wenjie.2.wang@uconn.edu",
