@@ -20,19 +20,27 @@
 NULL
 
 
-##' Formula Response for Survival Data With Uncertainty
+##' Formula Response for Survival Data With Uncertain Event Times
 ##'
 ##' \code{Survi} returns an S4 class that represents formula response for
 ##' survival data with uncertain records due to imperfect data integration.  The
 ##' last letter 'i' in \code{Survi} represents 'integration'.
+##'
+##' @aliases Survi
 ##'
 ##' @param ID Identificator of each subject.
 ##' @param time Time of reccurence event or censoring.
 ##' @param event The status indicator, 0 = censored, 1 = event.
 ##' @param check A logical value specifying whether to perform check on input
 ##'     data.
-##' @param ... Other arguments for future usage.
-##' @aliases Survi
+##' @param ... Other arguments for future usage.  A warning will be thrown if
+##'     any invalid argument is specified.
+##'
+##' @return
+##' \code{Survi} object.  See \code{\link{Survi-class}} for details.
+##'
+##' @examples
+##' ## See examples of function 'iCoxph'
 ##' @export
 Survi <- function(ID, time, event, check = TRUE, ...)
 {
@@ -59,9 +67,7 @@ Survi <- function(ID, time, event, check = TRUE, ...)
     dat$ID <- as.numeric(factor(dat$ID, levels = unique(id0)))
     mat <- with(dat, as.matrix(cbind(ID, time, event)))
     methods::new("Survi", mat,
-                 ID = id0,
-                 time = time,
-                 event = event)
+                 ID = id0)
 }
 
 

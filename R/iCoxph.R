@@ -19,10 +19,11 @@
 ##' @include class.R
 NULL
 
-##' Integrative Cox Model for Uncertain Survival Data
+##' Integrative Cox Model for Uncertain Event Times
 ##'
-##' Fit an integrative Cox model proposed by Wang et al. (2019+) for uncertain
-##' survival data due to imperfect data integration.
+##' Fit an integrative Cox model proposed by Wang et al. (2019) for
+##' right-censored survival data with uncertain event times due to imperfect
+##' data integration.
 ##'
 ##' @usage
 ##' iCoxph(formula, data, subset, na.action, contrasts = NULL,
@@ -66,8 +67,8 @@ NULL
 ##' \itemize{
 ##'     \item \code{call}: Function call.
 ##'     \item \code{formula}: Formula used in the model fitting.
-##'     \item \code{nObs}: Number of observation.
 ##'     \item \code{data}: A processed data frame used for model fitting.
+##'     \item \code{nObs}: Number of observation.
 ##'     \item \code{estimates}:
 ##'         \itemize{
 ##'             \item \code{beta}: Coefficient estimates.
@@ -78,9 +79,12 @@ NULL
 ##'                 baseline hazard function with columns named \code{time} and
 ##'                 \code{h0}.
 ##'         }
+##'     \item \code{start}: The initial guesses \code{beta_mat} and
+##'         \code{pi_mat} specified for the parameters to be estimated,
+##'         and the set of initial guess \code{beta_start} and \code{pi_start}
+##'         that resulted in the largest objective function, i.e.,
+##'         the observed-data likelihood function.
 ##'     \item \code{control}: The control list specified for model fitting.
-##'     \item \code{start}: The initial guess specified for the parameters
-##'         to be estimated.
 ##'     \item \code{na.action}: The procedure specified to deal with
 ##'         missing values in the covariate.
 ##'     \item \code{xlevels}: A list that records the levels in
@@ -90,22 +94,24 @@ NULL
 ##'     \item \code{convergeCode}: \code{code} returned by function
 ##'         \code{\link[stats]{nlm}}, which is an integer indicating why the
 ##'         optimization process terminated. \code{help(nlm)} for details.
-##'     \item \code{logL}: The Log-likelihood under observed data after
-##'         convergence.
+##'     \item \code{logL}: A numeric vector containing the observed-data
+##'         log-likelihood over iterations.
 ##' }
 ##'
 ##' @references
 ##'
-##' Wang, W., Aseltine, R., Chen, K., & Yan, J. (2019+).  Integrative Survival
+##' Wang, W., Aseltine, R., Chen, K., & Yan, J. (2019).  Integrative Survival
 ##' Analysis with Uncertain Event Times in Application to a Suicide Risk
-##' Study. (invited revision)
+##' Study. \emph{Annals of Applied Statistics}. (in press)
 ##'
 ##' @example inst/examples/iCoxph.R
 ##'
 ##' @seealso
+##' \code{\link{iCoxph.start}} and \code{\link{iCoxph.control}}, respectively,
+##' for starting and controlling iCoxph fitting;
 ##' \code{\link{summary,iCoxph-method}} for summary of fitted model;
 ##' \code{\link{coef,iCoxph-method}} for estimated covariate coefficients;
-##' \code{\link{bootSe}} for SE estimates from bootstrap method.
+##' \code{\link{bootSe}} for SE estimates from bootstrap methods.
 ##'
 ##' @importFrom stats na.fail na.omit na.exclude na.pass .getXlevels
 ##'     model.extract model.frame model.matrix nlm pnorm
@@ -193,7 +199,8 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
 
     for (oneBeta in seq_len(n_beta_start)) {
         for (onePi in seq_len(n_pi_start)) {
-
+            ## index of starts
+            idx_start <- 1
             incDat$piVec <- piVec <- piMat[, onePi]
             ## trace the log-likelihood for observed data
             logL <- rep(NA, control$ecm_max_iter)
@@ -238,7 +245,7 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
             logL <- rmNA(logL)
             iter <- (oneBeta - 1) * n_pi_start + onePi
             n_step <- length(logL)
-            logL_max <- logL_max_vec[iter] <- logL[n_step]
+            logL_max <- logL_max_vec[idx_start] <- logL[n_step]
             beta_est_mat[iter, ] <- betaHat
 
             if (logL_max > logL_max0) {
@@ -249,6 +256,9 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
                 piVec0 <- piVec
                 start$beta_start <- betaMat[1L, ]
             }
+
+            ## update index of start
+            idx_start <- idx_start + 1
         }
     }
 
@@ -257,8 +267,8 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
     ## prepare for outputs
     piEst <- oneFit0$piVec[(reOrderIdx <- order(orderInc))]
     start$pi_start <- piVec0[reOrderIdx]
-    start$logL_end <- logL_max_vec
-    start$beta_end <- beta_est_mat
+    ## start$logL_end <- logL_max_vec
+    ## start$beta_mat_end <- t(beta_est_mat)
     ## update results
     h0Dat$h0Vec <- oneFit0$h0Vec
     colnames(h0Dat) <- c("time", "h0")
@@ -359,8 +369,16 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
 ##'     default value is \code{2e2}.
 ##' @param ... Other arguments for future usage.  A warning will be thrown if
 ##'     any invalid argument is specified.
+##'
 ##' @return A list of class \code{intsurv-iCoxph.control} containing all
 ##'     specified control parameters.
+##'
+##' @examples
+##' ## See examples of function 'iCoxph'.
+##'
+##' @seealso
+##' \code{\link{iCoxph}} for fitting integerative Cox model.
+##'
 ##' @export
 iCoxph.control <- function(tol_beta = 1e-6,
                            tol_pi = 1e-8,
@@ -433,14 +451,15 @@ iCoxph.control <- function(tol_beta = 1e-6,
 ##'     details of the initialization methods.
 ##' @param ... Other arguments for future usage.  A warning will be thrown if
 ##'     any invalid argument is specified.
+##'
 ##' @return A list of class \code{intsurv-iCoxph.start} containing all specified
 ##'     starting values of the parameters to be estimated from the model.
 ##'
-##' @references
+##' @examples
+##' ## See examples of function 'iCoxph'.
 ##'
-##' Wang, W., Aseltine, R., Chen, K., & Yan, J. (2019+).  Integrative Survival
-##' Analysis with Uncertain Event Times in Application to a Suicide Risk
-##' Study. (invited revision)
+##' @seealso
+##' \code{\link{iCoxph}} for fitting integerative Cox model.
 ##'
 ##' @export
 iCoxph.start <- function(beta_vec = NULL,

@@ -13,9 +13,5 @@ An S4 Class Representing Formula Response
 \item{\code{.Data}}{A numeric matrix object.}
 
 \item{\code{ID}}{Identificator of each subject.}
-
-\item{\code{time}}{Observerd event time or censoring time.}
-
-\item{\code{event}}{The event indicator, 0 = censored, 1 = event.}
 }}
 

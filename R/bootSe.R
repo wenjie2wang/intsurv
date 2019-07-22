@@ -20,26 +20,24 @@
 NULL
 
 
-##' Standard Error Estimates through Bootstrapping Methods
+##' Standard Error Estimates through Bootstrap
 ##'
-##' This function addes or updates standard error (SE) estimates through
-##' bootstrap method for \code{\link{iCoxph-class}} object by default.  Three
-##' different methods are available for computing SE from bootstrap samples
-##' through argument \code{se}.
+##' For \code{\link{iCoxph-class}} object, add (or update) standard error (SE)
+##' estimates through bootstrap methods, or compute the coefficient estimates
+##' from the given number of bootstrap samples.
 ##'
-##' Given the fact that the bootstrap method is computional intensive, the
-##' function can return the coefficient estimates from one bootstrap sample when
-##' \code{control = list(estOnly = TRUE)} is specified, which can used in
-##' parallel computing or high performance computing (HPC) cluster. Then the SE
-##' estimates can be easily computed based on estimates from bootstrap samples.
-##'
-##' The available elements of argument \code{start} are the same with those of
-##' argument \code{start} in function \code{\link{iCoxph}} except that the
-##' \code{piVec} is not available since its length may vary in different
-##' bootstrap samples.
+##' Three different methods are available for computing SE from bootstrap
+##' samples through argument \code{se}.  Given the fact that the bootstrap
+##' method is computional intensive, the function returns the coefficient
+##' estimates in a matrix from the given number of bootstrap samples when
+##' \code{return_beta = TRUE)} is specified, which can be used in parallel
+##' computing or high performance computing (HPC) cluster.  The SE estimates can
+##' be further computed based on estimates from bootstrap samples by users on
+##' their own.  The \code{return_beta = TRUE} is implied, when \code{B = 1} is
+##' specified.
 ##'
 ##' @usage
-##' bootSe(object, B = 50, se = c("mad", "inter-quantile", "sd"),
+##' bootSe(object, B = 50, se = c("inter-quantile", "mad", "sd"),
 ##'        return_beta = FALSE, ...)
 ##'
 ##' @param object \code{\link{iCoxph-class}} object.
@@ -59,29 +57,35 @@ NULL
 ##'     samples, which allows users to split this potentially computational
 ##'     intensive step into small pieces that can be computed in a parallel
 ##'     manner.  The default value is \code{FALSE}.
-##' @param ... Other arguments for future usage.
+##' @param ... Other arguments for future usage.  A warning will be thrown if
+##'     any invalid argument is specified.
 ##'
-##' @return \code{\link{iCoxph-class}} object or a numeric matrix contains the
-##'     covariate coeffient estimates.
+##' @return \code{\link{iCoxph-class}} object or a numeric matrix that contains
+##'     the covariate coeffient estimates from the given number of bootstrap
+##'     samples in rows.
 ##'
 ##' @examples
-##' ## See examples given in function 'iCoxph'
+##' ## See examples of function 'iCoxph'.
 ##' @seealso
 ##' \code{\link{iCoxph}} for fitting integerative Cox model.
 ##' @importFrom stats median pnorm qnorm quantile sd
 ##' @export
 bootSe <- function(object,
                    B = 50,
-                   se = c("mad", "inter-quantile", "sd"),
+                   se = c("inter-quantile", "mad", "sd"),
                    return_beta = FALSE,
                    ...)
 {
+    ## some simple checkings
     if (! is_iCoxph(object))
         stop("The 'object' has to be an 'iCoxph' class object.")
     if (! is.integer(B))
         B <- as.integer(B)
     if (B <= 0)
         stop("The number of bootstrap samples must be a postive integer.")
+    ## warning on `...`
+    warn_dots(..., .fun_name = "bootSe")
+
     se <- match.arg(se)
     cal <- object@call
     fm <- object@formula
@@ -111,6 +115,7 @@ bootSe <- function(object,
         res <- eval(cal)
         as.numeric(res@estimates$beta[, "coef"])
     })
+
     ## return estimated beta only if B is 1
     if (B == 1L || return_beta) {
         nBeta <- NROW(estMat)
@@ -118,28 +123,38 @@ bootSe <- function(object,
         colnames(estMat) <- paste0("b", seq_len(nBeta))
         return(estMat)
     }
-    ## some computing can be skipped but kept now for testing
-    se_mad <- apply(estMat, 1L, function(a) {
-            median(abs(a - median(a))) * 1.4826
-    })
-    se_interQ <- apply(estMat, 1L, function(a) {
-            diff(stats::quantile(a, probs = c(0.25, 0.75))) /
-                (stats::qnorm(0.75) - stats::qnorm(0.25))
-    })
-    se_sd <- apply(estMat, 1L, sd)
-    object@estimates$beta[, "se(coef)"] <-
-        switch(se,
-               "mad" = se_mad,
-               "inter-quantile" = se_interQ,
-               "sd" = se_sd)
+
+    ## compute se estimates
+    se_vec <- switch(
+        se,
+        "inter-quantile" = {
+            apply(estMat, 1L, function(a) {
+                diff(stats::quantile(a, probs = c(0.25, 0.75))) /
+                    (stats::qnorm(0.75) - stats::qnorm(0.25))
+            })
+        },
+        "mad" = {
+            apply(estMat, 1L, function(a) {
+                median(abs(a - median(a))) * 1.4826
+            })
+        },
+        "sd" = {
+            apply(estMat, 1L, sd)
+        }
+    )
+
+    ## add/update se estimates in the obj
+    object@estimates$beta[, "se(coef)"] <- se_vec
 
     ## save estMat for testing
-    object@estimates$boostrap_beta <- estMat
-    object@estimates$boostrap_se <- cbind(
-        "mad" = se_mad,
-        "inter-quantile" = se_interQ,
-        "sd" = se_sd
-    )
+    ## object@estimates$boostrap_beta <- estMat
+    ## object@estimates$boostrap_se <- cbind(
+    ##     "mad" = se_mad,
+    ##     "inter-quantile" = se_interQ,
+    ##     "sd" = se_sd
+    ## )
+
+    ## compute p-value based on wald test
     tmp <- object@estimates$beta[, "z"] <-
         object@estimates$beta[, "coef"] / object@estimates$beta[, "se(coef)"]
     object@estimates$beta[, "Pr(>|z|)"] <- 2 * stats::pnorm(- abs(tmp))
