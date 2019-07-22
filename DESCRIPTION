@@ -1,7 +1,7 @@
 Package: intsurv
 Title: Integrative Survival Modeling
 Version: 0.2.0.9020
-Date: 2019-07-18
+Date: 2019-07-21
 Authors@R: c(
     person(given = "Wenjie", family = "Wang",
            email = "wenjie.2.wang@uconn.edu",
@@ -14,7 +14,7 @@ Authors@R: c(
     )
 Description: Fit
     1) integrative Cox model with uncertain event times,
-    2) Cox cure model with uncertain event times, and
+    2) Cox cure model with uncertain event status, and
     3) regularized Cox model and regularized Cox cure model
        with elastic net penalty.
 Depends:
