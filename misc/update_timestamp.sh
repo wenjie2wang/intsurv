@@ -50,7 +50,8 @@ else
     # update version and year in citation
     regexp3="s/version ([0-9]+\.*)+/version $version/"
     sed -i -E "$regexp3" $citation
-    regexp4="/Manual/,/^\)$/ s/20[0-9]{2}/$yr/"
+    # restrict the search and only update the year of package
+    regexp4="/intsurv-package/,/^\)$/ s/20[0-9]{2}/$yr/"
     sed -i -E "$regexp4" $citation
 
     # done
