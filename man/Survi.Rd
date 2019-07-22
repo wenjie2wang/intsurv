@@ -2,7 +2,7 @@
 % Please edit documentation in R/Survi.R
 \name{Survi}
 \alias{Survi}
-\title{Formula Response for Survival Data With Uncertainty}
+\title{Formula Response for Survival Data With Uncertain Event Times}
 \usage{
 Survi(ID, time, event, check = TRUE, ...)
 }
@@ -16,10 +16,17 @@ Survi(ID, time, event, check = TRUE, ...)
 \item{check}{A logical value specifying whether to perform check on input
 data.}
 
-\item{...}{Other arguments for future usage.}
+\item{...}{Other arguments for future usage.  A warning will be thrown if
+any invalid argument is specified.}
+}
+\value{
+\code{Survi} object.  See \code{\link{Survi-class}} for details.
 }
 \description{
 \code{Survi} returns an S4 class that represents formula response for
 survival data with uncertain records due to imperfect data integration.  The
 last letter 'i' in \code{Survi} represents 'integration'.
+}
+\examples{
+## See examples of function 'iCoxph'
 }

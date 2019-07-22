@@ -2,9 +2,9 @@
 % Please edit documentation in R/bootSe.R
 \name{bootSe}
 \alias{bootSe}
-\title{Standard Error Estimates through Bootstrapping Methods}
+\title{Standard Error Estimates through Bootstrap}
 \usage{
-bootSe(object, B = 50, se = c("mad", "inter-quantile", "sd"),
+bootSe(object, B = 50, se = c("inter-quantile", "mad", "sd"),
        return_beta = FALSE, ...)
 }
 \arguments{
@@ -29,32 +29,32 @@ samples, which allows users to split this potentially computational
 intensive step into small pieces that can be computed in a parallel
 manner.  The default value is \code{FALSE}.}
 
-\item{...}{Other arguments for future usage.}
+\item{...}{Other arguments for future usage.  A warning will be thrown if
+any invalid argument is specified.}
 }
 \value{
-\code{\link{iCoxph-class}} object or a numeric matrix contains the
-    covariate coeffient estimates.
+\code{\link{iCoxph-class}} object or a numeric matrix that contains
+    the covariate coeffient estimates from the given number of bootstrap
+    samples in rows.
 }
 \description{
-This function addes or updates standard error (SE) estimates through
-bootstrap method for \code{\link{iCoxph-class}} object by default.  Three
-different methods are available for computing SE from bootstrap samples
-through argument \code{se}.
+For \code{\link{iCoxph-class}} object, add (or update) standard error (SE)
+estimates through bootstrap methods, or compute the coefficient estimates
+from the given number of bootstrap samples.
 }
 \details{
-Given the fact that the bootstrap method is computional intensive, the
-function can return the coefficient estimates from one bootstrap sample when
-\code{control = list(estOnly = TRUE)} is specified, which can used in
-parallel computing or high performance computing (HPC) cluster. Then the SE
-estimates can be easily computed based on estimates from bootstrap samples.
-
-The available elements of argument \code{start} are the same with those of
-argument \code{start} in function \code{\link{iCoxph}} except that the
-\code{piVec} is not available since its length may vary in different
-bootstrap samples.
+Three different methods are available for computing SE from bootstrap
+samples through argument \code{se}.  Given the fact that the bootstrap
+method is computional intensive, the function returns the coefficient
+estimates in a matrix from the given number of bootstrap samples when
+\code{return_beta = TRUE)} is specified, which can be used in parallel
+computing or high performance computing (HPC) cluster.  The SE estimates can
+be further computed based on estimates from bootstrap samples by users on
+their own.  The \code{return_beta = TRUE} is implied, when \code{B = 1} is
+specified.
 }
 \examples{
-## See examples given in function 'iCoxph'
+## See examples of function 'iCoxph'.
 }
 \seealso{
 \code{\link{iCoxph}} for fitting integerative Cox model.

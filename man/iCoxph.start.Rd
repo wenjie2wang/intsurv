@@ -38,8 +38,10 @@ A list of class \code{intsurv-iCoxph.start} containing all specified
 Auxiliary function for \code{\link{iCoxph}} that enable users
 to specify the starting values of the model estimation procedure.
 }
-\references{
-Wang, W., Aseltine, R., Chen, K., & Yan, J. (2019+).  Integrative Survival
-Analysis with Uncertain Event Times in Application to a Suicide Risk
-Study. (invited revision)
+\examples{
+## See examples of function 'iCoxph'.
+
+}
+\seealso{
+\code{\link{iCoxph}} for fitting integerative Cox model.
 }

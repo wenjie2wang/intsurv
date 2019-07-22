@@ -56,3 +56,10 @@ arguments \code{cm_gradtol}, \code{cm_stepmax}, \code{cm_steptol}, and
 \code{gradtol}, \code{stepmax}, \code{steptol}, and \code{iterlim},
 respectively.
 }
+\examples{
+## See examples of function 'iCoxph'.
+
+}
+\seealso{
+\code{\link{iCoxph}} for fitting integerative Cox model.
+}

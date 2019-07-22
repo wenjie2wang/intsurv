@@ -2,7 +2,7 @@
 % Please edit documentation in R/iCoxph.R
 \name{iCoxph}
 \alias{iCoxph}
-\title{Integrative Cox Model for Uncertain Survival Data}
+\title{Integrative Cox Model for Uncertain Event Times}
 \usage{
 iCoxph(formula, data, subset, na.action, contrasts = NULL,
        start = iCoxph.start(), control = iCoxph.control(), ...)
@@ -51,8 +51,8 @@ An \code{\link{iCoxph-class}} object, whose slots include
 \itemize{
     \item \code{call}: Function call.
     \item \code{formula}: Formula used in the model fitting.
-    \item \code{nObs}: Number of observation.
     \item \code{data}: A processed data frame used for model fitting.
+    \item \code{nObs}: Number of observation.
     \item \code{estimates}:
         \itemize{
             \item \code{beta}: Coefficient estimates.
@@ -63,9 +63,12 @@ An \code{\link{iCoxph-class}} object, whose slots include
                 baseline hazard function with columns named \code{time} and
                 \code{h0}.
         }
+    \item \code{start}: The initial guesses \code{beta_mat} and
+        \code{pi_mat} specified for the parameters to be estimated,
+        and the set of initial guess \code{beta_start} and \code{pi_start}
+        that resulted in the largest objective function, i.e.,
+        the observed-data likelihood function.
     \item \code{control}: The control list specified for model fitting.
-    \item \code{start}: The initial guess specified for the parameters
-        to be estimated.
     \item \code{na.action}: The procedure specified to deal with
         missing values in the covariate.
     \item \code{xlevels}: A list that records the levels in
@@ -75,13 +78,14 @@ An \code{\link{iCoxph-class}} object, whose slots include
     \item \code{convergeCode}: \code{code} returned by function
         \code{\link[stats]{nlm}}, which is an integer indicating why the
         optimization process terminated. \code{help(nlm)} for details.
-    \item \code{logL}: The Log-likelihood under observed data after
-        convergence.
+    \item \code{logL}: A numeric vector containing the observed-data
+        log-likelihood over iterations.
 }
 }
 \description{
-Fit an integrative Cox model proposed by Wang et al. (2019+) for uncertain
-survival data due to imperfect data integration.
+Fit an integrative Cox model proposed by Wang et al. (2019) for
+right-censored survival data with uncertain event times due to imperfect
+data integration.
 }
 \examples{
 library(intsurv)
@@ -100,12 +104,14 @@ fit <- bootSe(fit, B = 30)
 summary(fit)
 }
 \references{
-Wang, W., Aseltine, R., Chen, K., & Yan, J. (2019+).  Integrative Survival
+Wang, W., Aseltine, R., Chen, K., & Yan, J. (2019).  Integrative Survival
 Analysis with Uncertain Event Times in Application to a Suicide Risk
-Study. (invited revision)
+Study. \emph{Annals of Applied Statistics}. (in press)
 }
 \seealso{
+\code{\link{iCoxph.start}} and \code{\link{iCoxph.control}}, respectively,
+for starting and controlling iCoxph fitting;
 \code{\link{summary,iCoxph-method}} for summary of fitted model;
 \code{\link{coef,iCoxph-method}} for estimated covariate coefficients;
-\code{\link{bootSe}} for SE estimates from bootstrap method.
+\code{\link{bootSe}} for SE estimates from bootstrap methods.
 }

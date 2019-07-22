@@ -2,25 +2,37 @@
 % Please edit documentation in R/assessment.R
 \name{cIndex}
 \alias{cIndex}
-\title{Weighted Concordance Index}
+\title{Concordance Index}
 \usage{
-cIndex(time, event, risk_score, weight = NULL)
+cIndex(time, event = NULL, risk_score, weight = NULL)
 }
 \arguments{
 \item{time}{A numeric vector for observed times}
 
-\item{event}{A numeric vector for event indicators.}
+\item{event}{A numeric vector for event indicators.  If it is \code{NULL}
+(by default) or \code{NA}, \code{event} will be treated all as ones and
+the function will compute concordance index for uncensored survival
+data.}
 
 \item{risk_score}{A numeric vector for risk scores.}
 
-\item{weight}{A optional numeric vector for weights.  By default, equal
-weights are used.}
+\item{weight}{A optional numeric vector for weights.  If it is \code{NULL}
+(by default) or \code{NA}, equal weights will be used.}
+}
+\value{
+A named numeric vector that consists of
+\itemize{
+  \item \code{index}: the concordance index.
+  \item \code{concordant}: the number of concordant pairs.
+  \item \code{comparable}: the number of comparable pairs.
+  \item \code{tied_tisk}: the number of comparable pairs having tied risks.
+}
 }
 \description{
-This function is a straightforward implementation of concordance index
-(C-index or C-statistic) that allows weights.  Asano and Hirakawa (2017)
-proposed using the probability of being susceptible as weights for cure
-models.  It reduces to Harrell's C-index for equal weights.
+Compute concordance index (C-index or C-statistic) that allows weights for
+right-censored survival data.  Asano and Hirakawa (2017) proposed using the
+probability of being susceptible as weights for cure models.  It reduces to
+Harrell's C-index for equal weights.
 }
 \details{
 Let \eqn{r_i}, \eqn{t_i}, and \eqn{\delta_i} denote the risk score, observed
@@ -33,6 +45,9 @@ survival outcomes if \eqn{r_i>r_j}.  The C-index is defined as the
 proportion of the concordant pairs among the comparable pairs.  For
 comparable pair satisfying \eqn{t_i<t_j,\delta_i=1}, we count 0.5 in the
 numerator of the concordance index for tied risk scores (\eqn{r_i=r_j}).
+}
+\examples{
+## See examples of function 'coxph_fit' and 'coxph_cure_fit'.
 }
 \references{
 Asano, J., & Hirakawa, A. (2017). Assessing the prediction accuracy of a
