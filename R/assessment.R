@@ -20,12 +20,12 @@
 NULL
 
 
-##' Weighted Concordance Index
+##' Concordance Index
 ##'
-##' This function is a straightforward implementation of concordance index
-##' (C-index or C-statistic) that allows weights.  Asano and Hirakawa (2017)
-##' proposed using the probability of being susceptible as weights for cure
-##' models.  It reduces to Harrell's C-index for equal weights.
+##' Compute concordance index (C-index or C-statistic) that allows weights for
+##' right-censored survival data.  Asano and Hirakawa (2017) proposed using the
+##' probability of being susceptible as weights for cure models.  It reduces to
+##' Harrell's C-index for equal weights.
 ##'
 ##' Let \eqn{r_i}, \eqn{t_i}, and \eqn{\delta_i} denote the risk score, observed
 ##' time, and event indicator of \eqn{i}-th subject.  The pair of
@@ -39,10 +39,22 @@ NULL
 ##' numerator of the concordance index for tied risk scores (\eqn{r_i=r_j}).
 ##'
 ##' @param time A numeric vector for observed times
-##' @param event A numeric vector for event indicators.
+##' @param event A numeric vector for event indicators.  If it is \code{NULL}
+##'     (by default) or \code{NA}, \code{event} will be treated all as ones and
+##'     the function will compute concordance index for uncensored survival
+##'     data.
 ##' @param risk_score A numeric vector for risk scores.
-##' @param weight A optional numeric vector for weights.  By default, equal
-##'     weights are used.
+##' @param weight A optional numeric vector for weights.  If it is \code{NULL}
+##'     (by default) or \code{NA}, equal weights will be used.
+##'
+##' @return
+##' A named numeric vector that consists of
+##' \itemize{
+##'   \item \code{index}: the concordance index.
+##'   \item \code{concordant}: the number of concordant pairs.
+##'   \item \code{comparable}: the number of comparable pairs.
+##'   \item \code{tied_tisk}: the number of comparable pairs having tied risks.
+##' }
 ##'
 ##' @references
 ##'
@@ -55,10 +67,17 @@ NULL
 ##' models: Issues in developing models, evaluating assumptions and adequacy,
 ##' and measuring and reducing errors. Statistics in medicine, 15(4), 361--387.
 ##'
+##' @examples
+##' ## See examples of function 'coxph_fit' and 'coxph_cure_fit'.
 ##' @export
-cIndex <- function(time, event, risk_score, weight = NULL) {
+cIndex <- function(time, event = NULL, risk_score, weight = NULL) {
     if (is.null(weight) || is.na(weight)) {
         weight <- 1
+    }
+    if (is.null(event) || is.na(event)) {
+        event <- 1
+    } else if (! any(event > 0)) {
+        stop("No compariable pairs can be found", call. = FALSE)
     }
     rcpp_cIndex(time, event, risk_score, weight)
 }

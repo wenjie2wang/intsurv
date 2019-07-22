@@ -84,6 +84,7 @@ namespace Intsurv {
             this->index = (this->concordant + this->tied_risk / 2) /
                 this->comparable;
         }
+        // constructor with weights
         Concordance(arma::vec time,
                     arma::vec event,
                     arma::vec risk_score)

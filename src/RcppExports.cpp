@@ -24,14 +24,14 @@
 using namespace Rcpp;
 
 // rcpp_cIndex
-Rcpp::List rcpp_cIndex(arma::vec time, arma::vec event, arma::vec risk_score, arma::vec weight);
+Rcpp::NumericVector rcpp_cIndex(const arma::vec& time, arma::vec event, const arma::vec& risk_score, arma::vec weight);
 RcppExport SEXP _intsurv_rcpp_cIndex(SEXP timeSEXP, SEXP eventSEXP, SEXP risk_scoreSEXP, SEXP weightSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::vec >::type time(timeSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type time(timeSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type event(eventSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type risk_score(risk_scoreSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type risk_score(risk_scoreSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type weight(weightSEXP);
     rcpp_result_gen = Rcpp::wrap(rcpp_cIndex(time, event, risk_score, weight));
     return rcpp_result_gen;
