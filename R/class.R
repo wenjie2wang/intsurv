@@ -19,14 +19,10 @@
 ##'
 ##' @slot .Data A numeric matrix object.
 ##' @slot ID Identificator of each subject.
-##' @slot time Observerd event time or censoring time.
-##' @slot event The event indicator, 0 = censored, 1 = event.
 ##' @aliases Survi-class
 ##' @export
 setClass("Survi", contains = "matrix",
-         slots = c(ID = "character",
-                   time = "numeric",
-                   event = "integer"))
+         slots = c(ID = "character"))
 
 
 ##' An S4 Class to Represent a Fitted Integrative Cox Model
