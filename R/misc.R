@@ -56,15 +56,32 @@ L2norm2 <- function(x) {
 }
 
 ## throw warnings if `...` is specified by mistake
-warn_dots <- function(..., .fun_name = NULL) {
+warn_dots <- function(...) {
     dotsList <- list(...)
+    .fun_name <- as.character(sys.call(- 1L)[[1L]])
     if (length(dotsList) > 0) {
-        warning(
-            "Some arguments went into `...`",
-            if (! is.null(.fun_name)) sprintf(" of %s()", .fun_name),
-            ", which is however not used currently.",
-            call. = FALSE
-        )
+        list_names <- names(dotsList)
+        if (is.null(list_names)) {
+            warning(
+                sprintf("Some argument(s) went into `...` of %s()",
+                        .fun_name),
+                call. = FALSE
+            )
+        } else {
+            list_names <- list_names[list_names != ""]
+            if (length(list_names) > 2) {
+                all_names <- paste(sprintf("'%s'", list_names), collapse = ", ")
+                all_names <- gsub("(.+), (.+)$", "\\1, and \\2", all_names)
+            } else {
+                all_names <- paste(sprintf("'%s'", list_names),
+                                   collapse = " and ")
+            }
+            warning(
+                sprintf("The argument %s went into `...` of %s().",
+                        all_names, .fun_name),
+                call. = FALSE
+            )
+        }
     }
     invisible(NULL)
 }

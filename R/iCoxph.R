@@ -25,18 +25,12 @@ NULL
 ##' right-censored survival data with uncertain event times due to imperfect
 ##' data integration.
 ##'
-##' @usage
-##' iCoxph(formula, data, subset, na.action, contrasts = NULL,
-##'        start = iCoxph.start(), control = iCoxph.control(), ...)
-##'
-##' @aliases iCoxph
-##'
 ##' @param formula \code{Survi} object specifying the covariates and response
 ##'     variable in the model, such as \code{Survi(ID, time, event) ~ x1 + x2}.
 ##' @param data An optional data frame, list, or environment that contains the
 ##'     covariates and response variables included in the model. If not found in
 ##'     data, the variables are taken from \code{environment(formula)}, usually
-##'     the environment from which function \code{\link{iCoxph}} is called.
+##'     the environment from which this function is called.
 ##' @param subset An optional logical vector specifying a subset of observations
 ##'     to be used in the fitting process.
 ##' @param na.action An optional function that indicates what should the
@@ -124,7 +118,7 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
     Call <- match.call()
 
     ## warning on `...`
-    warn_dots(..., .fun_name = "iCoxph")
+    warn_dots(...)
 
     ## arguments check
     if (missing(formula))
@@ -301,13 +295,7 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
     na.action <- if (is.null(attr(mf, "na.action")))
                      options("na.action")[[1L]]
                  else
-                     paste("na.", class(attr(mf, "na.action")))
-
-    ## output: contrasts
-    contrasts <- if (is.null(contrasts))
-                     list(contrasts = NULL)
-                 else
-                     attr(mm, "contrasts")
+                     paste0("na.", class(attr(mf, "na.action")))
 
     ## results to return
     methods::new("iCoxph",
@@ -322,7 +310,7 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
                  control = control,
                  na.action = na.action,
                  xlevels = .getXlevels(mt, mf),
-                 contrasts = contrasts,
+                 contrasts = attr(mm, "contrasts"),
                  convergeCode = betaEst$code,
                  logL = logL0)
 }
@@ -408,7 +396,7 @@ iCoxph.control <- function(tol_beta = 1e-6,
         stop("The maximum number of ECM iterations must be positive.",
              call. = FALSE)
     ## throw warning if anything is captured by `...`
-    warn_dots(..., .fun_name = "iCoxph.control")
+    warn_dots(...)
     ## parameters in a list
     out <- list(tol_beta = tol_beta,
                 tol_pi = tol_pi,
@@ -470,7 +458,7 @@ iCoxph.start <- function(beta_vec = NULL,
     ## match methods
     methods <- match.arg(methods, several.ok = TRUE)
     ## throw out warning if any invalid argument is captured by `...`
-    warn_dots(..., .fun_name = "iCoxph.start")
+    warn_dots(...)
     ## parameters in a list
     out <- list(beta_vec = beta_vec,
                 beta_mat = beta_mat,

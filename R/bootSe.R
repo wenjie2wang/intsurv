@@ -84,7 +84,7 @@ bootSe <- function(object,
     if (B <= 0)
         stop("The number of bootstrap samples must be a postive integer.")
     ## warning on `...`
-    warn_dots(..., .fun_name = "bootSe")
+    warn_dots(...)
 
     se <- match.arg(se)
     cal <- object@call
