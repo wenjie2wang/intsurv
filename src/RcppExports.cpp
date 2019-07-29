@@ -281,8 +281,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_reg_coxph1
-Rcpp::List rcpp_reg_coxph1(const arma::vec& time, const arma::vec& event, const arma::mat& x, const double& l1_lambda, const double& l2_lambda, arma::vec l1_penalty_factor, const arma::vec& start, const unsigned int& max_iter, const double& rel_tol, const bool& early_stop, const bool& verbose);
-RcppExport SEXP _intsurv_rcpp_reg_coxph1(SEXP timeSEXP, SEXP eventSEXP, SEXP xSEXP, SEXP l1_lambdaSEXP, SEXP l2_lambdaSEXP, SEXP l1_penalty_factorSEXP, SEXP startSEXP, SEXP max_iterSEXP, SEXP rel_tolSEXP, SEXP early_stopSEXP, SEXP verboseSEXP) {
+Rcpp::List rcpp_reg_coxph1(const arma::vec& time, const arma::vec& event, const arma::mat& x, const double& l1_lambda, const double& l2_lambda, arma::vec l1_penalty_factor, const arma::vec& offset, const arma::vec& start, const unsigned int& max_iter, const double& rel_tol, const bool& early_stop, const bool& verbose);
+RcppExport SEXP _intsurv_rcpp_reg_coxph1(SEXP timeSEXP, SEXP eventSEXP, SEXP xSEXP, SEXP l1_lambdaSEXP, SEXP l2_lambdaSEXP, SEXP l1_penalty_factorSEXP, SEXP offsetSEXP, SEXP startSEXP, SEXP max_iterSEXP, SEXP rel_tolSEXP, SEXP early_stopSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -292,18 +292,19 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const double& >::type l1_lambda(l1_lambdaSEXP);
     Rcpp::traits::input_parameter< const double& >::type l2_lambda(l2_lambdaSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type l1_penalty_factor(l1_penalty_factorSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type offset(offsetSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type start(startSEXP);
     Rcpp::traits::input_parameter< const unsigned int& >::type max_iter(max_iterSEXP);
     Rcpp::traits::input_parameter< const double& >::type rel_tol(rel_tolSEXP);
     Rcpp::traits::input_parameter< const bool& >::type early_stop(early_stopSEXP);
     Rcpp::traits::input_parameter< const bool& >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_reg_coxph1(time, event, x, l1_lambda, l2_lambda, l1_penalty_factor, start, max_iter, rel_tol, early_stop, verbose));
+    rcpp_result_gen = Rcpp::wrap(rcpp_reg_coxph1(time, event, x, l1_lambda, l2_lambda, l1_penalty_factor, offset, start, max_iter, rel_tol, early_stop, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
 // rcpp_reg_coxph2
-Rcpp::List rcpp_reg_coxph2(const arma::vec& time, const arma::vec& event, const arma::mat& x, arma::vec lambda, const double alpha, const unsigned int& nlambda, double lambda_min_ratio, arma::vec l1_penalty_factor, const unsigned int max_iter, const double rel_tol, const bool& early_stop, const bool& verbose);
-RcppExport SEXP _intsurv_rcpp_reg_coxph2(SEXP timeSEXP, SEXP eventSEXP, SEXP xSEXP, SEXP lambdaSEXP, SEXP alphaSEXP, SEXP nlambdaSEXP, SEXP lambda_min_ratioSEXP, SEXP l1_penalty_factorSEXP, SEXP max_iterSEXP, SEXP rel_tolSEXP, SEXP early_stopSEXP, SEXP verboseSEXP) {
+Rcpp::List rcpp_reg_coxph2(const arma::vec& time, const arma::vec& event, const arma::mat& x, arma::vec lambda, const double alpha, const unsigned int& nlambda, double lambda_min_ratio, arma::vec l1_penalty_factor, const arma::vec& offset, const unsigned int max_iter, const double rel_tol, const bool& early_stop, const bool& verbose);
+RcppExport SEXP _intsurv_rcpp_reg_coxph2(SEXP timeSEXP, SEXP eventSEXP, SEXP xSEXP, SEXP lambdaSEXP, SEXP alphaSEXP, SEXP nlambdaSEXP, SEXP lambda_min_ratioSEXP, SEXP l1_penalty_factorSEXP, SEXP offsetSEXP, SEXP max_iterSEXP, SEXP rel_tolSEXP, SEXP early_stopSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -315,11 +316,12 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const unsigned int& >::type nlambda(nlambdaSEXP);
     Rcpp::traits::input_parameter< double >::type lambda_min_ratio(lambda_min_ratioSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type l1_penalty_factor(l1_penalty_factorSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type offset(offsetSEXP);
     Rcpp::traits::input_parameter< const unsigned int >::type max_iter(max_iterSEXP);
     Rcpp::traits::input_parameter< const double >::type rel_tol(rel_tolSEXP);
     Rcpp::traits::input_parameter< const bool& >::type early_stop(early_stopSEXP);
     Rcpp::traits::input_parameter< const bool& >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_reg_coxph2(time, event, x, lambda, alpha, nlambda, lambda_min_ratio, l1_penalty_factor, max_iter, rel_tol, early_stop, verbose));
+    rcpp_result_gen = Rcpp::wrap(rcpp_reg_coxph2(time, event, x, lambda, alpha, nlambda, lambda_min_ratio, l1_penalty_factor, offset, max_iter, rel_tol, early_stop, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -451,8 +453,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_intsurv_coxph_cure_uncer_reg", (DL_FUNC) &_intsurv_coxph_cure_uncer_reg, 29},
     {"_intsurv_coxph_cure_uncer_vs", (DL_FUNC) &_intsurv_coxph_cure_uncer_vs, 33},
     {"_intsurv_rcpp_coxph", (DL_FUNC) &_intsurv_rcpp_coxph, 9},
-    {"_intsurv_rcpp_reg_coxph1", (DL_FUNC) &_intsurv_rcpp_reg_coxph1, 11},
-    {"_intsurv_rcpp_reg_coxph2", (DL_FUNC) &_intsurv_rcpp_reg_coxph2, 12},
+    {"_intsurv_rcpp_reg_coxph1", (DL_FUNC) &_intsurv_rcpp_reg_coxph1, 12},
+    {"_intsurv_rcpp_reg_coxph2", (DL_FUNC) &_intsurv_rcpp_reg_coxph2, 13},
     {"_intsurv_rcpp_logistic", (DL_FUNC) &_intsurv_rcpp_logistic, 10},
     {"_intsurv_rcpp_firth_logistic", (DL_FUNC) &_intsurv_rcpp_firth_logistic, 7},
     {"_intsurv_rcpp_reg_logistic1", (DL_FUNC) &_intsurv_rcpp_reg_logistic1, 11},

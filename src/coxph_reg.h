@@ -987,7 +987,16 @@ namespace Intsurv {
         for (size_t k {0}; k < lambda_seq.n_elem; ++k) {
             // early exit for large lambda greater than lambda_max
             if (alpha * lambda_seq(k) >= this->l1_lambda_max) {
+                // no re-scale is needed
                 this->coef_mat.col(k) = this->coef;
+                this->en_coef_mat.col(k) = this->coef;
+                // compute negative log-likelihood
+                this->negLogL_vec(k) = this->objective();
+                this->coef_df_vec(k) = get_coef_df(beta);
+                this->negLogL = this->negLogL_vec(k);
+                this->coef_df = this->coef_df_vec(k);
+                this->compute_bic();
+                this->bic_vec(k) = this->bic;
                 continue;
             }
             // allow users to stop the loop
