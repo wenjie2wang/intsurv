@@ -106,7 +106,7 @@ Rcpp::List coxph_cure_uncer(
         }
     }
     return Rcpp::List::create(
-        Rcpp::Named("cox_coef") = Intsurv::arma2rvec(obj.cox_coef),
+        Rcpp::Named("surv_coef") = Intsurv::arma2rvec(obj.cox_coef),
         Rcpp::Named("cure_coef") = Intsurv::arma2rvec(obj.cure_coef),
         Rcpp::Named("baseline") = Rcpp::List::create(
             Rcpp::Named("time") = Intsurv::arma2rvec(obj.unique_time),
@@ -117,8 +117,8 @@ Rcpp::List coxph_cure_uncer(
             Rcpp::Named("Hc") = Intsurv::arma2rvec(obj.Hc_est),
             Rcpp::Named("Sc") = Intsurv::arma2rvec(obj.Sc_est)
             ),
-        Rcpp::Named("prediction") = Rcpp::List::create(
-            Rcpp::Named("cox_xBeta") = Intsurv::arma2rvec(obj.cox_xBeta),
+        Rcpp::Named("fitted") = Rcpp::List::create(
+            Rcpp::Named("surv_xBeta") = Intsurv::arma2rvec(obj.cox_xBeta),
             Rcpp::Named("cure_xBeta") = Intsurv::arma2rvec(obj.cure_xBeta),
             Rcpp::Named("susceptible_prob") =
             Intsurv::arma2rvec(obj.susceptible_prob),
@@ -126,7 +126,7 @@ Rcpp::List coxph_cure_uncer(
             Rcpp::Named("estep_event") = Intsurv::arma2rvec(obj.estep_event),
             Rcpp::Named("estep_censor") = Intsurv::arma2rvec(obj.estep_censor)
             ),
-        Rcpp::Named("goodness") = Rcpp::List::create(
+        Rcpp::Named("model") = Rcpp::List::create(
             Rcpp::Named("nObs") = obj.nObs,
             Rcpp::Named("coef_df") = obj.coef_df,
             Rcpp::Named("negLogL") = obj.negLogL,
@@ -136,7 +136,7 @@ Rcpp::List coxph_cure_uncer(
             ),
         Rcpp::Named("bootstrap") = Rcpp::List::create(
             Rcpp::Named("B") = bootstrap,
-            Rcpp::Named("cox_coef_mat") = boot_cox_coef_mat.t(),
+            Rcpp::Named("surv_coef_mat") = boot_cox_coef_mat.t(),
             Rcpp::Named("cure_coef_mat") = boot_cure_coef_mat.t()
             ),
         Rcpp::Named("convergence") = Rcpp::List::create(
@@ -214,7 +214,7 @@ Rcpp::List coxph_cure_uncer_reg(
             Rcpp::Named("Hc") = Intsurv::arma2rvec(obj.Hc_est),
             Rcpp::Named("Sc") = Intsurv::arma2rvec(obj.Sc_est)
             ),
-        Rcpp::Named("prediction") = Rcpp::List::create(
+        Rcpp::Named("fitted") = Rcpp::List::create(
             Rcpp::Named("cox_xBeta") = Intsurv::arma2rvec(obj.cox_xBeta),
             Rcpp::Named("cure_xBeta") = Intsurv::arma2rvec(obj.cure_xBeta),
             Rcpp::Named("susceptible_prob") =
@@ -223,7 +223,7 @@ Rcpp::List coxph_cure_uncer_reg(
             Rcpp::Named("estep_event") = Intsurv::arma2rvec(obj.estep_event),
             Rcpp::Named("estep_censor") = Intsurv::arma2rvec(obj.estep_censor)
             ),
-        Rcpp::Named("goodness") = Rcpp::List::create(
+        Rcpp::Named("model") = Rcpp::List::create(
             Rcpp::Named("nObs") = obj.nObs,
             Rcpp::Named("coef_df") = obj.coef_df,
             Rcpp::Named("negLogL") = obj.negLogL,
@@ -418,7 +418,7 @@ Rcpp::List coxph_cure_uncer_vs(
         Rcpp::Named("cure_coef") = cure_coef_mat.t(),
         Rcpp::Named("cox_en_coef") = cox_en_coef_mat.t(),
         Rcpp::Named("cure_en_coef") = cure_en_coef_mat.t(),
-        Rcpp::Named("goodness") = Rcpp::List::create(
+        Rcpp::Named("model") = Rcpp::List::create(
             Rcpp::Named("nObs") = obj.nObs,
             Rcpp::Named("coef_df") = Intsurv::arma2rvec(coef_df),
             Rcpp::Named("negLogL") = Intsurv::arma2rvec(negLogL),
