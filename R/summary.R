@@ -40,7 +40,7 @@ NULL
 ##' @aliases summary.iCoxph summary,iCoxph-method
 ##'
 ##' @examples
-##' ## See examples given in function iCoxph
+##' ## See examples of function iCoxph
 ##' @seealso
 ##' \code{\link{iCoxph}} for model fitting;
 ##' \code{\link{coef,iCoxph-method}} for coefficient estimates.

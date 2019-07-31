@@ -14,7 +14,7 @@ variable in the model, such as \code{Survi(ID, time, event) ~ x1 + x2}.}
 \item{data}{An optional data frame, list, or environment that contains the
 covariates and response variables included in the model. If not found in
 data, the variables are taken from \code{environment(formula)}, usually
-the environment from which function \code{\link{iCoxph}} is called.}
+the environment from which this function is called.}
 
 \item{subset}{An optional logical vector specifying a subset of observations
 to be used in the fitting process.}

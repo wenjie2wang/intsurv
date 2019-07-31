@@ -1,7 +1,7 @@
 Package: intsurv
 Title: Integrative Survival Modeling
-Version: 0.2.0.9020
-Date: 2019-07-21
+Version: 0.2.0.9021
+Date: 2019-07-30
 Authors@R: c(
     person(given = "Wenjie", family = "Wang",
            email = "wenjie.2.wang@uconn.edu",
@@ -12,11 +12,12 @@ Authors@R: c(
     person(given = "Jun", family = "Yan", role = "ctb",
            comment = c(ORCID = "0000-0003-4401-7296"))
     )
-Description: Fit
+Description: Contains implementations of
     1) integrative Cox model with uncertain event times,
-    2) Cox cure model with uncertain event status, and
-    3) regularized Cox model and regularized Cox cure model
-       with elastic net penalty.
+    2) Cox cure model with uncertain event status,
+    and other survival analysis routines, including
+    Cox cure rate model, regularized Cox cure rate model
+    with elastic net penalty, and weighted concordance index.
 Depends:
     R (>= 3.2.3)
 Imports:
@@ -35,14 +36,15 @@ Collate:
     'assessment.R'
     'bootSe.R'
     'coef.R'
-    'coxph.R'
+    'cox_cure.R'
     'iCoxph.R'
     'intsurv.R'
     'misc.R'
+    'prep_model.R'
+    'print.R'
     'show.R'
     'simuData.R'
     'summary.R'
 URL: https://github.com/wenjie2wang/intsurv
 BugReports: https://github.com/wenjie2wang/intsurv/issues
 Encoding: UTF-8
-RoxygenNote: 6.1.1

@@ -40,6 +40,15 @@ is_iCoxph.start <- function(x)
 {
     inherits(x, "iCoxph.start")
 }
+is_cox_cure <- function(x)
+{
+    inherits(x, "cox_cure")
+}
+is_cox_cure_net <- function(x)
+{
+    inherits(x, "cox_cure_net")
+}
+
 
 ## remove NA's from vector `x`
 rmNA <- function(x)

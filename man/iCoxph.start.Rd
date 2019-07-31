@@ -12,9 +12,9 @@ iCoxph.start(beta_vec = NULL, beta_mat = NULL,
 estimates. The default values are the coefficient estimates from the
 regular Cox model only fitting on records without uncertainty.  If
 censoring rate among subjects having unique certain records is extremely
-high (> 99%) or \code{\link{coxph_fit}} returns any warning or error,
-such as perfect seperation problem between event indicator and one
-predictor, the starting values will be reset to be all zeros.}
+high (> 99%) or such as perfect seperation problem between event
+indicator and one predictor, the starting values will be reset to be all
+zeros.}
 
 \item{beta_mat}{A numeric matrix that consists of additional starting values
 of coefficient estimates in columns.  The default value is \code{NULL}.}

@@ -4,7 +4,7 @@
 \name{coef,iCoxph-method}
 \alias{coef,iCoxph-method}
 \alias{coef.iCoxph}
-\title{Estimated Coefficients of Covariates}
+\title{Estimated Covariates Coefficients}
 \usage{
 \S4method{coef}{iCoxph}(object, ...)
 }
@@ -22,7 +22,7 @@ coefficient estimates from \code{\link{iCoxph-class}} object from function
 \code{\link{iCoxph}}.
 }
 \examples{
-## See examples given in function iCoxph.
+## See examples of function iCoxph.
 }
 \seealso{
 \code{\link{iCoxph}} for fitting integrative Cox model;

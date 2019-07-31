@@ -15,11 +15,13 @@
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 ##
 
+
 ## collation after class.R
 ##' @include class.R
 NULL
 
-##' Estimated Coefficients of Covariates
+
+##' Estimated Covariates Coefficients
 ##'
 ##' \code{coef,iCoxph-method} is an S4 class method that extracts covariate
 ##' coefficient estimates from \code{\link{iCoxph-class}} object from function
@@ -33,7 +35,7 @@ NULL
 ##' \code{\link{iCoxph}} for fitting integrative Cox model;
 ##' \code{\link{summary,iCoxph-method}} for summary of a fitted model.
 ##' @examples
-##' ## See examples given in function iCoxph.
+##' ## See examples of function iCoxph.
 ##' @importFrom stats coef
 ##' @export
 setMethod(
@@ -42,3 +44,45 @@ setMethod(
     {
         object@estimates$beta[, "coef"]
     })
+
+
+##' Estimated Covariate Coefficients
+##'
+##' Extract the covariate coefficient estimates from a fitted Cox cure rate
+##' model.
+##'
+##' @param object Object representing a fitted model.
+##' @param ... Other arguments for future usage.
+##'
+##' @return A named numeric vector.
+##' @importFrom stats coef
+##' @method coef cox_cure
+##' @export
+coef.cox_cure <- function(object, ...)
+{
+    object$coef
+}
+
+
+##' Estimated Covariate Coefficients
+##'
+##' Extract the covariate coefficient estimates from a fitted Cox cure rate
+##' model.
+##'
+##'
+##' @param object Object representing a fitted model.
+##' @param selection A character string for specifying the criterion for
+##'     selection of coefficient estimates.  The available options are
+##'     \code{"bic"} for selecting coefficient estimates based on BIC criterion
+##'     and \code{"none"} for not performing selection and returning the whole
+##'     solution path.
+##' @param ... Other arguments for future usage.
+##'
+##' @return A named numeric vector.
+##' @importFrom stats coef
+##' @method coef cox_cure_net
+##' @export
+coef.cox_cure_net <- function(object, selection = c("bic", "none"), ...)
+{
+    object$coef[, which.min(object$model$bic)]
+}

@@ -22,8 +22,8 @@ rcpp_cIndex <- function(time, event, risk_score, weight) {
     .Call('_intsurv_rcpp_cIndex', PACKAGE = 'intsurv', time, event, risk_score, weight)
 }
 
-rcpp_coxph_cure <- function(time, event, cox_x, cure_x, cure_intercept = TRUE, cox_start = 0L, cure_start = 0L, bootstrap = 0L, em_max_iter = 1000L, cox_standardize = TRUE, cure_standardize = TRUE, em_rel_tol = 1e-4, cox_mstep_max_iter = 200L, cox_mstep_rel_tol = 1e-4, cure_mstep_max_iter = 200L, cure_mstep_rel_tol = 1e-6, firth = FALSE, tail_completion = 1L, tail_tau = -1, pmin = 1e-5, early_stop = 0L, verbose = 0L) {
-    .Call('_intsurv_rcpp_coxph_cure', PACKAGE = 'intsurv', time, event, cox_x, cure_x, cure_intercept, cox_start, cure_start, bootstrap, em_max_iter, cox_standardize, cure_standardize, em_rel_tol, cox_mstep_max_iter, cox_mstep_rel_tol, cure_mstep_max_iter, cure_mstep_rel_tol, firth, tail_completion, tail_tau, pmin, early_stop, verbose)
+rcpp_coxph_cure <- function(time, event, cox_x, cure_x, cure_intercept = TRUE, bootstrap = 0L, firth = FALSE, cox_start = 0L, cure_start = 0L, cox_standardize = TRUE, cure_standardize = TRUE, em_max_iter = 1000L, em_rel_tol = 1e-4, cox_mstep_max_iter = 200L, cox_mstep_rel_tol = 1e-4, cure_mstep_max_iter = 200L, cure_mstep_rel_tol = 1e-6, tail_completion = 1L, tail_tau = -1, pmin = 1e-5, early_stop = 0L, verbose = 0L) {
+    .Call('_intsurv_rcpp_coxph_cure', PACKAGE = 'intsurv', time, event, cox_x, cure_x, cure_intercept, bootstrap, firth, cox_start, cure_start, cox_standardize, cure_standardize, em_max_iter, em_rel_tol, cox_mstep_max_iter, cox_mstep_rel_tol, cure_mstep_max_iter, cure_mstep_rel_tol, tail_completion, tail_tau, pmin, early_stop, verbose)
 }
 
 rcpp_coxph_cure_reg <- function(time, event, cox_x, cure_x, cure_intercept = TRUE, cox_l1_lambda = 0, cox_l2_lambda = 0, cox_l1_penalty_factor = 0L, cure_l1_lambda = 0, cure_l2_lambda = 0, cure_l1_penalty_factor = 0L, cox_start = 0L, cure_start = 0L, em_max_iter = 500L, em_rel_tol = 1e-5, cox_mstep_max_iter = 200L, cox_mstep_rel_tol = 1e-4, cure_mstep_max_iter = 200L, cure_mstep_rel_tol = 1e-4, cox_standardize = TRUE, cure_standardize = TRUE, tail_completion = 1L, tail_tau = -1, pmin = 1e-5, early_stop = 0L, verbose = 0L) {
@@ -50,12 +50,12 @@ rcpp_coxph <- function(time, event, x, offset = 0L, start = 0L, max_iter = 200L,
     .Call('_intsurv_rcpp_coxph', PACKAGE = 'intsurv', time, event, x, offset, start, max_iter, rel_tol, early_stop, verbose)
 }
 
-rcpp_reg_coxph1 <- function(time, event, x, l1_lambda = 0, l2_lambda = 0, l1_penalty_factor = 0L, start = 0L, max_iter = 200L, rel_tol = 1e-5, early_stop = FALSE, verbose = FALSE) {
-    .Call('_intsurv_rcpp_reg_coxph1', PACKAGE = 'intsurv', time, event, x, l1_lambda, l2_lambda, l1_penalty_factor, start, max_iter, rel_tol, early_stop, verbose)
+rcpp_reg_coxph1 <- function(time, event, x, l1_lambda = 0, l2_lambda = 0, l1_penalty_factor = 0L, offset = 0L, start = 0L, max_iter = 200L, rel_tol = 1e-5, early_stop = FALSE, verbose = FALSE) {
+    .Call('_intsurv_rcpp_reg_coxph1', PACKAGE = 'intsurv', time, event, x, l1_lambda, l2_lambda, l1_penalty_factor, offset, start, max_iter, rel_tol, early_stop, verbose)
 }
 
-rcpp_reg_coxph2 <- function(time, event, x, lambda = 0L, alpha = 1, nlambda = 1L, lambda_min_ratio = 1e-4, l1_penalty_factor = 0L, max_iter = 200L, rel_tol = 1e-5, early_stop = FALSE, verbose = FALSE) {
-    .Call('_intsurv_rcpp_reg_coxph2', PACKAGE = 'intsurv', time, event, x, lambda, alpha, nlambda, lambda_min_ratio, l1_penalty_factor, max_iter, rel_tol, early_stop, verbose)
+rcpp_reg_coxph2 <- function(time, event, x, lambda = 0L, alpha = 1, nlambda = 1L, lambda_min_ratio = 1e-4, l1_penalty_factor = 0L, offset = 0L, max_iter = 200L, rel_tol = 1e-5, early_stop = FALSE, verbose = FALSE) {
+    .Call('_intsurv_rcpp_reg_coxph2', PACKAGE = 'intsurv', time, event, x, lambda, alpha, nlambda, lambda_min_ratio, l1_penalty_factor, offset, max_iter, rel_tol, early_stop, verbose)
 }
 
 rcpp_logistic <- function(x, y, intercept = TRUE, standardize = TRUE, start = 0L, max_iter = 300L, rel_tol = 1e-6, pmin = 1e-5, early_stop = FALSE, verbose = FALSE) {

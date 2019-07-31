@@ -15,15 +15,21 @@
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 ##
 
+
 ## collation after class.R
 ##' @include class.R
 NULL
+
 
 ##' Integrative Cox Model for Uncertain Event Times
 ##'
 ##' Fit an integrative Cox model proposed by Wang et al. (2019) for
 ##' right-censored survival data with uncertain event times due to imperfect
 ##' data integration.
+##'
+##' @usage
+##' iCoxph(formula, data, subset, na.action, contrasts = NULL,
+##'        start = iCoxph.start(), control = iCoxph.control(), ...)
 ##'
 ##' @param formula \code{Survi} object specifying the covariates and response
 ##'     variable in the model, such as \code{Survi(ID, time, event) ~ x1 + x2}.
@@ -310,7 +316,7 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
                  control = control,
                  na.action = na.action,
                  xlevels = .getXlevels(mt, mf),
-                 contrasts = attr(mm, "contrasts"),
+                 contrasts = list(attr(mm, "contrasts")),
                  convergeCode = betaEst$code,
                  logL = logL0)
 }
@@ -425,9 +431,9 @@ iCoxph.control <- function(tol_beta = 1e-6,
 ##'     estimates. The default values are the coefficient estimates from the
 ##'     regular Cox model only fitting on records without uncertainty.  If
 ##'     censoring rate among subjects having unique certain records is extremely
-##'     high (> 99%) or \code{\link{coxph_fit}} returns any warning or error,
-##'     such as perfect seperation problem between event indicator and one
-##'     predictor, the starting values will be reset to be all zeros.
+##'     high (> 99%) or such as perfect seperation problem between event
+##'     indicator and one predictor, the starting values will be reset to be all
+##'     zeros.
 ##' @param beta_mat A numeric matrix that consists of additional starting values
 ##'     of coefficient estimates in columns.  The default value is \code{NULL}.
 ##' @param methods A character vector specifying the initialization methods for
@@ -870,7 +876,7 @@ iCoxph_start <- function(beta_vec = NULL,
         } else {
             uniDat$eventIdx <- NULL
             tmp <- tryCatch(
-                with(uniDat, coxph_fit(time, event, uni_xMat)),
+                with(uniDat, rcpp_coxph(time, event, uni_xMat)),
                 warning = function(w) {
                     warning(w)
                     return(NULL)
@@ -959,10 +965,9 @@ ic_semi_parametric_start <- function(time, event, xMat = NULL)
 {
     ## set default value
     fit <- NULL
-    ## try fitting with survival::coxph
     if (! is.null(xMat)) {
         ## fitting may fail in bootstrap samples
-        fit <- tryCatch(coxph_fit(time, event, xMat),
+        fit <- tryCatch(rcpp_coxph(time, event, xMat),
                         warning = function(w) {
                             return(NULL)
                         },

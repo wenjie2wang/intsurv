@@ -30,7 +30,7 @@ For \code{\link{iCoxph}} object, the function returns a
 }
 }
 \examples{
-## See examples given in function iCoxph
+## See examples of function iCoxph
 }
 \seealso{
 \code{\link{iCoxph}} for model fitting;

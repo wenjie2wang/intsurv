@@ -47,7 +47,7 @@ comparable pair satisfying \eqn{t_i<t_j,\delta_i=1}, we count 0.5 in the
 numerator of the concordance index for tied risk scores (\eqn{r_i=r_j}).
 }
 \examples{
-## See examples of function 'coxph_fit' and 'coxph_cure_fit'.
+## See examples of function 'cox_cure'.
 }
 \references{
 Asano, J., & Hirakawa, A. (2017). Assessing the prediction accuracy of a

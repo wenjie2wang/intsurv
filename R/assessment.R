@@ -68,16 +68,69 @@ NULL
 ##' and measuring and reducing errors. Statistics in medicine, 15(4), 361--387.
 ##'
 ##' @examples
-##' ## See examples of function 'coxph_fit' and 'coxph_cure_fit'.
+##' ## See examples of function 'cox_cure'.
 ##' @export
-cIndex <- function(time, event = NULL, risk_score, weight = NULL) {
+cIndex <- function(time, event = NULL, risk_score, weight = NULL)
+{
     if (is.null(weight) || is.na(weight)) {
         weight <- 1
     }
     if (is.null(event) || is.na(event)) {
         event <- 1
     } else if (! any(event > 0)) {
-        stop("No compariable pairs can be found", call. = FALSE)
+        stop("No compariable pairs can be found")
     }
     rcpp_cIndex(time, event, risk_score, weight)
+}
+
+
+##' Bayesian Information Criterion (BIC)
+##'
+##' Compute Bayesian information criterion (BIC) or Schwarz's Bayesian criterion
+##' (SBC) for possibly one or several objects.
+##'
+##' @param object An object for a fitted model.
+##' @param ... Other objects.
+##'
+##' @examples
+##' ## See examples of function 'cox_cure'.
+##' @importFrom stats BIC
+##' @export
+BIC.cox_cure <- function(object, ...)
+{
+    if (! missing(...)) {
+        inpList <- list(object, ...)
+        ## check on object class
+        checkRes <- sapply(inpList, is_cox_cure)
+        if (any(! checkRes))
+            stop("All objects must be of the 'cox_cure' class.")
+        bics <- sapply(inpList, BIC.cox_cure)
+        dfs <- sapply(inpList, function(a) length(a$coef))
+        val <- data.frame(df = dfs, BIC = bics)
+        Call <- match.call()
+        row.names(val) <- as.character(Call[- 1L])
+        return(val)
+    }
+    ## else return
+    object$model$bic
+}
+
+
+##' Bayesian Information Criterion (BIC)
+##'
+##' Compute Bayesian information criterion (BIC) or Schwarz's Bayesian criterion
+##' (SBC) from a fitted model.
+##'
+##' @param object An object for a fitted model.
+##' @param ... Other arguments for future usage.
+##'
+##' @examples
+##' ## See examples of function 'cox_cure_net'.
+##' @importFrom stats BIC
+##' @export
+BIC.cox_cure_net <- function(object, ...)
+{
+    bics <- object$model$bic
+    dfs <- object$model$coef_df
+    data.frame(df = dfs, BIC = bics)
 }
