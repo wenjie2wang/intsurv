@@ -4,7 +4,7 @@
 \alias{bootSe}
 \title{Standard Error Estimates through Bootstrap}
 \usage{
-bootSe(object, B = 50, se = c("inter-quantile", "mad", "sd"),
+bootSe(object, B = 50, se = c("inter-quartile", "mad", "sd"),
        return_beta = FALSE, ...)
 }
 \arguments{
@@ -18,7 +18,7 @@ function will return the covariate coefficient estimates instead of a
 
 \item{se}{A character value specifying the way computing SE from bootstrap
 samples. The default method is based on median absolute deviation and
-the second method is based on inter-quantile, both of which are based on
+the second method is based on inter-quartile, both of which are based on
 normality of the bootstrap estimates and provids robust estimates for
 SE. The third method estimates SE by the standard deviation of the
 bootstrap estimates.}

@@ -37,7 +37,7 @@ NULL
 ##' specified.
 ##'
 ##' @usage
-##' bootSe(object, B = 50, se = c("inter-quantile", "mad", "sd"),
+##' bootSe(object, B = 50, se = c("inter-quartile", "mad", "sd"),
 ##'        return_beta = FALSE, ...)
 ##'
 ##' @param object \code{\link{iCoxph-class}} object.
@@ -48,7 +48,7 @@ NULL
 ##'     \code{iCoxph-class} object.
 ##' @param se A character value specifying the way computing SE from bootstrap
 ##'     samples. The default method is based on median absolute deviation and
-##'     the second method is based on inter-quantile, both of which are based on
+##'     the second method is based on inter-quartile, both of which are based on
 ##'     normality of the bootstrap estimates and provids robust estimates for
 ##'     SE. The third method estimates SE by the standard deviation of the
 ##'     bootstrap estimates.
@@ -72,7 +72,7 @@ NULL
 ##' @export
 bootSe <- function(object,
                    B = 50,
-                   se = c("inter-quantile", "mad", "sd"),
+                   se = c("inter-quartile", "mad", "sd"),
                    return_beta = FALSE,
                    ...)
 {
@@ -127,11 +127,8 @@ bootSe <- function(object,
     ## compute se estimates
     se_vec <- switch(
         se,
-        "inter-quantile" = {
-            apply(estMat, 1L, function(a) {
-                diff(stats::quantile(a, probs = c(0.25, 0.75))) /
-                    (stats::qnorm(0.75) - stats::qnorm(0.25))
-            })
+        "inter-quartile" = {
+            apply(estMat, 1L, se_interQ)
         },
         "mad" = {
             apply(estMat, 1L, function(a) {
@@ -150,7 +147,7 @@ bootSe <- function(object,
     ## object@estimates$boostrap_beta <- estMat
     ## object@estimates$boostrap_se <- cbind(
     ##     "mad" = se_mad,
-    ##     "inter-quantile" = se_interQ,
+    ##     "inter-quartile" = se_interQ,
     ##     "sd" = se_sd
     ## )
 

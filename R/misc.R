@@ -55,6 +55,11 @@ L2norm2 <- function(x) {
     sum(x ^ 2)
 }
 
+se_interQ <- function(x) {
+    diff(stats::quantile(x, probs = c(0.25, 0.75))) /
+        (stats::qnorm(0.75) - stats::qnorm(0.25))
+}
+
 ## throw warnings if `...` is specified by mistake
 warn_dots <- function(...) {
     dotsList <- list(...)
