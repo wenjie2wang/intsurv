@@ -57,3 +57,6 @@ print.cox_cure <- function(x, ...) {
     ## return
     invisible(x)
 }
+
+## for cox_cure_uncer
+print.cox_cure_uncer <- print.cox_cure

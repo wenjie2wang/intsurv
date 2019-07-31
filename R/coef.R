@@ -49,6 +49,24 @@ setMethod(
 ##' Estimated Covariate Coefficients
 ##'
 ##' Extract the covariate coefficient estimates from a fitted Cox cure rate
+##' model with uncertain event status.
+##'
+##' @param object Object representing a fitted model.
+##' @param ... Other arguments for future usage.
+##'
+##' @return A named numeric vector.
+##' @importFrom stats coef
+##' @method coef cox_cure_uncer
+##' @export
+coef.cox_cure_uncer <- function(object, ...)
+{
+    object$coef
+}
+
+
+##' Estimated Covariate Coefficients
+##'
+##' Extract the covariate coefficient estimates from a fitted Cox cure rate
 ##' model.
 ##'
 ##' @param object Object representing a fitted model.

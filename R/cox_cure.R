@@ -146,7 +146,7 @@ NULL
 ##' 531--541.
 ##'
 ##' Peng, Y. (2003). Estimating baseline distribution in proportional hazards
-##' cure models. \emph{Computational Statistics \& Data Analysis}, 42(1-2),
+##' cure models. \emph{Computational Statistics & Data Analysis}, 42(1-2),
 ##' 187--201.
 ##'
 ##' Sy, J. P., & Taylor, J. M. (2000). Estimation in a Cox proportional hazards
@@ -406,7 +406,7 @@ cox_cure <- function(surv_formula, cure_formula, time, event,
 ##' 531--541.
 ##'
 ##' Peng, Y. (2003). Estimating baseline distribution in proportional hazards
-##' cure models. \emph{Computational Statistics \& Data Analysis}, 42(1-2),
+##' cure models. \emph{Computational Statistics & Data Analysis}, 42(1-2),
 ##' 187--201.
 ##'
 ##' Sy, J. P., & Taylor, J. M. (2000). Estimation in a Cox proportional hazards

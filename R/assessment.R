@@ -90,29 +90,83 @@ cIndex <- function(time, event = NULL, risk_score, weight = NULL)
 ##' (SBC) for possibly one or several objects.
 ##'
 ##' @param object An object for a fitted model.
+##' @param method A character string specifying the method for computing the BIC
+##'     values.  The available options are \code{"obs"} for regular BIC based on
+##'     the number of observations, and \code{"effective"} for using BIC based
+##'     on the number of effective sample size for censored data (number of
+##'     uncensored events) proposed by Volinsky and Raftery (2000).  The former
+##'     is used by default.
 ##' @param ... Other objects.
+##'
+##' @references
+##'
+##' Volinsky, C. T., & Raftery, A. E. (2000). Bayesian information criterion for
+##' censored survival models. Biometrics, 56(1), 256--262.
 ##'
 ##' @examples
 ##' ## See examples of function 'cox_cure'.
 ##' @importFrom stats BIC
 ##' @export
-BIC.cox_cure <- function(object, ...)
+BIC.cox_cure <- function(object, ..., method = c("obs", "effective"))
 {
+    method <- match.arg(method)
+    bic_name <- switch(method, "obs" = "bic1", "effective" = "bic2")
     if (! missing(...)) {
         inpList <- list(object, ...)
         ## check on object class
         checkRes <- sapply(inpList, is_cox_cure)
         if (any(! checkRes))
             stop("All objects must be of the 'cox_cure' class.")
-        bics <- sapply(inpList, BIC.cox_cure)
-        dfs <- sapply(inpList, function(a) length(a$coef))
+        bics <- sapply(inpList, function(a) a$model[[bic_name]])
+        dfs <- sapply(inpList, function(a) a$model$coef_df)
         val <- data.frame(df = dfs, BIC = bics)
         Call <- match.call()
-        row.names(val) <- as.character(Call[- 1L])
+        is_obj <- names(Call) != "method"
+        row.names(val) <- as.character(Call[is_obj][- 1L])
         return(val)
     }
     ## else return
-    object$model$bic
+    object$model[[bic_name]]
+}
+
+
+##' Bayesian Information Criterion (BIC)
+##'
+##' Compute Bayesian information criterion (BIC) or Schwarz's Bayesian criterion
+##' (SBC) for possibly one or several objects.
+##'
+##' @param object An object for a fitted model.
+##' @param method A character string specifying the method for computing the BIC
+##'     values.  The available options are \code{"obs"} for regular BIC based on
+##'     the number of observations, and \code{"certain-event"} for a variant of
+##'     BIC based on the number of certain uncensored events.  The former is
+##'     used by default.
+##' @param ... Other objects.
+##'
+##' @examples
+##' ## See examples of function 'cox_cure'.
+##' @importFrom stats BIC
+##' @export
+BIC.cox_cure_uncer <- function(object, ..., method = c("obs", "certain-event"))
+{
+    method <- match.arg(method)
+    bic_name <- switch(method, "obs" = "bic1", "certain-event" = "bic2")
+    if (! missing(...)) {
+        inpList <- list(object, ...)
+        ## check on object class
+        checkRes <- sapply(inpList, is_cox_cure_uncer)
+        if (any(! checkRes))
+            stop("All objects must be of the 'cox_cure_uncer' class.")
+        bics <- sapply(inpList, function(a) a$model[[bic_name]])
+        dfs <- sapply(inpList, function(a) a$model$coef_df)
+        val <- data.frame(df = dfs, BIC = bics)
+        Call <- match.call()
+        is_obj <- names(Call) != "method"
+        row.names(val) <- as.character(Call[is_obj][- 1L])
+        return(val)
+    }
+    ## else return
+    object$model[[bic_name]]
 }
 
 

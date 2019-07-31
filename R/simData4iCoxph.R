@@ -18,14 +18,25 @@
 
 ##' Simulated Survival Data with Uncertain Records
 ##'
-##' Generate simulated survival data with uncertain records.  An integrative Cox
-##' model can be fitted for the simulated data by function \code{\link{iCoxph}}.
+##' Generate survival data with uncertain records.  An integrative Cox model can
+##' be fitted for the simulated data by function \code{\link{iCoxph}}.
 ##'
 ##' The event times are simulated from a Weibull proportional hazard model of
 ##' given shape and baseline scale.  The censoring times follow uniform
 ##' distribution of specified boundaries.
 ##'
-##' @param nSubject Number of subjects
+##' @usage
+##' simData4iCoxph(nSubject = 1e3, beta0Vec, xMat,
+##'                maxNum = 2, nRecordProb = c(0.9, 0.1),
+##'                matchCensor = 0.1, matchEvent = 0.1,
+##'                censorMin = 0.5, censorMax = 12.5,
+##'                lambda = 0.005, rho = 0.7,
+##'                fakeLambda1 = lambda * exp(- 3), fakeRho1 = rho,
+##'                fakeLambda2 = lambda * exp(3), fakeRho2 = rho,
+##'                mixture = 0.5, randomMiss = TRUE,
+##'                eventOnly = FALSE, ...)
+##'
+##' @param nSubject Number of subjects.
 ##' @param beta0Vec Time-invariant covariate coefficients.
 ##' @param xMat Design matrix. By default, three continuous variables following
 ##'     standard normal distribution and one binary variable following bernoulli
@@ -69,7 +80,7 @@
 ##'     recorods } and the corresponding covariates.
 ##'
 ##' @examples
-##' ## See examples given in function iCoxph
+##' ## See examples of function iCoxph
 ##' @importFrom stats runif rnorm
 ##' @export
 simData4iCoxph <- function(nSubject = 1e3, beta0Vec, xMat, maxNum = 2,

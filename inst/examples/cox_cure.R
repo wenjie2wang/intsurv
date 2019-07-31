@@ -1,5 +1,6 @@
 library(intsurv)
 
+### regular Cox cure rate model ======================================
 ## 1. simulate right-censored data with a cure fraction
 set.seed(123)
 n_obs <- 2e2
@@ -19,7 +20,7 @@ event <- ifelse(event_time < censor_time & ! is_cure, 1, 0)
 obs_time <- ifelse(event > 0, event_time, censor_time)
 
 ## model-fitting from given design matrices
-cureFit1 <- cox_cure.fit(x_mat, x_mat, obs_time, event, bootstrap = 30)
+fit1 <- cox_cure.fit(x_mat, x_mat, obs_time, event, bootstrap = 30)
 
 ## 2. create a toy dataset
 toy_dat <- data.frame(time = obs_time, status = event)
@@ -28,6 +29,38 @@ toy_dat$group <- cut(abs(x_mat[, 1L]), breaks = c(0, 0.5, 1, 3, Inf),
 toy_dat <- cbind(toy_dat, as.data.frame(x_mat[, - 1L, drop = FALSE]))
 
 ## model-fitting from given model formula
-cureFit2 <- cox_cure(~ x2 + x3 + x4 + group, ~ x2 + x3 + group,
-                     time = time, event = status, data = toy_dat,
-                     subset = group != "D", bootstrap = 30)
+fit2 <- cox_cure(~ x2 + x3 + x4 + group, ~ x2 + x3 + group,
+                 time = time, event = status, data = toy_dat,
+                 subset = group != "D", bootstrap = 30)
+
+## get BIC's
+BIC(fit1)
+BIC(fit2)
+BIC(fit1, fit2)
+
+## compute weighted concordance index (C-index)
+cIndex(time = obs_time, event = event,
+       risk_score = fit1$fitted$surv_xBeta,
+       weight = fit1$fitted$susceptible_prob)
+
+## or directly extract C-index from the object
+fit1$model$c_index
+
+
+### Cox cure rate model with uncertain event status ==================
+## simulate sample data
+sim_dat <- simData4cure(nSubject = 200, max_censor = 10,
+                        survMat = x_mat, cureMat = x_mat, b0 = 1)
+table(sim_dat$case)
+table(sim_dat$obs_event, useNA = "ifany")
+
+## use formula
+fit3 <- cox_cure(~ x1 + x2 + x3, ~ z1 + z2 + z3,
+                 time = obs_time, event = obs_event, data = sim_dat)
+
+## use design matrix
+fit4 <- cox_cure.fit(x_mat, x_mat, time = sim_dat$obs_time,
+                     event = sim_dat$obs_event)
+
+## get BIC's
+BIC(fit3, fit4)
