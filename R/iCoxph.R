@@ -42,7 +42,7 @@ NULL
 ##' @param na.action An optional function that indicates what should the
 ##'     procedure do if the data contains \code{NA}s.  The default is set by the
 ##'     na.action setting of \code{\link[base]{options}}.  The "factory-fresh"
-##'     default is \code{\link[stats]{na.omit}}.  Other possible values inlcude
+##'     default is \code{\link[stats]{na.omit}}.  Other possible values include
 ##'     \code{\link[stats]{na.fail}}, \code{\link[stats]{na.exclude}}, and
 ##'     \code{\link[stats]{na.pass}}.  \code{help(na.fail)} for details.
 ##' @param contrasts An optional list, whose entries are values (numeric
@@ -336,13 +336,13 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
 ##'                cm_stepmax = 1e2, cm_steptol = 1e-6, cm_max_iter = 1e2,
 ##'                ecm_max_iter = 2e2, ...)
 ##'
-##' @param tol_beta A postive value specifying the tolerance that concludes the
+##' @param tol_beta A positive value specifying the tolerance that concludes the
 ##'     convergence of the covariate coefficient estimates. The tolerance is
 ##'     compared with the relative change between the estimates from two
 ##'     consecutive iterations that is measured by ratio of the L2-norm of their
 ##'     difference to the sum of their L2-norm.  The default value is
 ##'     \code{1e-6}.
-##' @param tol_pi A postive value specifying the tolerance that concludes the
+##' @param tol_pi A positive value specifying the tolerance that concludes the
 ##'     convergence of the probability estimates of uncertain records being
 ##'     true.  The tolerance is compared with the relative change between the
 ##'     estimates from two consecutive iterations measured by ratio of L2-norm
@@ -371,7 +371,7 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
 ##' ## See examples of function 'iCoxph'.
 ##'
 ##' @seealso
-##' \code{\link{iCoxph}} for fitting integerative Cox model.
+##' \code{\link{iCoxph}} for fitting integrative Cox model.
 ##'
 ##' @export
 iCoxph.control <- function(tol_beta = 1e-6,
@@ -453,7 +453,7 @@ iCoxph.control <- function(tol_beta = 1e-6,
 ##' ## See examples of function 'iCoxph'.
 ##'
 ##' @seealso
-##' \code{\link{iCoxph}} for fitting integerative Cox model.
+##' \code{\link{iCoxph}} for fitting integrative Cox model.
 ##'
 ##' @export
 iCoxph.start <- function(beta_vec = NULL,

@@ -63,7 +63,7 @@ NULL
 ##'
 ##' Asano, J., & Hirakawa, A. (2017). Assessing the prediction accuracy of a
 ##' cure model for censored survival data with long-term survivors: Application
-##' to breast cancer data. Journal of biopharmaceutical statistics, 27(6),
+##' to breast cancer data. Journal of Biopharmaceutical Statistics, 27(6),
 ##' 918--932.
 ##'
 ##' Harrell, F. E., Lee, K. L., & Mark, D. B. (1996). Multivariable prognostic
@@ -173,7 +173,7 @@ BIC.cox_cure_uncer <- function(object, ..., method = c("obs", "certain-event"))
 ##' Compute Bayesian information criterion (BIC) or Schwarz's Bayesian criterion
 ##' (SBC) from a fitted solution path.
 ##'
-##' @param object An object for a fitted model.
+##' @param object An object for a fitted solution path.
 ##' @param method A character string specifying the method for computing the BIC
 ##'     values.  Notice that this argument is placed after \code{...} and thus
 ##'     must be specified as a named argument.  The available options for

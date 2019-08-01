@@ -39,10 +39,10 @@
 ##' @param nSubject Number of subjects.
 ##' @param beta0Vec Time-invariant covariate coefficients.
 ##' @param xMat Design matrix. By default, three continuous variables following
-##'     standard normal distribution and one binary variable following bernoulli
+##'     standard normal distribution and one binary variable following Bernoulli
 ##'     distribution with equal probability are used.
 ##' @param maxNum Maximum number of uncertain records.
-##' @param nRecordProb Probability of the number of uncertian records.
+##' @param nRecordProb Probability of the number of uncertain records.
 ##' @param matchCensor The matching rate for subjects actually having censoring
 ##'     times.
 ##' @param matchEvent The matching rate for subjects actually having event
@@ -55,29 +55,40 @@
 ##'     for true event times.
 ##' @param rho A positive number, shape parameter in baseline rate function for
 ##'     true event times.
-##' @param fakeLambda1 A positive number, scale paramenter in baseline rate
+##' @param fakeLambda1 A positive number, scale parameter in baseline rate
 ##'     function for fake event times from one distribution.
 ##' @param fakeRho1 A positive number, shape parameter in baseline rate function
 ##'     for fake event times from one distribution.
-##' @param fakeLambda2 A positive number, scale paramenter in baseline rate
+##' @param fakeLambda2 A positive number, scale parameter in baseline rate
 ##'     function for fake event times from another distribution.
 ##' @param fakeRho2 A positive number, shape parameter in baseline rate function
 ##'     for fake event times from another distribution.
-##' @param mixture The mixture weights, i.e., the probabilies (summing up to
+##' @param mixture The mixture weights, i.e., the probabilities (summing up to
 ##'     one) of fake event times coming from different mixture components.
-##' @param randomMiss A boolean value specifying whether the labels of the true
+##' @param randomMiss A logical value specifying whether the labels of the true
 ##'     records are missing completely at random (MCAR) or missing not at random
 ##'     (MNAR). The default value is \code{TRUE} for MCAR.
-##' @param eventOnly A boolean value specifying whether the uncertain records
+##' @param eventOnly A logical value specifying whether the uncertain records
 ##'     only include possible events. The default value is \code{FALSE}, which
 ##'     considers the censoring cases as the possible truth in addition to event
 ##'     records.
 ##' @param ... Other arguments for future usage.
 ##'
-##' @return A data frame with the following columns, \itemize{ \item \code{ID}:
-##'     subject ID \item \code{time}: observed event times \item \code{event}:
-##'     event indicators \item \code{isTure}: latent labels indicating the true
-##'     recorods } and the corresponding covariates.
+##' @return A data frame with the following columns,
+##'
+##' \itemize{
+##'
+##' \item \code{ID}: subject ID
+##'
+##' \item \code{time}: observed event times
+##'
+##' \item \code{event}: event indicators
+##'
+##' \item \code{isTure}: latent labels indicating the true records
+##'
+##' }
+##'
+##' and the corresponding covariates.
 ##'
 ##' @examples
 ##' ## See examples of function iCoxph

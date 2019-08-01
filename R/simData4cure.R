@@ -40,8 +40,8 @@
 ##' @param p1 A number between 0 and 1 specifying the probability of simulating
 ##'     events with observed event indicators given the simulated event times.
 ##' @param p2 A number between 0 and 1 specifying the probability of simulating
-##'     suspectible censoring times with observed event status given the
-##'     simulated suspectible censoring times.
+##'     susceptible censoring times with observed event status given the
+##'     simulated susceptible censoring times.
 ##' @param p3 A number between 0 and 1 specifying the probability of simulating
 ##'     cured censoring times with observed event status given the simulated
 ##'     cured censoring times.

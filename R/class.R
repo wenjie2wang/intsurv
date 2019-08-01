@@ -32,7 +32,7 @@ setClass("Survi", contains = "matrix",
 ##' for details.
 ##'
 ##' @slot call Function call.
-##' @slot formula Formula.
+##' @slot formula Model formula.
 ##' @slot nObs A positive integer.
 ##' @slot data A data frame.
 ##' @slot estimates A list.
@@ -41,7 +41,7 @@ setClass("Survi", contains = "matrix",
 ##' @slot na.action A length-one character vector.
 ##' @slot xlevels A list.
 ##' @slot contrasts A list.
-##' @slot convergeCode A nonnegative integer.
+##' @slot convergeCode A non-negative integer.
 ##' @slot logL A numeric value.
 ##'
 ##' @aliases iCoxph-class
@@ -63,7 +63,7 @@ setClass(Class = "iCoxph",
                    logL = "numeric"))
 
 
-##' An S4 Class to Represent Summary of a fitted integerative Cox model
+##' An S4 Class to Represent Summary of a fitted integrative Cox model
 ##'
 ##' The \code{summary.intsurv} class is an S4 class that represents a summarized
 ##' model.  Function \code{\link{summary,iCoxph-method}} produces objects of

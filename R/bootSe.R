@@ -28,7 +28,7 @@ NULL
 ##'
 ##' Three different methods are available for computing SE from bootstrap
 ##' samples through argument \code{se}.  Given the fact that the bootstrap
-##' method is computional intensive, the function returns the coefficient
+##' method is computationally intensive, the function returns the coefficient
 ##' estimates in a matrix from the given number of bootstrap samples when
 ##' \code{return_beta = TRUE)} is specified, which can be used in parallel
 ##' computing or high performance computing (HPC) cluster.  The SE estimates can
@@ -49,25 +49,25 @@ NULL
 ##' @param se A character value specifying the way computing SE from bootstrap
 ##'     samples. The default method is based on median absolute deviation and
 ##'     the second method is based on inter-quartile, both of which are based on
-##'     normality of the bootstrap estimates and provids robust estimates for
+##'     normality of the bootstrap estimates and provides robust estimates for
 ##'     SE. The third method estimates SE by the standard deviation of the
 ##'     bootstrap estimates.
 ##' @param return_beta A logical value. If \code{TRUE}, the function returns the
 ##'     covariate coefficient estimates from the given number of bootstrap
-##'     samples, which allows users to split this potentially computational
-##'     intensive step into small pieces that can be computed in a parallel
-##'     manner.  The default value is \code{FALSE}.
+##'     samples, which allows users to split the most computationally intensive
+##'     step into small pieces that can be computed in a parallel manner.  The
+##'     default value is \code{FALSE}.
 ##' @param ... Other arguments for future usage.  A warning will be thrown if
 ##'     any invalid argument is specified.
 ##'
 ##' @return \code{\link{iCoxph-class}} object or a numeric matrix that contains
-##'     the covariate coeffient estimates from the given number of bootstrap
+##'     the covariate coefficient estimates from the given number of bootstrap
 ##'     samples in rows.
 ##'
 ##' @examples
 ##' ## See examples of function 'iCoxph'.
 ##' @seealso
-##' \code{\link{iCoxph}} for fitting integerative Cox model.
+##' \code{\link{iCoxph}} for fitting integrative Cox model.
 ##' @importFrom stats median pnorm qnorm quantile sd
 ##' @export
 bootSe <- function(object,

@@ -29,7 +29,7 @@ NULL
 ##' @aliases Survi
 ##'
 ##' @param ID Identificator of each subject.
-##' @param time Time of reccurence event or censoring.
+##' @param time Event times (whether certain or uncertain) or censoring times.
 ##' @param event The status indicator, 0 = censored, 1 = event.
 ##' @param check A logical value specifying whether to perform check on input
 ##'     data.

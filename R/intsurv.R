@@ -19,8 +19,11 @@
 ##'
 ##' The package \pkg{intsurv} provides implementations of
 ##' \itemize{
-##' \item integrative Cox model with uncertain event times (Wang, 2019)
-##' \item Cox cure rate model with uncertain event status (Wang, 2019+)
+##'
+##' \item integrative Cox model with uncertain event times (Wang et al., 2019)
+##'
+##' \item Cox cure rate model with uncertain event status (Wang et al., 2019+)
+##'
 ##' }
 ##'
 ##' It also contains other survival analysis routines, including regular Cox

@@ -69,7 +69,7 @@ setMethod(
 ##'
 ##' }
 ##'
-##' Otherwise, a named numberic vector representing the coefficient estimates of
+##' Otherwise, a named numeric vector representing the coefficient estimates of
 ##' the specified model part will be returned.
 ##'
 ##' @importFrom stats coef
@@ -98,10 +98,10 @@ coef.cox_cure_uncer <- coef.cox_cure
 
 ##' Estimated Covariate Coefficients
 ##'
-##' Extract the covariate coefficient estimates from a fitted Cox cure rate
-##' model.
+##' Extract the covariate coefficient estimates from a solution path of
+##' regularized Cox cure rate model.
 ##'
-##' @param object Object representing a fitted model.
+##' @param object Object representing a fitted solution path.
 ##' @param naive_en A logical value specifying whether to return naive elastic
 ##'     net estimates.  If \code{FALSE} by default, the elastic net estimates
 ##'     will be returned instead of the naive elastic net estimates.

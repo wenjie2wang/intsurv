@@ -85,15 +85,15 @@
 ##' @param surv_l1_penalty_factor A numeric vector that consists of positive
 ##'     numbers for penalty factors (or weights) on L1-norm for the coefficient
 ##'     estimate vector in the survival model part.  The penalty is applied to
-##'     the coefficient estimate devided by the specified weights.  The
+##'     the coefficient estimate divided by the specified weights.  The
 ##'     specified weights are re-scaled internally so that their summation
 ##'     equals the length of coefficients.  If it is left unspecified, the
 ##'     weights are all set to be one.
 ##' @param cure_lambda A numeric vector consists of non-negative values
 ##'     representing the tuning parameter sequence for the cure model part.
 ##' @param cure_alpha A number between 0 and 1 for tuning the elastic net
-##'     penalty for the cure model part.  If it is one, the elastic penalty
-##'     will reduce to the well-known lasso penalty.  If it is zero, the ridge
+##'     penalty for the cure model part.  If it is one, the elastic penalty will
+##'     reduce to the well-known lasso penalty.  If it is zero, the ridge
 ##'     penalty will be used.
 ##' @param cure_nlambda A positive number specifying the number of
 ##'     \code{cure_lambda} if \code{cure_lambda} is not specified.  The default
@@ -103,29 +103,29 @@
 ##'     log scale.  The default value is \code{1e-1}.
 ##' @param cure_l1_penalty_factor A numeric vector that consists of positive
 ##'     numbers for penalty factors (or weights) on L1-norm for the coefficient
-##'     estimate vector in the cure model part.  The penalty is applied to
-##'     the coefficient estimate devided by the specified weights.  The
-##'     specified weights are re-scaled internally so that their summation
-##'     equals the length of coefficients.  If it is left unspecified, the
-##'     weights are all set to be one.
+##'     estimate vector in the cure model part.  The penalty is applied to the
+##'     coefficient estimate divided by the specified weights.  The specified
+##'     weights are re-scaled internally so that their summation equals the
+##'     length of coefficients.  If it is left unspecified, the weights are all
+##'     set to be one.
 ##' @param surv_start An optional numeric vector representing the starting
 ##'     values for the Cox model component.  If not specified, the starting
 ##'     values will be obtained from fitting a regular Cox model to events only.
-##' @param cure_start An optional numberic vector representing the starting
+##' @param cure_start An optional numeric vector representing the starting
 ##'     values for the logistic model component.  If not specified, the starting
 ##'     values will be obtained from fitting a regular logistic model to the
 ##'     non-missing event indicators.
-##' @param surv_standardize A logicial value specifying whether to standardize
+##' @param surv_standardize A logical value specifying whether to standardize
 ##'     the covariates for the survival model part.  If \code{FALSE}, the
 ##'     covariates will be standardized internally to have mean zero and
 ##'     standard deviation one.
-##' @param cure_standardize A logicial value specifying whether to standardize
+##' @param cure_standardize A logical value specifying whether to standardize
 ##'     the covariates for the cure rate model part.  If \code{TRUE} (by
 ##'     default), the covariates will be standardized internally to have mean
 ##'     zero and standard deviation one.
 ##' @param em_max_iter A positive integer specifying the maximum iteration
 ##'     number of the EM algorithm.  The default value is \code{200}.
-##' @param em_rel_tol A positive number specifying the tolence that determines
+##' @param em_rel_tol A positive number specifying the tolerance that determines
 ##'     the convergence of the EM algorithm in terms of the convergence of the
 ##'     covariate coefficient estimates.  The tolerance is compared with the
 ##'     relative change between estimates from two consecutive iterations, which
@@ -134,23 +134,23 @@
 ##' @param surv_max_iter A positive integer specifying the maximum iteration
 ##'     number of the M-step routine related to the survival model component.
 ##'     The default value is \code{200}.
-##' @param surv_rel_tol A positive number specifying the tolence that determines
-##'     the convergence of the M-step related to the survival model component in
-##'     terms of the convergence of the covariate coefficient estimates.  The
-##'     tolerance is compared with the relative change between estimates from
-##'     two consecutive iterations, which is measured by ratio of the L1-norm of
-##'     their difference to the sum of their L1-norm.  The default value is
-##'     \code{1e-5}.
+##' @param surv_rel_tol A positive number specifying the tolerance that
+##'     determines the convergence of the M-step related to the survival model
+##'     component in terms of the convergence of the covariate coefficient
+##'     estimates.  The tolerance is compared with the relative change between
+##'     estimates from two consecutive iterations, which is measured by ratio of
+##'     the L1-norm of their difference to the sum of their L1-norm.  The
+##'     default value is \code{1e-5}.
 ##' @param cure_max_iter A positive integer specifying the maximum iteration
 ##'     number of the M-step routine related to the cure rate model component.
 ##'     The default value is \code{200}.
-##' @param cure_rel_tol A positive number specifying the tolence that determines
-##'     the convergence of the M-step related to the cure rate model component
-##'     in terms of the convergence of the covariate coefficient estimates.  The
-##'     tolerance is compared with the relative change between estimates from
-##'     two consecutive iterations, which is measured by ratio of the L1-norm of
-##'     their difference to the sum of their L1-norm.  The default value is
-##'     \code{1e-5}.
+##' @param cure_rel_tol A positive number specifying the tolerance that
+##'     determines the convergence of the M-step related to the cure rate model
+##'     component in terms of the convergence of the covariate coefficient
+##'     estimates.  The tolerance is compared with the relative change between
+##'     estimates from two consecutive iterations, which is measured by ratio of
+##'     the L1-norm of their difference to the sum of their L1-norm.  The
+##'     default value is \code{1e-5}.
 ##' @param tail_completion A character string specifying the tail completion
 ##'     method for conditional survival function.  The available methods are
 ##'     \code{"zero"} for zero-tail completion after the largest event times (Sy
@@ -164,11 +164,11 @@
 ##'     largest event time and the largest survival time.
 ##' @param pmin A numeric number specifying the minimum value of probabilities
 ##'     for sake of numerical stability.  The default value is \code{1e-5}.
-##' @param early_stop A boolean value specifying whether to stop the iteration
+##' @param early_stop A logical value specifying whether to stop the iteration
 ##'     once the negative log-likelihood unexpectedly increases, which may
 ##'     suggest convergence on likelihood, or indicate numerical issues or
 ##'     implementation bugs.  The default value is \code{TRUE}.
-##' @param verbose A boolean value.  If \code{TRUE}, a verbose information will
+##' @param verbose A logical value.  If \code{TRUE}, a verbose information will
 ##'     be given along iterations for tracing the convergence.  The default
 ##'     value is \code{FALSE}.
 ##' @param ... Other arguments for future usage.  A warning will be thrown if
