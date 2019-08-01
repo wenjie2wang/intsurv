@@ -75,10 +75,10 @@ NULL
 ##' @export
 cIndex <- function(time, event = NULL, risk_score, weight = NULL)
 {
-    if (is.null(weight) || is.na(weight)) {
+    if (is.null(weight)) {
         weight <- 1
     }
-    if (is.null(event) || is.na(event)) {
+    if (is.null(event)) {
         event <- 1
     } else if (! any(event > 0)) {
         stop("No compariable pairs can be found")
