@@ -52,7 +52,7 @@ numerator of the concordance index for tied risk scores (\eqn{r_i=r_j}).
 \references{
 Asano, J., & Hirakawa, A. (2017). Assessing the prediction accuracy of a
 cure model for censored survival data with long-term survivors: Application
-to breast cancer data. Journal of biopharmaceutical statistics, 27(6),
+to breast cancer data. Journal of Biopharmaceutical Statistics, 27(6),
 918--932.
 
 Harrell, F. E., Lee, K. L., & Mark, D. B. (1996). Multivariable prognostic

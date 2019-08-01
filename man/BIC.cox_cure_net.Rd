@@ -10,7 +10,7 @@
 \method{BIC}{cox_cure_net_uncer}(object, ..., method = c("obs", "certain-event"))
 }
 \arguments{
-\item{object}{An object for a fitted model.}
+\item{object}{An object for a fitted solution path.}
 
 \item{...}{Other arguments for future usage.  A warning message will be
 thrown for any invalid argument.}

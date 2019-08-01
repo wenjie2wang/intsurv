@@ -12,7 +12,7 @@
      selection = c("bic1", "bic2", "all"), ...)
 }
 \arguments{
-\item{object}{Object representing a fitted model.}
+\item{object}{Object representing a fitted solution path.}
 
 \item{naive_en}{A logical value specifying whether to return naive elastic
 net estimates.  If \code{FALSE} by default, the elastic net estimates
@@ -41,8 +41,8 @@ A list that consists of the following named elements:
 }
 }
 \description{
-Extract the covariate coefficient estimates from a fitted Cox cure rate
-model.
+Extract the covariate coefficient estimates from a solution path of
+regularized Cox cure rate model.
 }
 \examples{
 ## see examples of function `cox_cure_net`

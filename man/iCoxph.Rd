@@ -22,7 +22,7 @@ to be used in the fitting process.}
 \item{na.action}{An optional function that indicates what should the
 procedure do if the data contains \code{NA}s.  The default is set by the
 na.action setting of \code{\link[base]{options}}.  The "factory-fresh"
-default is \code{\link[stats]{na.omit}}.  Other possible values inlcude
+default is \code{\link[stats]{na.omit}}.  Other possible values include
 \code{\link[stats]{na.fail}}, \code{\link[stats]{na.exclude}}, and
 \code{\link[stats]{na.pass}}.  \code{help(na.fail)} for details.}
 

@@ -43,5 +43,5 @@ to specify the starting values of the model estimation procedure.
 
 }
 \seealso{
-\code{\link{iCoxph}} for fitting integerative Cox model.
+\code{\link{iCoxph}} for fitting integrative Cox model.
 }

@@ -9,7 +9,7 @@ Survi(ID, time, event, check = TRUE, ...)
 \arguments{
 \item{ID}{Identificator of each subject.}
 
-\item{time}{Time of reccurence event or censoring.}
+\item{time}{Event times (whether certain or uncertain) or censoring times.}
 
 \item{event}{The status indicator, 0 = censored, 1 = event.}
 

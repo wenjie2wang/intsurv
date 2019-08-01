@@ -20,12 +20,12 @@ simData4iCoxph(nSubject = 1e3, beta0Vec, xMat,
 \item{beta0Vec}{Time-invariant covariate coefficients.}
 
 \item{xMat}{Design matrix. By default, three continuous variables following
-standard normal distribution and one binary variable following bernoulli
+standard normal distribution and one binary variable following Bernoulli
 distribution with equal probability are used.}
 
 \item{maxNum}{Maximum number of uncertain records.}
 
-\item{nRecordProb}{Probability of the number of uncertian records.}
+\item{nRecordProb}{Probability of the number of uncertain records.}
 
 \item{matchCensor}{The matching rate for subjects actually having censoring
 times.}
@@ -45,26 +45,26 @@ for true event times.}
 \item{rho}{A positive number, shape parameter in baseline rate function for
 true event times.}
 
-\item{fakeLambda1}{A positive number, scale paramenter in baseline rate
+\item{fakeLambda1}{A positive number, scale parameter in baseline rate
 function for fake event times from one distribution.}
 
 \item{fakeRho1}{A positive number, shape parameter in baseline rate function
 for fake event times from one distribution.}
 
-\item{fakeLambda2}{A positive number, scale paramenter in baseline rate
+\item{fakeLambda2}{A positive number, scale parameter in baseline rate
 function for fake event times from another distribution.}
 
 \item{fakeRho2}{A positive number, shape parameter in baseline rate function
 for fake event times from another distribution.}
 
-\item{mixture}{The mixture weights, i.e., the probabilies (summing up to
+\item{mixture}{The mixture weights, i.e., the probabilities (summing up to
 one) of fake event times coming from different mixture components.}
 
-\item{randomMiss}{A boolean value specifying whether the labels of the true
+\item{randomMiss}{A logical value specifying whether the labels of the true
 records are missing completely at random (MCAR) or missing not at random
 (MNAR). The default value is \code{TRUE} for MCAR.}
 
-\item{eventOnly}{A boolean value specifying whether the uncertain records
+\item{eventOnly}{A logical value specifying whether the uncertain records
 only include possible events. The default value is \code{FALSE}, which
 considers the censoring cases as the possible truth in addition to event
 records.}
@@ -72,10 +72,21 @@ records.}
 \item{...}{Other arguments for future usage.}
 }
 \value{
-A data frame with the following columns, \itemize{ \item \code{ID}:
-    subject ID \item \code{time}: observed event times \item \code{event}:
-    event indicators \item \code{isTure}: latent labels indicating the true
-    recorods } and the corresponding covariates.
+A data frame with the following columns,
+
+\itemize{
+
+\item \code{ID}: subject ID
+
+\item \code{time}: observed event times
+
+\item \code{event}: event indicators
+
+\item \code{isTure}: latent labels indicating the true records
+
+}
+
+and the corresponding covariates.
 }
 \description{
 Generate survival data with uncertain records.  An integrative Cox model can

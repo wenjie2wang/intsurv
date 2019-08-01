@@ -3,7 +3,7 @@
 \docType{class}
 \name{summary.iCoxph-class}
 \alias{summary.iCoxph-class}
-\title{An S4 Class to Represent Summary of a fitted integerative Cox model}
+\title{An S4 Class to Represent Summary of a fitted integrative Cox model}
 \description{
 The \code{summary.intsurv} class is an S4 class that represents a summarized
 model.  Function \code{\link{summary,iCoxph-method}} produces objects of

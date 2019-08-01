@@ -14,7 +14,7 @@ for details.
 \describe{
 \item{\code{call}}{Function call.}
 
-\item{\code{formula}}{Formula.}
+\item{\code{formula}}{Model formula.}
 
 \item{\code{nObs}}{A positive integer.}
 
@@ -32,7 +32,7 @@ for details.
 
 \item{\code{contrasts}}{A list.}
 
-\item{\code{convergeCode}}{A nonnegative integer.}
+\item{\code{convergeCode}}{A non-negative integer.}
 
 \item{\code{logL}}{A numeric value.}
 }}

@@ -9,14 +9,14 @@ iCoxph.control(tol_beta = 1e-6, tol_pi = 1e-8, cm_gradtol = 1e-6,
                ecm_max_iter = 2e2, ...)
 }
 \arguments{
-\item{tol_beta}{A postive value specifying the tolerance that concludes the
+\item{tol_beta}{A positive value specifying the tolerance that concludes the
 convergence of the covariate coefficient estimates. The tolerance is
 compared with the relative change between the estimates from two
 consecutive iterations that is measured by ratio of the L2-norm of their
 difference to the sum of their L2-norm.  The default value is
 \code{1e-6}.}
 
-\item{tol_pi}{A postive value specifying the tolerance that concludes the
+\item{tol_pi}{A positive value specifying the tolerance that concludes the
 convergence of the probability estimates of uncertain records being
 true.  The tolerance is compared with the relative change between the
 estimates from two consecutive iterations measured by ratio of L2-norm
@@ -61,5 +61,5 @@ respectively.
 
 }
 \seealso{
-\code{\link{iCoxph}} for fitting integerative Cox model.
+\code{\link{iCoxph}} for fitting integrative Cox model.
 }

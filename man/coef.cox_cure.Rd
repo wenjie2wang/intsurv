@@ -31,7 +31,7 @@ If \code{part = "both"}, this function returns a list that consists
 
 }
 
-Otherwise, a named numberic vector representing the coefficient estimates of
+Otherwise, a named numeric vector representing the coefficient estimates of
 the specified model part will be returned.
 }
 \description{
