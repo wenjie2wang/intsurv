@@ -15,9 +15,11 @@
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 ##
 
+
 ##' Integrative Survival Modeling
 ##'
 ##' The package \pkg{intsurv} provides implementations of
+##'
 ##' \itemize{
 ##'
 ##' \item integrative Cox model with uncertain event times (Wang et al., 2019)

@@ -5,7 +5,20 @@
 \alias{intsurv-package}
 \title{Integrative Survival Modeling}
 \description{
-Integrative Survival Modeling
+The package \pkg{intsurv} provides implementations of
+}
+\details{
+\itemize{
+
+\item integrative Cox model with uncertain event times (Wang et al., 2019)
+
+\item Cox cure rate model with uncertain event status (Wang et al., 2019+)
+
+}
+
+It also contains other survival analysis routines, including regular Cox
+cure rate model, regularized Cox cure rate model with elastic net penalty,
+and weighted concordance index.
 }
 \references{
 Wang, W., Aseltine, R., Chen, K., & Yan, J. (2019).  Integrative Survival
