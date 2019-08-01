@@ -248,9 +248,6 @@ fit1 <- cox_cure_net.fit(x_mat, x_mat, dat$obs_time, dat$obs_event,
                          surv_nlambda = 5, cure_nlambda = 5,
                          surv_alpha = 0.8, cure_alpha = 0.8)
 
-## summary of BIC's
-BIC(fit1)
-
 ## model-fitting from given model formula
 fm <- paste(paste0("x", seq_len(p)), collapse = " + ")
 surv_fm <- as.formula(sprintf("~ \%s", fm))
@@ -258,10 +255,15 @@ cure_fm <- surv_fm
 fit2 <- cox_cure_net(surv_fm, cure_fm, data = dat,
                      time = obs_time, event = obs_event,
                      surv_nlambda = 5, cure_nlambda = 5,
-                     surv_alpha = 0.8, cure_alpha = 0.8)
+                     surv_alpha = 0.5, cure_alpha = 0.5)
 
 ## summary of BIC's
+BIC(fit1)
 BIC(fit2)
+
+## list of coefficient estimates based on BIC
+coef(fit1)
+coef(fit2)
 
 
 ### regularized Cox cure model with uncertain event status ===========
@@ -283,9 +285,6 @@ fit1 <- cox_cure_net.fit(x_mat, x_mat, dat$obs_time, dat$obs_event,
                          surv_nlambda = 5, cure_nlambda = 5,
                          surv_alpha = 0.8, cure_alpha = 0.8)
 
-## summary of BIC's
-BIC(fit1)
-
 ## model-fitting from given model formula
 fm <- paste(paste0("x", seq_len(p)), collapse = " + ")
 surv_fm <- as.formula(sprintf("~ \%s", fm))
@@ -293,10 +292,15 @@ cure_fm <- surv_fm
 fit2 <- cox_cure_net(surv_fm, cure_fm, data = dat,
                      time = obs_time, event = obs_event,
                      surv_nlambda = 5, cure_nlambda = 5,
-                     surv_alpha = 0.8, cure_alpha = 0.8)
+                     surv_alpha = 0.5, cure_alpha = 0.5)
 
 ## summary of BIC's
+BIC(fit1)
 BIC(fit2)
+
+## list of coefficient estimates based on BIC
+coef(fit1)
+coef(fit2)
 }
 \references{
 Kuk, A. Y. C., & Chen, C. (1992). A mixture model combining logistic

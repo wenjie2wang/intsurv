@@ -5,17 +5,36 @@
 \alias{coef.cox_cure_uncer}
 \title{Estimated Covariate Coefficients}
 \usage{
-\method{coef}{cox_cure}(object, ...)
+\method{coef}{cox_cure}(object, part = c("both", "survival", "cure"),
+  ...)
 
-\method{coef}{cox_cure_uncer}(object, ...)
+\method{coef}{cox_cure_uncer}(object, part = c("both", "survival",
+  "cure"), ...)
 }
 \arguments{
 \item{object}{Object representing a fitted model.}
 
+\item{part}{A character string specifying the coefficient estimates from a
+particular model part.  The available options are \code{"both"} for the
+coefficient estimates from both model parts, \code{"survival"} for the
+coefficient estimates from the survival model part, and \code{"cure"}
+for the coefficient estimates from the cure rate model part.  The
+default option is \code{"all"}.}
+
 \item{...}{Other arguments for future usage.}
 }
 \value{
-A named numeric vector.
+If \code{part = "both"}, this function returns a list that consists
+    of the following named elements \itemize{
+
+\item \code{surv}: the coefficient estimates of survival model part.
+
+\item \code{cure}: the coefficient estimates of cure rate model part.
+
+}
+
+Otherwise, a named numberic vector representing the coefficient estimates of
+the specified model part will be returned.
 }
 \description{
 Extract the covariate coefficient estimates from a fitted Cox cure rate

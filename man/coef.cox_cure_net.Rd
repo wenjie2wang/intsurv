@@ -2,25 +2,49 @@
 % Please edit documentation in R/coef.R
 \name{coef.cox_cure_net}
 \alias{coef.cox_cure_net}
+\alias{coef.cox_cure_net_uncer}
 \title{Estimated Covariate Coefficients}
 \usage{
-\method{coef}{cox_cure_net}(object, selection = c("bic", "none"), ...)
+\method{coef}{cox_cure_net}(object, naive_en = FALSE,
+  selection = c("bic1", "bic2", "all"), ...)
+
+\method{coef}{cox_cure_net_uncer}(object, naive_en = FALSE,
+  selection = c("bic1", "bic2", "all"), ...)
 }
 \arguments{
 \item{object}{Object representing a fitted model.}
 
+\item{naive_en}{A logical value specifying whether to return naive elastic
+net estimates.  If \code{FALSE} by default, the elastic net estimates
+will be returned instead of the naive elastic net estimates.}
+
 \item{selection}{A character string for specifying the criterion for
 selection of coefficient estimates.  The available options are
-\code{"bic"} for selecting coefficient estimates based on BIC criterion
-and \code{"none"} for not performing selection and returning the whole
-solution path.}
+\code{"bic1"} for selecting coefficient estimates by regular BIC
+criterion based on the number of observations, \code{"bic2"} for a
+variant BIC criterion based on the effective sample size, and
+\code{"all"} for returning the whole solution path.  See
+\code{\link{BIC.cox_cure_net}} for details of selection by BIC.}
 
 \item{...}{Other arguments for future usage.}
 }
 \value{
-A named numeric vector.
+A list that consists of the following named elements:
+\itemize{
+
+\item \code{surv}: the selected coefficient estimates of survival model
+    part.
+
+\item \code{cure}: the selected coefficient estimates of cure rate model
+    part.
+
+}
 }
 \description{
 Extract the covariate coefficient estimates from a fitted Cox cure rate
 model.
+}
+\examples{
+## see examples of function `cox_cure_net`
+
 }
