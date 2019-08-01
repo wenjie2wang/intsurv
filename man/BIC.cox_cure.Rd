@@ -7,8 +7,7 @@
 \usage{
 \method{BIC}{cox_cure}(object, ..., method = c("obs", "effective"))
 
-\method{BIC}{cox_cure_uncer}(object, ..., method = c("obs",
-  "certain-event"))
+\method{BIC}{cox_cure_uncer}(object, ..., method = c("obs", "certain-event"))
 }
 \arguments{
 \item{object}{An object for a fitted model.}
