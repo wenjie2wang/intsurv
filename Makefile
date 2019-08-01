@@ -31,11 +31,14 @@ $(tar): $(objects)
 	R CMD build .
 
 $(checkLog): $(tar)
-# R CMD check --as-cran $(tar)
-	R CMD check $(tar)
+	R CMD check --as-cran $(tar)
 
 # $(vignettes): $(rmd)
 #	Rscript -e "rmarkdown::render('$(rmd)')"
+
+.PHONY: pkgdown
+pkgdown:
+	@Rscript -e "library(methods); pkgdown::build_site();"
 
 
 ## update copyright year in HEADER, R script and date in DESCRIPTION
