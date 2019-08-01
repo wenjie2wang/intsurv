@@ -15,9 +15,11 @@
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 ##
 
+
 ## collation after class.R
 ##' @include class.R
 NULL
+
 
 ##' Summary of a Fitted Model
 ##'
@@ -59,3 +61,89 @@ setMethod(
             logL = object@logL[len_logL])
     }
 )
+
+
+##' Summary of a Fitted Model
+##'
+##' Summarize a fitted Cox cure rate model with possible uncertain event status.
+##'
+##' @param object Object representing a fitted model.
+##' @param ... Other arguments for future usage.  A warning will be thrown if
+##'     any invalid argument is specified.
+##'
+##' @method summary cox_cure
+##' @importFrom stats pnorm
+##' @export
+summary.cox_cure <- function(object, ...)
+{
+    warn_dots()
+    ## function summarizing coef matrix
+    get_coef_mat <- function(object, part = c("surv", "cure"), ...) {
+        part <- match.arg(part)
+        coef_name <- sprintf("%s_coef", part)
+        se_name <- sprintf("%s_coef_se", part)
+        mat <- matrix(NA, nrow = length(object[[coef_name]]), ncol = 5L)
+        colnames(mat) <- c("coef", "exp(coef)", "se(coef)", "z", "Pr(>|z|)")
+        rownames(mat) <- names(object[[coef_name]])
+        mat[, "coef"] <- object[[coef_name]]
+        mat[, "exp(coef)"] <- exp(mat[, "coef"])
+        mat[, "se(coef)"] <- if (is.null(object$bootstrap[[se_name]])) {
+                                 NA_real_
+                             } else {
+                                 object$bootstrap[[se_name]]
+                             }
+        mat[, "z"] <- mat[, "coef"] / mat[, "se(coef)"]
+        mat[, "Pr(>|z|)"] <- 2 * stats::pnorm(- abs(mat[, "z"]))
+        ## return
+        mat
+    }
+    ## return
+    structure(
+        list(
+            surv_coef_mat = get_coef_mat(object, "surv"),
+            cure_coef_mat = get_coef_mat(object, "cure"),
+            model = object$model,
+            call = object$call
+        ),
+        class = "summary_cox_cure"
+    )
+}
+
+
+##' @rdname summary.cox_cure
+##' @method summary cox_cure_uncer
+##' @export
+summary.cox_cure_uncer <- function(object, ...)
+{
+    warn_dots()
+    ## function summarizing coef matrix
+    get_coef_mat <- function(object, part = c("surv", "cure"), ...) {
+        part <- match.arg(part)
+        coef_name <- sprintf("%s_coef", part)
+        se_name <- sprintf("%s_coef_se", part)
+        mat <- matrix(NA, nrow = length(object[[coef_name]]), ncol = 5L)
+        colnames(mat) <- c("coef", "exp(coef)", "se(coef)", "z", "Pr(>|z|)")
+        rownames(mat) <- names(object[[coef_name]])
+        mat[, "coef"] <- object[[coef_name]]
+        mat[, "exp(coef)"] <- exp(mat[, "coef"])
+        mat[, "se(coef)"] <- if (is.null(object$bootstrap[[se_name]])) {
+                                 NA_real_
+                             } else {
+                                 object$bootstrap[[se_name]]
+                             }
+        mat[, "z"] <- mat[, "coef"] / mat[, "se(coef)"]
+        mat[, "Pr(>|z|)"] <- 2 * stats::pnorm(- abs(mat[, "z"]))
+        ## return
+        mat
+    }
+    ## return
+    structure(
+        list(
+            surv_coef_mat = get_coef_mat(object, "surv"),
+            cure_coef_mat = get_coef_mat(object, "cure"),
+            model = object$model,
+            call = object$call
+        ),
+        class = "summary_cox_cure_uncer"
+    )
+}

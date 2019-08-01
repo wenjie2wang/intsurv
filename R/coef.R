@@ -52,25 +52,48 @@ setMethod(
 ##' model with possible uncertain event status.
 ##'
 ##' @param object Object representing a fitted model.
+##' @param part A character string specifying the coefficient estimates from a
+##'     particular model part.  The available options are \code{"both"} for the
+##'     coefficient estimates from both model parts, \code{"survival"} for the
+##'     coefficient estimates from the survival model part, and \code{"cure"}
+##'     for the coefficient estimates from the cure rate model part.  The
+##'     default option is \code{"all"}.
 ##' @param ... Other arguments for future usage.
 ##'
-##' @return A named numeric vector.
+##' @return If \code{part = "both"}, this function returns a list that consists
+##'     of the following named elements \itemize{
+##'
+##' \item \code{surv}: the coefficient estimates of survival model part.
+##'
+##' \item \code{cure}: the coefficient estimates of cure rate model part.
+##'
+##' }
+##'
+##' Otherwise, a named numberic vector representing the coefficient estimates of
+##' the specified model part will be returned.
+##'
 ##' @importFrom stats coef
 ##' @method coef cox_cure
 ##' @export
-coef.cox_cure <- function(object, ...)
+coef.cox_cure <- function(object, part = c("both", "survival", "cure"), ...)
 {
-    object$coef
+    part <- match.arg(part)
+    if (part != "both") {
+        coef_name <- sprintf(
+            "%s_coef", switch(part, "survival" = "surv", "cure" = "cure")
+        )
+        return(object[[coef_name]])
+    }
+    ## else return both
+    list(surv = object$surv_coef,
+         cure = object$cure_coef)
 }
 
 
 ##' @rdname coef.cox_cure
 ##' @method coef cox_cure_uncer
 ##' @export
-coef.cox_cure_uncer <- function(object, ...)
-{
-    object$coef
-}
+coef.cox_cure_uncer <- coef.cox_cure
 
 
 ##' Estimated Covariate Coefficients
@@ -78,20 +101,57 @@ coef.cox_cure_uncer <- function(object, ...)
 ##' Extract the covariate coefficient estimates from a fitted Cox cure rate
 ##' model.
 ##'
-##'
 ##' @param object Object representing a fitted model.
+##' @param naive_en A logical value specifying whether to return naive elastic
+##'     net estimates.  If \code{FALSE} by default, the elastic net estimates
+##'     will be returned instead of the naive elastic net estimates.
 ##' @param selection A character string for specifying the criterion for
 ##'     selection of coefficient estimates.  The available options are
-##'     \code{"bic"} for selecting coefficient estimates based on BIC criterion
-##'     and \code{"none"} for not performing selection and returning the whole
-##'     solution path.
+##'     \code{"bic1"} for selecting coefficient estimates by regular BIC
+##'     criterion based on the number of observations, \code{"bic2"} for a
+##'     variant BIC criterion based on the effective sample size, and
+##'     \code{"all"} for returning the whole solution path.  See
+##'     \code{\link{BIC.cox_cure_net}} for details of selection by BIC.
 ##' @param ... Other arguments for future usage.
 ##'
-##' @return A named numeric vector.
+##' @return A list that consists of the following named elements:
+##' \itemize{
+##'
+##' \item \code{surv}: the selected coefficient estimates of survival model
+##'     part.
+##'
+##' \item \code{cure}: the selected coefficient estimates of cure rate model
+##'     part.
+##'
+##' }
+##'
+##' @examples
+##' ## see examples of function `cox_cure_net`
+##'
 ##' @importFrom stats coef
 ##' @method coef cox_cure_net
 ##' @export
-coef.cox_cure_net <- function(object, selection = c("bic", "none"), ...)
+coef.cox_cure_net <- function(object, naive_en = FALSE,
+                              selection = c("bic1", "bic2", "all"), ...)
 {
-    object$coef[, which.min(object$model$bic)]
+    bic <- match.arg(selection)
+    surv_coef_name <- paste0("surv_", ifelse(naive_en, "", "en_"), "coef")
+    cure_coef_name <- paste0("cure_", ifelse(naive_en, "", "en_"), "coef")
+    if (bic != "all") {
+        idx <- which.min(object$model[[bic]])
+        out <- list(surv = object[[surv_coef_name]][idx, ],
+                    cure = object[[cure_coef_name]][idx, ])
+    } else {
+        out <- list(surv = object[[surv_coef_name]],
+                    cure = object[[cure_coef_name]])
+    }
+    ## return
+    out
 }
+
+
+##' @rdname coef.cox_cure_net
+##' @importFrom stats coef
+##' @method coef cox_cure_net_uncer
+##' @export
+coef.cox_cure_net_uncer <- coef.cox_cure_net

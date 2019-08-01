@@ -18,45 +18,93 @@
 
 ##' @method print cox_cure
 ##' @export
-print.cox_cure <- function(x, ...) {
+print.cox_cure <- function(x, ...)
+{
     ## function call
     cat("Call:\n", paste(deparse(x$call), sep = "\n", collapse = "\n"),
         "\n", sep = "")
+    ## get the coef matrix
+    obj <- summary.cox_cure(x)
     ## survival part
-    surv_mat <- matrix(NA, nrow = length(x$surv_coef), ncol = 5L)
-    colnames(surv_mat) <- c("coef", "exp(coef)", "se(coef)", "z", "Pr(>|z|)")
-    rownames(surv_mat) <- names(x$surv_coef)
-    surv_mat[, "coef"] <- x$surv_coef
-    surv_mat[, "exp(coef)"] <- exp(surv_mat[, "coef"])
-    surv_mat[, "se(coef)"] <-
-        if (is.null(x$bootstrap$surv_coef_se)) {
-            NA_real_
-        } else {
-            x$bootstrap$surv_coef_se
-        }
-    surv_mat[, "z"] <- surv_mat[, "coef"] / surv_mat[, "se(coef)"]
-    surv_mat[, "Pr(>|z|)"] <- 2 * stats::pnorm(- abs(surv_mat[, "z"]))
     cat("\nCoefficient estimates from the survival part:\n\n")
-    printCoefmat(surv_mat)
+    printCoefmat(obj$surv_coef_mat)
     ## cure rate part
-    cure_mat <- matrix(NA, nrow = length(x$cure_coef), ncol = 5L)
-    colnames(cure_mat) <- c("coef", "exp(coef)", "se(coef)", "z", "Pr(>|z|)")
-    rownames(cure_mat) <- names(x$cure_coef)
-    cure_mat[, "coef"] <- x$cure_coef
-    cure_mat[, "exp(coef)"] <- exp(cure_mat[, "coef"])
-    cure_mat[, "se(coef)"] <-
-        if (is.null(x$bootstrap$cure_coef_se)) {
-            NA_real_
-        } else {
-            x$bootstrap$cure_coef_se
-        }
-    cure_mat[, "z"] <- cure_mat[, "coef"] / cure_mat[, "se(coef)"]
-    cure_mat[, "Pr(>|z|)"] <- 2 * stats::pnorm(- abs(cure_mat[, "z"]))
     cat("\nCoefficient estimates from the cure rate part:\n\n")
-    printCoefmat(cure_mat)
+    printCoefmat(obj$cure_coef_mat)
     ## return
     invisible(x)
 }
 
-## for cox_cure_uncer
-print.cox_cure_uncer <- print.cox_cure
+
+##' @method print cox_cure_uncer
+##' @export
+print.cox_cure_uncer <- function(x, ...)
+{
+    ## function call
+    cat("Call:\n", paste(deparse(x$call), sep = "\n", collapse = "\n"),
+        "\n", sep = "")
+    ## get the coef matrix
+    obj <- summary.cox_cure_uncer(x)
+    ## survival part
+    cat("\nCoefficient estimates from the survival part:\n\n")
+    printCoefmat(obj$surv_coef_mat)
+    ## cure rate part
+    cat("\nCoefficient estimates from the cure rate part:\n\n")
+    printCoefmat(obj$cure_coef_mat)
+    ## return
+    invisible(x)
+}
+
+
+##' @method print summary_cox_cure
+##' @export
+print.summary_cox_cure <- function(x, ...)
+{
+    ## function call
+    cat("Call:\n", paste(deparse(x$call), sep = "\n", collapse = "\n"),
+        "\n", sep = "")
+    ## survival coef
+    cat("\nCoefficient estimates from the survival part:\n\n")
+    printCoefmat(x$surv_coef_mat)
+    ## cure coef
+    cat("\nCoefficient estimates from the cure rate part:\n\n")
+    printCoefmat(x$cure_coef_mat)
+    ## misc
+    cat(sprintf("\nNumber of observations: %d\n", x$model$nObs))
+    cat(sprintf("Number of events: %d\n", x$model$nEvent))
+    cat(sprintf("Weighted concordance index: %2.2f%s\n",
+                100 * x$model$c_index, "%"))
+    cat(sprintf("Observed data log-likelihood: %.3f\n",
+                - x$model$negLogL))
+    ## return
+    invisible(x)
+}
+
+
+## TODO: customize more for cox_cure_uncer
+##' @method print summary_cox_cure_uncer
+##' @export
+print.summary_cox_cure_uncer <- print.summary_cox_cure
+
+
+##' @method print cox_cure_net
+##' @export
+print.cox_cure_net <- function(x, ...)
+{
+    ## function call
+    cat("Call:\n", paste(deparse(x$call), sep = "\n", collapse = "\n"),
+        "\n\n", sep = "")
+    bic_dat <- BIC.cox_cure_net(x)
+    digits <- max(3, getOption("digits") - 3)
+    lambda_dat <- as.data.frame(signif(x$penalty$lambda_mat, digits))
+    colnames(lambda_dat) <- c("surv_l1", "surv_l2", "cure_l1", "cure_l2")
+    print_dat <- cbind(bic_dat, lambda_dat)
+    print(print_dat)
+    ## return nothing
+    invisible(NULL)
+}
+
+
+##' @method print cox_cure_net_uncer
+##' @export
+print.cox_cure_net_uncer <- print.cox_cure_net
