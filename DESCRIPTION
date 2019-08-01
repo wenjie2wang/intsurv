@@ -1,6 +1,6 @@
 Package: intsurv
 Title: Integrative Survival Modeling
-Version: 0.2.0.9021
+Version: 0.2.0
 Date: 2019-08-01
 Authors@R: c(
     person(given = "Wenjie", family = "Wang",
@@ -14,9 +14,9 @@ Authors@R: c(
     )
 Description: Contains implementations of
     1) integrative Cox model with uncertain event times,
-    2) Cox cure model with uncertain event status,
+    2) Cox cure rate model with uncertain event status,
     and other survival analysis routines, including
-    Cox cure rate model, regularized Cox cure rate model
+    regular Cox cure rate model, regularized Cox cure rate model
     with elastic net penalty, and weighted concordance index.
 Depends:
     R (>= 3.2.3)
