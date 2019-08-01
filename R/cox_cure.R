@@ -147,8 +147,8 @@
 ##' Sy, J. P., & Taylor, J. M. (2000). Estimation in a Cox proportional hazards
 ##' cure model. \emph{Biometrics}, 56(1), 227--236.
 ##'
-##' Wang, W., Aseltine, R., Chen, K., Luo, C., & Yan, J. (2019+). Cox Cure Model
-##' with Uncertain Event Status with application to a Suicide Risk
+##' Wang, W., Chen, K., Luo, C., & Yan, J. (2019+). Cox Cure Model with
+##' Uncertain Event Status with application to a Suicide Risk
 ##' Study. \emph{Working in Progress}.
 ##'
 ##' @seealso

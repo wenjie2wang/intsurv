@@ -79,8 +79,8 @@
 ##'
 ##' @references
 ##'
-##' Wang, W., Aseltine, R., Chen, K., Luo, C., & Yan, J. (2019+). Cox Cure Model
-##' with Uncertain Event Status with application to a Suicide Risk
+##' Wang, W., Chen, K., Luo, C., & Yan, J. (2019+). Cox Cure Model with
+##' Uncertain Event Status with application to a Suicide Risk
 ##' Study. \emph{Working in Progress}.
 ##'
 ##' @examples

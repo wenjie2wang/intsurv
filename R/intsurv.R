@@ -33,8 +33,8 @@
 ##' Analysis with Uncertain Event Times in Application to a Suicide Risk
 ##' Study. \emph{Annals of Applied Statistics}. (in press)
 ##'
-##' Wang, W., Aseltine, R., Chen, K., Luo, C., & Yan, J. (2019+). Cox Cure Model
-##' with Uncertain Event Status with application to a Suicide Risk
+##' Wang, W., Chen, K., Luo, C., & Yan, J. (2019+). Cox Cure Model with
+##' Uncertain Event Status with application to a Suicide Risk
 ##' Study. \emph{Working in Progress}.
 ##'
 ##' @importFrom Rcpp sourceCpp
