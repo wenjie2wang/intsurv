@@ -51,6 +51,7 @@ namespace Intsurv {
         unsigned int coef_df;     // degree of freedom of coef estimates
         double negLogL;           // negative log-likelihood
         unsigned int nObs;        // number of observations
+        unsigned int nEvent;      // number of certain events
         unsigned int num_iter;    // number of iterations
         // BIC: log(num_obs) * coef_df + 2 * negLogL
         double bic1;
@@ -124,6 +125,7 @@ namespace Intsurv {
             arma::vec s_event { event0na.elem(cox_sort_ind) };
             this->case1_ind = arma::find(s_event > const4na);
             this->case2_ind = arma::find(s_event < const4na);
+            this->nEvent = case1_ind.n_elem;
             this->cer_ind = vec_union(case1_ind, case2_ind);
             this->case3_ind = arma::find(s_event == const4na);
             this->max_event_time_ind = arma::max(this->case1_ind);

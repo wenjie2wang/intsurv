@@ -116,6 +116,7 @@ Rcpp::List rcpp_coxph_cure(
             ),
         Rcpp::Named("model") = Rcpp::List::create(
             Rcpp::Named("nObs") = obj.nObs,
+            Rcpp::Named("nEvent") = obj.nEvent,
             Rcpp::Named("coef_df") = obj.coef_df,
             Rcpp::Named("negLogL") = obj.negLogL,
             Rcpp::Named("c_index") = obj.c_index,
@@ -204,6 +205,7 @@ Rcpp::List rcpp_coxph_cure_reg(
             ),
         Rcpp::Named("model") = Rcpp::List::create(
             Rcpp::Named("nObs") = obj.nObs,
+            Rcpp::Named("nEvent") = obj.nEvent,
             Rcpp::Named("coef_df") = obj.coef_df,
             Rcpp::Named("negLogL") = obj.negLogL,
             Rcpp::Named("c_index") = obj.c_index,
@@ -392,6 +394,7 @@ Rcpp::List rcpp_coxph_cure_vs(
         Rcpp::Named("cure_en_coef") = cure_en_coef_mat.t(),
         Rcpp::Named("model") = Rcpp::List::create(
             Rcpp::Named("nObs") = obj.nObs,
+            Rcpp::Named("nEvent") = obj.nEvent,
             Rcpp::Named("coef_df") = Intsurv::arma2rvec(coef_df),
             Rcpp::Named("negLogL") = Intsurv::arma2rvec(negLogL),
             Rcpp::Named("bic1") = Intsurv::arma2rvec(bic1),

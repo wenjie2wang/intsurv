@@ -45,6 +45,7 @@ namespace Intsurv {
         unsigned int coef_df;     // degree of freedom of coef estimates
         double negLogL;           // negative log-likelihood
         unsigned int nObs;        // number of observations
+        unsigned int nEvent;      // number of events
         unsigned int num_iter;    // number of iterations
         double bic1;              // BIC: log(num_obs) * coef_df + 2 * negLogL
         double bic2;              // BIC: log(num_event) * coef_df + 2 * negLogL
@@ -103,6 +104,7 @@ namespace Intsurv {
             arma::vec s_event { event.elem(cox_sort_ind) };
             this->case1_ind = arma::find(s_event > 0);
             this->case2_ind = arma::find(s_event < 1);
+            this->nEvent = this->case1_ind.n_elem;
             this->max_event_time_ind = arma::max(this->case1_ind);
             // create the LogisticReg object
             this->cure_obj = LogisticReg(cure_xx, s_event, cure_intercept,

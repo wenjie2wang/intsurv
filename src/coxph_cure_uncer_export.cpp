@@ -128,6 +128,7 @@ Rcpp::List coxph_cure_uncer(
             ),
         Rcpp::Named("model") = Rcpp::List::create(
             Rcpp::Named("nObs") = obj.nObs,
+            Rcpp::Named("nEvent") = obj.nEvent,
             Rcpp::Named("coef_df") = obj.coef_df,
             Rcpp::Named("negLogL") = obj.negLogL,
             Rcpp::Named("c_index") = obj.c_index,
@@ -225,6 +226,7 @@ Rcpp::List coxph_cure_uncer_reg(
             ),
         Rcpp::Named("model") = Rcpp::List::create(
             Rcpp::Named("nObs") = obj.nObs,
+            Rcpp::Named("nEvent") = obj.nEvent,
             Rcpp::Named("coef_df") = obj.coef_df,
             Rcpp::Named("negLogL") = obj.negLogL,
             Rcpp::Named("c_index") = obj.c_index,
@@ -237,7 +239,6 @@ Rcpp::List coxph_cure_uncer_reg(
             Rcpp::Named("cox_l2_lambda") = obj.cox_l2_lambda,
             Rcpp::Named("cox_l1_penalty_factor") =
             Intsurv::arma2rvec(obj.cox_l1_penalty_factor),
-
             Rcpp::Named("cure_l1_lambda_max") = obj.cure_l1_lambda_max,
             Rcpp::Named("cure_l1_lambda") = obj.cure_l1_lambda,
             Rcpp::Named("cure_l2_lambda") = obj.cure_l2_lambda,
@@ -420,6 +421,7 @@ Rcpp::List coxph_cure_uncer_vs(
         Rcpp::Named("cure_en_coef") = cure_en_coef_mat.t(),
         Rcpp::Named("model") = Rcpp::List::create(
             Rcpp::Named("nObs") = obj.nObs,
+            Rcpp::Named("nEvent") = obj.nEvent,
             Rcpp::Named("coef_df") = Intsurv::arma2rvec(coef_df),
             Rcpp::Named("negLogL") = Intsurv::arma2rvec(negLogL),
             Rcpp::Named("bic1") = Intsurv::arma2rvec(bic1),
