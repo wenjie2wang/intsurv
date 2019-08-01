@@ -77,9 +77,13 @@ cIndex <- function(time, event = NULL, risk_score, weight = NULL)
 {
     if (is.null(weight)) {
         weight <- 1
+    } else if (anyNA(weight)) {
+        stop("Found NA's in 'weight'.")
     }
     if (is.null(event)) {
         event <- 1
+    } else if (anyNA(event)) {
+        stop("Found NA's in 'event'.")
     } else if (! any(event > 0)) {
         stop("No compariable pairs can be found")
     }
