@@ -2,19 +2,41 @@
 % Please edit documentation in R/assessment.R
 \name{BIC.cox_cure_net}
 \alias{BIC.cox_cure_net}
+\alias{BIC.cox_cure_net_uncer}
 \title{Bayesian Information Criterion (BIC)}
 \usage{
-\method{BIC}{cox_cure_net}(object, ...)
+\method{BIC}{cox_cure_net}(object, ..., method = c("obs", "effective"))
+
+\method{BIC}{cox_cure_net_uncer}(object, ..., method = c("obs",
+  "certain-event"))
 }
 \arguments{
 \item{object}{An object for a fitted model.}
 
-\item{...}{Other arguments for future usage.}
+\item{...}{Other arguments for future usage.  A warning message will be
+thrown for any invalid argument.}
+
+\item{method}{A character string specifying the method for computing the BIC
+values.  Notice that this argument is placed after \code{...} and thus
+must be specified as a named argument.  The available options for
+\code{cox_cure} objects are \code{"obs"} for regular BIC based on the
+number of observations, and \code{"effective"} for using BIC based on
+the number of effective sample size for censored data (number of
+uncensored events) proposed by Volinsky and Raftery (2000).  The
+available options for \code{cox_cure_uncer} objects are \code{"obs"} for
+regular BIC based on the number of observations, and
+\code{"certain-event"} for a variant of BIC based on the number of
+certain uncensored events.  For objects of either class, the former
+method is used by default.}
 }
 \description{
 Compute Bayesian information criterion (BIC) or Schwarz's Bayesian criterion
-(SBC) from a fitted model.
+(SBC) from a fitted solution path.
 }
 \examples{
 ## See examples of function 'cox_cure_net'.
+}
+\references{
+Volinsky, C. T., & Raftery, A. E. (2000). Bayesian information criterion for
+censored survival models. Biometrics, 56(1), 256--262.
 }

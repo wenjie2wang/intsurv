@@ -2,7 +2,8 @@
 % Please edit documentation in R/cox_cure.R
 \name{cox_cure}
 \alias{cox_cure}
-\title{Fit Cox Cure Rate Model}
+\alias{cox_cure.fit}
+\title{Cox Cure Rate Model}
 \usage{
 cox_cure(surv_formula, cure_formula,
          time, event, data, subset, contrasts = NULL,
@@ -10,9 +11,19 @@ cox_cure(surv_formula, cure_formula,
          em_max_iter = 200, em_rel_tol = 1e-5,
          surv_max_iter = 200, surv_rel_tol = 1e-5,
          cure_max_iter = 200, cure_rel_tol = 1e-5,
-         tail_completion = c("zero", "exp", "zero-after-tau"),
+         tail_completion = c("zero", "exp", "zero-tau"),
          tail_tau = NULL, pmin = 1e-5, early_stop = TRUE,
          verbose = FALSE, ...)
+
+cox_cure.fit(surv_x, cure_x, time, event, cure_intercept = TRUE,
+             bootstrap = 0, firth = FALSE, surv_start, cure_start,
+             surv_standardize = TRUE, cure_standardize = TRUE,
+             em_max_iter = 200, em_rel_tol = 1e-5,
+             surv_max_iter = 200, surv_rel_tol = 1e-5,
+             cure_max_iter = 200, cure_rel_tol = 1e-5,
+             tail_completion = c("zero", "exp", "zero-tau"),
+             tail_tau = NULL, pmin = 1e-5, early_stop = TRUE,
+             verbose = FALSE, ...)
 }
 \arguments{
 \item{surv_formula}{A formula object starting with \code{~} for the model
@@ -105,13 +116,13 @@ their difference to the sum of their L1-norm.  The default value is
 method for conditional survival function.  The available methods are
 \code{"zero"} for zero-tail completion after the largest event times (Sy
 and Taylor, 2000), \code{"exp"} for exponential-tail completion (Peng,
-2003), and \code{"zero-after-tau"} for zero-tail completion after a
+2003), and \code{"zero-tau"} for zero-tail completion after a
 specified \code{tail_tau}.  The default method is the zero-tail
 completion proposed by Sy and Taylor (2000).}
 
 \item{tail_tau}{A numeric number specifying the time of zero-tail
 completion.  It will be used only if \code{tail_completion =
-"zero-after-tau"}.  A reasonable choice must be a time point between the
+"zero-tau"}.  A reasonable choice must be a time point between the
 largest event time and the largest survival time.}
 
 \item{pmin}{A numeric number specifying the minimum value of probabilities
@@ -128,6 +139,29 @@ value is \code{FALSE}.}
 
 \item{...}{Other arguments for future usage.  A warning will be thrown if
 any invalid argument is specified.}
+
+\item{surv_x}{A numeric matrix for the design matrix of the survival model
+component.}
+
+\item{cure_x}{A numeric matrix for the design matrix of the cure rate model
+component.  The design matrix should exclude an intercept term unless we
+want to fit a model only including the intercept term.  In that case, we
+need further set \code{cure_intercept = FALSE} to not standardize the
+intercept term.}
+
+\item{cure_intercept}{A logical value specifying whether to add an intercept
+term to the cure rate model component.  If \code{TRUE} by default, an
+intercept term is included.}
+
+\item{surv_standardize}{A logicial value specifying whether to standardize
+the covariates for the survival model part.  If \code{FALSE}, the
+covariates will be standardized internally to have mean zero and
+standard deviation one.}
+
+\item{cure_standardize}{A logicial value specifying whether to standardize
+the covariates for the cure rate model part.  If \code{TRUE} (by
+default), the covariates will be standardized internally to have mean
+zero and standard deviation one.}
 }
 \value{
 \code{cox_cure} object for regular Cox cure rate model or
@@ -135,9 +169,9 @@ any invalid argument is specified.}
 }
 \description{
 For right-censored data, fit a regular Cox cure rate model (Kuk and Chen,
-1992; Sy and Taylor, 2000) data via an EM algorithm.  For right-censored
-data with uncertain event status, fit an extended Cox cure model proposed by
-Wang et al. (2019+).
+1992; Sy and Taylor, 2000) via an EM algorithm.  For right-censored data
+with uncertain event status, fit the Cox cure model proposed by Wang et
+al. (2019+).
 }
 \examples{
 library(intsurv)
@@ -227,7 +261,6 @@ with Uncertain Event Status with application to a Suicide Risk
 Study. \emph{Working in Progress}.
 }
 \seealso{
-\code{\link{cox_cure.fit}} for fitting Cox cure rate model for given design
-matrices; \code{\link{cox_cure_net}} for regularized Cox cure rate model
-with elastic-net penalty.
+\code{\link{cox_cure_net}} for regularized Cox cure rate model with
+elastic-net penalty.
 }

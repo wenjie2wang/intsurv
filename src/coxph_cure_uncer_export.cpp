@@ -414,9 +414,9 @@ Rcpp::List coxph_cure_uncer_vs(
     }
     // return results in a list
     return Rcpp::List::create(
-        Rcpp::Named("cox_coef") = cox_coef_mat.t(),
+        Rcpp::Named("surv_coef") = cox_coef_mat.t(),
         Rcpp::Named("cure_coef") = cure_coef_mat.t(),
-        Rcpp::Named("cox_en_coef") = cox_en_coef_mat.t(),
+        Rcpp::Named("surv_en_coef") = cox_en_coef_mat.t(),
         Rcpp::Named("cure_en_coef") = cure_en_coef_mat.t(),
         Rcpp::Named("model") = Rcpp::List::create(
             Rcpp::Named("nObs") = obj.nObs,
@@ -427,11 +427,11 @@ Rcpp::List coxph_cure_uncer_vs(
             ),
         Rcpp::Named("penalty") = Rcpp::List::create(
             Rcpp::Named("lambda_mat") = lambda_mat,
-            Rcpp::Named("cox_alpha") = cox_alpha,
+            Rcpp::Named("surv_alpha") = cox_alpha,
             Rcpp::Named("cure_alpha") = cure_alpha,
-            Rcpp::Named("cox_l1_lambda_max") = obj.cox_l1_lambda_max,
+            Rcpp::Named("surv_l1_lambda_max") = obj.cox_l1_lambda_max,
             Rcpp::Named("cure_l1_lambda_max") = obj.cure_l1_lambda_max,
-            Rcpp::Named("cox_l1_penalty_factor") =
+            Rcpp::Named("surv_l1_penalty_factor") =
             Intsurv::arma2rvec(obj.cox_l1_penalty_factor),
             Rcpp::Named("cure_l1_penalty_factor") =
             Intsurv::arma2rvec(obj.cure_l1_penalty_factor)

@@ -2,9 +2,12 @@
 % Please edit documentation in R/coef.R
 \name{coef.cox_cure}
 \alias{coef.cox_cure}
+\alias{coef.cox_cure_uncer}
 \title{Estimated Covariate Coefficients}
 \usage{
 \method{coef}{cox_cure}(object, ...)
+
+\method{coef}{cox_cure_uncer}(object, ...)
 }
 \arguments{
 \item{object}{Object representing a fitted model.}
@@ -16,5 +19,5 @@ A named numeric vector.
 }
 \description{
 Extract the covariate coefficient estimates from a fitted Cox cure rate
-model.
+model with possible uncertain event status.
 }

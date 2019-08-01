@@ -38,6 +38,9 @@ NULL
 ##' comparable pair satisfying \eqn{t_i<t_j,\delta_i=1}, we count 0.5 in the
 ##' numerator of the concordance index for tied risk scores (\eqn{r_i=r_j}).
 ##'
+##' @usage
+##' cIndex(time, event = NULL, risk_score, weight = NULL)
+##'
 ##' @param time A numeric vector for observed times
 ##' @param event A numeric vector for event indicators.  If it is \code{NULL}
 ##'     (by default) or \code{NA}, \code{event} will be treated all as ones and
@@ -91,12 +94,18 @@ cIndex <- function(time, event = NULL, risk_score, weight = NULL)
 ##'
 ##' @param object An object for a fitted model.
 ##' @param method A character string specifying the method for computing the BIC
-##'     values.  The available options are \code{"obs"} for regular BIC based on
-##'     the number of observations, and \code{"effective"} for using BIC based
-##'     on the number of effective sample size for censored data (number of
-##'     uncensored events) proposed by Volinsky and Raftery (2000).  The former
-##'     is used by default.
-##' @param ... Other objects.
+##'     values.  Notice that this argument is placed after \code{...} and thus
+##'     must be specified as a named argument.  The available options for
+##'     \code{cox_cure} objects are \code{"obs"} for regular BIC based on the
+##'     number of observations, and \code{"effective"} for using BIC based on
+##'     the number of effective sample size for censored data (number of
+##'     uncensored events) proposed by Volinsky and Raftery (2000).  The
+##'     available options for \code{cox_cure_uncer} objects are \code{"obs"} for
+##'     regular BIC based on the number of observations, and
+##'     \code{"certain-event"} for a variant of BIC based on the number of
+##'     certain uncensored events.  For objects of either class, the former
+##'     method is used by default.
+##' @param ... Other objects of the same class.
 ##'
 ##' @references
 ##'
@@ -130,22 +139,7 @@ BIC.cox_cure <- function(object, ..., method = c("obs", "effective"))
 }
 
 
-##' Bayesian Information Criterion (BIC)
-##'
-##' Compute Bayesian information criterion (BIC) or Schwarz's Bayesian criterion
-##' (SBC) for possibly one or several objects.
-##'
-##' @param object An object for a fitted model.
-##' @param method A character string specifying the method for computing the BIC
-##'     values.  The available options are \code{"obs"} for regular BIC based on
-##'     the number of observations, and \code{"certain-event"} for a variant of
-##'     BIC based on the number of certain uncensored events.  The former is
-##'     used by default.
-##' @param ... Other objects.
-##'
-##' @examples
-##' ## See examples of function 'cox_cure'.
-##' @importFrom stats BIC
+##' @rdname BIC.cox_cure
 ##' @export
 BIC.cox_cure_uncer <- function(object, ..., method = c("obs", "certain-event"))
 {
@@ -173,18 +167,63 @@ BIC.cox_cure_uncer <- function(object, ..., method = c("obs", "certain-event"))
 ##' Bayesian Information Criterion (BIC)
 ##'
 ##' Compute Bayesian information criterion (BIC) or Schwarz's Bayesian criterion
-##' (SBC) from a fitted model.
+##' (SBC) from a fitted solution path.
 ##'
 ##' @param object An object for a fitted model.
-##' @param ... Other arguments for future usage.
+##' @param method A character string specifying the method for computing the BIC
+##'     values.  Notice that this argument is placed after \code{...} and thus
+##'     must be specified as a named argument.  The available options for
+##'     \code{cox_cure} objects are \code{"obs"} for regular BIC based on the
+##'     number of observations, and \code{"effective"} for using BIC based on
+##'     the number of effective sample size for censored data (number of
+##'     uncensored events) proposed by Volinsky and Raftery (2000).  The
+##'     available options for \code{cox_cure_uncer} objects are \code{"obs"} for
+##'     regular BIC based on the number of observations, and
+##'     \code{"certain-event"} for a variant of BIC based on the number of
+##'     certain uncensored events.  For objects of either class, the former
+##'     method is used by default.
+##' @param ... Other arguments for future usage.  A warning message will be
+##'     thrown for any invalid argument.
+##'
+##' @references
+##'
+##' Volinsky, C. T., & Raftery, A. E. (2000). Bayesian information criterion for
+##' censored survival models. Biometrics, 56(1), 256--262.
 ##'
 ##' @examples
 ##' ## See examples of function 'cox_cure_net'.
 ##' @importFrom stats BIC
 ##' @export
-BIC.cox_cure_net <- function(object, ...)
+BIC.cox_cure_net <- function(object, ..., method = c("obs", "effective"))
 {
-    bics <- object$model$bic
+    warn_dots()
+    method <- match.arg(method)
+    bic_name <- switch(method, "obs" = "bic1", "effective" = "bic2")
+    bics <- object$model[[bic_name]]
     dfs <- object$model$coef_df
-    data.frame(df = dfs, BIC = bics)
+    surv_dfs <- apply(object$surv_coef, 1L, function(a) sum(a != 0))
+    cure_dfs <- apply(object$cure_coef, 1L, function(a) sum(a != 0))
+    data.frame(df = dfs,
+               surv_df = surv_dfs,
+               cure_df = cure_dfs,
+               BIC = bics)
+}
+
+
+##' @rdname BIC.cox_cure_net
+##' @export
+BIC.cox_cure_net_uncer <- function(object, ...,
+                                   method = c("obs", "certain-event"))
+{
+    warn_dots()
+    method <- match.arg(method)
+    bic_name <- switch(method, "obs" = "bic1", "certain-event" = "bic2")
+    bics <- object$model[[bic_name]]
+    dfs <- object$model$coef_df
+    surv_dfs <- apply(object$surv_coef, 1L, function(a) sum(a != 0))
+    cure_dfs <- apply(object$cure_coef, 1L, function(a) sum(a != 0))
+    data.frame(df = dfs,
+               surv_df = surv_dfs,
+               cure_df = cure_dfs,
+               BIC = bics)
 }

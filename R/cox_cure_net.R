@@ -16,23 +16,35 @@
 ##
 
 
-##' Cox Cure Rate Model
+##' Regularized Cox Cure Rate Model
 ##'
-##' For right-censored data, fit a regular Cox cure rate model (Kuk and Chen,
-##' 1992; Sy and Taylor, 2000) via an EM algorithm.  For right-censored data
-##' with uncertain event status, fit the Cox cure model proposed by Wang et
-##' al. (2019+).
+##' For right-censored data, fit a regularized Cox cure rate model through
+##' elastic-net penalty.  For right-censored data with uncertain event status,
+##' fit the regularized Cox cure model proposed by Wang et al. (2019+).  Without
+##' regularization, the model reduces to the regular Cox cure rate model (Kuk
+##' and Chen, 1992; Sy and Taylor, 2000)
+##'
+##' The model estimation procedure follows expectation maximization (EM)
+##' algorithm.  Variable selection procedure through regularization by elastic
+##' net penalty is developed based on cyclic coordinate descent and
+##' majorization-minimization (MM) algorithm.
 ##'
 ##' @usage
-##' cox_cure(surv_formula, cure_formula,
-##'          time, event, data, subset, contrasts = NULL,
-##'          bootstrap = 0, firth = FALSE, surv_start, cure_start,
-##'          em_max_iter = 200, em_rel_tol = 1e-5,
-##'          surv_max_iter = 200, surv_rel_tol = 1e-5,
-##'          cure_max_iter = 200, cure_rel_tol = 1e-5,
-##'          tail_completion = c("zero", "exp", "zero-tau"),
-##'          tail_tau = NULL, pmin = 1e-5, early_stop = TRUE,
-##'          verbose = FALSE, ...)
+##'
+##' cox_cure_net(surv_formula, cure_formula, time, event,
+##'              data, subset, contrasts = NULL,
+##'              surv_lambda, surv_alpha = 1, surv_nlambda = 10,
+##'              surv_lambda_min_ratio = 1e-1, surv_l1_penalty_factor,
+##'              cure_lambda, cure_alpha = 1, cure_nlambda = 10,
+##'              cure_lambda_min_ratio = 1e-1, cure_l1_penalty_factor,
+##'              surv_start, cure_start,
+##'              surv_standardize = TRUE, cure_standardize = TRUE,
+##'              em_max_iter = 200, em_rel_tol = 1e-5,
+##'              surv_max_iter = 200, surv_rel_tol = 1e-5,
+##'              cure_max_iter = 200, cure_rel_tol = 1e-5,
+##'              tail_completion = c("zero", "exp", "zero-tau"),
+##'              tail_tau = NULL, pmin = 1e-5, early_stop = TRUE,
+##'              verbose = FALSE, ...)
 ##'
 ##' @param surv_formula A formula object starting with \code{~} for the model
 ##'     formula in survival model part.  For Cox model, no intercept term is
@@ -58,16 +70,44 @@
 ##'     names are the names of columns of data containing factors.  See
 ##'     \code{contrasts.arg} of \code{\link[stats]{model.matrix.default}} for
 ##'     details.
-##' @param bootstrap An integer representing the number of bootstrap samples for
-##'     estimating standard errors of the coefficient estimates.  The bootstrap
-##'     procedure will not run with \code{bootstrap = 0} by default.  If
-##'     \code{bootstrap > 0}, the specified number of bootstrap samples will be
-##'     used in estimating standard errors.
-##' @param firth A logical value indicating whether to use Firth's
-##'     bias-reduction method (Firth, 1993) in the logistic model component.
-##'     The default value is \code{FALSE} for fitting a regular logistic model.
-##'     Notice that this argument is experimental and only available for regular
-##'     Cox cure rate model currently.
+##' @param surv_lambda A numeric vector consists of non-negative values
+##'     representing the tuning parameter sequence for the survival model part.
+##' @param surv_alpha A number between 0 and 1 for tuning the elastic net
+##'     penalty for the survival model part.  If it is one, the elastic penalty
+##'     will reduce to the well-known lasso penalty.  If it is zero, the ridge
+##'     penalty will be used.
+##' @param surv_nlambda A positive number specifying the number of
+##'     \code{surv_lambda} if \code{surv_lambda} is not specified.  The default
+##'     value is 10.
+##' @param surv_lambda_min_ratio The ratio of the minimum \code{surv_lambda} to
+##'     the large enough \code{surv_lambda} that produces all-zero estimates on
+##'     log scale.  The default value is \code{1e-1}.
+##' @param surv_l1_penalty_factor A numeric vector that consists of positive
+##'     numbers for penalty factors (or weights) on L1-norm for the coefficient
+##'     estimate vector in the survival model part.  The penalty is applied to
+##'     the coefficient estimate devided by the specified weights.  The
+##'     specified weights are re-scaled internally so that their summation
+##'     equals the length of coefficients.  If it is left unspecified, the
+##'     weights are all set to be one.
+##' @param cure_lambda A numeric vector consists of non-negative values
+##'     representing the tuning parameter sequence for the cure model part.
+##' @param cure_alpha A number between 0 and 1 for tuning the elastic net
+##'     penalty for the cure model part.  If it is one, the elastic penalty
+##'     will reduce to the well-known lasso penalty.  If it is zero, the ridge
+##'     penalty will be used.
+##' @param cure_nlambda A positive number specifying the number of
+##'     \code{cure_lambda} if \code{cure_lambda} is not specified.  The default
+##'     value is 10.
+##' @param cure_lambda_min_ratio The ratio of the minimum \code{cure_lambda} to
+##'     the large enough \code{cure_lambda} that produces all-zero estimates on
+##'     log scale.  The default value is \code{1e-1}.
+##' @param cure_l1_penalty_factor A numeric vector that consists of positive
+##'     numbers for penalty factors (or weights) on L1-norm for the coefficient
+##'     estimate vector in the cure model part.  The penalty is applied to
+##'     the coefficient estimate devided by the specified weights.  The
+##'     specified weights are re-scaled internally so that their summation
+##'     equals the length of coefficients.  If it is left unspecified, the
+##'     weights are all set to be one.
 ##' @param surv_start An optional numeric vector representing the starting
 ##'     values for the Cox model component.  If not specified, the starting
 ##'     values will be obtained from fitting a regular Cox model to events only.
@@ -75,6 +115,14 @@
 ##'     values for the logistic model component.  If not specified, the starting
 ##'     values will be obtained from fitting a regular logistic model to the
 ##'     non-missing event indicators.
+##' @param surv_standardize A logicial value specifying whether to standardize
+##'     the covariates for the survival model part.  If \code{FALSE}, the
+##'     covariates will be standardized internally to have mean zero and
+##'     standard deviation one.
+##' @param cure_standardize A logicial value specifying whether to standardize
+##'     the covariates for the cure rate model part.  If \code{TRUE} (by
+##'     default), the covariates will be standardized internally to have mean
+##'     zero and standard deviation one.
 ##' @param em_max_iter A positive integer specifying the maximum iteration
 ##'     number of the EM algorithm.  The default value is \code{200}.
 ##' @param em_rel_tol A positive number specifying the tolence that determines
@@ -107,9 +155,9 @@
 ##'     method for conditional survival function.  The available methods are
 ##'     \code{"zero"} for zero-tail completion after the largest event times (Sy
 ##'     and Taylor, 2000), \code{"exp"} for exponential-tail completion (Peng,
-##'     2003), and \code{"zero-tau"} for zero-tail completion after a
-##'     specified \code{tail_tau}.  The default method is the zero-tail
-##'     completion proposed by Sy and Taylor (2000).
+##'     2003), and \code{"zero-tau"} for zero-tail completion after a specified
+##'     \code{tail_tau}.  The default method is the zero-tail completion
+##'     proposed by Sy and Taylor (2000).
 ##' @param tail_tau A numeric number specifying the time of zero-tail
 ##'     completion.  It will be used only if \code{tail_completion =
 ##'     "zero-tau"}.  A reasonable choice must be a time point between the
@@ -128,13 +176,11 @@
 ##'
 ##' @return
 ##'
-##' \code{cox_cure} object for regular Cox cure rate model or
-##' \code{cox_cure_uncer} object for Cox cure rate model with uncertain events.
+##' \code{cox_cure_net} object for regular Cox cure rate model or
+##' \code{cox_cure_net_uncer} object for Cox cure rate model with uncertain
+##' events.
 ##'
 ##' @references
-##'
-##' Firth, D. (1993). Bias reduction of maximum likelihood
-##' estimates. \emph{Biometrika}, 80(1), 27--38.
 ##'
 ##' Kuk, A. Y. C., & Chen, C. (1992). A mixture model combining logistic
 ##' regression with proportional hazards regression. \emph{Biometrika}, 79(3),
@@ -153,26 +199,37 @@
 ##'
 ##' @seealso
 ##'
-##' \code{\link{cox_cure_net}} for regularized Cox cure rate model with
-##' elastic-net penalty.
+##' \code{\link{cox_cure}} for regular Cox cure rate model.
 ##'
-##' @example inst/examples/cox_cure.R
+##' @example inst/examples/cox_cure_net.R
 ##' @export
-cox_cure <- function(surv_formula, cure_formula, time, event,
-                     data, subset, contrasts = NULL,
-                     bootstrap = 0, firth = FALSE,
-                     surv_start, cure_start,
-                     em_max_iter = 200,
-                     em_rel_tol = 1e-5,
-                     surv_max_iter = 200,
-                     surv_rel_tol = 1e-5,
-                     cure_max_iter = 200,
-                     cure_rel_tol = 1e-5,
-                     tail_completion = c("zero", "exp", "zero-tau"),
-                     tail_tau = NULL,
-                     pmin = 1e-5,
-                     early_stop = TRUE,
-                     verbose = FALSE, ...)
+cox_cure_net <-
+    function(surv_formula, cure_formula, time, event,
+             data, subset, contrasts = NULL,
+             surv_lambda,
+             surv_alpha = 1,
+             surv_nlambda = 10,
+             surv_lambda_min_ratio = 1e-1,
+             surv_l1_penalty_factor,
+             cure_lambda,
+             cure_alpha = 1,
+             cure_nlambda = 10,
+             cure_lambda_min_ratio = 1e-1,
+             cure_l1_penalty_factor,
+             surv_start, cure_start,
+             surv_standardize = TRUE,
+             cure_standardize = TRUE,
+             em_max_iter = 200,
+             em_rel_tol = 1e-5,
+             surv_max_iter = 200,
+             surv_rel_tol = 1e-5,
+             cure_max_iter = 200,
+             cure_rel_tol = 1e-5,
+             tail_completion = c("zero", "exp", "zero-tau"),
+             tail_tau = NULL,
+             pmin = 1e-5,
+             early_stop = TRUE,
+             verbose = FALSE, ...)
 {
     ## warning on `...`
     warn_dots(...)
@@ -259,18 +316,47 @@ cox_cure <- function(surv_formula, cure_formula, time, event,
         }
     }
 
+    ## lambda sequence
+    if (missing(surv_lambda)) {
+        surv_lambda <- 0
+    } else {
+        surv_nlambda <- 1
+    }
+    if (missing(cure_lambda)) {
+        cure_lambda <- 0
+    } else {
+        cure_nlambda <- 1
+    }
+
+    ## penalty factor
+    if (missing(surv_l1_penalty_factor)) {
+        surv_l1_penalty_factor <- 0
+    }
+    if (missing(cure_l1_penalty_factor)) {
+        cure_l1_penalty_factor <- 0
+    }
+
     ## call the routine
     if (anyNA(obs_event)) {
-        out <- coxph_cure_uncer(
+        out <- coxph_cure_uncer_vs(
             time = obs_time,
             event = obs_event,
             cox_x = surv_x,
             cure_x = cure_x,
             cure_intercept = cure_intercept,
-            bootstrap = bootstrap,
+            cox_lambda = surv_lambda,
+            cox_alpha = surv_alpha,
+            cox_nlambda = surv_nlambda,
+            cox_lambda_min_ratio = surv_lambda_min_ratio,
+            cox_l1_penalty_factor = surv_l1_penalty_factor,
+            cure_lambda = cure_lambda,
+            cure_alpha = cure_alpha,
+            cure_nlambda = cure_nlambda,
+            cure_lambda_min_ratio = cure_lambda_min_ratio,
+            cure_l1_penalty_factor = cure_l1_penalty_factor,
             cox_start = surv_start,
             cure_start = cure_start,
-            cox_standardize = TRUE,
+            cox_standardize = surv_standardize,
             cure_standardize = cure_standardize,
             em_max_iter = em_max_iter,
             cox_mstep_max_iter = surv_max_iter,
@@ -284,19 +370,27 @@ cox_cure <- function(surv_formula, cure_formula, time, event,
             verbose = verbose
         )
         ## add class
-        class(out) <- "cox_cure_uncer"
+        class(out) <- "cox_cure_net_uncer"
     } else {
-        out <- rcpp_coxph_cure(
+        out <- rcpp_coxph_cure_vs(
             time = obs_time,
             event = obs_event,
             cox_x = surv_x,
             cure_x = cure_x,
             cure_intercept = cure_intercept,
-            bootstrap = bootstrap,
-            firth = firth,
+            cox_lambda = surv_lambda,
+            cox_alpha = surv_alpha,
+            cox_nlambda = surv_nlambda,
+            cox_lambda_min_ratio = surv_lambda_min_ratio,
+            cox_l1_penalty_factor = surv_l1_penalty_factor,
+            cure_lambda = cure_lambda,
+            cure_alpha = cure_alpha,
+            cure_nlambda = cure_nlambda,
+            cure_lambda_min_ratio = cure_lambda_min_ratio,
+            cure_l1_penalty_factor = cure_l1_penalty_factor,
             cox_start = surv_start,
             cure_start = cure_start,
-            cox_standardize = TRUE,
+            cox_standardize = surv_standardize,
             cure_standardize = cure_standardize,
             em_max_iter = em_max_iter,
             cox_mstep_max_iter = surv_max_iter,
@@ -310,35 +404,30 @@ cox_cure <- function(surv_formula, cure_formula, time, event,
             verbose = verbose
         )
         ## add class
-        class(out) <- "cox_cure"
-    }
-    ## add bootstrap se if available
-    if (bootstrap <= 0) {
-        out$bootstrap$surv_coef_mat <- out$bootstrap$cure_coef_mat <- NULL
-    } else {
-        out$bootstrap$surv_coef_se <- apply(out$bootstrap$surv_coef_mat,
-                                            2L, se_interQ)
-        out$bootstrap$cure_coef_se <- apply(out$bootstrap$cure_coef_mat,
-                                            2L, se_interQ)
+        class(out) <- "cox_cure_net"
     }
     ## add covariate names back
     if (! is.null(surv_var_names <- colnames(surv_x))) {
-        names(out$surv_coef) <- surv_var_names
+        colnames(out$surv_coef) <- surv_var_names
     } else {
-        names(out$surv_coef) <- paste0("x", seq_along(out$surv_coef))
+        colnames(out$surv_coef) <- paste0("x", seq_len(ncol(out$surv_coef)))
     }
     if (! is.null(cure_var_names <- colnames(cure_x))) {
-        names(out$cure_coef) <- c({if (cure_intercept) "(Intercept)" else NULL},
-                                  colnames(cure_x))
+        colnames(out$cure_coef) <- c(
+        {if (cure_intercept) "(Intercept)" else NULL},
+        colnames(cure_x)
+        )
     } else {
-        names(out$cure_coef) <-
+        colnames(out$cure_coef) <-
             if (cure_intercept) {
                 c("(Intercept)",
-                  paste0("z", seq_along(out$cure_coef[- 1L])))
+                  paste0("z", seq_len(ncol(out$cure_coef[- 1L]))))
             } else {
-                paste0("z", seq_along(out$cure_coef))
+                paste0("z", seq_len(ncol(out$cure_coef)))
             }
     }
+    colnames(out$surv_en_coef) <- colnames(out$surv_coef)
+    colnames(out$cure_en_coef) <- colnames(out$cure_coef)
     ## add function call
     out$call <- this_call
     ## return
@@ -346,19 +435,23 @@ cox_cure <- function(surv_formula, cure_formula, time, event,
 }
 
 
-##' @rdname cox_cure
+##' @rdname cox_cure_net
 ##'
 ##' @usage
-##' cox_cure.fit(surv_x, cure_x, time, event, cure_intercept = TRUE,
-##'              bootstrap = 0, firth = FALSE, surv_start, cure_start,
-##'              surv_standardize = TRUE, cure_standardize = TRUE,
-##'              em_max_iter = 200, em_rel_tol = 1e-5,
-##'              surv_max_iter = 200, surv_rel_tol = 1e-5,
-##'              cure_max_iter = 200, cure_rel_tol = 1e-5,
-##'              tail_completion = c("zero", "exp", "zero-tau"),
-##'              tail_tau = NULL, pmin = 1e-5, early_stop = TRUE,
-##'              verbose = FALSE, ...)
 ##'
+##' cox_cure_net.fit(surv_x, cure_x, time, event, cure_intercept = TRUE,
+##'                  surv_lambda, surv_alpha = 1, surv_nlambda = 10,
+##'                  surv_lambda_min_ratio = 1e-1, surv_l1_penalty_factor,
+##'                  cure_lambda, cure_alpha = 1, cure_nlambda = 10,
+##'                  cure_lambda_min_ratio = 1e-1, cure_l1_penalty_factor,
+##'                  surv_start, cure_start,
+##'                  surv_standardize = TRUE, cure_standardize = TRUE,
+##'                  em_max_iter = 200, em_rel_tol = 1e-5,
+##'                  surv_max_iter = 200, surv_rel_tol = 1e-5,
+##'                  cure_max_iter = 200, cure_rel_tol = 1e-5,
+##'                  tail_completion = c("zero", "exp", "zero-tau"),
+##'                  tail_tau = NULL, pmin = 1e-5, early_stop = TRUE,
+##'                  verbose = FALSE, ...)
 ##'
 ##' @param surv_x A numeric matrix for the design matrix of the survival model
 ##'     component.
@@ -370,35 +463,37 @@ cox_cure <- function(surv_formula, cure_formula, time, event,
 ##' @param cure_intercept A logical value specifying whether to add an intercept
 ##'     term to the cure rate model component.  If \code{TRUE} by default, an
 ##'     intercept term is included.
-##' @param surv_standardize A logicial value specifying whether to standardize
-##'     the covariates for the survival model part.  If \code{FALSE}, the
-##'     covariates will be standardized internally to have mean zero and
-##'     standard deviation one.
-##' @param cure_standardize A logicial value specifying whether to standardize
-##'     the covariates for the cure rate model part.  If \code{TRUE} (by
-##'     default), the covariates will be standardized internally to have mean
-##'     zero and standard deviation one.
 ##'
 ##' @export
-cox_cure.fit <- function(surv_x, cure_x, time, event,
-                         cure_intercept = TRUE,
-                         bootstrap = 0,
-                         firth = FALSE,
-                         surv_start,
-                         cure_start,
-                         surv_standardize = TRUE,
-                         cure_standardize = TRUE,
-                         em_max_iter = 200,
-                         em_rel_tol = 1e-5,
-                         surv_max_iter = 200,
-                         surv_rel_tol = 1e-5,
-                         cure_max_iter = 200,
-                         cure_rel_tol = 1e-5,
-                         tail_completion = c("zero", "exp", "zero-tau"),
-                         tail_tau = NULL,
-                         pmin = 1e-5,
-                         early_stop = TRUE,
-                         verbose = FALSE, ...)
+cox_cure_net.fit <-
+    function(surv_x, cure_x, time, event,
+             cure_intercept = TRUE,
+             surv_lambda,
+             surv_alpha = 1,
+             surv_nlambda = 10,
+             surv_lambda_min_ratio = 1e-1,
+             surv_l1_penalty_factor,
+             cure_lambda,
+             cure_alpha = 1,
+             cure_nlambda = 10,
+             cure_lambda_min_ratio = 1e-1,
+             cure_l1_penalty_factor,
+             surv_start,
+             cure_start,
+             surv_standardize = TRUE,
+             cure_standardize = TRUE,
+             em_max_iter = 200,
+             em_rel_tol = 1e-5,
+             surv_max_iter = 200,
+             surv_rel_tol = 1e-5,
+             cure_max_iter = 200,
+             cure_rel_tol = 1e-5,
+             tail_completion = c("zero", "exp", "zero-tau"),
+             tail_tau = NULL,
+             pmin = 1e-5,
+             early_stop = TRUE,
+             verbose = FALSE,
+             ...)
 {
     ## warning on `...`
     warn_dots(...)
@@ -444,15 +539,44 @@ cox_cure.fit <- function(surv_x, cure_x, time, event,
         }
     }
 
+    ## lambda sequence
+    if (missing(surv_lambda)) {
+        surv_lambda <- 0
+    } else {
+        surv_nlambda <- 1
+    }
+    if (missing(cure_lambda)) {
+        cure_lambda <- 0
+    } else {
+        cure_nlambda <- 1
+    }
+
+    ## penalty factor
+    if (missing(surv_l1_penalty_factor)) {
+        surv_l1_penalty_factor <- 0
+    }
+    if (missing(cure_l1_penalty_factor)) {
+        cure_l1_penalty_factor <- 0
+    }
+
     ## call the routine
     if (anyNA(event)) {
-        out <- coxph_cure_uncer(
+        out <- coxph_cure_uncer_vs(
             time = time,
             event = event,
             cox_x = surv_x,
             cure_x = cure_x,
             cure_intercept = cure_intercept,
-            bootstrap = bootstrap,
+            cox_lambda = surv_lambda,
+            cox_alpha = surv_alpha,
+            cox_nlambda = surv_nlambda,
+            cox_lambda_min_ratio = surv_lambda_min_ratio,
+            cox_l1_penalty_factor = surv_l1_penalty_factor,
+            cure_lambda = cure_lambda,
+            cure_alpha = cure_alpha,
+            cure_nlambda = cure_nlambda,
+            cure_lambda_min_ratio = cure_lambda_min_ratio,
+            cure_l1_penalty_factor = cure_l1_penalty_factor,
             cox_start = surv_start,
             cure_start = cure_start,
             cox_standardize = surv_standardize,
@@ -469,16 +593,24 @@ cox_cure.fit <- function(surv_x, cure_x, time, event,
             verbose = verbose
         )
         ## add class
-        class(out) <- "cox_cure_uncer"
+        class(out) <- "cox_cure_net_uncer"
     } else {
-        out <- rcpp_coxph_cure(
+        out <- rcpp_coxph_cure_vs(
             time = time,
             event = event,
             cox_x = surv_x,
             cure_x = cure_x,
             cure_intercept = cure_intercept,
-            bootstrap = bootstrap,
-            firth = firth,
+            cox_lambda = surv_lambda,
+            cox_alpha = surv_alpha,
+            cox_nlambda = surv_nlambda,
+            cox_lambda_min_ratio = surv_lambda_min_ratio,
+            cox_l1_penalty_factor = surv_l1_penalty_factor,
+            cure_lambda = cure_lambda,
+            cure_alpha = cure_alpha,
+            cure_nlambda = cure_nlambda,
+            cure_lambda_min_ratio = cure_lambda_min_ratio,
+            cure_l1_penalty_factor = cure_l1_penalty_factor,
             cox_start = surv_start,
             cure_start = cure_start,
             cox_standardize = surv_standardize,
@@ -495,35 +627,31 @@ cox_cure.fit <- function(surv_x, cure_x, time, event,
             verbose = verbose
         )
         ## add class
-        class(out) <- "cox_cure"
-    }
-    ## add bootstrap se if available
-    if (bootstrap <= 0) {
-        out$bootstrap$surv_coef_mat <- out$bootstrap$cure_coef_mat <- NULL
-    } else {
-        out$bootstrap$surv_coef_se <- apply(out$bootstrap$surv_coef_mat,
-                                            2L, se_interQ)
-        out$bootstrap$cure_coef_se <- apply(out$bootstrap$cure_coef_mat,
-                                            2L, se_interQ)
+        class(out) <- "cox_cure_net"
     }
     ## add covariate names back
     if (! is.null(surv_var_names <- colnames(surv_x))) {
-        names(out$surv_coef) <- surv_var_names
+        colnames(out$surv_coef) <- surv_var_names
     } else {
-        names(out$surv_coef) <- paste0("x", seq_along(out$surv_coef))
+        colnames(out$surv_coef) <- paste0("x", seq_len(ncol(out$surv_coef)))
     }
     if (! is.null(cure_var_names <- colnames(cure_x))) {
-        names(out$cure_coef) <- c({if (cure_intercept) "(Intercept)" else NULL},
-                                  colnames(cure_x))
+        colnames(out$cure_coef) <- c(
+        {if (cure_intercept) "(Intercept)" else NULL},
+        colnames(cure_x)
+        )
     } else {
-        names(out$cure_coef) <-
+        colnames(out$cure_coef) <-
             if (cure_intercept) {
                 c("(Intercept)",
-                  paste0("z", seq_along(out$cure_coef[- 1L])))
+                  paste0("z", seq_len(ncol(out$cure_coef[- 1L]))))
             } else {
-                paste0("z", seq_along(out$cure_coef))
+                paste0("z", seq_len(ncol(out$cure_coef)))
             }
     }
+    colnames(out$surv_en_coef) <- colnames(out$surv_coef)
+    colnames(out$cure_en_coef) <- colnames(out$cure_coef)
+
     ## add function call
     out$call <- this_call
     ## return

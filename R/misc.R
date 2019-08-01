@@ -83,11 +83,11 @@ warn_dots <- function(...) {
     if (length(dotsList) > 0) {
         list_names <- names(dotsList)
         if (is.null(list_names)) {
-            warning(
-                sprintf("Some argument(s) went into `...` of %s()",
-                        .fun_name),
-                call. = FALSE
-            )
+            warning(wrapMessages(
+                sprintf(paste("Some invalid argument(s) went into `...`",
+                              "of %s()"),
+                        .fun_name)
+            ), call. = FALSE)
         } else {
             list_names <- list_names[list_names != ""]
             if (length(list_names) > 2) {
@@ -97,11 +97,10 @@ warn_dots <- function(...) {
                 all_names <- paste(sprintf("'%s'", list_names),
                                    collapse = " and ")
             }
-            warning(
-                sprintf("The argument %s went into `...` of %s().",
-                        all_names, .fun_name),
-                call. = FALSE
-            )
+            warning(wrapMessages(
+                sprintf("Invalid argument %s went into `...` of %s()",
+                        all_names, .fun_name)
+            ), call. = FALSE)
         }
     }
     invisible(NULL)
