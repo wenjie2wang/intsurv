@@ -215,7 +215,8 @@ events.
 }
 \description{
 For right-censored data, fit a regularized Cox cure rate model through
-elastic-net penalty.  For right-censored data with uncertain event status,
+elastic-net penalty following Masud et al. (2018), and Zou and Hastie
+(2005).  For right-censored data with uncertain event status,
 fit the regularized Cox cure model proposed by Wang et al. (2019+).  Without
 regularization, the model reduces to the regular Cox cure rate model (Kuk
 and Chen, 1992; Sy and Taylor, 2000)
@@ -307,6 +308,10 @@ Kuk, A. Y. C., & Chen, C. (1992). A mixture model combining logistic
 regression with proportional hazards regression. \emph{Biometrika}, 79(3),
 531--541.
 
+Masud, A., Tu, W., & Yu, Z. (2018). Variable selection for mixture and
+promotion time cure rate models. \emph{Statistical methods in medical
+research}, 27(7), 2185--2199.
+
 Peng, Y. (2003). Estimating baseline distribution in proportional hazards
 cure models. \emph{Computational Statistics & Data Analysis}, 42(1-2),
 187--201.
@@ -317,6 +322,10 @@ cure model. \emph{Biometrics}, 56(1), 227--236.
 Wang, W., Chen, K., Luo, C., & Yan, J. (2019+). Cox Cure Model with
 Uncertain Event Status with application to a Suicide Risk
 Study. \emph{Working in Progress}.
+
+Zou, H., & Hastie, T. (2005). Regularization and variable selection via the
+elastic net. \emph{Journal of the Royal Statistical Society}: Series B
+(Statistical Methodology), 67(2), 301--320.
 }
 \seealso{
 \code{\link{cox_cure}} for regular Cox cure rate model.
