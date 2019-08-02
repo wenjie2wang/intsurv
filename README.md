@@ -49,7 +49,7 @@ remotes::install_github("wenjie2wang/intsurv")
 ```
 
 
-## Reference
+## References
 
 Wang, W., Aseltine, R., Chen, K., & Yan, J. (2019).  Integrative Survival
 Analysis with Uncertain Event Times in Application to a Suicide Risk
