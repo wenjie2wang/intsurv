@@ -1,6 +1,6 @@
 # intsurv
 
-![CRAN_Status_Badge][cranVersion]
+[![CRAN_Status_Badge][cranVersion]][cran]
 [![Build Status][travis_master]][travis]
 
 
@@ -59,6 +59,7 @@ Wang, W., Chen, K., Luo, C., & Yan, J. (2019+). Cox Cure Model with Uncertain
 Event Status with application to a Suicide Risk Study. *Working in Progress*.
 
 
-[cranVersion]: http://www.r-pkg.org/badges/version/intsurv
+[cran]: https://cran.r-project.org/package=intsurv
+[cranVersion]: https://www.r-pkg.org/badges/version/intsurv
 [travis]: https://travis-ci.org/wenjie2wang/intsurv
 [travis_master]: https://travis-ci.org/wenjie2wang/intsurv.svg?branch=master
