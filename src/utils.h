@@ -100,24 +100,14 @@ namespace Intsurv {
         return arma::conv_to<arma::uvec>::from(res);
     }
     // function that returns the indices of the first unique indices
-    inline arma::uvec find_first_unique(const arma::vec& x,
-                                        bool fromLast = false)
+    inline arma::uvec find_first_unique(const arma::vec& x)
     {
         std::unordered_set<double> seen;
         std::vector<unsigned int> res;
-        if (fromLast) {
-            for (size_t i {1}; i <= x.n_rows; ++i) {
-                if (seen.insert(x(x.n_rows - i)).second) {
-                    // if duplicated, add index to vector res
-                    res.push_back(i);
-                }
-            }
-        } else {
-            for (size_t i {0}; i < x.n_rows; ++i) {
-                if (seen.insert(x(i)).second) {
-                    // if duplicated, add index to vector res
-                    res.push_back(i);
-                }
+        for (size_t i {0}; i < x.n_rows; ++i) {
+            if (seen.insert(x(i)).second) {
+                // if duplicated, add index to vector res
+                res.push_back(i);
             }
         }
         return arma::conv_to<arma::uvec>::from(res);
