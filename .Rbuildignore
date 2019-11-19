@@ -5,6 +5,7 @@
 ^\.git$
 ^\.gitignore$
 ^\.travis\.yml$
+^\.clang_complete$
 ^misc$
 ^testing$
 ^working$
