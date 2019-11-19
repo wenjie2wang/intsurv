@@ -15,10 +15,10 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 //
 
+#include <RcppArmadillo.h>
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::plugins(cpp11)]]
-
-#include "utils.h"
+#include <intsurv.h>
 
 // [[Rcpp::export]]
 Rcpp::NumericVector aggregateSum(const arma::vec& x,

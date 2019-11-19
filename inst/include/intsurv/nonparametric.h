@@ -19,9 +19,9 @@
 #define NONPARAMETRIC_H
 
 #include <RcppArmadillo.h>
+#include <map>
 #include "utils.h"
 
-#include <map>
 
 namespace Intsurv {
 

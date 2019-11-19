@@ -18,10 +18,7 @@
 #include <RcppArmadillo.h>
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::plugins(cpp11)]]
-
-#include "assessment.h"
-#include "coxph_cure.h"
-
+#include <intsurv.h>
 
 // fit regular Cox cure rate model by EM algorithm
 // [[Rcpp::export]]

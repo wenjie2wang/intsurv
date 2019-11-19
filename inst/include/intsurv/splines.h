@@ -24,10 +24,10 @@
 namespace Intsurv {
 
     // generate B-spline bases
-    arma::mat bSpline(const arma::vec& x,
-                      const unsigned int& degree,
-                      const arma::vec& internal_knots,
-                      const arma::vec& boundary_knots)
+    inline arma::mat bSpline(const arma::vec& x,
+                             const unsigned int& degree,
+                             const arma::vec& internal_knots,
+                             const arma::vec& boundary_knots)
     {
         const unsigned int order { degree + 1 };
         arma::vec all_knots {
@@ -85,11 +85,11 @@ namespace Intsurv {
     }
 
     // generate derivative of B-splines
-    arma::mat dbs(const arma::vec& x,
-                  const unsigned int& degree,
-                  const arma::vec& internal_knots,
-                  const arma::vec& boundary_knots,
-                  const unsigned int derivs = 1)
+    inline arma::mat dbs(const arma::vec& x,
+                         const unsigned int& degree,
+                         const arma::vec& internal_knots,
+                         const arma::vec& boundary_knots,
+                         const unsigned int derivs = 1)
     {
         const unsigned int order { degree + 1 };
         const unsigned int df { order + internal_knots.n_elem };
@@ -140,10 +140,10 @@ namespace Intsurv {
     }
 
     // generate M-spline bases from transformation of B-splines
-    arma::mat mSpline(const arma::vec& x,
-                      const unsigned int& degree,
-                      const arma::vec& internal_knots,
-                      const arma::vec& boundary_knots)
+    inline arma::mat mSpline(const arma::vec& x,
+                             const unsigned int& degree,
+                             const arma::vec& internal_knots,
+                             const arma::vec& boundary_knots)
     {
         const unsigned int order { degree + 1 };
         arma::vec all_knots {
@@ -162,11 +162,11 @@ namespace Intsurv {
     }
 
     // generate M-spline bases from transformation of B-splines
-    arma::mat dms(const arma::vec& x,
-                  const unsigned int& degree,
-                  const arma::vec& internal_knots,
-                  const arma::vec& boundary_knots,
-                  const unsigned int derivs = 1)
+    inline arma::mat dms(const arma::vec& x,
+                         const unsigned int& degree,
+                         const arma::vec& internal_knots,
+                         const arma::vec& boundary_knots,
+                         const unsigned int derivs = 1)
     {
         const unsigned int order { degree + 1 };
         arma::vec all_knots {
@@ -185,10 +185,10 @@ namespace Intsurv {
     }
 
     // generate I-splines from B-splines
-    arma::mat iSpline(const arma::vec& x,
-                      const unsigned int& degree,
-                      const arma::vec& internal_knots,
-                      const arma::vec& boundary_knots)
+    inline arma::mat iSpline(const arma::vec& x,
+                             const unsigned int& degree,
+                             const arma::vec& internal_knots,
+                             const arma::vec& boundary_knots)
     {
         const unsigned int n_knots { internal_knots.n_elem };
         const unsigned int order { degree + 1 };
@@ -224,13 +224,13 @@ namespace Intsurv {
     }
 
     // get the placement of knots based on quantile
-    arma::vec get_boundary_knots(const arma::vec& x)
+    inline arma::vec get_boundary_knots(const arma::vec& x)
     {
         arma::vec probs { {0, 1} };
         return arma_quantile(x, probs);
     }
-    arma::vec get_internal_knots(const arma::vec& x,
-                                 const unsigned int& num_knots)
+    inline arma::vec get_internal_knots(const arma::vec& x,
+                                        const unsigned int& num_knots)
     {
         double prob { 1.0 / (static_cast<double>(num_knots) + 1.0) };
         arma::vec probs { prob * arma::regspace(1, num_knots) };
@@ -238,8 +238,8 @@ namespace Intsurv {
     }
 
     // non-negative least square
-    arma::vec nnls(const arma::vec& y, const arma::mat& x,
-                   const double eps = 1e-4)
+    inline arma::vec nnls(const arma::vec& y, const arma::mat& x,
+                          const double eps = 1e-4)
     {
         // reference: Lawson and Hanson (1974)
         const unsigned int p { x.n_cols };

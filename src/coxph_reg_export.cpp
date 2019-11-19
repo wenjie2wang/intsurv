@@ -18,10 +18,7 @@
 #include <RcppArmadillo.h>
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::plugins(cpp11)]]
-
-#include "coxph_reg.h"
-#include "utils.h"
-
+#include <intsurv.h>
 
 // fit regular Cox model that allows non-integer "event" and tied events
 // [[Rcpp::export]]

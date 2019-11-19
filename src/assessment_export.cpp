@@ -17,10 +17,10 @@
 
 
 #include <RcppArmadillo.h>
+ // [[Rcpp::depends(RcppArmadillo)]]
+ // [[Rcpp::plugins(cpp11)]]
 #include <stdexcept>
-#include "utils.h"
-#include "assessment.h"
-
+#include <intsurv.h>
 
 // weighted C-index
 // [[Rcpp::export]]

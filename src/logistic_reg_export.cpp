@@ -18,10 +18,7 @@
 #include <RcppArmadillo.h>
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::plugins(cpp11)]]
-
-#include "logistic_reg.h"
-#include "utils.h"
-
+#include <intsurv.h>
 
 // fitting regular logistic model by monotonic quadratic approximation algorithm
 // non-integer y vector is allowed

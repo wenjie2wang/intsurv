@@ -18,8 +18,7 @@
 #include <RcppArmadillo.h>
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::plugins(cpp11)]]
-
-#include "coxph_cure_uncer.h"
+#include <intsurv.h>
 
 // Cox cure model with uncertain events without regularization
 // [[Rcpp::export]]
