@@ -1,4 +1,6 @@
-objects := $(wildcard R/*.R) $(wildcard src/*.[hc]pp) DESCRIPTION
+objects := DESCRIPTION $(wildcard R/*.R) \
+	$(wildcard src/*.cpp) $(wildcard inst/include/*.h) \
+	$(wildcard inst/include/intsurv/*.h)
 version := $(shell grep "Version" DESCRIPTION | awk '{print $$NF}')
 pkg := $(shell grep "Package" DESCRIPTION | awk '{print $$NF}')
 tar := $(pkg)_$(version).tar.gz
@@ -6,7 +8,6 @@ checkLog := $(pkg).Rcheck/00check.log
 # tests := $(wildcard tests/testthat/*.R)
 # rmd := vignettes/$(pkg)-intro.Rmd
 # vignettes := vignettes/$(pkg)-intro.html
-
 
 .PHONY: check
 check: $(checkLog)
@@ -31,6 +32,10 @@ $(tar): $(objects)
 	R CMD build .
 
 $(checkLog): $(tar)
+	R CMD check $(tar)
+
+.PHONY: check-as-cran
+check-as-cran: $(tar)
 	R CMD check --as-cran $(tar)
 
 # $(vignettes): $(rmd)
