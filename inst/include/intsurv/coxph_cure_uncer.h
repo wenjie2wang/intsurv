@@ -235,9 +235,9 @@ namespace Intsurv {
             cox_beta = cox_start;
         } else {
             CoxphReg tmp_object {
-                CoxphReg(time.elem(case1_ind),
-                         event.elem(case1_ind),
-                         cox_x.rows(case1_ind))
+                time.elem(case1_ind),
+                event.elem(case1_ind),
+                cox_x.rows(case1_ind)
             };
             tmp_object.fit(cox_beta, cox_mstep_max_iter, cox_mstep_rel_tol);
             cox_beta = tmp_object.coef;
@@ -669,7 +669,6 @@ namespace Intsurv {
         )
     {
         // get pre-processed design matrix, time, and event
-        const arma::mat& cox_x { cox_obj.get_x() };
         const arma::vec& time { cox_obj.get_time() };
         arma::vec event { cox_obj.get_event() };
 

@@ -48,9 +48,7 @@ Rcpp::NumericVector rcpp_cIndex(const arma::vec& time,
             );
     }
     // create a concordance object
-    Intsurv::Concordance c_obj {
-        Intsurv::Concordance(time, event, risk_score, weight)
-    };
+    Intsurv::Concordance c_obj {time, event, risk_score, weight};
     return Rcpp::NumericVector::create(
         Rcpp::Named("index") = c_obj.index,
         Rcpp::Named("concordant") = c_obj.concordant,

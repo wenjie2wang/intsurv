@@ -25,9 +25,7 @@
 Rcpp::List rcpp_mcf_right(const arma::vec& time,
                           const arma::vec& event)
 {
-    Intsurv::NelsonAalen na_obj {
-        Intsurv::NelsonAalen(time, event)
-    };
+    Intsurv::NelsonAalen na_obj { time, event };
     return Rcpp::List::create(
         Rcpp::Named("time") = Intsurv::arma2rvec(na_obj.uni_event_time),
         Rcpp::Named("inst_rate") = Intsurv::arma2rvec(na_obj.inst_rate),

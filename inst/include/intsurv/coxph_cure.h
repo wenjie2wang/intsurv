@@ -202,9 +202,9 @@ namespace Intsurv {
             arma::vec tmp_event { cox_obj.get_event() };
             arma::uvec tmp_idx { arma::find(tmp_event > 0) };
             CoxphReg tmp_object {
-                CoxphReg(time.elem(tmp_idx),
-                         tmp_event.elem(tmp_idx),
-                         tmp_cox_x.rows(tmp_idx))
+                time.elem(tmp_idx),
+                tmp_event.elem(tmp_idx),
+                tmp_cox_x.rows(tmp_idx)
             };
             tmp_object.fit(cox_beta, cox_mstep_max_iter, cox_mstep_rel_tol);
             cox_beta = tmp_object.coef;

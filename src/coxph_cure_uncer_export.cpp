@@ -51,8 +51,8 @@ Rcpp::List coxph_cure_uncer(
 {
     // define object
     Intsurv::CoxphCureUncer obj {
-        Intsurv::CoxphCureUncer(time, event, cox_x, cure_x, cure_intercept,
-                                cox_standardize, cure_standardize)
+        time, event, cox_x, cure_x, cure_intercept,
+        cox_standardize, cure_standardize
     };
     // model-fitting
     obj.fit(cox_start, cure_start,
@@ -85,13 +85,13 @@ Rcpp::List coxph_cure_uncer(
             boot_ind = Intsurv::vec_union(
                 boot_ind, Intsurv::bootstrap_sample(case3_ind));
             Intsurv::CoxphCureUncer boot_obj {
-                Intsurv::CoxphCureUncer(time.elem(boot_ind),
-                                        event.elem(boot_ind),
-                                        cox_x.rows(boot_ind),
-                                        cure_x.rows(boot_ind),
-                                        cure_intercept,
-                                        cox_standardize,
-                                        cure_standardize)
+                time.elem(boot_ind),
+                event.elem(boot_ind),
+                cox_x.rows(boot_ind),
+                cure_x.rows(boot_ind),
+                cure_intercept,
+                cox_standardize,
+                cure_standardize
             };
             boot_obj.fit(cox_start, cure_start,
                          em_max_iter, em_rel_tol,
@@ -183,8 +183,8 @@ Rcpp::List coxph_cure_uncer_reg(
 {
     // define object
     Intsurv::CoxphCureUncer obj {
-        Intsurv::CoxphCureUncer(time, event, cox_x, cure_x, cure_intercept,
-                                cox_standardize, cure_standardize)
+        time, event, cox_x, cure_x, cure_intercept,
+        cox_standardize, cure_standardize
     };
     // model-fitting
     obj.regularized_fit(
@@ -294,8 +294,8 @@ Rcpp::List coxph_cure_uncer_vs(
 {
     // define object
     Intsurv::CoxphCureUncer obj {
-        Intsurv::CoxphCureUncer(time, event, cox_x, cure_x, cure_intercept,
-                                cox_standardize, cure_standardize)
+        time, event, cox_x, cure_x, cure_intercept,
+        cox_standardize, cure_standardize
     };
     // get the maximum lambdas by setting em_max_iter = 0
     obj.regularized_fit(

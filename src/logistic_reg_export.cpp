@@ -37,7 +37,7 @@ Rcpp::List rcpp_logistic(
     )
 {
     Intsurv::LogisticReg object {
-        Intsurv::LogisticReg(x, y, intercept, standardize)
+        x, y, intercept, standardize
     };
     object.fit(start, max_iter, rel_tol, pmin, early_stop, verbose);
     return Rcpp::List::create(
@@ -64,7 +64,7 @@ Rcpp::List rcpp_firth_logistic(
     )
 {
     Intsurv::LogisticReg object {
-        Intsurv::LogisticReg(x, y, intercept, standardize)
+        x, y, intercept, standardize
     };
     object.firth_fit(start, max_iter, rel_tol);
     return Rcpp::List::create(
@@ -93,7 +93,7 @@ Rcpp::List rcpp_reg_logistic1(const arma::mat& x,
                               const bool& early_stop = false,
                               const bool& verbose = false)
 {
-    Intsurv::LogisticReg object { Intsurv::LogisticReg(x, y, intercept) };
+    Intsurv::LogisticReg object { x, y, intercept };
     object.regularized_fit(l1_lambda, l2_lambda, l1_penalty_factor,
                            start, max_iter, rel_tol, early_stop, verbose);
     return Rcpp::List::create(
@@ -130,7 +130,7 @@ Rcpp::List rcpp_reg_logistic2(const arma::mat& x,
                               const bool& early_stop = false,
                               const bool& verbose = false)
 {
-    Intsurv::LogisticReg object { Intsurv::LogisticReg(x, y, intercept) };
+    Intsurv::LogisticReg object { x, y, intercept };
     object.regularized_fit(lambda, alpha, nlambda, lambda_min_ratio,
                            penalty_factor, max_iter, rel_tol,
                            early_stop, verbose);

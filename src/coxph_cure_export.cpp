@@ -49,8 +49,8 @@ Rcpp::List rcpp_coxph_cure(
 {
     // define object
     Intsurv::CoxphCure obj {
-        Intsurv::CoxphCure(time, event, cox_x, cure_x, cure_intercept,
-                           cox_standardize, cure_standardize)
+        time, event, cox_x, cure_x, cure_intercept,
+        cox_standardize, cure_standardize
     };
     // model-fitting
     obj.fit(cox_start, cure_start,
@@ -75,11 +75,11 @@ Rcpp::List rcpp_coxph_cure(
                     )
             };
             Intsurv::CoxphCure boot_obj {
-                Intsurv::CoxphCure(time.elem(boot_ind),
-                                   event.elem(boot_ind),
-                                   cox_x.rows(boot_ind),
-                                   cure_x.rows(boot_ind),
-                                   cure_intercept)
+                time.elem(boot_ind),
+                event.elem(boot_ind),
+                cox_x.rows(boot_ind),
+                cure_x.rows(boot_ind),
+                cure_intercept
             };
             // fit the bootstarp sample
             boot_obj.fit(cox_start, cure_start,
@@ -165,8 +165,8 @@ Rcpp::List rcpp_coxph_cure_reg(
     )
 {
     Intsurv::CoxphCure obj {
-        Intsurv::CoxphCure(time, event, cox_x, cure_x, cure_intercept,
-                           cox_standardize, cure_standardize)
+        time, event, cox_x, cure_x, cure_intercept,
+        cox_standardize, cure_standardize
     };
     obj.regularized_fit(
         cox_l1_lambda, cox_l2_lambda,
@@ -268,8 +268,8 @@ Rcpp::List rcpp_coxph_cure_vs(
 {
     // define object
     Intsurv::CoxphCure obj {
-        Intsurv::CoxphCure(time, event, cox_x, cure_x, cure_intercept,
-                           cox_standardize, cure_standardize)
+        time, event, cox_x, cure_x, cure_intercept,
+        cox_standardize, cure_standardize
     };
     // get the maximum lambdas by setting em_max_iter = 0
     obj.regularized_fit(0, 0, 0, 0,
