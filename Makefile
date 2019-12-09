@@ -1,6 +1,9 @@
-objects := DESCRIPTION $(wildcard R/*.R) \
-	$(wildcard src/*.cpp) $(wildcard inst/include/*.h) \
-	$(wildcard inst/include/intsurv/*.h)
+objects := DESCRIPTION \
+	$(wildcard R/*.R) \
+	$(wildcard src/*.cpp) \
+	$(wildcard inst/include/*.h) \
+	$(wildcard inst/include/intsurv/*.h) \
+	$(wildcard inst/examples/*.R)
 version := $(shell grep "Version" DESCRIPTION | awk '{print $$NF}')
 pkg := $(shell grep "Package" DESCRIPTION | awk '{print $$NF}')
 tar := $(pkg)_$(version).tar.gz
