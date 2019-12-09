@@ -238,19 +238,21 @@ cox_cure_net <-
              tail_tau = NULL,
              pmin = 1e-5,
              early_stop = TRUE,
-             verbose = FALSE, ...)
+             verbose = FALSE,
+             ...)
 {
     ## warning on `...`
     warn_dots(...)
 
     ## record function call
-    this_call <- match.call()
+    call0 <- match.call()
 
     ## prepare to call function prep_cure_model
     this_call <- match.call(expand.dots = FALSE)
     ## time is also a function name.  rename to avoid potential issues.
     names(this_call)[which(names(this_call) == "time")] <- "obs_time"
     names(this_call)[which(names(this_call) == "event")] <- "obs_event"
+    this_call$eval_env <- parent.frame()
     matched_call <- match(names(formals(prep_cure_model)),
                           names(this_call), nomatch = 0L)
     model_call <- this_call[c(1L, matched_call)]
@@ -438,7 +440,7 @@ cox_cure_net <-
     colnames(out$surv_en_coef) <- colnames(out$surv_coef)
     colnames(out$cure_en_coef) <- colnames(out$cure_coef)
     ## add function call
-    out$call <- this_call
+    out$call <- call0
     ## return
     out
 }
