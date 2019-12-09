@@ -449,22 +449,78 @@ elastic-net penalty.</p></div>
 <span class='co'>## model-fitting from given model formula</span>
 <span class='no'>fit2</span> <span class='kw'>&lt;-</span> <span class='fu'>cox_cure</span>(~ <span class='no'>x2</span> + <span class='no'>x3</span> + <span class='no'>x4</span> + <span class='no'>group</span>, ~ <span class='no'>x2</span> + <span class='no'>x3</span> + <span class='no'>group</span>,
                  <span class='kw'>time</span> <span class='kw'>=</span> <span class='no'>time</span>, <span class='kw'>event</span> <span class='kw'>=</span> <span class='no'>status</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>toy_dat</span>,
-                 <span class='kw'>subset</span> <span class='kw'>=</span> <span class='no'>group</span> <span class='kw'>!=</span> <span class='st'>"D"</span>, <span class='kw'>bootstrap</span> <span class='kw'>=</span> <span class='fl'>30</span>)</div><div class='output co'>#&gt; <span class='error'>Error in is.data.frame(data): object 'toy_dat' not found</span></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='no'>fit2</span>)</div><div class='output co'>#&gt; <span class='error'>Error in summary(fit2): object 'fit2' not found</span></div><div class='input'>
+                 <span class='kw'>subset</span> <span class='kw'>=</span> <span class='no'>group</span> <span class='kw'>!=</span> <span class='st'>"D"</span>, <span class='kw'>bootstrap</span> <span class='kw'>=</span> <span class='fl'>30</span>)
+<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='no'>fit2</span>)</div><div class='output co'>#&gt; Call:
+#&gt; cox_cure(surv_formula = ~x2 + x3 + x4 + group, cure_formula = ~x2 + 
+#&gt;     x3 + group, time = time, event = status, data = toy_dat, 
+#&gt;     subset = group != "D", bootstrap = 30)
+#&gt; 
+#&gt; Coefficient estimates from the survival part:
+#&gt; 
+#&gt;             coef exp(coef)  se(coef)      z  Pr(&gt;|z|)    
+#&gt; x2     0.3621490 1.4364130 0.0930211 3.8932 9.893e-05 ***
+#&gt; x3     0.2698033 1.3097069 0.1316441 2.0495   0.04041 *  
+#&gt; x4     0.6802422 1.9743559 0.1516111 4.4868 7.231e-06 ***
+#&gt; groupB 0.1083320 1.1144177 0.2884753 0.3755   0.70726    
+#&gt; groupC 0.0076492 1.0076785 0.3194374 0.0239   0.98090    
+#&gt; ---
+#&gt; Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+#&gt; 
+#&gt; Coefficient estimates from the cure rate part:
+#&gt; 
+#&gt;                 coef exp(coef) se(coef)       z Pr(&gt;|z|)   
+#&gt; (Intercept) -0.78654   0.45542  0.28610 -2.7491 0.005975 **
+#&gt; x2           0.51825   1.67909  0.21957  2.3603 0.018259 * 
+#&gt; x3           0.39331   1.48188  0.15029  2.6171 0.008869 **
+#&gt; groupB       0.53074   1.70019  0.36584  1.4508 0.146848   
+#&gt; groupC      -0.24558   0.78225  0.56860 -0.4319 0.665815   
+#&gt; ---
+#&gt; Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+#&gt; 
+#&gt; Number of observations: 199
+#&gt; Number of events: 69
+#&gt; Weighted concordance index: 75.89%
+#&gt; Observed data log-likelihood: -404.311</div><div class='input'>
 <span class='co'>## get BIC's</span>
-<span class='fu'><a href='https://rdrr.io/r/stats/AIC.html'>BIC</a></span>(<span class='no'>fit1</span>)</div><div class='output co'>#&gt; [1] 840.0902</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/stats/AIC.html'>BIC</a></span>(<span class='no'>fit2</span>)</div><div class='output co'>#&gt; <span class='error'>Error in BIC(fit2): object 'fit2' not found</span></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/stats/AIC.html'>BIC</a></span>(<span class='no'>fit1</span>, <span class='no'>fit2</span>)</div><div class='output co'>#&gt; <span class='error'>Error in BIC.cox_cure(fit1, fit2): object 'fit2' not found</span></div><div class='input'>
+<span class='fu'><a href='https://rdrr.io/r/stats/AIC.html'>BIC</a></span>(<span class='no'>fit1</span>)</div><div class='output co'>#&gt; [1] 840.0902</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/stats/AIC.html'>BIC</a></span>(<span class='no'>fit2</span>)</div><div class='output co'>#&gt; [1] 861.5559</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/stats/AIC.html'>BIC</a></span>(<span class='no'>fit1</span>, <span class='no'>fit2</span>)</div><div class='output co'>#&gt;      df      BIC
+#&gt; fit1 11 840.0902
+#&gt; fit2 10 861.5559</div><div class='input'>
 
 <span class='co'>### Cox cure rate model with uncertain event status ==================</span>
 <span class='co'>## simulate sample data</span>
 <span class='no'>sim_dat</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='simData4cure.html'>simData4cure</a></span>(<span class='kw'>nSubject</span> <span class='kw'>=</span> <span class='fl'>200</span>, <span class='kw'>max_censor</span> <span class='kw'>=</span> <span class='fl'>10</span>,
                         <span class='kw'>survMat</span> <span class='kw'>=</span> <span class='no'>x_mat</span>, <span class='kw'>cureMat</span> <span class='kw'>=</span> <span class='no'>x_mat</span>, <span class='kw'>b0</span> <span class='kw'>=</span> <span class='fl'>1</span>)
 <span class='fu'><a href='https://rdrr.io/r/base/table.html'>table</a></span>(<span class='no'>sim_dat</span>$<span class='no'>case</span>)</div><div class='output co'>#&gt; 
-#&gt;  1 2a 2b 3c 3b 3a 
-#&gt; 35 80 68  6  9  2 </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/table.html'>table</a></span>(<span class='no'>sim_dat</span>$<span class='no'>obs_event</span>, <span class='kw'>useNA</span> <span class='kw'>=</span> <span class='st'>"ifany"</span>)</div><div class='output co'>#&gt; 
+#&gt;  1 2b 2a 3b 3a 3c 
+#&gt; 43 67 75  7  4  4 </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/table.html'>table</a></span>(<span class='no'>sim_dat</span>$<span class='no'>obs_event</span>, <span class='kw'>useNA</span> <span class='kw'>=</span> <span class='st'>"ifany"</span>)</div><div class='output co'>#&gt; 
 #&gt;    0    1 &lt;NA&gt; 
-#&gt;  148   35   17 </div><div class='input'>
+#&gt;  142   43   15 </div><div class='input'>
 <span class='co'>## use formula</span>
 <span class='no'>fit3</span> <span class='kw'>&lt;-</span> <span class='fu'>cox_cure</span>(~ <span class='no'>x1</span> + <span class='no'>x2</span> + <span class='no'>x3</span>, ~ <span class='no'>z1</span> + <span class='no'>z2</span> + <span class='no'>z3</span>,
-                 <span class='kw'>time</span> <span class='kw'>=</span> <span class='no'>obs_time</span>, <span class='kw'>event</span> <span class='kw'>=</span> <span class='no'>obs_event</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>sim_dat</span>)</div><div class='output co'>#&gt; <span class='error'>Error in is.data.frame(data): object 'sim_dat' not found</span></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='no'>fit3</span>)</div><div class='output co'>#&gt; <span class='error'>Error in summary(fit3): object 'fit3' not found</span></div><div class='input'>
+                 <span class='kw'>time</span> <span class='kw'>=</span> <span class='no'>obs_time</span>, <span class='kw'>event</span> <span class='kw'>=</span> <span class='no'>obs_event</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>sim_dat</span>)
+<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='no'>fit3</span>)</div><div class='output co'>#&gt; Call:
+#&gt; cox_cure(surv_formula = ~x1 + x2 + x3, cure_formula = ~z1 + z2 + 
+#&gt;     z3, time = obs_time, event = obs_event, data = sim_dat)
+#&gt; 
+#&gt; Coefficient estimates from the survival part:
+#&gt; 
+#&gt;        coef exp(coef) se(coef)  z Pr(&gt;|z|)
+#&gt; x1 0.033131  1.033686       NA NA       NA
+#&gt; x2 1.000048  2.718412       NA NA       NA
+#&gt; x3 1.079841  2.944212       NA NA       NA
+#&gt; 
+#&gt; Coefficient estimates from the cure rate part:
+#&gt; 
+#&gt;                coef exp(coef) se(coef)  z Pr(&gt;|z|)
+#&gt; (Intercept) 0.91708   2.50197       NA NA       NA
+#&gt; z1          1.10672   3.02441       NA NA       NA
+#&gt; z2          0.37592   1.45633       NA NA       NA
+#&gt; z3          0.14330   1.15408       NA NA       NA
+#&gt; 
+#&gt; Number of observations: 200
+#&gt; Number of events: 43
+#&gt; Weighted concordance index: 78.88%
+#&gt; Observed data log-likelihood: -1037.772</div><div class='input'>
 <span class='co'>## use design matrix</span>
 <span class='no'>fit4</span> <span class='kw'>&lt;-</span> <span class='fu'>cox_cure.fit</span>(<span class='no'>x_mat</span>, <span class='no'>x_mat</span>, <span class='kw'>time</span> <span class='kw'>=</span> <span class='no'>sim_dat</span>$<span class='no'>obs_time</span>,
                      <span class='kw'>event</span> <span class='kw'>=</span> <span class='no'>sim_dat</span>$<span class='no'>obs_event</span>)
@@ -475,28 +531,30 @@ elastic-net penalty.</p></div>
 #&gt; Coefficient estimates from the survival part:
 #&gt; 
 #&gt;       coef exp(coef) se(coef)  z Pr(&gt;|z|)
-#&gt; x1 0.81792   2.26578       NA NA       NA
-#&gt; x2 0.63662   1.89009       NA NA       NA
-#&gt; x3 0.93505   2.54733       NA NA       NA
-#&gt; x4 1.15805   3.18372       NA NA       NA
-#&gt; x5 1.02139   2.77705       NA NA       NA
+#&gt; x1 0.59865   1.81966       NA NA       NA
+#&gt; x2 0.89708   2.45242       NA NA       NA
+#&gt; x3 0.97204   2.64333       NA NA       NA
+#&gt; x4 0.94508   2.57303       NA NA       NA
+#&gt; x5 0.96043   2.61283       NA NA       NA
 #&gt; 
 #&gt; Coefficient estimates from the cure rate part:
 #&gt; 
-#&gt;                 coef exp(coef) se(coef)  z Pr(&gt;|z|)
-#&gt; (Intercept) 0.038993  1.039763       NA NA       NA
-#&gt; x1          1.437102  4.208484       NA NA       NA
-#&gt; x2          1.975916  7.213225       NA NA       NA
-#&gt; x3          1.873795  6.512966       NA NA       NA
-#&gt; x4          0.747896  2.112550       NA NA       NA
-#&gt; x5          1.291221  3.637223       NA NA       NA
+#&gt;                   coef  exp(coef) se(coef)  z Pr(&gt;|z|)
+#&gt; (Intercept) 1.5241e+01 4.1587e+06       NA NA       NA
+#&gt; x1          1.5074e+01 3.5196e+06       NA NA       NA
+#&gt; x2          1.9194e+01 2.1668e+08       NA NA       NA
+#&gt; x3          9.7437e+00 1.7047e+04       NA NA       NA
+#&gt; x4          1.1465e+01 9.5287e+04       NA NA       NA
+#&gt; x5          2.0296e+00 7.6113e+00       NA NA       NA
 #&gt; 
 #&gt; Number of observations: 200
-#&gt; Number of events: 35
-#&gt; Weighted concordance index: 91.70%
-#&gt; Observed data log-likelihood: -1007.554</div><div class='input'>
+#&gt; Number of events: 43
+#&gt; Weighted concordance index: 86.60%
+#&gt; Observed data log-likelihood: -1006.176</div><div class='input'>
 <span class='co'>## get BIC's</span>
-<span class='fu'><a href='https://rdrr.io/r/stats/AIC.html'>BIC</a></span>(<span class='no'>fit3</span>, <span class='no'>fit4</span>)</div><div class='output co'>#&gt; <span class='error'>Error in BIC(fit3, fit4): object 'fit3' not found</span></div></pre>
+<span class='fu'><a href='https://rdrr.io/r/stats/AIC.html'>BIC</a></span>(<span class='no'>fit3</span>, <span class='no'>fit4</span>)</div><div class='output co'>#&gt;      df      BIC
+#&gt; fit3  7 2112.633
+#&gt; fit4 11 2070.633</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>

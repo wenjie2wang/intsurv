@@ -469,7 +469,8 @@ elastic net. <em>Journal of the Royal Statistical Society</em>: Series B
 <span class='no'>fit2</span> <span class='kw'>&lt;-</span> <span class='fu'>cox_cure_net</span>(<span class='no'>surv_fm</span>, <span class='no'>cure_fm</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>dat</span>,
                      <span class='kw'>time</span> <span class='kw'>=</span> <span class='no'>obs_time</span>, <span class='kw'>event</span> <span class='kw'>=</span> <span class='no'>obs_event</span>,
                      <span class='kw'>surv_nlambda</span> <span class='kw'>=</span> <span class='fl'>5</span>, <span class='kw'>cure_nlambda</span> <span class='kw'>=</span> <span class='fl'>5</span>,
-                     <span class='kw'>surv_alpha</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>cure_alpha</span> <span class='kw'>=</span> <span class='fl'>0.5</span>)</div><div class='output co'>#&gt; <span class='error'>Error in prep_cure_model(surv_formula = surv_fm, cure_formula = cure_fm,     obs_time = obs_time, obs_event = obs_event, data = dat): object 'surv_fm' not found</span></div><div class='input'>
+                     <span class='kw'>surv_alpha</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>cure_alpha</span> <span class='kw'>=</span> <span class='fl'>0.5</span>)
+
 <span class='co'>## summary of BIC's</span>
 <span class='fu'><a href='https://rdrr.io/r/stats/AIC.html'>BIC</a></span>(<span class='no'>fit1</span>)</div><div class='output co'>#&gt;    df surv_df cure_df      BIC
 #&gt; 1   2       0       2 581.7120
@@ -496,7 +497,32 @@ elastic net. <em>Journal of the Royal Statistical Society</em>: Series B
 #&gt; 22  9       6       3 543.3485
 #&gt; 23  9       6       3 534.5779
 #&gt; 24 14       6       8 549.9885
-#&gt; 25 15       6       9 549.1525</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/stats/AIC.html'>BIC</a></span>(<span class='no'>fit2</span>)</div><div class='output co'>#&gt; <span class='error'>Error in BIC(fit2): object 'fit2' not found</span></div><div class='input'>
+#&gt; 25 15       6       9 549.1525</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/stats/AIC.html'>BIC</a></span>(<span class='no'>fit2</span>)</div><div class='output co'>#&gt;    df surv_df cure_df      BIC
+#&gt; 1   2       0       2 581.8072
+#&gt; 2   3       0       3 577.5193
+#&gt; 3   4       0       4 573.4277
+#&gt; 4   8       0       8 584.0037
+#&gt; 5   9       0       9 582.6180
+#&gt; 6   4       2       2 577.7278
+#&gt; 7   5       2       3 573.3965
+#&gt; 8   6       2       4 569.2869
+#&gt; 9  10       2       8 579.8747
+#&gt; 10 11       2       9 578.4803
+#&gt; 11  6       4       2 566.3732
+#&gt; 12  7       4       3 562.0027
+#&gt; 13  8       4       4 557.8766
+#&gt; 14 12       4       8 568.4783
+#&gt; 15 13       4       9 567.0486
+#&gt; 16  8       6       2 560.7823
+#&gt; 17  9       6       3 556.4590
+#&gt; 18  9       6       3 547.7356
+#&gt; 19 14       6       8 562.9739
+#&gt; 20 15       6       9 561.5039
+#&gt; 21  9       7       2 556.9984
+#&gt; 22 11       8       3 557.3055
+#&gt; 23 11       8       3 548.5886
+#&gt; 24 16       8       8 563.8172
+#&gt; 25 17       8       9 562.3536</div><div class='input'>
 <span class='co'>## list of coefficient estimates based on BIC</span>
 <span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span>(<span class='no'>fit1</span>)</div><div class='output co'>#&gt; $surv
 #&gt;          x1          x2          x3          x4          x5          x6 
@@ -509,7 +535,18 @@ elastic net. <em>Journal of the Royal Statistical Society</em>: Series B
 #&gt;   0.1813808   0.6708914   0.2270820   0.0000000   0.0000000   0.0000000 
 #&gt;          x6          x7          x8          x9         x10 
 #&gt;   0.0000000   0.0000000   0.0000000   0.0000000   0.0000000 
-#&gt; </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span>(<span class='no'>fit2</span>)</div><div class='output co'>#&gt; <span class='error'>Error in coef(fit2): object 'fit2' not found</span></div><div class='input'>
+#&gt; </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span>(<span class='no'>fit2</span>)</div><div class='output co'>#&gt; $surv
+#&gt;           x1           x2           x3           x4           x5           x6 
+#&gt;  0.000000000  0.000000000 -0.023208179  0.163621643 -0.001057624  0.000000000 
+#&gt;           x7           x8           x9          x10 
+#&gt;  0.000000000  0.679901815  0.561248132  0.277077510 
+#&gt; 
+#&gt; $cure
+#&gt; (Intercept)          x1          x2          x3          x4          x5 
+#&gt;   0.1851833   0.5571062   0.1894700   0.0000000   0.0000000   0.0000000 
+#&gt;          x6          x7          x8          x9         x10 
+#&gt;   0.0000000   0.0000000   0.0000000   0.0000000   0.0000000 
+#&gt; </div><div class='input'>
 
 <span class='co'>### regularized Cox cure model with uncertain event status ===========</span>
 <span class='co'>## simulate a toy data</span>
@@ -537,7 +574,8 @@ elastic net. <em>Journal of the Royal Statistical Society</em>: Series B
 <span class='no'>fit2</span> <span class='kw'>&lt;-</span> <span class='fu'>cox_cure_net</span>(<span class='no'>surv_fm</span>, <span class='no'>cure_fm</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>dat</span>,
                      <span class='kw'>time</span> <span class='kw'>=</span> <span class='no'>obs_time</span>, <span class='kw'>event</span> <span class='kw'>=</span> <span class='no'>obs_event</span>,
                      <span class='kw'>surv_nlambda</span> <span class='kw'>=</span> <span class='fl'>5</span>, <span class='kw'>cure_nlambda</span> <span class='kw'>=</span> <span class='fl'>5</span>,
-                     <span class='kw'>surv_alpha</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>cure_alpha</span> <span class='kw'>=</span> <span class='fl'>0.5</span>)</div><div class='output co'>#&gt; <span class='error'>Error in prep_cure_model(surv_formula = surv_fm, cure_formula = cure_fm,     obs_time = obs_time, obs_event = obs_event, data = dat): object 'surv_fm' not found</span></div><div class='input'>
+                     <span class='kw'>surv_alpha</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>cure_alpha</span> <span class='kw'>=</span> <span class='fl'>0.5</span>)
+
 <span class='co'>## summary of BIC's</span>
 <span class='fu'><a href='https://rdrr.io/r/stats/AIC.html'>BIC</a></span>(<span class='no'>fit1</span>)</div><div class='output co'>#&gt;    df surv_df cure_df      BIC
 #&gt; 1   1       0       1 671.1178
@@ -564,7 +602,32 @@ elastic net. <em>Journal of the Royal Statistical Society</em>: Series B
 #&gt; 22 11       8       3 659.9253
 #&gt; 23 13       8       5 659.2454
 #&gt; 24 14       8       6 657.0960
-#&gt; 25 16       8       8 662.7537</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/stats/AIC.html'>BIC</a></span>(<span class='no'>fit2</span>)</div><div class='output co'>#&gt; <span class='error'>Error in BIC(fit2): object 'fit2' not found</span></div><div class='input'>
+#&gt; 25 16       8       8 662.7537</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/stats/AIC.html'>BIC</a></span>(<span class='no'>fit2</span>)</div><div class='output co'>#&gt;    df surv_df cure_df      BIC
+#&gt; 1   1       0       1 671.1178
+#&gt; 2   3       0       3 668.9191
+#&gt; 3   5       0       5 667.8654
+#&gt; 4   6       0       6 664.9561
+#&gt; 5   7       0       7 665.3830
+#&gt; 6   2       1       1 671.3169
+#&gt; 7   4       1       3 669.0883
+#&gt; 8   6       1       5 668.1568
+#&gt; 9   7       1       6 665.4199
+#&gt; 10  9       1       8 670.2694
+#&gt; 11  6       5       1 674.4519
+#&gt; 12  8       5       3 672.2086
+#&gt; 13 10       5       5 671.1407
+#&gt; 14 11       5       6 668.2655
+#&gt; 15 13       5       8 673.0370
+#&gt; 16  8       7       1 670.6370
+#&gt; 17 10       7       3 668.5103
+#&gt; 18 12       7       5 667.5756
+#&gt; 19 13       7       6 664.8319
+#&gt; 20 15       7       8 669.6826
+#&gt; 21 10       9       1 671.5667
+#&gt; 22 12       9       3 669.4687
+#&gt; 23 14       9       5 668.5150
+#&gt; 24 15       9       6 665.6928
+#&gt; 25 17       9       8 670.5216</div><div class='input'>
 <span class='co'>## list of coefficient estimates based on BIC</span>
 <span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span>(<span class='no'>fit1</span>)</div><div class='output co'>#&gt; $surv
 #&gt;         x1         x2         x3         x4         x5         x6         x7 
@@ -577,7 +640,18 @@ elastic net. <em>Journal of the Royal Statistical Society</em>: Series B
 #&gt;  -0.1113152   0.8103170   0.5764737   0.1070077   0.0000000   0.0000000 
 #&gt;          x6          x7          x8          x9         x10 
 #&gt;   0.0000000   0.0000000   0.1353057   0.0000000  -0.2300215 
-#&gt; </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span>(<span class='no'>fit2</span>)</div><div class='output co'>#&gt; <span class='error'>Error in coef(fit2): object 'fit2' not found</span></div></pre>
+#&gt; </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span>(<span class='no'>fit2</span>)</div><div class='output co'>#&gt; $surv
+#&gt;          x1          x2          x3          x4          x5          x6 
+#&gt;  0.05301368  0.01825863  0.00000000  0.00000000  0.00000000  0.16455756 
+#&gt;          x7          x8          x9         x10 
+#&gt; -0.16141143  0.47463767  0.29464310  0.38533484 
+#&gt; 
+#&gt; $cure
+#&gt; (Intercept)          x1          x2          x3          x4          x5 
+#&gt; -0.10422948  0.71027926  0.50848669  0.08297583  0.00000000  0.00000000 
+#&gt;          x6          x7          x8          x9         x10 
+#&gt;  0.00000000  0.00000000  0.12529617  0.00000000 -0.20819511 
+#&gt; </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>
