@@ -36,7 +36,7 @@ prep_cure_model <- function(surv_formula, cure_formula,
     ## 1. process formula for survival model
     names(this_call)[names(this_call) == "surv_formula"] <- "formula"
     if (missing(data)) {
-        this_call$data <- environment(surv_formula)
+        this_call$data <- eval_env
     }
     matched_call <- match(c("formula", "data", "subset",
                             "obs_time", "obs_event"),
@@ -70,7 +70,7 @@ prep_cure_model <- function(surv_formula, cure_formula,
     this_call <- call0
     names(this_call)[names(this_call) == "cure_formula"] <- "formula"
     if (missing(data)) {
-        this_call$data <- environment(cure_formula)
+        this_call$data <- eval_env
     }
     matched_call <- match(c("formula", "data", "subset"),
                           names(this_call), nomatch = 0L)

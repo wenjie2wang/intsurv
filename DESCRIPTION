@@ -1,7 +1,7 @@
 Package: intsurv
 Title: Integrative Survival Modeling
 Version: 0.2.1
-Date: 2019-12-08
+Date: 2019-12-13
 Authors@R: c(
     person(given = "Wenjie", family = "Wang",
            email = "wenjie.2.wang@uconn.edu",
@@ -28,7 +28,9 @@ Depends:
 Imports:
     Rcpp (>= 0.12.0),
     methods,
-    stats,
+    stats
+Suggests:
+    tinytest
 LinkingTo:
     Rcpp,
     RcppArmadillo
