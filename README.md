@@ -1,8 +1,10 @@
 # intsurv
 
-[![CRAN_Status_Badge][cranVersion]][cran]
-[![Build Status][travis_master]][travis]
-
+[![CRAN Version][cran-version]][cran]
+![Dependence][tinyverse-dep]
+[![Travis Build][travis-master]][travis]
+[![AppVeyor Build][appveyor-master]][appveyor]
+[![Code Coverage][codecov-master]][codecov]
 
 The R package **intsurv** contains implementations of
 
@@ -60,6 +62,11 @@ Event Status with application to a Suicide Risk Study. *Working in Progress*.
 
 
 [cran]: https://cran.r-project.org/package=intsurv
-[cranVersion]: https://www.r-pkg.org/badges/version/intsurv
+[cran-version]: https://www.r-pkg.org/badges/version/intsurv
+[tinyverse-dep]: https://tinyverse.netlify.com/badge/intsurv
 [travis]: https://travis-ci.org/wenjie2wang/intsurv
-[travis_master]: https://travis-ci.org/wenjie2wang/intsurv.svg?branch=master
+[travis-master]: https://travis-ci.org/wenjie2wang/intsurv.svg?branch=master
+[appveyor]: https://ci.appveyor.com/project/wenjie2wang/intsurv
+[appveyor-master]: https://ci.appveyor.com/api/projects/status/744io3y0l83s0huq/branch/master?svg=true
+[codecov]: https://codecov.io/gh/wenjie2wang/intsurv
+[codecov-master]: https://codecov.io/gh/wenjie2wang/intsurv/branch/master/graph/badge.svg
