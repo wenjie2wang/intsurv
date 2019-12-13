@@ -17,6 +17,7 @@
 ^\.travis\.yml$
 ^\.travis\.yml$
 ^_pkgdown\.yml$
+^appveyor\.yml$
 ^docs$
 ^misc$
 ^testing$
