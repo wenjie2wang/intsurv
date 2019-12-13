@@ -1,7 +1,7 @@
 # intsurv
 
 [![CRAN Version][cran-version]][cran]
-![Dependence][tinyverse-dep]
+[![Dependence][tinyverse-dep]][cran]
 [![Travis Build][travis-master]][travis]
 [![AppVeyor Build][appveyor-master]][appveyor]
 [![Code Coverage][codecov-master]][codecov]
