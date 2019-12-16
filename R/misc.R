@@ -98,7 +98,7 @@ warn_dots <- function(...) {
                                    collapse = " and ")
             }
             warning(wrapMessages(
-                sprintf("Invalid argument %s went into `...` of %s()",
+                sprintf("Invalid %s went into `...` of %s()",
                         all_names, .fun_name)
             ), call. = FALSE)
         }

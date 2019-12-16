@@ -25,11 +25,19 @@ prep_cure_model <- function(surv_formula, cure_formula,
 {
     this_call <- call0 <- match.call(expand.dots = FALSE)
     if (missing(surv_formula)) {
-        stop("The 'surv_formula' cannot be missing.",
+        stop("The survival model formula cannot be missing.",
              call. = FALSE)
     }
     if (missing(cure_formula)) {
-        stop("The 'cure_formula' cannot be missing.",
+        stop("The cure model formula cannot be missing.",
+             call. = FALSE)
+    }
+    if (missing(obs_time)) {
+        stop("The survival times cannot be missing.",
+             call. = FALSE)
+    }
+    if (missing(obs_time)) {
+        stop("The event indicators cannot be missing.",
              call. = FALSE)
     }
 
