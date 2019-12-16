@@ -28,8 +28,8 @@ cox_cure_net.fit(surv_x, cure_x, time, event, cure_intercept = TRUE,
                  surv_start, cure_start,
                  surv_standardize = TRUE, cure_standardize = TRUE,
                  em_max_iter = 200, em_rel_tol = 1e-5,
-                 surv_max_iter = 200, surv_rel_tol = 1e-5,
-                 cure_max_iter = 200, cure_rel_tol = 1e-5,
+                 surv_max_iter = 10, surv_rel_tol = 1e-5,
+                 cure_max_iter = 10, cure_rel_tol = 1e-5,
                  tail_completion = c("zero", "exp", "zero-tau"),
                  tail_tau = NULL, pmin = 1e-5, early_stop = TRUE,
                  verbose = FALSE, ...)
@@ -237,7 +237,7 @@ n_obs <- 100
 p <- 10
 x_mat <- matrix(rnorm(n_obs * p), nrow = n_obs, ncol = p)
 colnames(x_mat) <- paste0("x", seq_len(p))
-surv_beta <- c(rep(0, p - 3), rep(1, 3))
+surv_beta <- c(rep(0, p - 5), rep(1, 5))
 cure_beta <- c(rep(1, 2), rep(0, p - 2))
 dat <- simData4cure(nSubject = n_obs, lambda_censor = 0.01,
                     max_censor = 10, survMat = x_mat,
@@ -254,7 +254,8 @@ fm <- paste(paste0("x", seq_len(p)), collapse = " + ")
 surv_fm <- as.formula(sprintf("~ \%s", fm))
 cure_fm <- surv_fm
 fit2 <- cox_cure_net(surv_fm, cure_fm, data = dat,
-                     time = obs_time, event = obs_event)
+                     time = obs_time, event = obs_event,
+                     surv_alpha = 0.5, cure_alpha = 0.5)
 
 ## summary of BIC's
 BIC(fit1)
@@ -272,7 +273,7 @@ n_obs <- 100
 p <- 10
 x_mat <- matrix(rnorm(n_obs * p), nrow = n_obs, ncol = p)
 colnames(x_mat) <- paste0("x", seq_len(p))
-surv_beta <- c(rep(0, p - 3), rep(1, 3))
+surv_beta <- c(rep(0, p - 5), rep(1, 5))
 cure_beta <- c(rep(1, 2), rep(0, p - 2))
 dat <- simData4cure(nSubject = n_obs, lambda_censor = 0.01,
                     max_censor = 10, survMat = x_mat,
