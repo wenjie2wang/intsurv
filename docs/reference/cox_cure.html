@@ -127,8 +127,8 @@ al. (2019+).</p>
          <span class='no'>time</span>, <span class='no'>event</span>, <span class='no'>data</span>, <span class='no'>subset</span>, <span class='kw'>contrasts</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
          <span class='kw'>bootstrap</span> <span class='kw'>=</span> <span class='fl'>0</span>, <span class='kw'>firth</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='no'>surv_start</span>, <span class='no'>cure_start</span>,
          <span class='kw'>em_max_iter</span> <span class='kw'>=</span> <span class='fl'>200</span>, <span class='kw'>em_rel_tol</span> <span class='kw'>=</span> <span class='fl'>1e-5</span>,
-         <span class='kw'>surv_max_iter</span> <span class='kw'>=</span> <span class='fl'>200</span>, <span class='kw'>surv_rel_tol</span> <span class='kw'>=</span> <span class='fl'>1e-5</span>,
-         <span class='kw'>cure_max_iter</span> <span class='kw'>=</span> <span class='fl'>200</span>, <span class='kw'>cure_rel_tol</span> <span class='kw'>=</span> <span class='fl'>1e-5</span>,
+         <span class='kw'>surv_max_iter</span> <span class='kw'>=</span> <span class='fl'>30</span>, <span class='kw'>surv_rel_tol</span> <span class='kw'>=</span> <span class='fl'>1e-5</span>,
+         <span class='kw'>cure_max_iter</span> <span class='kw'>=</span> <span class='fl'>30</span>, <span class='kw'>cure_rel_tol</span> <span class='kw'>=</span> <span class='fl'>1e-5</span>,
          <span class='kw'>tail_completion</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"zero"</span>, <span class='st'>"exp"</span>, <span class='st'>"zero-tau"</span>),
          <span class='kw'>tail_tau</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>pmin</span> <span class='kw'>=</span> <span class='fl'>1e-5</span>, <span class='kw'>early_stop</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
          <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='no'>...</span>)
@@ -137,8 +137,8 @@ al. (2019+).</p>
              <span class='kw'>bootstrap</span> <span class='kw'>=</span> <span class='fl'>0</span>, <span class='kw'>firth</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='no'>surv_start</span>, <span class='no'>cure_start</span>,
              <span class='kw'>surv_standardize</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>cure_standardize</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
              <span class='kw'>em_max_iter</span> <span class='kw'>=</span> <span class='fl'>200</span>, <span class='kw'>em_rel_tol</span> <span class='kw'>=</span> <span class='fl'>1e-5</span>,
-             <span class='kw'>surv_max_iter</span> <span class='kw'>=</span> <span class='fl'>200</span>, <span class='kw'>surv_rel_tol</span> <span class='kw'>=</span> <span class='fl'>1e-5</span>,
-             <span class='kw'>cure_max_iter</span> <span class='kw'>=</span> <span class='fl'>200</span>, <span class='kw'>cure_rel_tol</span> <span class='kw'>=</span> <span class='fl'>1e-5</span>,
+             <span class='kw'>surv_max_iter</span> <span class='kw'>=</span> <span class='fl'>30</span>, <span class='kw'>surv_rel_tol</span> <span class='kw'>=</span> <span class='fl'>1e-5</span>,
+             <span class='kw'>cure_max_iter</span> <span class='kw'>=</span> <span class='fl'>30</span>, <span class='kw'>cure_rel_tol</span> <span class='kw'>=</span> <span class='fl'>1e-5</span>,
              <span class='kw'>tail_completion</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"zero"</span>, <span class='st'>"exp"</span>, <span class='st'>"zero-tau"</span>),
              <span class='kw'>tail_tau</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>pmin</span> <span class='kw'>=</span> <span class='fl'>1e-5</span>, <span class='kw'>early_stop</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
              <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='no'>...</span>)</pre>
@@ -395,12 +395,12 @@ elastic-net penalty.</p></div>
 #&gt; 
 #&gt; Coefficient estimates from the survival part:
 #&gt; 
-#&gt;       coef exp(coef) se(coef)      z  Pr(&gt;|z|)    
-#&gt; x1 0.42521   1.52991  0.14922 2.8495  0.004379 ** 
-#&gt; x2 0.41582   1.51562  0.25198 1.6502  0.098897 .  
-#&gt; x3 0.31245   1.36677  0.21455 1.4564  0.145295    
-#&gt; x4 0.65654   1.92811  0.10825 6.0651 1.319e-09 ***
-#&gt; x5 0.53661   1.71020  0.09377 5.7226 1.049e-08 ***
+#&gt;        coef exp(coef) se(coef)      z  Pr(&gt;|z|)    
+#&gt; x1 0.424787  1.529264 0.148820 2.8544  0.004312 ** 
+#&gt; x2 0.415574  1.515241 0.251128 1.6548  0.097959 .  
+#&gt; x3 0.312479  1.366809 0.215197 1.4521  0.146484    
+#&gt; x4 0.656209  1.927471 0.107090 6.1276 8.919e-10 ***
+#&gt; x5 0.536194  1.709488 0.093791 5.7169 1.085e-08 ***
 #&gt; ---
 #&gt; Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #&gt; 
@@ -410,7 +410,7 @@ elastic-net penalty.</p></div>
 #&gt; (Intercept) -0.82103   0.43998  0.11138 -7.3716 1.686e-13 ***
 #&gt; x1           0.27945   1.32241  0.15172  1.8419  0.065486 .  
 #&gt; x2           0.47637   1.61022  0.20779  2.2925  0.021876 *  
-#&gt; x3           0.44615   1.56228  0.19981  2.2329  0.025559 *  
+#&gt; x3           0.44615   1.56228  0.19981  2.2329  0.025558 *  
 #&gt; x4           0.67783   1.96960  0.21637  3.1327  0.001732 ** 
 #&gt; x5           0.57693   1.78057  0.20864  2.7652  0.005688 ** 
 #&gt; ---
@@ -423,7 +423,7 @@ elastic-net penalty.</p></div>
 <span class='co'>## coefficient estimates from both model parts</span>
 <span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span>(<span class='no'>fit1</span>)</div><div class='output co'>#&gt; $surv
 #&gt;        x1        x2        x3        x4        x5 
-#&gt; 0.4252076 0.4158237 0.3124531 0.6565415 0.5366095 
+#&gt; 0.4247867 0.4155744 0.3124786 0.6562086 0.5361937 
 #&gt; 
 #&gt; $cure
 #&gt; (Intercept)          x1          x2          x3          x4          x5 
@@ -431,7 +431,7 @@ elastic-net penalty.</p></div>
 #&gt; </div><div class='input'>
 <span class='co'>## or a particular part</span>
 <span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span>(<span class='no'>fit1</span>, <span class='st'>"surv"</span>)</div><div class='output co'>#&gt;        x1        x2        x3        x4        x5 
-#&gt; 0.4252076 0.4158237 0.3124531 0.6565415 0.5366095 </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span>(<span class='no'>fit1</span>, <span class='st'>"cure"</span>)</div><div class='output co'>#&gt; (Intercept)          x1          x2          x3          x4          x5 
+#&gt; 0.4247867 0.4155744 0.3124786 0.6562086 0.5361937 </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span>(<span class='no'>fit1</span>, <span class='st'>"cure"</span>)</div><div class='output co'>#&gt; (Intercept)          x1          x2          x3          x4          x5 
 #&gt;  -0.8210297   0.2794521   0.4763700   0.4461459   0.6778322   0.5769342 </div><div class='input'>
 <span class='co'>## compute weighted concordance index (C-index)</span>
 <span class='fu'><a href='cIndex.html'>cIndex</a></span>(<span class='kw'>time</span> <span class='kw'>=</span> <span class='no'>obs_time</span>, <span class='kw'>event</span> <span class='kw'>=</span> <span class='no'>event</span>,
@@ -458,11 +458,11 @@ elastic-net penalty.</p></div>
 #&gt; Coefficient estimates from the survival part:
 #&gt; 
 #&gt;             coef exp(coef)  se(coef)      z  Pr(&gt;|z|)    
-#&gt; x2     0.3621490 1.4364130 0.0930211 3.8932 9.893e-05 ***
-#&gt; x3     0.2698033 1.3097069 0.1316441 2.0495   0.04041 *  
-#&gt; x4     0.6802422 1.9743559 0.1516111 4.4868 7.231e-06 ***
-#&gt; groupB 0.1083320 1.1144177 0.2884753 0.3755   0.70726    
-#&gt; groupC 0.0076492 1.0076785 0.3194374 0.0239   0.98090    
+#&gt; x2     0.3621462 1.4364089 0.0922064 3.9276 8.581e-05 ***
+#&gt; x3     0.2697801 1.3096765 0.1303953 2.0689   0.03855 *  
+#&gt; x4     0.6799737 1.9738259 0.1516270 4.4845 7.308e-06 ***
+#&gt; groupB 0.1084115 1.1145063 0.2885040 0.3758   0.70709    
+#&gt; groupC 0.0075088 1.0075371 0.3195018 0.0235   0.98125    
 #&gt; ---
 #&gt; Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #&gt; 
@@ -505,22 +505,22 @@ elastic-net penalty.</p></div>
 #&gt; Coefficient estimates from the survival part:
 #&gt; 
 #&gt;        coef exp(coef) se(coef)  z Pr(&gt;|z|)
-#&gt; x1 0.033131  1.033686       NA NA       NA
-#&gt; x2 1.000048  2.718412       NA NA       NA
-#&gt; x3 1.079841  2.944212       NA NA       NA
+#&gt; x1 0.032763  1.033306       NA NA       NA
+#&gt; x2 1.003005  2.726462       NA NA       NA
+#&gt; x3 1.083061  2.953707       NA NA       NA
 #&gt; 
 #&gt; Coefficient estimates from the cure rate part:
 #&gt; 
 #&gt;                coef exp(coef) se(coef)  z Pr(&gt;|z|)
-#&gt; (Intercept) 0.91708   2.50197       NA NA       NA
-#&gt; z1          1.10672   3.02441       NA NA       NA
-#&gt; z2          0.37592   1.45633       NA NA       NA
-#&gt; z3          0.14330   1.15408       NA NA       NA
+#&gt; (Intercept) 0.91883   2.50636       NA NA       NA
+#&gt; z1          1.10733   3.02628       NA NA       NA
+#&gt; z2          0.37420   1.45383       NA NA       NA
+#&gt; z3          0.14176   1.15231       NA NA       NA
 #&gt; 
 #&gt; Number of observations: 200
 #&gt; Number of events: 43
 #&gt; Weighted concordance index: 78.88%
-#&gt; Observed data log-likelihood: -1037.772</div><div class='input'>
+#&gt; Observed data log-likelihood: -1037.769</div><div class='input'>
 <span class='co'>## use design matrix</span>
 <span class='no'>fit4</span> <span class='kw'>&lt;-</span> <span class='fu'>cox_cure.fit</span>(<span class='no'>x_mat</span>, <span class='no'>x_mat</span>, <span class='kw'>time</span> <span class='kw'>=</span> <span class='no'>sim_dat</span>$<span class='no'>obs_time</span>,
                      <span class='kw'>event</span> <span class='kw'>=</span> <span class='no'>sim_dat</span>$<span class='no'>obs_event</span>)
@@ -531,30 +531,30 @@ elastic-net penalty.</p></div>
 #&gt; Coefficient estimates from the survival part:
 #&gt; 
 #&gt;       coef exp(coef) se(coef)  z Pr(&gt;|z|)
-#&gt; x1 0.59865   1.81966       NA NA       NA
-#&gt; x2 0.89708   2.45242       NA NA       NA
-#&gt; x3 0.97204   2.64333       NA NA       NA
-#&gt; x4 0.94508   2.57303       NA NA       NA
-#&gt; x5 0.96043   2.61283       NA NA       NA
+#&gt; x1 0.56189   1.75399       NA NA       NA
+#&gt; x2 0.85788   2.35816       NA NA       NA
+#&gt; x3 0.94811   2.58084       NA NA       NA
+#&gt; x4 0.94266   2.56679       NA NA       NA
+#&gt; x5 0.96433   2.62304       NA NA       NA
 #&gt; 
 #&gt; Coefficient estimates from the cure rate part:
 #&gt; 
 #&gt;                   coef  exp(coef) se(coef)  z Pr(&gt;|z|)
-#&gt; (Intercept) 1.5241e+01 4.1587e+06       NA NA       NA
-#&gt; x1          1.5074e+01 3.5196e+06       NA NA       NA
-#&gt; x2          1.9194e+01 2.1668e+08       NA NA       NA
-#&gt; x3          9.7437e+00 1.7047e+04       NA NA       NA
-#&gt; x4          1.1465e+01 9.5287e+04       NA NA       NA
-#&gt; x5          2.0296e+00 7.6113e+00       NA NA       NA
+#&gt; (Intercept) 1.0022e+01 2.2524e+04       NA NA       NA
+#&gt; x1          1.3702e+01 8.9290e+05       NA NA       NA
+#&gt; x2          1.2635e+01 3.0702e+05       NA NA       NA
+#&gt; x3          5.6389e+00 2.8116e+02       NA NA       NA
+#&gt; x4          5.6894e+00 2.9573e+02       NA NA       NA
+#&gt; x5          1.4526e+00 4.2743e+00       NA NA       NA
 #&gt; 
 #&gt; Number of observations: 200
 #&gt; Number of events: 43
-#&gt; Weighted concordance index: 86.60%
-#&gt; Observed data log-likelihood: -1006.176</div><div class='input'>
+#&gt; Weighted concordance index: 86.94%
+#&gt; Observed data log-likelihood: -1006.335</div><div class='input'>
 <span class='co'>## get BIC's</span>
 <span class='fu'><a href='https://rdrr.io/r/stats/AIC.html'>BIC</a></span>(<span class='no'>fit3</span>, <span class='no'>fit4</span>)</div><div class='output co'>#&gt;      df      BIC
-#&gt; fit3  7 2112.633
-#&gt; fit4 11 2070.633</div></pre>
+#&gt; fit3  7 2112.626
+#&gt; fit4 11 2070.952</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>

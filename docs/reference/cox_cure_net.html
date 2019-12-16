@@ -136,8 +136,8 @@ and Chen, 1992; Sy and Taylor, 2000)</p>
              <span class='no'>surv_start</span>, <span class='no'>cure_start</span>,
              <span class='kw'>surv_standardize</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>cure_standardize</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
              <span class='kw'>em_max_iter</span> <span class='kw'>=</span> <span class='fl'>200</span>, <span class='kw'>em_rel_tol</span> <span class='kw'>=</span> <span class='fl'>1e-5</span>,
-             <span class='kw'>surv_max_iter</span> <span class='kw'>=</span> <span class='fl'>200</span>, <span class='kw'>surv_rel_tol</span> <span class='kw'>=</span> <span class='fl'>1e-5</span>,
-             <span class='kw'>cure_max_iter</span> <span class='kw'>=</span> <span class='fl'>200</span>, <span class='kw'>cure_rel_tol</span> <span class='kw'>=</span> <span class='fl'>1e-5</span>,
+             <span class='kw'>surv_max_iter</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>surv_rel_tol</span> <span class='kw'>=</span> <span class='fl'>1e-5</span>,
+             <span class='kw'>cure_max_iter</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>cure_rel_tol</span> <span class='kw'>=</span> <span class='fl'>1e-5</span>,
              <span class='kw'>tail_completion</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"zero"</span>, <span class='st'>"exp"</span>, <span class='st'>"zero-tau"</span>),
              <span class='kw'>tail_tau</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>pmin</span> <span class='kw'>=</span> <span class='fl'>1e-5</span>, <span class='kw'>early_stop</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
              <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='no'>...</span>)
@@ -150,8 +150,8 @@ and Chen, 1992; Sy and Taylor, 2000)</p>
                  <span class='no'>surv_start</span>, <span class='no'>cure_start</span>,
                  <span class='kw'>surv_standardize</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>cure_standardize</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
                  <span class='kw'>em_max_iter</span> <span class='kw'>=</span> <span class='fl'>200</span>, <span class='kw'>em_rel_tol</span> <span class='kw'>=</span> <span class='fl'>1e-5</span>,
-                 <span class='kw'>surv_max_iter</span> <span class='kw'>=</span> <span class='fl'>200</span>, <span class='kw'>surv_rel_tol</span> <span class='kw'>=</span> <span class='fl'>1e-5</span>,
-                 <span class='kw'>cure_max_iter</span> <span class='kw'>=</span> <span class='fl'>200</span>, <span class='kw'>cure_rel_tol</span> <span class='kw'>=</span> <span class='fl'>1e-5</span>,
+                 <span class='kw'>surv_max_iter</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>surv_rel_tol</span> <span class='kw'>=</span> <span class='fl'>1e-5</span>,
+                 <span class='kw'>cure_max_iter</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>cure_rel_tol</span> <span class='kw'>=</span> <span class='fl'>1e-5</span>,
                  <span class='kw'>tail_completion</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"zero"</span>, <span class='st'>"exp"</span>, <span class='st'>"zero-tau"</span>),
                  <span class='kw'>tail_tau</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>pmin</span> <span class='kw'>=</span> <span class='fl'>1e-5</span>, <span class='kw'>early_stop</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
                  <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='no'>...</span>)</pre>
@@ -317,7 +317,7 @@ their L1-norm.  The default value is <code>1e-5</code>.</p></td>
       <th>surv_max_iter</th>
       <td><p>A positive integer specifying the maximum iteration
 number of the M-step routine related to the survival model component.
-The default value is <code>200</code>.</p></td>
+The default value is <code>10</code> to encourage faster convergence.</p></td>
     </tr>
     <tr>
       <th>surv_rel_tol</th>
@@ -333,7 +333,7 @@ default value is <code>1e-5</code>.</p></td>
       <th>cure_max_iter</th>
       <td><p>A positive integer specifying the maximum iteration
 number of the M-step routine related to the cure rate model component.
-The default value is <code>200</code>.</p></td>
+The default value is <code>10</code> to encourage faster convergence.</p></td>
     </tr>
     <tr>
       <th>cure_rel_tol</th>
@@ -450,7 +450,7 @@ elastic net. <em>Journal of the Royal Statistical Society</em>: Series B
 <span class='no'>p</span> <span class='kw'>&lt;-</span> <span class='fl'>10</span>
 <span class='no'>x_mat</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>matrix</a></span>(<span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span>(<span class='no'>n_obs</span> * <span class='no'>p</span>), <span class='kw'>nrow</span> <span class='kw'>=</span> <span class='no'>n_obs</span>, <span class='kw'>ncol</span> <span class='kw'>=</span> <span class='no'>p</span>)
 <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>x_mat</span>) <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span>(<span class='st'>"x"</span>, <span class='fu'><a href='https://rdrr.io/r/base/seq.html'>seq_len</a></span>(<span class='no'>p</span>))
-<span class='no'>surv_beta</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>0</span>, <span class='no'>p</span> - <span class='fl'>3</span>), <span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>1</span>, <span class='fl'>3</span>))
+<span class='no'>surv_beta</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>0</span>, <span class='no'>p</span> - <span class='fl'>5</span>), <span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>1</span>, <span class='fl'>5</span>))
 <span class='no'>cure_beta</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>1</span>, <span class='fl'>2</span>), <span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>0</span>, <span class='no'>p</span> - <span class='fl'>2</span>))
 <span class='no'>dat</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='simData4cure.html'>simData4cure</a></span>(<span class='kw'>nSubject</span> <span class='kw'>=</span> <span class='no'>n_obs</span>, <span class='kw'>lambda_censor</span> <span class='kw'>=</span> <span class='fl'>0.01</span>,
                     <span class='kw'>max_censor</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>survMat</span> <span class='kw'>=</span> <span class='no'>x_mat</span>,
@@ -459,7 +459,7 @@ elastic net. <em>Journal of the Royal Statistical Society</em>: Series B
 
 <span class='co'>## model-fitting from given design matrices</span>
 <span class='no'>fit1</span> <span class='kw'>&lt;-</span> <span class='fu'>cox_cure_net.fit</span>(<span class='no'>x_mat</span>, <span class='no'>x_mat</span>, <span class='no'>dat</span>$<span class='no'>obs_time</span>, <span class='no'>dat</span>$<span class='no'>obs_event</span>,
-                         <span class='kw'>surv_nlambda</span> <span class='kw'>=</span> <span class='fl'>5</span>, <span class='kw'>cure_nlambda</span> <span class='kw'>=</span> <span class='fl'>5</span>,
+                         <span class='kw'>surv_nlambda</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>cure_nlambda</span> <span class='kw'>=</span> <span class='fl'>10</span>,
                          <span class='kw'>surv_alpha</span> <span class='kw'>=</span> <span class='fl'>0.8</span>, <span class='kw'>cure_alpha</span> <span class='kw'>=</span> <span class='fl'>0.8</span>)
 
 <span class='co'>## model-fitting from given model formula</span>
@@ -468,84 +468,233 @@ elastic net. <em>Journal of the Royal Statistical Society</em>: Series B
 <span class='no'>cure_fm</span> <span class='kw'>&lt;-</span> <span class='no'>surv_fm</span>
 <span class='no'>fit2</span> <span class='kw'>&lt;-</span> <span class='fu'>cox_cure_net</span>(<span class='no'>surv_fm</span>, <span class='no'>cure_fm</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>dat</span>,
                      <span class='kw'>time</span> <span class='kw'>=</span> <span class='no'>obs_time</span>, <span class='kw'>event</span> <span class='kw'>=</span> <span class='no'>obs_event</span>,
-                     <span class='kw'>surv_nlambda</span> <span class='kw'>=</span> <span class='fl'>5</span>, <span class='kw'>cure_nlambda</span> <span class='kw'>=</span> <span class='fl'>5</span>,
                      <span class='kw'>surv_alpha</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>cure_alpha</span> <span class='kw'>=</span> <span class='fl'>0.5</span>)
 
 <span class='co'>## summary of BIC's</span>
-<span class='fu'><a href='https://rdrr.io/r/stats/AIC.html'>BIC</a></span>(<span class='no'>fit1</span>)</div><div class='output co'>#&gt;    df surv_df cure_df      BIC
-#&gt; 1   2       0       2 581.7120
-#&gt; 2   3       0       3 575.1233
-#&gt; 3   3       0       3 566.3820
-#&gt; 4   8       0       8 581.6890
-#&gt; 5   9       0       9 580.9658
-#&gt; 6   4       2       2 573.3574
-#&gt; 7   5       2       3 566.6952
-#&gt; 8   5       2       3 557.9185
-#&gt; 9  10       2       8 573.2636
-#&gt; 10 11       2       9 572.5225
-#&gt; 11  6       4       2 559.5607
-#&gt; 12  7       4       3 552.8606
-#&gt; 13  7       4       3 544.0506
-#&gt; 14 12       4       8 559.4421
-#&gt; 15 13       4       9 558.6396
-#&gt; 16  8       6       2 556.1585
-#&gt; 17  9       6       3 549.6456
-#&gt; 18  8       5       3 536.2544
-#&gt; 19 13       5       8 551.6861
-#&gt; 20 14       5       9 550.8314
-#&gt; 21  8       6       2 549.8983
-#&gt; 22  9       6       3 543.3485
-#&gt; 23  9       6       3 534.5779
-#&gt; 24 14       6       8 549.9885
-#&gt; 25 15       6       9 549.1525</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/stats/AIC.html'>BIC</a></span>(<span class='no'>fit2</span>)</div><div class='output co'>#&gt;    df surv_df cure_df      BIC
-#&gt; 1   2       0       2 581.8072
-#&gt; 2   3       0       3 577.5193
-#&gt; 3   4       0       4 573.4277
-#&gt; 4   8       0       8 584.0037
-#&gt; 5   9       0       9 582.6180
-#&gt; 6   4       2       2 577.7278
-#&gt; 7   5       2       3 573.3965
-#&gt; 8   6       2       4 569.2869
-#&gt; 9  10       2       8 579.8747
-#&gt; 10 11       2       9 578.4803
-#&gt; 11  6       4       2 566.3732
-#&gt; 12  7       4       3 562.0027
-#&gt; 13  8       4       4 557.8766
-#&gt; 14 12       4       8 568.4783
-#&gt; 15 13       4       9 567.0486
-#&gt; 16  8       6       2 560.7823
-#&gt; 17  9       6       3 556.4590
-#&gt; 18  9       6       3 547.7356
-#&gt; 19 14       6       8 562.9739
-#&gt; 20 15       6       9 561.5039
-#&gt; 21  9       7       2 556.9984
-#&gt; 22 11       8       3 557.3055
-#&gt; 23 11       8       3 548.5886
-#&gt; 24 16       8       8 563.8172
-#&gt; 25 17       8       9 562.3536</div><div class='input'>
+<span class='fu'><a href='https://rdrr.io/r/stats/AIC.html'>BIC</a></span>(<span class='no'>fit1</span>)</div><div class='output co'>#&gt;     df surv_df cure_df      BIC
+#&gt; 1    2       0       2 571.6571
+#&gt; 2    2       0       2 567.3183
+#&gt; 3    3       0       3 566.3959
+#&gt; 4    4       0       4 567.0486
+#&gt; 5    6       0       6 572.1125
+#&gt; 6    7       0       7 572.3151
+#&gt; 7    9       0       9 578.0114
+#&gt; 8   10       0      10 579.5360
+#&gt; 9   10       0      10 577.3779
+#&gt; 10  11       0      11 580.3647
+#&gt; 11   3       1       2 574.8274
+#&gt; 12   3       1       2 570.4874
+#&gt; 13   4       1       3 569.5848
+#&gt; 14   5       1       4 570.2519
+#&gt; 15   6       1       5 570.7127
+#&gt; 16   8       1       7 575.5229
+#&gt; 17  10       1       9 581.2240
+#&gt; 18  11       1      10 582.7503
+#&gt; 19  11       1      10 580.5941
+#&gt; 20  12       1      11 583.5950
+#&gt; 21   4       2       2 571.2997
+#&gt; 22   4       2       2 566.9032
+#&gt; 23   5       2       3 565.9783
+#&gt; 24   6       2       4 566.6104
+#&gt; 25   7       2       5 567.0881
+#&gt; 26   9       2       7 571.9319
+#&gt; 27  11       2       9 577.6632
+#&gt; 28  12       2      10 579.1987
+#&gt; 29  12       2      10 577.0549
+#&gt; 30  13       2      11 580.0565
+#&gt; 31   6       4       2 572.0656
+#&gt; 32   6       4       2 567.2675
+#&gt; 33   7       4       3 566.1284
+#&gt; 34   8       4       4 566.5333
+#&gt; 35   9       4       5 567.1053
+#&gt; 36  11       4       7 572.0550
+#&gt; 37  12       4       8 573.2711
+#&gt; 38  14       4      10 579.5199
+#&gt; 39  14       4      10 577.4571
+#&gt; 40  15       4      11 580.4857
+#&gt; 41   7       5       2 561.6701
+#&gt; 42   7       5       2 556.4553
+#&gt; 43   8       5       3 555.4695
+#&gt; 44   9       5       4 555.9365
+#&gt; 45   9       5       4 552.1170
+#&gt; 46  12       5       7 561.6257
+#&gt; 47  13       5       8 562.8343
+#&gt; 48  15       5      10 569.1114
+#&gt; 49  15       5      10 567.0386
+#&gt; 50  16       5      11 570.0646
+#&gt; 51   8       6       2 553.9804
+#&gt; 52   8       6       2 549.1282
+#&gt; 53   9       6       3 548.2643
+#&gt; 54  10       6       4 548.7767
+#&gt; 55  10       6       4 544.9999
+#&gt; 56  13       6       7 554.6095
+#&gt; 57  15       6       9 560.3973
+#&gt; 58  16       6      10 562.0775
+#&gt; 59  16       6      10 559.9850
+#&gt; 60  17       6      11 562.9912
+#&gt; 61   8       6       2 546.0301
+#&gt; 62   9       7       2 545.7688
+#&gt; 63  10       7       3 544.8990
+#&gt; 64  11       7       4 545.4237
+#&gt; 65  11       7       4 541.6581
+#&gt; 66  14       7       7 551.3499
+#&gt; 67  16       7       9 557.1245
+#&gt; 68  17       7      10 558.8266
+#&gt; 69  17       7      10 556.7271
+#&gt; 70  18       7      11 559.7162
+#&gt; 71  10       8       2 549.1905
+#&gt; 72  10       8       2 544.4252
+#&gt; 73  11       8       3 543.5545
+#&gt; 74  12       8       4 544.0806
+#&gt; 75  12       8       4 540.3208
+#&gt; 76  14       8       6 545.4670
+#&gt; 77  17       8       9 555.8510
+#&gt; 78  18       8      10 557.5811
+#&gt; 79  18       8      10 555.4871
+#&gt; 80  19       8      11 558.4629
+#&gt; 81  12      10       2 553.2414
+#&gt; 82  12      10       2 548.5922
+#&gt; 83  13      10       3 547.6943
+#&gt; 84  14      10       4 548.1867
+#&gt; 85  14      10       4 544.4073
+#&gt; 86  16      10       6 549.5504
+#&gt; 87  19      10       9 559.9386
+#&gt; 88  20      10      10 561.6793
+#&gt; 89  20      10      10 559.5780
+#&gt; 90  21      10      11 562.5353
+#&gt; 91  12      10       2 549.7202
+#&gt; 92  12      10       2 545.0457
+#&gt; 93  13      10       3 544.0781
+#&gt; 94  14      10       4 544.5525
+#&gt; 95  14      10       4 540.7614
+#&gt; 96  16      10       6 545.9142
+#&gt; 97  19      10       9 556.3302
+#&gt; 98  20      10      10 558.0768
+#&gt; 99  21      10      11 560.5729
+#&gt; 100 21      10      11 558.9188</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/stats/AIC.html'>BIC</a></span>(<span class='no'>fit2</span>)</div><div class='output co'>#&gt;     df surv_df cure_df      BIC
+#&gt; 1    2       0       2 571.7960
+#&gt; 2    2       0       2 568.4846
+#&gt; 3    3       0       3 568.4513
+#&gt; 4    4       0       4 569.2554
+#&gt; 5    6       0       6 574.2391
+#&gt; 6    7       0       7 574.6854
+#&gt; 7    8       0       8 575.6073
+#&gt; 8   10       0      10 581.4936
+#&gt; 9   10       0      10 578.9976
+#&gt; 10  11       0      11 581.7159
+#&gt; 11   3       1       2 575.2444
+#&gt; 12   3       1       2 571.9326
+#&gt; 13   4       1       3 571.9113
+#&gt; 14   5       1       4 572.7252
+#&gt; 15   7       1       6 577.7099
+#&gt; 16   8       1       7 578.1589
+#&gt; 17   9       1       8 579.0874
+#&gt; 18  11       1      10 584.9734
+#&gt; 19  11       1      10 582.4793
+#&gt; 20  12       1      11 585.2047
+#&gt; 21   4       2       2 573.4416
+#&gt; 22   4       2       2 570.0996
+#&gt; 23   5       2       3 570.0653
+#&gt; 24   6       2       4 570.8644
+#&gt; 25   8       2       6 575.8693
+#&gt; 26   9       2       7 576.3260
+#&gt; 27  11       2       9 581.8684
+#&gt; 28  12       2      10 583.1636
+#&gt; 29  12       2      10 580.6778
+#&gt; 30  13       2      11 583.4075
+#&gt; 31   6       4       2 576.5409
+#&gt; 32   6       4       2 573.0322
+#&gt; 33   7       4       3 572.8718
+#&gt; 34   8       4       4 573.5274
+#&gt; 35  10       4       6 578.5670
+#&gt; 36  11       4       7 579.1076
+#&gt; 37  13       4       9 584.6892
+#&gt; 38  14       4      10 586.0466
+#&gt; 39  14       4      10 583.6085
+#&gt; 40  15       4      11 586.3682
+#&gt; 41   7       5       2 569.3149
+#&gt; 42   7       5       2 565.4893
+#&gt; 43   8       5       3 565.3710
+#&gt; 44   9       5       4 566.0249
+#&gt; 45  11       5       6 571.2513
+#&gt; 46  12       5       7 571.7455
+#&gt; 47  14       5       9 577.3171
+#&gt; 48  15       5      10 578.7200
+#&gt; 49  15       5      10 576.2849
+#&gt; 50  16       5      11 579.0387
+#&gt; 51   8       6       2 562.1825
+#&gt; 52   8       6       2 558.4702
+#&gt; 53   9       6       3 558.4211
+#&gt; 54  10       6       4 559.0871
+#&gt; 55  11       6       5 559.7990
+#&gt; 56  13       6       7 564.9188
+#&gt; 57  15       6       9 570.4690
+#&gt; 58  16       6      10 571.8977
+#&gt; 59  16       6      10 569.4549
+#&gt; 60  17       6      11 572.2025
+#&gt; 61   8       6       2 553.2286
+#&gt; 62   8       6       2 549.5317
+#&gt; 63   9       6       3 549.5310
+#&gt; 64  10       6       4 550.2104
+#&gt; 65  11       6       5 550.9517
+#&gt; 66  13       6       7 556.1330
+#&gt; 67  15       6       9 561.6679
+#&gt; 68  16       6      10 563.1173
+#&gt; 69  16       6      10 560.6681
+#&gt; 70  17       6      11 563.4066
+#&gt; 71  10       8       2 555.7214
+#&gt; 72  10       8       2 551.8425
+#&gt; 73  11       8       3 551.8157
+#&gt; 74  12       8       4 552.4985
+#&gt; 75  13       8       5 553.2558
+#&gt; 76  15       8       7 558.4936
+#&gt; 77  17       8       9 564.0277
+#&gt; 78  18       8      10 565.5041
+#&gt; 79  18       8      10 563.0594
+#&gt; 80  19       8      11 565.7908
+#&gt; 81  12      10       2 558.9980
+#&gt; 82  12      10       2 555.1464
+#&gt; 83  13      10       3 555.0609
+#&gt; 84  14      10       4 555.7283
+#&gt; 85  15      10       5 556.4958
+#&gt; 86  17      10       7 561.7781
+#&gt; 87  19      10       9 567.3022
+#&gt; 88  20      10      10 568.7959
+#&gt; 89  20      10      10 566.3472
+#&gt; 90  21      10      11 569.0627
+#&gt; 91  12      10       2 554.2618
+#&gt; 92  12      10       2 550.4198
+#&gt; 93  13      10       3 550.3587
+#&gt; 94  14      10       4 551.0205
+#&gt; 95  15      10       5 551.7731
+#&gt; 96  17      10       7 557.0863
+#&gt; 97  19      10       9 562.6015
+#&gt; 98  20      10      10 564.1141
+#&gt; 99  20      10      10 561.6663
+#&gt; 100 21      10      11 564.3729</div><div class='input'>
 <span class='co'>## list of coefficient estimates based on BIC</span>
 <span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span>(<span class='no'>fit1</span>)</div><div class='output co'>#&gt; $surv
 #&gt;          x1          x2          x3          x4          x5          x6 
-#&gt;  0.09063833  0.00000000 -0.10036374  0.25328468  0.00000000  0.00000000 
+#&gt;  0.00000000  0.04362831 -0.01424770  0.00000000 -0.05010440  0.60241075 
 #&gt;          x7          x8          x9         x10 
-#&gt;  0.00000000  0.89801599  0.80470744  0.48548434 
+#&gt;  0.53260469  0.70036371  0.69408151  0.39596762 
 #&gt; 
 #&gt; $cure
 #&gt; (Intercept)          x1          x2          x3          x4          x5 
-#&gt;   0.1813808   0.6708914   0.2270820   0.0000000   0.0000000   0.0000000 
+#&gt;  0.18538807  0.57609403  0.28251064  0.00000000  0.00000000  0.00000000 
 #&gt;          x6          x7          x8          x9         x10 
-#&gt;   0.0000000   0.0000000   0.0000000   0.0000000   0.0000000 
+#&gt;  0.00000000  0.07310284  0.00000000  0.00000000  0.00000000 
 #&gt; </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span>(<span class='no'>fit2</span>)</div><div class='output co'>#&gt; $surv
-#&gt;           x1           x2           x3           x4           x5           x6 
-#&gt;  0.000000000  0.000000000 -0.023208179  0.163621643 -0.001057624  0.000000000 
-#&gt;           x7           x8           x9          x10 
-#&gt;  0.000000000  0.679901815  0.561248132  0.277077510 
+#&gt;         x1         x2         x3         x4         x5         x6         x7 
+#&gt; 0.00000000 0.04209618 0.00000000 0.00000000 0.00000000 0.37504428 0.34838703 
+#&gt;         x8         x9        x10 
+#&gt; 0.51943261 0.51472535 0.23160788 
 #&gt; 
 #&gt; $cure
 #&gt; (Intercept)          x1          x2          x3          x4          x5 
-#&gt;   0.1851833   0.5571062   0.1894700   0.0000000   0.0000000   0.0000000 
+#&gt;  0.16783042  0.26824247  0.08013096  0.00000000  0.00000000  0.00000000 
 #&gt;          x6          x7          x8          x9         x10 
-#&gt;   0.0000000   0.0000000   0.0000000   0.0000000   0.0000000 
+#&gt;  0.00000000  0.00000000  0.00000000  0.00000000  0.00000000 
 #&gt; </div><div class='input'>
 
 <span class='co'>### regularized Cox cure model with uncertain event status ===========</span>
@@ -555,7 +704,7 @@ elastic net. <em>Journal of the Royal Statistical Society</em>: Series B
 <span class='no'>p</span> <span class='kw'>&lt;-</span> <span class='fl'>10</span>
 <span class='no'>x_mat</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>matrix</a></span>(<span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span>(<span class='no'>n_obs</span> * <span class='no'>p</span>), <span class='kw'>nrow</span> <span class='kw'>=</span> <span class='no'>n_obs</span>, <span class='kw'>ncol</span> <span class='kw'>=</span> <span class='no'>p</span>)
 <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>x_mat</span>) <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span>(<span class='st'>"x"</span>, <span class='fu'><a href='https://rdrr.io/r/base/seq.html'>seq_len</a></span>(<span class='no'>p</span>))
-<span class='no'>surv_beta</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>0</span>, <span class='no'>p</span> - <span class='fl'>3</span>), <span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>1</span>, <span class='fl'>3</span>))
+<span class='no'>surv_beta</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>0</span>, <span class='no'>p</span> - <span class='fl'>5</span>), <span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>1</span>, <span class='fl'>5</span>))
 <span class='no'>cure_beta</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>1</span>, <span class='fl'>2</span>), <span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>0</span>, <span class='no'>p</span> - <span class='fl'>2</span>))
 <span class='no'>dat</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='simData4cure.html'>simData4cure</a></span>(<span class='kw'>nSubject</span> <span class='kw'>=</span> <span class='no'>n_obs</span>, <span class='kw'>lambda_censor</span> <span class='kw'>=</span> <span class='fl'>0.01</span>,
                     <span class='kw'>max_censor</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>survMat</span> <span class='kw'>=</span> <span class='no'>x_mat</span>,
@@ -578,79 +727,79 @@ elastic net. <em>Journal of the Royal Statistical Society</em>: Series B
 
 <span class='co'>## summary of BIC's</span>
 <span class='fu'><a href='https://rdrr.io/r/stats/AIC.html'>BIC</a></span>(<span class='no'>fit1</span>)</div><div class='output co'>#&gt;    df surv_df cure_df      BIC
-#&gt; 1   1       0       1 671.1178
-#&gt; 2   3       0       3 665.9183
-#&gt; 3   5       0       5 665.1390
-#&gt; 4   6       0       6 662.9066
-#&gt; 5   7       0       7 664.1900
-#&gt; 6   2       1       1 670.2646
-#&gt; 7   4       1       3 665.0808
-#&gt; 8   6       1       5 664.4739
-#&gt; 9   7       1       6 662.4412
-#&gt; 10  9       1       8 668.1265
-#&gt; 11  6       5       1 670.6557
-#&gt; 12  8       5       3 665.4044
-#&gt; 13 10       5       5 664.6154
-#&gt; 14 11       5       6 662.4137
-#&gt; 15 13       5       8 668.0133
-#&gt; 16  8       7       1 667.7064
-#&gt; 17 10       7       3 662.6256
-#&gt; 18 12       7       5 661.9920
-#&gt; 19 13       7       6 659.9418
-#&gt; 20 15       7       8 665.6230
-#&gt; 21  9       8       1 664.9945
-#&gt; 22 11       8       3 659.9253
-#&gt; 23 13       8       5 659.2454
-#&gt; 24 14       8       6 657.0960
-#&gt; 25 16       8       8 662.7537</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/stats/AIC.html'>BIC</a></span>(<span class='no'>fit2</span>)</div><div class='output co'>#&gt;    df surv_df cure_df      BIC
-#&gt; 1   1       0       1 671.1178
-#&gt; 2   3       0       3 668.9191
-#&gt; 3   5       0       5 667.8654
-#&gt; 4   6       0       6 664.9561
-#&gt; 5   7       0       7 665.3830
-#&gt; 6   2       1       1 671.3169
-#&gt; 7   4       1       3 669.0883
-#&gt; 8   6       1       5 668.1568
-#&gt; 9   7       1       6 665.4199
-#&gt; 10  9       1       8 670.2694
-#&gt; 11  6       5       1 674.4519
-#&gt; 12  8       5       3 672.2086
-#&gt; 13 10       5       5 671.1407
-#&gt; 14 11       5       6 668.2655
-#&gt; 15 13       5       8 673.0370
-#&gt; 16  8       7       1 670.6370
-#&gt; 17 10       7       3 668.5103
-#&gt; 18 12       7       5 667.5756
-#&gt; 19 13       7       6 664.8319
-#&gt; 20 15       7       8 669.6826
-#&gt; 21 10       9       1 671.5667
-#&gt; 22 12       9       3 669.4687
-#&gt; 23 14       9       5 668.5150
-#&gt; 24 15       9       6 665.6928
-#&gt; 25 17       9       8 670.5216</div><div class='input'>
+#&gt; 1   2       0       2 660.0951
+#&gt; 2   3       0       3 649.6661
+#&gt; 3   8       0       8 662.4689
+#&gt; 4   8       0       8 653.7398
+#&gt; 5   9       0       9 654.4038
+#&gt; 6   4       2       2 653.2886
+#&gt; 7   5       2       3 642.7620
+#&gt; 8  10       2       8 655.9078
+#&gt; 9  10       2       8 647.3588
+#&gt; 10 11       2       9 648.0941
+#&gt; 11  5       4       1 649.1912
+#&gt; 12  7       4       3 642.3998
+#&gt; 13 11       4       7 651.2044
+#&gt; 14 12       4       8 647.3566
+#&gt; 15 13       4       9 648.1374
+#&gt; 16  9       8       1 654.9063
+#&gt; 17 11       8       3 648.6869
+#&gt; 18 14       8       6 653.0220
+#&gt; 19 16       8       8 653.6878
+#&gt; 20 17       8       9 654.4016
+#&gt; 21 10       9       1 652.2151
+#&gt; 22 12       9       3 646.4180
+#&gt; 23 15       9       6 650.8193
+#&gt; 24 16       8       8 646.8662
+#&gt; 25 17       8       9 647.5568</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/stats/AIC.html'>BIC</a></span>(<span class='no'>fit2</span>)</div><div class='output co'>#&gt;    df surv_df cure_df      BIC
+#&gt; 1   2       0       2 660.1474
+#&gt; 2   3       0       3 652.6713
+#&gt; 3   7       0       7 661.2005
+#&gt; 4   8       0       8 656.0703
+#&gt; 5   8       0       8 651.2207
+#&gt; 6   4       2       2 656.1159
+#&gt; 7   5       2       3 648.6202
+#&gt; 8  10       2       8 661.5912
+#&gt; 9  10       2       8 652.5115
+#&gt; 10 11       2       9 652.3423
+#&gt; 11  4       3       1 646.9408
+#&gt; 12  6       3       3 643.6201
+#&gt; 13 11       3       8 656.7878
+#&gt; 14 11       3       8 647.7554
+#&gt; 15 12       3       9 647.6006
+#&gt; 16  9       8       1 658.2755
+#&gt; 17 11       8       3 654.7547
+#&gt; 18 15       8       7 663.5134
+#&gt; 19 16       8       8 659.1908
+#&gt; 20 16       7       9 654.4754
+#&gt; 21 10       9       1 654.1403
+#&gt; 22 12       9       3 651.1082
+#&gt; 23 16       9       7 659.9199
+#&gt; 24 17       9       8 655.5378
+#&gt; 25 18       9       9 655.3806</div><div class='input'>
 <span class='co'>## list of coefficient estimates based on BIC</span>
 <span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span>(<span class='no'>fit1</span>)</div><div class='output co'>#&gt; $surv
 #&gt;         x1         x2         x3         x4         x5         x6         x7 
-#&gt;  0.2173657  0.1387006  0.0000000  0.0000000  0.1140273  0.2008852 -0.2462932 
+#&gt; 0.04679663 0.00000000 0.00000000 0.00000000 0.00000000 0.47929140 0.01572914 
 #&gt;         x8         x9        x10 
-#&gt;  0.7017137  0.4534017  0.6064085 
+#&gt; 0.41052238 0.00000000 0.00000000 
 #&gt; 
 #&gt; $cure
 #&gt; (Intercept)          x1          x2          x3          x4          x5 
-#&gt;  -0.1113152   0.8103170   0.5764737   0.1070077   0.0000000   0.0000000 
+#&gt;  -0.1996682   0.3369252   0.2668648   0.0000000   0.0000000   0.0000000 
 #&gt;          x6          x7          x8          x9         x10 
-#&gt;   0.0000000   0.0000000   0.1353057   0.0000000  -0.2300215 
+#&gt;   0.0000000   0.0000000   0.0000000   0.0000000   0.0000000 
 #&gt; </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/stats/coef.html'>coef</a></span>(<span class='no'>fit2</span>)</div><div class='output co'>#&gt; $surv
-#&gt;          x1          x2          x3          x4          x5          x6 
-#&gt;  0.05301368  0.01825863  0.00000000  0.00000000  0.00000000  0.16455756 
-#&gt;          x7          x8          x9         x10 
-#&gt; -0.16141143  0.47463767  0.29464310  0.38533484 
+#&gt;         x1         x2         x3         x4         x5         x6         x7 
+#&gt; 0.02924518 0.00000000 0.00000000 0.00000000 0.00000000 0.40564512 0.00000000 
+#&gt;         x8         x9        x10 
+#&gt; 0.36028994 0.00000000 0.00000000 
 #&gt; 
 #&gt; $cure
 #&gt; (Intercept)          x1          x2          x3          x4          x5 
-#&gt; -0.10422948  0.71027926  0.50848669  0.08297583  0.00000000  0.00000000 
+#&gt;  -0.2051408   0.2676769   0.2131741   0.0000000   0.0000000   0.0000000 
 #&gt;          x6          x7          x8          x9         x10 
-#&gt;  0.00000000  0.00000000  0.12529617  0.00000000 -0.20819511 
+#&gt;   0.0000000   0.0000000   0.0000000   0.0000000   0.0000000 
 #&gt; </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
