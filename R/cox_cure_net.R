@@ -41,8 +41,8 @@
 ##'              surv_start, cure_start,
 ##'              surv_standardize = TRUE, cure_standardize = TRUE,
 ##'              em_max_iter = 200, em_rel_tol = 1e-5,
-##'              surv_max_iter = 200, surv_rel_tol = 1e-5,
-##'              cure_max_iter = 200, cure_rel_tol = 1e-5,
+##'              surv_max_iter = 10, surv_rel_tol = 1e-5,
+##'              cure_max_iter = 10, cure_rel_tol = 1e-5,
 ##'              tail_completion = c("zero", "exp", "zero-tau"),
 ##'              tail_tau = NULL, pmin = 1e-5, early_stop = TRUE,
 ##'              verbose = FALSE, ...)
@@ -134,7 +134,7 @@
 ##'     their L1-norm.  The default value is \code{1e-5}.
 ##' @param surv_max_iter A positive integer specifying the maximum iteration
 ##'     number of the M-step routine related to the survival model component.
-##'     The default value is \code{200}.
+##'     The default value is \code{10} to encourage faster convergence.
 ##' @param surv_rel_tol A positive number specifying the tolerance that
 ##'     determines the convergence of the M-step related to the survival model
 ##'     component in terms of the convergence of the covariate coefficient
@@ -144,7 +144,7 @@
 ##'     default value is \code{1e-5}.
 ##' @param cure_max_iter A positive integer specifying the maximum iteration
 ##'     number of the M-step routine related to the cure rate model component.
-##'     The default value is \code{200}.
+##'     The default value is \code{10} to encourage faster convergence.
 ##' @param cure_rel_tol A positive number specifying the tolerance that
 ##'     determines the convergence of the M-step related to the cure rate model
 ##'     component in terms of the convergence of the covariate coefficient
@@ -225,14 +225,15 @@ cox_cure_net <-
              cure_nlambda = 10,
              cure_lambda_min_ratio = 1e-1,
              cure_l1_penalty_factor,
-             surv_start, cure_start,
+             surv_start,
+             cure_start,
              surv_standardize = TRUE,
              cure_standardize = TRUE,
              em_max_iter = 200,
              em_rel_tol = 1e-5,
-             surv_max_iter = 200,
+             surv_max_iter = 10,
              surv_rel_tol = 1e-5,
-             cure_max_iter = 200,
+             cure_max_iter = 10,
              cure_rel_tol = 1e-5,
              tail_completion = c("zero", "exp", "zero-tau"),
              tail_tau = NULL,

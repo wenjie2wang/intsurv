@@ -16,7 +16,7 @@ dat <- simData4cure(nSubject = n_obs, lambda_censor = 0.01,
 
 ## model-fitting from given design matrices
 fit1 <- cox_cure_net.fit(x_mat, x_mat, dat$obs_time, dat$obs_event,
-                         surv_nlambda = 5, cure_nlambda = 5,
+                         surv_nlambda = 10, cure_nlambda = 10,
                          surv_alpha = 0.8, cure_alpha = 0.8)
 
 ## model-fitting from given model formula
@@ -24,9 +24,7 @@ fm <- paste(paste0("x", seq_len(p)), collapse = " + ")
 surv_fm <- as.formula(sprintf("~ %s", fm))
 cure_fm <- surv_fm
 fit2 <- cox_cure_net(surv_fm, cure_fm, data = dat,
-                     time = obs_time, event = obs_event,
-                     surv_nlambda = 5, cure_nlambda = 5,
-                     surv_alpha = 0.5, cure_alpha = 0.5)
+                     time = obs_time, event = obs_event)
 
 ## summary of BIC's
 BIC(fit1)
