@@ -23,9 +23,9 @@ NULL
 ##' Concordance Index
 ##'
 ##' Compute concordance index (C-index or C-statistic) that allows weights for
-##' right-censored survival data.  Asano and Hirakawa (2017) proposed using the
-##' probability of being susceptible as weights for cure models.  It reduces to
-##' Harrell's C-index for equal weights.
+##' right-censored survival data.  For example, Asano and Hirakawa (2017)
+##' proposed using the probability of being susceptible as weights for cure
+##' models, which reduces to Harrell's C-index if weighs are all equal.
 ##'
 ##' Let \eqn{r_i}, \eqn{t_i}, and \eqn{\delta_i} denote the risk score, observed
 ##' time, and event indicator of \eqn{i}-th subject.  The pair of
@@ -46,7 +46,7 @@ NULL
 ##'     (by default) or \code{NA}, \code{event} will be treated all as ones and
 ##'     the function will compute concordance index for uncensored survival
 ##'     data.
-##' @param risk_score A numeric vector for risk scores.
+##' @param risk_score A numeric vector representing the risk scores of events.
 ##' @param weight A optional numeric vector for weights.  If it is \code{NULL}
 ##'     (by default) or \code{NA}, equal weights will be used.
 ##'

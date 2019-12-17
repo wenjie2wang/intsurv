@@ -63,19 +63,19 @@ namespace Intsurv {
                             continue;
                         }
                         // otherwise, comparable
-                        this->comparable += weight(i);
+                        this->comparable += weight(j);
                         // determine the concordance
                         if (isAlmostEqual(time(i), time(j))) {
                             // case 1. tied times but event(j) = 0
                             if (is_gt(risk_score(i), risk_score(j))) {
-                                this->concordant += weight(i);
+                                this->concordant += weight(j);
                             }
                         } else {
                             // case 2. distinct times
                             if (isAlmostEqual(risk_score(i), risk_score(j))) {
-                                this->tied_risk += weight(i);
+                                this->tied_risk += weight(j);
                             } else if (risk_score(i) > risk_score(j)) {
-                                this->concordant += weight(i);
+                                this->concordant += weight(j);
                             }
                         }
                     }

@@ -14,7 +14,7 @@ cIndex(time, event = NULL, risk_score, weight = NULL)
 the function will compute concordance index for uncensored survival
 data.}
 
-\item{risk_score}{A numeric vector for risk scores.}
+\item{risk_score}{A numeric vector representing the risk scores of events.}
 
 \item{weight}{A optional numeric vector for weights.  If it is \code{NULL}
 (by default) or \code{NA}, equal weights will be used.}
@@ -30,9 +30,9 @@ A named numeric vector that consists of
 }
 \description{
 Compute concordance index (C-index or C-statistic) that allows weights for
-right-censored survival data.  Asano and Hirakawa (2017) proposed using the
-probability of being susceptible as weights for cure models.  It reduces to
-Harrell's C-index for equal weights.
+right-censored survival data.  For example, Asano and Hirakawa (2017)
+proposed using the probability of being susceptible as weights for cure
+models, which reduces to Harrell's C-index if weighs are all equal.
 }
 \details{
 Let \eqn{r_i}, \eqn{t_i}, and \eqn{\delta_i} denote the risk score, observed
