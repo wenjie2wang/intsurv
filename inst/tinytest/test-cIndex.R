@@ -28,3 +28,10 @@ expect_equivalent(res3["comparable"], 4.8)
 expect_equivalent(res3["tied_risk"], 1.0)
 expect_equivalent(res3["concordant"], 3.2)
 expect_equivalent(res3["index"], 3.7 / 4.8)
+
+## default events
+expect_equal(
+    cIndex(time = time1, risk_score = risk_score1),
+    cIndex(time = time1, event = rep(1, length(time)),
+           risk_score = risk_score1)
+)
