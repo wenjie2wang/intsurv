@@ -185,9 +185,9 @@ x_mat <- matrix(rnorm(n_obs * p), nrow = n_obs, ncol = p)
 colnames(x_mat) <- paste0("x", seq_len(p))
 cure_beta <- rep(0.5, p)
 b0 <- - 1
-expit <- stats::binomial()$linkinv
+expit <- binomial()$linkinv
 ncure_prob <- expit(as.numeric(b0 + x_mat \%*\% cure_beta))
-is_cure <- 1 - stats::rbinom(n_obs, size = 1, prob = ncure_prob)
+is_cure <- 1 - rbinom(n_obs, size = 1, prob = ncure_prob)
 surv_beta <- rep(0.5, p)
 risk_score <- as.numeric(x_mat \%*\% surv_beta)
 event_time <- rexp(n_obs, exp(as.numeric(x_mat \%*\% surv_beta)))

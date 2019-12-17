@@ -1,7 +1,7 @@
 Package: intsurv
 Title: Integrative Survival Modeling
 Version: 0.2.1
-Date: 2019-12-16
+Date: 2019-12-17
 Authors@R: c(
     person(given = "Wenjie", family = "Wang",
            email = "wenjie.2.wang@uconn.edu",
@@ -57,3 +57,4 @@ Collate:
 URL: https://github.com/wenjie2wang/intsurv
 BugReports: https://github.com/wenjie2wang/intsurv/issues
 Encoding: UTF-8
+RoxygenNote: 7.0.2
