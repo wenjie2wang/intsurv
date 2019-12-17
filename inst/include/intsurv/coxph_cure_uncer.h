@@ -225,8 +225,7 @@ namespace Intsurv {
         )
     {
         // get pre-processed design matrix, time, and event
-        const arma::mat& cox_x { cox_obj.get_x() };
-        const arma::vec& time { cox_obj.get_time() };
+        const arma::vec time { cox_obj.get_time() };
         arma::vec event { cox_obj.get_event() };
 
         // initialize cox_beta
@@ -237,7 +236,7 @@ namespace Intsurv {
             CoxphReg tmp_object {
                 time.elem(case1_ind),
                 event.elem(case1_ind),
-                cox_x.rows(case1_ind)
+                cox_obj.get_x().rows(case1_ind)
             };
             tmp_object.fit(cox_beta, cox_mstep_max_iter, cox_mstep_rel_tol);
             cox_beta = tmp_object.coef;
@@ -603,6 +602,8 @@ namespace Intsurv {
         arma::uvec rev_ord { cox_obj.get_rev_sort_index() };
         this->cox_xBeta = cox_obj.xBeta.elem(rev_ord);
         this->cure_xBeta = cure_obj.xBeta.elem(rev_ord);
+        // set suspectible prob to be 1 for certain events
+        cure_obj.prob_vec.elem(case1_ind).ones();
         this->susceptible_prob = cure_obj.prob_vec.elem(rev_ord);
 
         // compute posterior probabilities from E-step
@@ -632,11 +633,12 @@ namespace Intsurv {
         this->estep_censor = 1 - this->estep_cured - this->estep_event;
 
         // compute weighted c-index over the certain records
-        this->c_index =
-            Intsurv::Concordance(cox_obj.get_time().elem(cer_ind),
-                                 cox_obj.get_event().elem(cer_ind),
-                                 cox_obj.xBeta.elem(cer_ind),
-                                 cure_obj.prob_vec.elem(cer_ind)).index;
+        this->c_index = Intsurv::Concordance(
+            cox_obj.get_time().elem(cer_ind),
+            cox_obj.get_event().elem(cer_ind),
+            cox_obj.xBeta.elem(cer_ind),
+            cure_obj.prob_vec.elem(cer_ind)
+            ).index;
     }
 
 
@@ -1129,6 +1131,8 @@ namespace Intsurv {
         arma::uvec rev_ord { cox_obj.get_rev_sort_index() };
         this->cox_xBeta = cox_obj.xBeta.elem(rev_ord);
         this->cure_xBeta = cure_obj.xBeta.elem(rev_ord);
+        // set suspectible prob to be 1 for certain events
+        cure_obj.prob_vec.elem(case1_ind).ones();
         this->susceptible_prob = cure_obj.prob_vec.elem(rev_ord);
 
         // compute posterior probabilities from E-step
@@ -1156,11 +1160,12 @@ namespace Intsurv {
         this->estep_censor = 1 - this->estep_cured - this->estep_event;
 
         // compute weighted c-index over the certain records
-        this->c_index =
-            Intsurv::Concordance(cox_obj.get_time().elem(cer_ind),
-                                 cox_obj.get_event().elem(cer_ind),
-                                 cox_obj.xBeta.elem(cer_ind),
-                                 cure_obj.prob_vec.elem(cer_ind)).index;
+        this->c_index = Intsurv::Concordance(
+            cox_obj.get_time().elem(cer_ind),
+            cox_obj.get_event().elem(cer_ind),
+            cox_obj.xBeta.elem(cer_ind),
+            cure_obj.prob_vec.elem(cer_ind)
+            ).index;
     }
 
 

@@ -31,7 +31,7 @@ namespace Intsurv {
         // number of comparable pairs with tied risk scores
         double tied_risk {0.0};
 
-        // constructors
+        // constructors with weight
         Concordance(arma::vec time,
                     arma::vec event,
                     arma::vec risk_score,
@@ -84,7 +84,8 @@ namespace Intsurv {
             this->index = (this->concordant + this->tied_risk / 2) /
                 this->comparable;
         }
-        // constructor with weights
+
+        // constructor without weight
         Concordance(arma::vec time,
                     arma::vec event,
                     arma::vec risk_score)
