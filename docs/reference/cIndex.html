@@ -37,9 +37,9 @@
 
 <meta property="og:title" content="Concordance Index — cIndex" />
 <meta property="og:description" content="Compute concordance index (C-index or C-statistic) that allows weights for
-right-censored survival data.  Asano and Hirakawa (2017) proposed using the
-probability of being susceptible as weights for cure models.  It reduces to
-Harrell's C-index for equal weights." />
+right-censored survival data.  For example, Asano and Hirakawa (2017)
+proposed using the probability of being susceptible as weights for cure
+models, which reduces to Harrell's C-index if weighs are all equal." />
 <meta name="twitter:card" content="summary" />
 
 
@@ -118,9 +118,9 @@ Harrell's C-index for equal weights." />
 
     <div class="ref-description">
     <p>Compute concordance index (C-index or C-statistic) that allows weights for
-right-censored survival data.  Asano and Hirakawa (2017) proposed using the
-probability of being susceptible as weights for cure models.  It reduces to
-Harrell's C-index for equal weights.</p>
+right-censored survival data.  For example, Asano and Hirakawa (2017)
+proposed using the probability of being susceptible as weights for cure
+models, which reduces to Harrell's C-index if weighs are all equal.</p>
     </div>
 
     <pre class="usage"><span class='fu'>cIndex</span>(<span class='no'>time</span>, <span class='kw'>event</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>risk_score</span>, <span class='kw'>weight</span> <span class='kw'>=</span> <span class='kw'>NULL</span>)</pre>
@@ -141,7 +141,7 @@ data.</p></td>
     </tr>
     <tr>
       <th>risk_score</th>
-      <td><p>A numeric vector for risk scores.</p></td>
+      <td><p>A numeric vector representing the risk scores of events.</p></td>
     </tr>
     <tr>
       <th>weight</th>
