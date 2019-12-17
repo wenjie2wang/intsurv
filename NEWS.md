@@ -6,11 +6,11 @@
   packages.
 - Added testing suite with help of the tinytest package.
 - Adjusted default maximum number of iterations in M-steps for possibly faster
-  convergence in `cox_cure()` and `cox_cure_net()`.
+  convergence in function `cox_cure` and `cox_cure_net`.
 
 ## Bug fixes
 
-- Fixed weight indices in function `cIndex()`.
+- Fixed weight indices in function `cIndex`.
 
 
 # intsurv 0.2.0
