@@ -76,9 +76,9 @@ with(env_b, {
 ## expect warnings from warn_dots
 with(env_b, {
     expect_warning(
-        cox_cure(~ X2 + X3 + X4 + group, ~ X2 + X3 + group,
+        cox_cure(~ X2, ~ X3,
                  time = time, event = status, data = sim_dat,
-                 bootstrap = 0, em_max_iter = 1,
+                 bootstrap = 0, em_max_iter = 2,
                  ## some invalid arguments
                  em_max_iter2 = - 1, foo = 2),
         pattern = "\\.{3}"

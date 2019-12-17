@@ -234,7 +234,7 @@ BIC(fit1, fit2)
 
 ### Cox cure rate model with uncertain event status ==================
 ## simulate sample data
-sim_dat <- simData4cure(nSubject = 200, max_censor = 10,
+sim_dat <- simData4cure(nSubject = 200, max_censor = 10, lambda_censor = 0.1,
                         survMat = x_mat, cureMat = x_mat, b0 = 1)
 table(sim_dat$case)
 table(sim_dat$obs_event, useNA = "ifany")
