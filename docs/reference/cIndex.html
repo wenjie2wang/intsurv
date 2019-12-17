@@ -38,8 +38,8 @@
 <meta property="og:title" content="Concordance Index — cIndex" />
 <meta property="og:description" content="Compute concordance index (C-index or C-statistic) that allows weights for
 right-censored survival data.  For example, Asano and Hirakawa (2017)
-proposed using the probability of being susceptible as weights for cure
-models, which reduces to Harrell's C-index if weighs are all equal." />
+proposed cure status weighting for cure models, which reduces to Harrell's
+C-index if weighs are all ones." />
 <meta name="twitter:card" content="summary" />
 
 
@@ -119,8 +119,8 @@ models, which reduces to Harrell's C-index if weighs are all equal." />
     <div class="ref-description">
     <p>Compute concordance index (C-index or C-statistic) that allows weights for
 right-censored survival data.  For example, Asano and Hirakawa (2017)
-proposed using the probability of being susceptible as weights for cure
-models, which reduces to Harrell's C-index if weighs are all equal.</p>
+proposed cure status weighting for cure models, which reduces to Harrell's
+C-index if weighs are all ones.</p>
     </div>
 
     <pre class="usage"><span class='fu'>cIndex</span>(<span class='no'>time</span>, <span class='kw'>event</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>risk_score</span>, <span class='kw'>weight</span> <span class='kw'>=</span> <span class='kw'>NULL</span>)</pre>

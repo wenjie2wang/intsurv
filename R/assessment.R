@@ -24,8 +24,8 @@ NULL
 ##'
 ##' Compute concordance index (C-index or C-statistic) that allows weights for
 ##' right-censored survival data.  For example, Asano and Hirakawa (2017)
-##' proposed using the probability of being susceptible as weights for cure
-##' models, which reduces to Harrell's C-index if weighs are all equal.
+##' proposed cure status weighting for cure models, which reduces to Harrell's
+##' C-index if weighs are all ones.
 ##'
 ##' Let \eqn{r_i}, \eqn{t_i}, and \eqn{\delta_i} denote the risk score, observed
 ##' time, and event indicator of \eqn{i}-th subject.  The pair of
