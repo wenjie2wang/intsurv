@@ -656,7 +656,7 @@ cox_cure_net.fit <-
         colnames(out$cure_coef) <-
             if (cure_intercept) {
                 c("(Intercept)",
-                  paste0("z", seq_len(ncol(out$cure_coef[- 1L]))))
+                  paste0("z", seq_len(ncol(out$cure_coef) - 1L)))
             } else {
                 paste0("z", seq_len(ncol(out$cure_coef)))
             }
