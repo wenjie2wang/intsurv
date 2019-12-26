@@ -233,12 +233,13 @@ cox_cure <- function(surv_formula, cure_formula, time, event,
     ## starting values
     if (missing(surv_start)) {
         surv_start <- 0
-    } else if (length(surv_start) != surv_x) {
+    } else if (length(surv_start) != ncol(surv_x)) {
         stop("The length of 'surv_start' is inappropriate.")
     }
     if (missing(cure_start)) {
         cure_start <- 0
-    } else if (length(cure_start) != cure_x + as.integer(cure_intercept)) {
+    } else if (length(cure_start) != ncol(cure_x) +
+               as.integer(cure_intercept)) {
         stop("The length of 'cure_start' is inappropriate.")
     }
     ## on tail completion
@@ -418,12 +419,13 @@ cox_cure.fit <- function(surv_x, cure_x, time, event,
     ## starting values
     if (missing(surv_start)) {
         surv_start <- 0
-    } else if (length(surv_start) != surv_x) {
+    } else if (length(surv_start) != ncol(surv_x)) {
         stop("The length of 'surv_start' is inappropriate.")
     }
     if (missing(cure_start)) {
         cure_start <- 0
-    } else if (length(cure_start) != cure_x + as.integer(cure_intercept)) {
+    } else if (length(cure_start) != ncol(cure_x) +
+               as.integer(cure_intercept)) {
         stop("The length of 'cure_start' is inappropriate.")
     }
     ## on tail completion
