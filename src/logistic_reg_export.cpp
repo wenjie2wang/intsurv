@@ -90,12 +90,14 @@ Rcpp::List rcpp_reg_logistic1(const arma::mat& x,
                               const bool intercept = true,
                               const unsigned int max_iter = 300,
                               const double rel_tol = 1e-5,
+                              const double pmin = 1e-5,
                               const bool& early_stop = false,
                               const bool& verbose = false)
 {
     Intsurv::LogisticReg object { x, y, intercept };
     object.regularized_fit(l1_lambda, l2_lambda, l1_penalty_factor,
-                           start, max_iter, rel_tol, early_stop, verbose);
+                           start, max_iter, rel_tol, pmin,
+                           early_stop, verbose);
     return Rcpp::List::create(
         Rcpp::Named("coef") = Intsurv::arma2rvec(object.coef),
         Rcpp::Named("en_coef") = Intsurv::arma2rvec(object.en_coef),

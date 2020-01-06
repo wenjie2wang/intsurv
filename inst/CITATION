@@ -4,7 +4,11 @@ bibentry(
     key = "intsurv-package",
     bibtype = "Manual",
     title = "{intsurv}: {I}ntegrative Survival Models",
-    author = as.person("Wenjie Wang"),
+    author = c(
+        as.person("Wenjie Wang"),
+        as.person("Kun Chen"),
+        as.person("Jun Yan")
+        )
     year = "2019",
     url = "https://github.com/wenjie2wang/intsurv",
     note = "{R} package version 0.2.1"
