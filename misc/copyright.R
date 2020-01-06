@@ -1,6 +1,6 @@
 ##
 ## intsurv: Integrative Survival Models
-## Copyright (C) 2017-2019  Wenjie Wang <wjwang.stat@gmail.com>
+## Copyright (C) 2017-2020  Wenjie Wang <wjwang.stat@gmail.com>
 ##
 ## This file is part of the R package intsurv.
 ##
