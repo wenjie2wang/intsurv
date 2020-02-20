@@ -940,7 +940,7 @@ namespace Intsurv {
         arma::vec grad_beta { beta }, strong_rhs { beta };
         this->l1_lambda_max =
             arma::max(arma::abs(this->gradient(beta)) / l1_penalty) /
-            this->x.n_rows / std::max(alpha, 1e-10);
+            this->x.n_rows / std::max(alpha, 1e-3);
 
         // take unique lambda and sort descendingly
         lambda = arma::reverse(arma::unique(lambda));
