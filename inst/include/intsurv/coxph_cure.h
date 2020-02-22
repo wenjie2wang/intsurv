@@ -49,6 +49,7 @@ namespace Intsurv {
         unsigned int num_iter;    // number of iterations
         double bic1;              // BIC: log(num_obs) * coef_df + 2 * negLogL
         double bic2;              // BIC: log(num_event) * coef_df + 2 * negLogL
+        double aic;               // AIC: 2 * coef_df + 2 * negLogL
         double c_index;           // weighted C-index
 
         // for each subject and in the original order of X
@@ -169,6 +170,9 @@ namespace Intsurv {
         inline void compute_bic2() {
             this->bic2 = std::log(case1_ind.n_elem) *
                 coef_df + 2 * negLogL;
+        }
+        inline void compute_aic() {
+            this->aic = 2 * (coef_df + negLogL);
         }
 
     };                          // end of class definition
@@ -461,6 +465,8 @@ namespace Intsurv {
         this->num_iter = i;
         this->compute_bic1();
         this->compute_bic2();
+        this->compute_aic();
+
         // prepare scores and prob in their original order
         arma::uvec rev_ord { cox_obj.get_rev_sort_index() };
         this->cox_xBeta = cox_obj.xBeta.elem(rev_ord);
@@ -659,6 +665,7 @@ namespace Intsurv {
             this->coef_df = cox_obj.coef_df + cure_obj.coef_df;
             this->compute_bic1();
             this->compute_bic2();
+            this->compute_aic();
 
             // verbose tracing for objective function
             if (verbose) {
@@ -771,11 +778,11 @@ namespace Intsurv {
                 double numer_j { p_vec(j) *  cox_obj.S_time(j)};
                 estep_v(j) = numer_j / (1 - p_vec(j) + numer_j);
                 // special care prevents coef diverging
-                if (estep_v(j) < pmin) {
-                    estep_v(j) = pmin;
-                } else if (estep_v(j) > 1 - pmin) {
-                    estep_v(j) = 1 - pmin;
-                }
+                // if (estep_v(j) < pmin) {
+                //     estep_v(j) = 0;
+                // } else if (estep_v(j) > 1 - pmin) {
+                //     estep_v(j) = 1;
+                // }
             }
 
             // allow users to stop the main loop
@@ -850,6 +857,8 @@ namespace Intsurv {
         // compute BIC
         this->compute_bic1();
         this->compute_bic2();
+        this->compute_aic();
+
         // prepare scores and prob in their original order
         arma::uvec rev_ord { cox_obj.get_rev_sort_index() };
         this->cox_xBeta = cox_obj.xBeta.elem(rev_ord);

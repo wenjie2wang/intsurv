@@ -91,6 +91,12 @@ cIndex <- function(time, event = NULL, risk_score, weight = NULL)
 }
 
 
+## FIXME: add AIC methods
+## Akaike Information Criterion (AIC)
+
+
+
+
 ##' Bayesian Information Criterion (BIC)
 ##'
 ##' Compute Bayesian information criterion (BIC) or Schwarz's Bayesian criterion

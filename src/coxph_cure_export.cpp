@@ -117,6 +117,7 @@ Rcpp::List rcpp_coxph_cure(
             Rcpp::Named("coef_df") = obj.coef_df,
             Rcpp::Named("negLogL") = obj.negLogL,
             Rcpp::Named("c_index") = obj.c_index,
+            Rcpp::Named("aic") = obj.aic,
             Rcpp::Named("bic1") = obj.bic1,
             Rcpp::Named("bic2") = obj.bic2
             ),
@@ -206,6 +207,7 @@ Rcpp::List rcpp_coxph_cure_reg(
             Rcpp::Named("coef_df") = obj.coef_df,
             Rcpp::Named("negLogL") = obj.negLogL,
             Rcpp::Named("c_index") = obj.c_index,
+            Rcpp::Named("aic") = obj.aic,
             Rcpp::Named("bic1") = obj.bic1,
             Rcpp::Named("bic2") = obj.bic2
             ),
@@ -325,7 +327,7 @@ Rcpp::List rcpp_coxph_cure_vs(
     arma::mat cure_coef_mat { arma::zeros(cure_p, n_lambda) };
     arma::mat cox_en_coef_mat { arma::zeros(cox_p, n_lambda) };
     arma::mat cure_en_coef_mat { arma::zeros(cure_p, n_lambda) };
-    arma::vec bic1 { arma::zeros(n_lambda) }, bic2 { bic1 };
+    arma::vec bic1 { arma::zeros(n_lambda) }, bic2 { bic1 }, aic { bic1 };
     arma::vec coef_df { bic1 }, negLogL { bic1 };
     arma::mat lambda_mat { arma::zeros(n_lambda, 4) };
 
@@ -371,6 +373,7 @@ Rcpp::List rcpp_coxph_cure_vs(
             cure_coef_mat.col(iter) = obj.cure_coef;
             cox_en_coef_mat.col(iter) = obj.cox_en_coef;
             cure_en_coef_mat.col(iter) = obj.cure_en_coef;
+            aic(iter) = obj.aic;
             bic1(iter) = obj.bic1;
             bic2(iter) = obj.bic2;
             coef_df(iter) = obj.coef_df;
@@ -394,6 +397,7 @@ Rcpp::List rcpp_coxph_cure_vs(
             Rcpp::Named("nEvent") = obj.nEvent,
             Rcpp::Named("coef_df") = Intsurv::arma2rvec(coef_df),
             Rcpp::Named("negLogL") = Intsurv::arma2rvec(negLogL),
+            Rcpp::Named("aic") = Intsurv::arma2rvec(aic),
             Rcpp::Named("bic1") = Intsurv::arma2rvec(bic1),
             Rcpp::Named("bic2") = Intsurv::arma2rvec(bic2)
             ),

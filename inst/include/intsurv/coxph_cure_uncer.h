@@ -57,6 +57,7 @@ namespace Intsurv {
         double bic1;
         // BIC: log(num_certain_event) * coef_df + 2 * negLogL
         double bic2;
+        double aic;               // AIC: 2 * coef_df + 2 * negLogL
         double c_index;           // weighted C-index
 
         // for each subject and in the original order of X
@@ -199,6 +200,9 @@ namespace Intsurv {
         inline void compute_bic2() {
             this->bic2 = std::log(case1_ind.n_elem) *
                 coef_df + 2 * negLogL;
+        }
+        inline void compute_aic() {
+            this->aic = 2 * (coef_df + negLogL);
         }
 
     };                          // end of class definition
@@ -597,6 +601,7 @@ namespace Intsurv {
         this->num_iter = i;
         this->compute_bic1();
         this->compute_bic2();
+        this->compute_aic();
 
         // prepare scores and prob in their original order
         arma::uvec rev_ord { cox_obj.get_rev_sort_index() };
@@ -917,6 +922,7 @@ namespace Intsurv {
             this->coef_df = cox_obj.coef_df + cure_obj.coef_df;
             this->compute_bic1();
             this->compute_bic2();
+            this->compute_aic();
 
             // if verbose
             if (verbose) {
@@ -1126,6 +1132,7 @@ namespace Intsurv {
         this->num_iter = i;
         this->compute_bic1();
         this->compute_bic2();
+        this->compute_aic();
 
         // prepare scores and prob in their original order
         arma::uvec rev_ord { cox_obj.get_rev_sort_index() };
