@@ -39,7 +39,7 @@ Rcpp::List rcpp_coxph_cure(
     const unsigned int& cox_mstep_max_iter = 200,
     const double& cox_mstep_rel_tol = 1e-4,
     const unsigned int& cure_mstep_max_iter = 200,
-    const double& cure_mstep_rel_tol = 1e-6,
+    const double& cure_mstep_rel_tol = 1e-4,
     const unsigned int& tail_completion = 1,
     double tail_tau = -1,
     const double& pmin = 1e-5,

@@ -32,9 +32,9 @@ namespace Intsurv {
     private:
         CoxphReg cox_obj;
         LogisticReg cure_obj;
-        unsigned int cox_p;
-        unsigned int cure_p;
-        unsigned int cure_p0;
+        unsigned int cox_p;     // coef df of cox part
+        unsigned int cure_p;    // coef df of cure part wi intercept
+        unsigned int cure_p0;   // coef df of cure part wo intercept
         arma::uvec case1_ind;
         arma::uvec case2_ind;
         unsigned int max_event_time_ind; // index of the maximum event time
@@ -472,8 +472,8 @@ namespace Intsurv {
         this->cox_xBeta = cox_obj.xBeta.elem(rev_ord);
         this->cure_xBeta = cure_obj.xBeta.elem(rev_ord);
         // set suspectible prob to be 1 for events
-        cure_obj.prob_vec.elem(case1_ind).ones();
-        this->susceptible_prob = cure_obj.prob_vec.elem(rev_ord);
+        // cure_obj.prob_vec.elem(case1_ind).ones();
+        // this->susceptible_prob = cure_obj.prob_vec.elem(rev_ord);
         // compute posterior probabilities from E-step
         for (size_t j: case2_ind) {
             double numer_j { p_vec(j) * cox_obj.S_time(j) };
@@ -863,9 +863,11 @@ namespace Intsurv {
         arma::uvec rev_ord { cox_obj.get_rev_sort_index() };
         this->cox_xBeta = cox_obj.xBeta.elem(rev_ord);
         this->cure_xBeta = cure_obj.xBeta.elem(rev_ord);
+
         // set suspectible prob to be 1 for events
-        cure_obj.prob_vec.elem(case1_ind).ones();
-        this->susceptible_prob = cure_obj.prob_vec.elem(rev_ord);
+        // cure_obj.prob_vec.elem(case1_ind).ones();
+        // this->susceptible_prob = cure_obj.prob_vec.elem(rev_ord);
+
         // compute posterior probabilities from E-step
         for (size_t j: case2_ind) {
             double numer_j { p_vec(j) * cox_obj.S_time(j) };
