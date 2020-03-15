@@ -22,7 +22,7 @@ rcpp_cIndex <- function(time, event, risk_score, weight) {
     .Call('_intsurv_rcpp_cIndex', PACKAGE = 'intsurv', time, event, risk_score, weight)
 }
 
-rcpp_coxph_cure <- function(time, event, cox_x, cure_x, cure_intercept = TRUE, bootstrap = 0L, firth = FALSE, cox_start = 0L, cure_start = 0L, cox_standardize = TRUE, cure_standardize = TRUE, em_max_iter = 1000L, em_rel_tol = 1e-4, cox_mstep_max_iter = 200L, cox_mstep_rel_tol = 1e-4, cure_mstep_max_iter = 200L, cure_mstep_rel_tol = 1e-6, tail_completion = 1L, tail_tau = -1, pmin = 1e-5, early_stop = 0L, verbose = 0L) {
+rcpp_coxph_cure <- function(time, event, cox_x, cure_x, cure_intercept = TRUE, bootstrap = 0L, firth = FALSE, cox_start = 0L, cure_start = 0L, cox_standardize = TRUE, cure_standardize = TRUE, em_max_iter = 1000L, em_rel_tol = 1e-4, cox_mstep_max_iter = 200L, cox_mstep_rel_tol = 1e-4, cure_mstep_max_iter = 200L, cure_mstep_rel_tol = 1e-4, tail_completion = 1L, tail_tau = -1, pmin = 1e-5, early_stop = 0L, verbose = 0L) {
     .Call('_intsurv_rcpp_coxph_cure', PACKAGE = 'intsurv', time, event, cox_x, cure_x, cure_intercept, bootstrap, firth, cox_start, cure_start, cox_standardize, cure_standardize, em_max_iter, em_rel_tol, cox_mstep_max_iter, cox_mstep_rel_tol, cure_mstep_max_iter, cure_mstep_rel_tol, tail_completion, tail_tau, pmin, early_stop, verbose)
 }
 
