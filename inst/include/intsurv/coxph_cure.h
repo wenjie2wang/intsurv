@@ -60,6 +60,10 @@ namespace Intsurv {
         arma::vec estep_cured;
         arma::vec estep_susceptible;
 
+        // tail completion
+        unsigned int tail_completion = 1;
+        double tail_tau = - 1.0;
+
         // hazard and survival function estimates at unique time
         arma::vec unique_time;
         arma::vec h0_est;
@@ -162,6 +166,123 @@ namespace Intsurv {
             const unsigned int& early_stop,
             const unsigned int& verbose
             );
+
+        // function to compute the observe data log-likelihood function
+        // for given fitted model and estimates
+        inline double obs_log_likelihood() const
+        {
+            double obs_ell { 0 };
+            arma::vec sus_prob { cure_obj.prob_vec };
+            // for case 1
+            for (size_t j: case1_ind) {
+                obs_ell += std::log(sus_prob(j)) +
+                    std::log(cox_obj.h_time(j)) -
+                    cox_obj.H_time(j);
+            }
+            // for case 2
+            for (size_t j: case2_ind) {
+                obs_ell += std::log(
+                    sus_prob(j) * cox_obj.S_time(j) +
+                    (1 - sus_prob(j))
+                    );
+            }
+            return obs_ell;
+        }
+
+        // for given fitted model and a new set of data
+        inline double obs_log_likelihood(
+            // all the inputs will be sorted inside of the function
+            // so their copies are asked here
+            arma::vec new_time,
+            arma::vec new_event,
+            arma::mat new_cox_x,
+            arma::mat new_cure_x,
+            const double pmin = 1e-5
+            ) const
+        {
+            // check if the number of covariates matchs the fitted model
+            if (new_cox_x.n_cols != this->cox_p) {
+                throw std::range_error(
+                    "The number of columns ('new_cox_x') must match the model."
+                    );
+            }
+            if (new_cure_x.n_cols != this->cure_p0) {
+                throw std::range_error(
+                    "The number of columns ('new_cure_x') must match the model."
+                    );
+            }
+            // number of observations
+            unsigned int new_n_obs { new_cox_x.n_rows };
+            if (new_cure_x.n_rows != new_n_obs) {
+                throw std::range_error(
+                    "The number of rows of the new data must be the same."
+                    );
+            }
+            double obs_ell { 0 };
+            // sort based on time and event
+            // time: ascending order
+            // event: events first, then censoring at the same time point
+            arma::uvec des_event_ind { arma::sort_index(new_event, "descend") };
+            arma::uvec asc_time_ind {
+                arma::stable_sort_index(new_time.elem(des_event_ind), "ascend")
+            };
+            arma::uvec ord { des_event_ind.elem(asc_time_ind) };
+            // do actual sorting
+            new_time = new_time.elem(ord);
+            new_event = new_event.elem(ord);
+            new_cox_x = new_cox_x.rows(ord);
+            new_cure_x = new_cure_x.rows(ord);
+
+            // add intercept if needed
+            if (this->cure_p > this->cure_p0) {
+                new_cure_x = arma::join_horiz(
+                    arma::ones(new_cure_x.n_rows), new_cure_x
+                    );
+            }
+            arma::uvec new_case1_ind { arma::find(new_event > 0) };
+            arma::uvec new_case2_ind { arma::find(new_event < 1) };
+            // construct the baseline survival curve
+            // tail completion has already been applied to this->S0_est
+            arma::vec S0_vec {
+                arma::join_cols(arma::ones<arma::vec>(1), this->S0_est)
+            };
+            // baseline estimates
+            arma::vec S_vec {
+                step_fun(new_time, this->unique_time, S0_vec)
+            };
+            arma::vec H_vec { - arma::log(S_vec) };
+            arma::vec h_vec {
+                step_fun2(new_time, this->unique_time, this->h0_est)
+            };
+            // apply x * beta
+            // compute parts for the new data
+            arma::vec new_cox_xbeta { mat2vec(new_cox_x * this->cox_coef) };
+            arma::vec exp_cox_xbeta { arma::exp(new_cox_xbeta) };
+            arma::vec new_cure_xgamma { mat2vec(new_cure_x * this->cure_coef) };
+            h_vec = h_vec % exp_cox_xbeta;
+            H_vec = H_vec % exp_cox_xbeta;
+            S_vec = exp(- H_vec);
+            arma::vec p_vec { 1 / (1 + arma::exp(- new_cure_xgamma)) };
+            for (size_t i {0}; i < p_vec.n_elem; ++i) {
+                if (p_vec(i) < pmin) {
+                    p_vec(i) = pmin;
+                } else if (p_vec(i) > 1 - pmin) {
+                    p_vec(i) = 1 - pmin;
+                }
+            }
+            // for case 1
+            for (size_t j: new_case1_ind) {
+                obs_ell += std::log(p_vec(j)) +
+                    std::log(h_vec(j)) - H_vec(j);
+            }
+            // for case 2
+            for (size_t j: new_case2_ind) {
+                obs_ell += std::log(
+                    p_vec(j) * S_vec(j) + (1 - p_vec(j))
+                    );
+            }
+            return obs_ell;
+        }
 
         // compute BIC
         inline void compute_bic1() {
@@ -466,6 +587,10 @@ namespace Intsurv {
         this->compute_bic1();
         this->compute_bic2();
         this->compute_aic();
+
+        // record tail completion
+        this->tail_completion = tail_completion;
+        this->tail_tau = tail_tau;
 
         // prepare scores and prob in their original order
         arma::uvec rev_ord { cox_obj.get_rev_sort_index() };
@@ -858,6 +983,10 @@ namespace Intsurv {
         this->compute_bic1();
         this->compute_bic2();
         this->compute_aic();
+
+        // record tail completion
+        this->tail_completion = tail_completion;
+        this->tail_tau = tail_tau;
 
         // prepare scores and prob in their original order
         arma::uvec rev_ord { cox_obj.get_rev_sort_index() };

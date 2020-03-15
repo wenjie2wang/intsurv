@@ -353,6 +353,24 @@ namespace Intsurv {
         return out;
     }
 
+    // capped exponential
+    inline arma::vec cap_exp(arma::vec x,
+                             const double positive_cap = 20,
+                             const double negative_cap = - 120)
+    {
+        x.elem(arma::find(x > positive_cap)).fill(positive_cap);
+        x.elem(arma::find(x < negative_cap)).fill(negative_cap);
+        return arma::exp(x);
+    }
+    inline double cap_exp(double x,
+                          const double positive_cap = 20,
+                          const double negative_cap = - 120)
+    {
+        return std::exp(
+            std::min(std::max(x, negative_cap), positive_cap)
+            );
+    }
+
     // inline handy functions
     inline arma::vec mat2vec(const arma::mat& x) {
         return arma::conv_to<arma::vec>::from(x);
@@ -524,6 +542,18 @@ namespace Intsurv {
         return res;
     }
 
+    // compute reverse difference for a vector
+    inline arma::vec rev_diff(const arma::vec& x) {
+        if (x.n_elem <= 1) {
+            throw std::range_error("The length of 'x' should be >= 1.");
+        }
+        arma::vec res { arma::vec(x.n_elem - 1) };
+        for (size_t i {0}; i < x.n_elem - 1; ++i) {
+            res(i) = x(i + 1) - x(i);
+        }
+        return res;
+    }
+
     // log of sum of exponentials
     inline double log_sum_exp(const arma::vec& x)
     {
@@ -551,7 +581,7 @@ namespace Intsurv {
         return res;
     }
 
-    // step function
+    // step function, where length(height) = length(knots) + 1
     inline arma::vec step_fun(const arma::vec& x,
                               const arma::vec& knots,
                               const arma::vec& height)
@@ -570,6 +600,32 @@ namespace Intsurv {
                 res(i) = it->second;
             } else {
                 res(i) = height(0);
+            }
+        }
+        return res;
+    }
+
+    // step function, where length(height) = length(knots)
+    // the nearest left neighbor or the nearest right neighbor
+    // is used if the left neighbor doesn't exist
+    inline arma::vec step_fun2(const arma::vec& x,
+                               const arma::vec& knots,
+                               const arma::vec& height)
+    {
+        // create a map for fast comparison
+        std::map<double, double> step_map;
+        for (size_t i {0}; i < knots.n_elem; ++i) {
+            step_map.insert(std::make_pair(knots(i), height(i)));
+        }
+        arma::vec res { arma::zeros(x.n_elem) };
+        std::map<double, double>::iterator it;
+        for (size_t i {0}; i < x.n_elem; ++i) {
+            it = step_map.upper_bound(x(i));
+            if (it == step_map.begin()) {
+                res(i) = height(0);
+            } else {
+                --it;
+                res(i) = it->second;
             }
         }
         return res;
