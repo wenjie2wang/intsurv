@@ -206,13 +206,12 @@ coef(fit1)
 coef(fit1, "surv")
 coef(fit1, "cure")
 
-## compute weighted concordance index (C-index)
+## weighted concordance index (C-index)
+fit1$model$c_index
+## which also can be computed as follows
 cIndex(time = obs_time, event = event,
        risk_score = fit1$fitted$surv_xBeta,
-       weight = fit1$fitted$susceptible_prob)
-
-## or directly extract C-index from the object
-fit1$model$c_index
+       weight = ifelse(event > 0, 1, fit1$fitted$susceptible_prob))
 
 ## 2. create a toy dataset
 toy_dat <- data.frame(time = obs_time, status = event)

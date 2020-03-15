@@ -596,9 +596,10 @@ namespace Intsurv {
         arma::uvec rev_ord { cox_obj.get_rev_sort_index() };
         this->cox_xBeta = cox_obj.xBeta.elem(rev_ord);
         this->cure_xBeta = cure_obj.xBeta.elem(rev_ord);
-        // set suspectible prob to be 1 for events
-        // cure_obj.prob_vec.elem(case1_ind).ones();
-        // this->susceptible_prob = cure_obj.prob_vec.elem(rev_ord);
+        // set prob to be 1 for events for computing C-index
+        arma::vec p_vec_event { cure_obj.prob_vec };
+        p_vec_event.elem(case1_ind).ones();
+        this->susceptible_prob = cure_obj.prob_vec.elem(rev_ord);
         // compute posterior probabilities from E-step
         for (size_t j: case2_ind) {
             double numer_j { p_vec(j) * cox_obj.S_time(j) };
@@ -608,7 +609,7 @@ namespace Intsurv {
         this->estep_cured = 1 - this->estep_susceptible;
         // compute weighted c-index
         this->c_index = Intsurv::Concordance(
-            time, event, cox_obj.xBeta, cure_obj.prob_vec
+            time, event, cox_obj.xBeta, p_vec_event
             ).index;
     }
 
@@ -993,9 +994,10 @@ namespace Intsurv {
         this->cox_xBeta = cox_obj.xBeta.elem(rev_ord);
         this->cure_xBeta = cure_obj.xBeta.elem(rev_ord);
 
-        // set suspectible prob to be 1 for events
-        // cure_obj.prob_vec.elem(case1_ind).ones();
-        // this->susceptible_prob = cure_obj.prob_vec.elem(rev_ord);
+        // set prob to be 1 for events for computing C-index
+        arma::vec p_vec_event { cure_obj.prob_vec };
+        p_vec_event.elem(case1_ind).ones();
+        this->susceptible_prob = cure_obj.prob_vec.elem(rev_ord);
 
         // compute posterior probabilities from E-step
         for (size_t j: case2_ind) {
@@ -1006,7 +1008,7 @@ namespace Intsurv {
         this->estep_cured = 1 - this->estep_susceptible;
         // compute weight C-index
         this->c_index = Intsurv::Concordance(
-            time, event, cox_obj.xBeta, cure_obj.prob_vec
+            time, event, cox_obj.xBeta, p_vec_event
             ).index;
     }
 
