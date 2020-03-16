@@ -114,13 +114,17 @@ namespace Intsurv {
     }
 
     // set intersection for vector a and vector b
+    // a and b must be sorted
     // armadillo vector has just one template type parameter
     template <typename T, template <typename> class ARMA_VEC_TYPE>
     inline ARMA_VEC_TYPE<T> vec_intersection(const ARMA_VEC_TYPE<T>& a,
                                              const ARMA_VEC_TYPE<T>& b)
     {
         std::vector<T> res;
-        std::set_intersection(a.begin(), a.end(), b.begin(), b.end(),
+        ARMA_VEC_TYPE<T> s_a { arma::sort(a) };
+        ARMA_VEC_TYPE<T> s_b { arma::sort(b) };
+        std::set_intersection(s_a.begin(), s_a.end(),
+                              s_b.begin(), s_b.end(),
                               std::back_inserter(res));
         std::reverse(res.begin(), res.end());
         return arma::sort(arma::conv_to<ARMA_VEC_TYPE<T>>::from(res));
@@ -132,9 +136,25 @@ namespace Intsurv {
                                       const ARMA_VEC_TYPE<T>& b)
     {
         std::vector<T> res;
-        std::set_union(a.begin(), a.end(),
-                       b.begin(), b.end(),
+        ARMA_VEC_TYPE<T> s_a { arma::sort(a) };
+        ARMA_VEC_TYPE<T> s_b { arma::sort(b) };
+        std::set_union(s_a.begin(), s_a.end(),
+                       s_b.begin(), s_b.end(),
                        std::inserter(res, res.begin()));
+        return arma::sort(arma::conv_to<ARMA_VEC_TYPE<T>>::from(res));
+    }
+
+    // set difference for vector a and vector b
+    template <typename T, template <typename> class ARMA_VEC_TYPE>
+    inline ARMA_VEC_TYPE<T> vec_diff(const ARMA_VEC_TYPE<T>& a,
+                                     const ARMA_VEC_TYPE<T>& b)
+    {
+        std::vector<T> res;
+        ARMA_VEC_TYPE<T> s_a { arma::sort(a) };
+        ARMA_VEC_TYPE<T> s_b { arma::sort(b) };
+        std::set_difference(s_a.begin(), s_a.end(),
+                            s_b.begin(), s_b.end(),
+                            std::inserter(res, res.begin()));
         return arma::sort(arma::conv_to<ARMA_VEC_TYPE<T>>::from(res));
     }
 
@@ -701,6 +721,42 @@ namespace Intsurv {
         arma::uvec out { x };
         for (int i {0}; i < ran_xx.size(); ++i) {
             out(i) = ran_xx(i);
+        }
+        return out;
+    }
+
+    // generate cross-validation indices
+    // for given number of folds and number of observations
+    inline std::vector<arma::uvec> get_cv_test_index(
+        const unsigned long n_obs,
+        const unsigned long n_folds = 10
+        )
+    {
+        // number of observations must be at least two
+        if (n_obs < 2) {
+            throw std::range_error(
+                "Cross-validation needs at least two observations."
+                );
+        }
+        // number of folds is at most number of observations
+        if (n_folds > n_obs) {
+            throw std::range_error(
+                "Number of folds should be <= number of observations."
+                );
+        }
+        // define output
+        std::vector<arma::uvec> out;
+        // observation indices random permuted
+        arma::uvec obs_idx { arma::randperm(n_obs) };
+        // remaining number of observations
+        unsigned long re_n_obs { n_obs };
+        // determine the size of folds and indices one by one
+        for (size_t i {0}; i < n_folds; ++i) {
+            unsigned long fold_i { re_n_obs / (n_folds - i) };
+            unsigned long j { n_obs - re_n_obs };
+            arma::uvec idx_i { obs_idx.subvec(j, j + fold_i - 1) };
+            out.push_back(idx_i);
+            re_n_obs -= fold_i;
         }
         return out;
     }

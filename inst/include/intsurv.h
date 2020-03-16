@@ -19,6 +19,7 @@
 #define INTSURV_H
 
 #include "intsurv/assessment.h"
+#include "intsurv/cross-validation.h"
 #include "intsurv/logistic_reg.h"
 #include "intsurv/splines.h"
 #include "intsurv/coxph_cure.h"
