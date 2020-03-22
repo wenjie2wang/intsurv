@@ -995,7 +995,9 @@ namespace Intsurv {
         };
         arma::vec H_vec { - arma::log(S_vec) };
         arma::vec h_vec {
-            step_fun2(new_time, this->unique_time, this->h0_est)
+            step_fun2(new_time,
+                      this->unique_time.elem(this->case1_ind),
+                      this->h0_est.elem(this->case1_ind))
         };
         // apply x * beta
         // compute parts for the new data
