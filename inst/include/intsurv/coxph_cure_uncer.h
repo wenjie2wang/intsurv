@@ -193,6 +193,21 @@ namespace Intsurv {
             const unsigned int& verbose
             );
 
+        // function to compute the observe data log-likelihood function
+        // for given fitted model and estimates
+        inline double obs_log_likelihood() const;
+
+        // for given fitted model and a new set of data
+        // all the inputs will be sorted inside of the function
+        // so their copies are asked here
+        inline double obs_log_likelihood(
+            arma::vec new_time,
+            arma::vec new_event,
+            arma::mat new_cox_x,
+            arma::mat new_cure_x,
+            const double pmin
+            ) const;
+
         // compute BIC
         inline void compute_bic1() {
             this->bic1 = std::log(nObs) * coef_df + 2 * negLogL;
@@ -401,16 +416,14 @@ namespace Intsurv {
             // for case 1
             for (size_t j: case1_ind) {
                 obs_ell += std::log(p_vec(j)) +
-                    std::log(cox_obj.h_time(j)) +
-                    std::log(cox_obj.S_time(j)) +
-                    std::log(cox_obj.Sc_time(j));
+                    std::log(cox_obj.h_time(j)) -
+                    cox_obj.H_time(j) - cox_obj.Hc_time(j);
             }
             // for case 2
             for (size_t j: case2_ind) {
                 obs_ell +=
-                    std::log(p_vec(j) * cox_obj.S_time(j) + 1 - p_vec(j)) +
-                    std::log(cox_obj.Sc_time(j)) +
-                    std::log(cox_obj.hc_time(j));
+                    std::log(p_vec(j) * cox_obj.S_time(j) + 1 - p_vec(j)) -
+                    cox_obj.Hc_time(j) + std::log(cox_obj.hc_time(j));
             }
             // for case 3
             for (size_t j: case3_ind) {
@@ -607,8 +620,10 @@ namespace Intsurv {
         arma::uvec rev_ord { cox_obj.get_rev_sort_index() };
         this->cox_xBeta = cox_obj.xBeta.elem(rev_ord);
         this->cure_xBeta = cure_obj.xBeta.elem(rev_ord);
-        // set suspectible prob to be 1 for certain events
-        cure_obj.prob_vec.elem(case1_ind).ones();
+
+        // set prob to be 1 for events for computing C-index
+        arma::vec p_vec_event { cure_obj.prob_vec };
+        p_vec_event.elem(case1_ind).ones();
         this->susceptible_prob = cure_obj.prob_vec.elem(rev_ord);
 
         // compute posterior probabilities from E-step
@@ -642,7 +657,7 @@ namespace Intsurv {
             cox_obj.get_time().elem(cer_ind),
             cox_obj.get_event().elem(cer_ind),
             cox_obj.xBeta.elem(cer_ind),
-            cure_obj.prob_vec.elem(cer_ind)
+            p_vec_event.elem(cer_ind)
             ).index;
     }
 
@@ -1138,8 +1153,10 @@ namespace Intsurv {
         arma::uvec rev_ord { cox_obj.get_rev_sort_index() };
         this->cox_xBeta = cox_obj.xBeta.elem(rev_ord);
         this->cure_xBeta = cure_obj.xBeta.elem(rev_ord);
-        // set suspectible prob to be 1 for certain events
-        cure_obj.prob_vec.elem(case1_ind).ones();
+
+        // set prob to be 1 for events for computing C-index
+        arma::vec p_vec_event { cure_obj.prob_vec };
+        p_vec_event.elem(case1_ind).ones();
         this->susceptible_prob = cure_obj.prob_vec.elem(rev_ord);
 
         // compute posterior probabilities from E-step
@@ -1171,10 +1188,176 @@ namespace Intsurv {
             cox_obj.get_time().elem(cer_ind),
             cox_obj.get_event().elem(cer_ind),
             cox_obj.xBeta.elem(cer_ind),
-            cure_obj.prob_vec.elem(cer_ind)
+            p_vec_event.elem(cer_ind)
             ).index;
     }
 
+    // function to compute the observe data log-likelihood function
+    // for given fitted model and estimates
+    inline double CoxphCureUncer::obs_log_likelihood() const
+    {
+        double obs_ell { 0 };
+        arma::vec sus_prob { cure_obj.prob_vec };
+        // for case 1
+        for (size_t j: case1_ind) {
+            obs_ell += std::log(sus_prob(j)) +
+                std::log(cox_obj.h_time(j)) -
+                cox_obj.H_time(j) - cox_obj.Hc_time(j);
+        }
+        // for case 2
+        for (size_t j: case2_ind) {
+            obs_ell +=
+                std::log(sus_prob(j) * cox_obj.S_time(j) + 1 - sus_prob(j)) -
+                cox_obj.Hc_time(j) + std::log(cox_obj.hc_time(j));
+        }
+        // for case 3
+        for (size_t j: case3_ind) {
+            double m12_common {
+                sus_prob(j) * cox_obj.S0_time(j) * cox_obj.Sc_time(j)
+            };
+            double m1 { cox_obj.h_time(j) * m12_common };
+            double m2 { cox_obj.hc_time(j) * m12_common };
+            double m3 {
+                (1 - sus_prob(j)) * cox_obj.hc_time(j) * cox_obj.Sc_time(j)
+            };
+            obs_ell += std::log(m1 + m2 + m3);
+        }
+        return obs_ell;
+    }
+
+    // for given fitted model and a new set of data
+    inline double CoxphCureUncer::obs_log_likelihood(
+        // all the inputs will be sorted inside of the function
+        // so their copies are asked here
+        arma::vec new_time,
+        arma::vec new_event,
+        arma::mat new_cox_x,
+        arma::mat new_cure_x,
+        const double pmin = 1e-5
+        ) const
+    {
+        // check if the number of covariates matchs the fitted model
+        if (new_cox_x.n_cols != this->cox_p) {
+            throw std::range_error(
+                "The number of columns ('new_cox_x') must match the model."
+                );
+        }
+        if (new_cure_x.n_cols != this->cure_p0) {
+            throw std::range_error(
+                "The number of columns ('new_cure_x') must match the model."
+                );
+        }
+        // number of observations
+        unsigned int new_n_obs { new_cox_x.n_rows };
+        if (new_cure_x.n_rows != new_n_obs ||
+            new_time.n_elem != new_n_obs ||
+            new_event.n_elem != new_n_obs) {
+            throw std::range_error(
+                "The number of rows of the new data must be the same."
+                );
+        }
+        const double const4na { 0.5 };
+        new_event.replace(arma::datum::nan, const4na);
+        double obs_ell { 0 };
+        // sort based on time and event
+        // time: ascending order
+        // event: events first, then censoring at the same time point
+        arma::uvec des_event_ind { arma::sort_index(new_event, "descend") };
+        arma::uvec asc_time_ind {
+            arma::stable_sort_index(new_time.elem(des_event_ind), "ascend")
+        };
+        arma::uvec ord { des_event_ind.elem(asc_time_ind) };
+        // do actual sorting
+        new_time = new_time.elem(ord);
+        new_event = new_event.elem(ord);
+        new_cox_x = new_cox_x.rows(ord);
+        new_cure_x = new_cure_x.rows(ord);
+
+        // add intercept if needed
+        if (this->cure_p > this->cure_p0) {
+            new_cure_x = arma::join_horiz(
+                arma::ones(new_cure_x.n_rows), new_cure_x
+                );
+        }
+        arma::uvec new_case1_ind { arma::find(new_event > const4na) };
+        arma::uvec new_case2_ind { arma::find(new_event < const4na) };
+        arma::uvec new_case3_ind { arma::find(new_event == const4na) };
+
+        // construct the baseline survival curve
+        // tail completion has already been applied to this->S0_est
+        arma::vec S0_vec {
+            arma::join_cols(arma::ones<arma::vec>(1), this->S0_est)
+        };
+        arma::vec Sc0_vec {
+            arma::join_cols(arma::ones<arma::vec>(1), this->Sc_est)
+        };
+        // baseline estimates
+        arma::vec S_vec {
+            step_fun(new_time, this->unique_time, S0_vec)
+        };
+        arma::vec Sc_vec {
+            step_fun(new_time, this->unique_time, Sc0_vec)
+        };
+        arma::vec H_vec { - arma::log(S_vec) };
+        arma::vec Hc_vec { - arma::log(Sc_vec) };
+        // only consider positive values
+        arma::uvec which_h { arma::find(this->h0_est > 0) };
+        arma::uvec which_hc { arma::find(this->hc_est > 0) };
+        arma::vec h_vec {
+            step_fun2(new_time,
+                      this->unique_time.elem(which_h),
+                      this->h0_est.elem(which_h))
+        };
+        arma::vec hc_vec {
+            step_fun2(new_time,
+                      this->unique_time.elem(which_hc),
+                      this->hc_est.elem(which_hc))
+        };
+        // apply x * beta
+        // compute parts for the new data
+        arma::vec new_cox_xbeta { mat2vec(new_cox_x * this->cox_coef) };
+        arma::vec exp_cox_xbeta { arma::exp(new_cox_xbeta) };
+        h_vec %= exp_cox_xbeta;
+        H_vec %= exp_cox_xbeta;
+        S_vec = arma::exp(- H_vec);
+        arma::vec new_cure_xgamma { mat2vec(new_cure_x * this->cure_coef) };
+        arma::vec p_vec { 1 / (1 + arma::exp(- new_cure_xgamma)) };
+        for (size_t i {0}; i < p_vec.n_elem; ++i) {
+            if (p_vec(i) < pmin) {
+                p_vec(i) = pmin;
+            } else if (p_vec(i) > 1 - pmin) {
+                p_vec(i) = 1 - pmin;
+            }
+        }
+        // for case 1
+        for (size_t j: new_case1_ind) {
+            obs_ell += std::log(p_vec(j)) +
+                std::log(h_vec(j)) -
+                cox_obj.H_time(j) - cox_obj.Hc_time(j);
+        }
+        // for case 2
+        for (size_t j: new_case2_ind) {
+            obs_ell +=
+                std::log(p_vec(j) * S_vec(j) + 1 - p_vec(j)) -
+                Hc_vec(j) + std::log(hc_vec(j));
+        }
+        // for case 3
+        for (size_t j: new_case3_ind) {
+            double m1 {
+                p_vec(j) * h_vec(j) *
+                S_vec(j) * Sc_vec(j)
+            };
+            double m2 {
+                p_vec(j) * hc_vec(j) *
+                Sc_vec(j) * S_vec(j)
+            };
+            double m3 {
+                (1 - p_vec(j)) * hc_vec(j) * Sc_vec(j)
+            };
+            obs_ell += std::log(m1 + m2 + m3);
+        }
+        return obs_ell;
+    }
 
 }
 
