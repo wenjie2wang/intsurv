@@ -1,3 +1,20 @@
+//
+// intsurv: Integrative Survival Models
+// Copyright (C) 2017-2020  Wenjie Wang <wjwang.stat@gmail.com>
+//
+// This file is part of the R package intsurv.
+//
+// The R package intsurv is free software: You can redistribute it and/or
+// modify it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or any later
+// version (at your option). See the GNU General Public License at
+// <https://www.gnu.org/licenses/> for details.
+//
+// The R package intsurv is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+//
+
 #ifndef CV_COXPH_CURE_H
 #define CV_COXPH_CURE_H
 
@@ -7,7 +24,7 @@
 
 namespace Intsurv {
     // estimation from cross-validation
-    arma::vec cv_coxph_cure(
+    inline arma::vec cv_coxph_cure(
         const arma::vec& time,
         const arma::vec& event,
         const arma::mat& cox_x,
@@ -68,14 +85,14 @@ namespace Intsurv {
             };
             arma::mat train_cox_x {
                 arma::join_vert(
-                    cox_x_case1.elem(cv_obj_case1.train_index.at(i)),
-                    cox_x_case2.elem(cv_obj_case2.train_index.at(i))
+                    cox_x_case1.rows(cv_obj_case1.train_index.at(i)),
+                    cox_x_case2.rows(cv_obj_case2.train_index.at(i))
                     )
             };
             arma::mat train_cure_x {
                 arma::join_vert(
-                    cure_x_case1.elem(cv_obj_case1.train_index.at(i)),
-                    cure_x_case2.elem(cv_obj_case2.train_index.at(i))
+                    cure_x_case1.rows(cv_obj_case1.train_index.at(i)),
+                    cure_x_case2.rows(cv_obj_case2.train_index.at(i))
                     )
             };
             // testing set
@@ -93,14 +110,14 @@ namespace Intsurv {
             };
             arma::mat test_cox_x {
                 arma::join_vert(
-                    cox_x_case1.elem(cv_obj_case1.test_index.at(i)),
-                    cox_x_case2.elem(cv_obj_case2.test_index.at(i))
+                    cox_x_case1.rows(cv_obj_case1.test_index.at(i)),
+                    cox_x_case2.rows(cv_obj_case2.test_index.at(i))
                     )
             };
             arma::mat test_cure_x {
                 arma::join_vert(
-                    cure_x_case1.elem(cv_obj_case1.test_index.at(i)),
-                    cure_x_case2.elem(cv_obj_case2.test_index.at(i))
+                    cure_x_case1.rows(cv_obj_case1.test_index.at(i)),
+                    cure_x_case2.rows(cv_obj_case2.test_index.at(i))
                     )
             };
             // define object
@@ -124,7 +141,7 @@ namespace Intsurv {
     }
 
     // regularized Cox cure model
-    arma::vec cv_coxph_cure_reg(
+    inline arma::vec cv_coxph_cure_reg(
         const arma::vec& time,
         const arma::vec& event,
         const arma::mat& cox_x,
@@ -190,14 +207,14 @@ namespace Intsurv {
             };
             arma::mat train_cox_x {
                 arma::join_vert(
-                    cox_x_case1.elem(cv_obj_case1.train_index.at(i)),
-                    cox_x_case2.elem(cv_obj_case2.train_index.at(i))
+                    cox_x_case1.rows(cv_obj_case1.train_index.at(i)),
+                    cox_x_case2.rows(cv_obj_case2.train_index.at(i))
                     )
             };
             arma::mat train_cure_x {
                 arma::join_vert(
-                    cure_x_case1.elem(cv_obj_case1.train_index.at(i)),
-                    cure_x_case2.elem(cv_obj_case2.train_index.at(i))
+                    cure_x_case1.rows(cv_obj_case1.train_index.at(i)),
+                    cure_x_case2.rows(cv_obj_case2.train_index.at(i))
                     )
             };
             // testing set
@@ -215,14 +232,14 @@ namespace Intsurv {
             };
             arma::mat test_cox_x {
                 arma::join_vert(
-                    cox_x_case1.elem(cv_obj_case1.test_index.at(i)),
-                    cox_x_case2.elem(cv_obj_case2.test_index.at(i))
+                    cox_x_case1.rows(cv_obj_case1.test_index.at(i)),
+                    cox_x_case2.rows(cv_obj_case2.test_index.at(i))
                     )
             };
             arma::mat test_cure_x {
                 arma::join_vert(
-                    cure_x_case1.elem(cv_obj_case1.test_index.at(i)),
-                    cure_x_case2.elem(cv_obj_case2.test_index.at(i))
+                    cure_x_case1.rows(cv_obj_case1.test_index.at(i)),
+                    cure_x_case2.rows(cv_obj_case2.test_index.at(i))
                     )
             };
             // define object

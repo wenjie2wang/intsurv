@@ -61,8 +61,8 @@ namespace Intsurv {
         arma::vec estep_susceptible;
 
         // tail completion
-        unsigned int tail_completion = 1;
-        double tail_tau = - 1.0;
+        // unsigned int tail_completion = 1;
+        // double tail_tau = - 1.0;
 
         // hazard and survival function estimates at unique time
         arma::vec unique_time;
@@ -486,9 +486,9 @@ namespace Intsurv {
         this->compute_bic2();
         this->compute_aic();
 
-        // record tail completion
-        this->tail_completion = tail_completion;
-        this->tail_tau = tail_tau;
+        // // record tail completion
+        // this->tail_completion = tail_completion;
+        // this->tail_tau = tail_tau;
 
         // prepare scores and prob in their original order
         arma::uvec rev_ord { cox_obj.get_rev_sort_index() };
@@ -884,8 +884,8 @@ namespace Intsurv {
         this->compute_aic();
 
         // record tail completion
-        this->tail_completion = tail_completion;
-        this->tail_tau = tail_tau;
+        // this->tail_completion = tail_completion;
+        // this->tail_tau = tail_tau;
 
         // prepare scores and prob in their original order
         arma::uvec rev_ord { cox_obj.get_rev_sort_index() };
@@ -994,19 +994,21 @@ namespace Intsurv {
             step_fun(new_time, this->unique_time, S0_vec)
         };
         arma::vec H_vec { - arma::log(S_vec) };
+        // only consider positive values
+        arma::uvec which_h { arma::find(this->h0_est > 0) };
         arma::vec h_vec {
             step_fun2(new_time,
-                      this->unique_time.elem(this->case1_ind),
-                      this->h0_est.elem(this->case1_ind))
+                      this->unique_time.elem(which_h),
+                      this->h0_est.elem(which_h))
         };
         // apply x * beta
         // compute parts for the new data
         arma::vec new_cox_xbeta { mat2vec(new_cox_x * this->cox_coef) };
         arma::vec exp_cox_xbeta { arma::exp(new_cox_xbeta) };
+        h_vec %= exp_cox_xbeta;
+        H_vec %= exp_cox_xbeta;
+        S_vec = arma::exp(- H_vec);
         arma::vec new_cure_xgamma { mat2vec(new_cure_x * this->cure_coef) };
-        h_vec = h_vec % exp_cox_xbeta;
-        H_vec = H_vec % exp_cox_xbeta;
-        S_vec = exp(- H_vec);
         arma::vec p_vec { 1 / (1 + arma::exp(- new_cure_xgamma)) };
         for (size_t i {0}; i < p_vec.n_elem; ++i) {
             if (p_vec(i) < pmin) {
