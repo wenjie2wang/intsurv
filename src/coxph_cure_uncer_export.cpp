@@ -162,6 +162,7 @@ Rcpp::List coxph_cure_uncer_reg(
     const double& cure_l1_lambda = 0,
     const double& cure_l2_lambda = 0,
     const arma::vec& cure_l1_penalty_factor = 0,
+    const unsigned long cv_nfolds = 0,
     const arma::vec& cox_start = 0,
     const arma::vec& cure_start = 0,
     const unsigned int& em_max_iter = 500,
@@ -199,6 +200,26 @@ Rcpp::List coxph_cure_uncer_reg(
         tail_completion, tail_tau,
         pmin, early_stop, verbose
         );
+    // cross-validation
+    arma::vec cv_vec;
+    if (cv_nfolds > 1) {
+        cv_vec = Intsurv::cv_coxph_cure_uncer_reg(
+            time, event, cox_x, cure_x, cure_intercept,
+            cv_nfolds,
+            cox_l1_lambda, cox_l2_lambda,
+            cox_l1_penalty_factor,
+            cure_l1_lambda, cure_l2_lambda,
+            cure_l1_penalty_factor,
+            cox_start, cure_start,
+            em_max_iter, em_rel_tol,
+            cox_mstep_max_iter, cox_mstep_rel_tol,
+            cure_mstep_max_iter, cure_mstep_rel_tol,
+            cox_standardize, cure_standardize,
+            spline_start, iSpline_num_knots, iSpline_degree,
+            tail_completion, tail_tau,
+            pmin, early_stop, verbose
+            );
+    }
     // return results in a list
     return Rcpp::List::create(
         Rcpp::Named("cox_coef") = Intsurv::arma2rvec(obj.cox_coef),
@@ -232,7 +253,8 @@ Rcpp::List coxph_cure_uncer_reg(
             Rcpp::Named("c_index") = obj.c_index,
             Rcpp::Named("aic") = obj.aic,
             Rcpp::Named("bic1") = obj.bic1,
-            Rcpp::Named("bic2") = obj.bic2
+            Rcpp::Named("bic2") = obj.bic2,
+            Rcpp::Named("cv_logL") = Intsurv::arma2rvec(cv_vec)
             ),
         Rcpp::Named("penalty") = Rcpp::List::create(
             Rcpp::Named("cox_l1_lambda_max") = obj.cox_l1_lambda_max,
