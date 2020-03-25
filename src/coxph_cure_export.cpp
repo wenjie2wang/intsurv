@@ -181,6 +181,7 @@ Rcpp::List rcpp_coxph_cure_reg(
         tail_completion, tail_tau,
         pmin, early_stop, verbose
         );
+    // cross-validation
     arma::vec cv_vec;
     if (cv_nfolds > 1) {
         cv_vec = Intsurv::cv_coxph_cure_reg(

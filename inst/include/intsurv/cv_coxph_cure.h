@@ -50,8 +50,8 @@ namespace Intsurv {
         )
     {
         // stratify
-        const arma::uvec case1_ind = arma::find(event > 0);
-        const arma::uvec case2_ind = arma::find(event < 1);
+        const arma::uvec case1_ind { arma::find(event > 0) };
+        const arma::uvec case2_ind { arma::find(event < 1) };
         const arma::vec time_case1 { time.elem(case1_ind) };
         const arma::vec time_case2 { time.elem(case2_ind) };
         const arma::vec event_case1 { event.elem(case1_ind) };
@@ -172,8 +172,8 @@ namespace Intsurv {
         )
     {
         // stratify
-        const arma::uvec case1_ind = arma::find(event > 0);
-        const arma::uvec case2_ind = arma::find(event < 1);
+        const arma::uvec case1_ind { arma::find(event > 0) };
+        const arma::uvec case2_ind { arma::find(event < 1) };
         const arma::vec time_case1 { time.elem(case1_ind) };
         const arma::vec time_case2 { time.elem(case2_ind) };
         const arma::vec event_case1 { event.elem(case1_ind) };
