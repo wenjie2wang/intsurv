@@ -4,15 +4,27 @@
 \alias{simData4iCoxph}
 \title{Simulated Survival Data with Uncertain Records}
 \usage{
-simData4iCoxph(nSubject = 1e3, beta0Vec, xMat,
-               maxNum = 2, nRecordProb = c(0.9, 0.1),
-               matchCensor = 0.1, matchEvent = 0.1,
-               censorMin = 0.5, censorMax = 12.5,
-               lambda = 0.005, rho = 0.7,
-               fakeLambda1 = lambda * exp(- 3), fakeRho1 = rho,
-               fakeLambda2 = lambda * exp(3), fakeRho2 = rho,
-               mixture = 0.5, randomMiss = TRUE,
-               eventOnly = FALSE, ...)
+simData4iCoxph(
+  nSubject = 1000,
+  beta0Vec,
+  xMat,
+  maxNum = 2,
+  nRecordProb = c(0.9, 0.1),
+  matchCensor = 0.1,
+  matchEvent = 0.1,
+  censorMin = 0.5,
+  censorMax = 12.5,
+  lambda = 0.005,
+  rho = 0.7,
+  fakeLambda1 = lambda * exp(-3),
+  fakeRho1 = rho,
+  fakeLambda2 = lambda * exp(3),
+  fakeRho2 = rho,
+  mixture = 0.5,
+  randomMiss = TRUE,
+  eventOnly = FALSE,
+  ...
+)
 }
 \arguments{
 \item{nSubject}{Number of subjects.}

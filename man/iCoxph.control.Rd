@@ -4,9 +4,16 @@
 \alias{iCoxph.control}
 \title{Auxiliary for Controlling iCoxph Fitting}
 \usage{
-iCoxph.control(tol_beta = 1e-6, tol_pi = 1e-8, cm_gradtol = 1e-6,
-               cm_stepmax = 1e2, cm_steptol = 1e-6, cm_max_iter = 1e2,
-               ecm_max_iter = 2e2, ...)
+iCoxph.control(
+  tol_beta = 1e-06,
+  tol_pi = 1e-08,
+  cm_gradtol = 1e-06,
+  cm_stepmax = 100,
+  cm_steptol = 1e-06,
+  cm_max_iter = 100,
+  ecm_max_iter = 200,
+  ...
+)
 }
 \arguments{
 \item{tol_beta}{A positive value specifying the tolerance that concludes the

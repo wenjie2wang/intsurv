@@ -4,8 +4,16 @@
 \alias{iCoxph}
 \title{Integrative Cox Model for Uncertain Event Times}
 \usage{
-iCoxph(formula, data, subset, na.action, contrasts = NULL,
-       start = iCoxph.start(), control = iCoxph.control(), ...)
+iCoxph(
+  formula,
+  data,
+  subset,
+  na.action,
+  contrasts = NULL,
+  start = iCoxph.start(),
+  control = iCoxph.control(),
+  ...
+)
 }
 \arguments{
 \item{formula}{\code{Survi} object specifying the covariates and response

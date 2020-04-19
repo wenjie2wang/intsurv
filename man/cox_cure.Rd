@@ -5,25 +5,57 @@
 \alias{cox_cure.fit}
 \title{Cox Cure Rate Model}
 \usage{
-cox_cure(surv_formula, cure_formula,
-         time, event, data, subset, contrasts = NULL,
-         bootstrap = 0, firth = FALSE, surv_start, cure_start,
-         em_max_iter = 200, em_rel_tol = 1e-5,
-         surv_max_iter = 30, surv_rel_tol = 1e-5,
-         cure_max_iter = 30, cure_rel_tol = 1e-5,
-         tail_completion = c("zero", "exp", "zero-tau"),
-         tail_tau = NULL, pmin = 1e-5, early_stop = TRUE,
-         verbose = FALSE, ...)
+cox_cure(
+  surv_formula,
+  cure_formula,
+  time,
+  event,
+  data,
+  subset,
+  contrasts = NULL,
+  bootstrap = 0,
+  firth = FALSE,
+  surv_start = NULL,
+  cure_start = NULL,
+  em_max_iter = 200,
+  em_rel_tol = 1e-05,
+  surv_max_iter = 30,
+  surv_rel_tol = 1e-05,
+  cure_max_iter = 30,
+  cure_rel_tol = 1e-05,
+  tail_completion = c("zero", "exp", "zero-tau"),
+  tail_tau = NULL,
+  pmin = 1e-05,
+  early_stop = TRUE,
+  verbose = FALSE,
+  ...
+)
 
-cox_cure.fit(surv_x, cure_x, time, event, cure_intercept = TRUE,
-             bootstrap = 0, firth = FALSE, surv_start, cure_start,
-             surv_standardize = TRUE, cure_standardize = TRUE,
-             em_max_iter = 200, em_rel_tol = 1e-5,
-             surv_max_iter = 30, surv_rel_tol = 1e-5,
-             cure_max_iter = 30, cure_rel_tol = 1e-5,
-             tail_completion = c("zero", "exp", "zero-tau"),
-             tail_tau = NULL, pmin = 1e-5, early_stop = TRUE,
-             verbose = FALSE, ...)
+cox_cure.fit(
+  surv_x,
+  cure_x,
+  time,
+  event,
+  cure_intercept = TRUE,
+  bootstrap = 0,
+  firth = FALSE,
+  surv_start = NULL,
+  cure_start = NULL,
+  surv_standardize = TRUE,
+  cure_standardize = TRUE,
+  em_max_iter = 200,
+  em_rel_tol = 1e-05,
+  surv_max_iter = 30,
+  surv_rel_tol = 1e-05,
+  cure_max_iter = 30,
+  cure_rel_tol = 1e-05,
+  tail_completion = c("zero", "exp", "zero-tau"),
+  tail_tau = NULL,
+  pmin = 1e-05,
+  early_stop = TRUE,
+  verbose = FALSE,
+  ...
+)
 }
 \arguments{
 \item{surv_formula}{A formula object starting with \code{~} for the model
@@ -70,13 +102,14 @@ Notice that this argument is experimental and only available for regular
 Cox cure rate model currently.}
 
 \item{surv_start}{An optional numeric vector representing the starting
-values for the Cox model component.  If not specified, the starting
-values will be obtained from fitting a regular Cox model to events only.}
+values for the Cox model component.  If \code{NULL} is specified, the
+starting values will be obtained from fitting a regular Cox model to
+events only.}
 
 \item{cure_start}{An optional numeric vector representing the starting
-values for the logistic model component.  If not specified, the starting
-values will be obtained from fitting a regular logistic model to the
-non-missing event indicators.}
+values for the logistic model component.  If \code{NULL} is specified,
+the starting values will be obtained from fitting a regular logistic
+model to the non-missing event indicators.}
 
 \item{em_max_iter}{A positive integer specifying the maximum iteration
 number of the EM algorithm.  The default value is \code{200}.}

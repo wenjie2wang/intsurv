@@ -4,15 +4,22 @@
 \alias{simData4cure}
 \title{Simulate Data from Cox Cure Model with Uncertain Event Status}
 \usage{
-simData4cure(nSubject = 1e3,
-             shape = 2, scale = 0.1,
-             lambda_censor = 1, max_censor = Inf,
-             p1 = 0.9, p2 = 0.9, p3 = 0.9,
-             survMat, cureMat = survMat,
-             b0 = stats::binomial()$linkfun(0.7),
-             survCoef = rep(1, ncol(survMat)),
-             cureCoef = rep(1, ncol(cureMat)),
-             ...)
+simData4cure(
+  nSubject = 1000,
+  shape = 2,
+  scale = 0.1,
+  lambda_censor = 1,
+  max_censor = Inf,
+  p1 = 0.9,
+  p2 = 0.9,
+  p3 = 0.9,
+  survMat,
+  cureMat = survMat,
+  b0 = stats::binomial()$linkfun(0.7),
+  survCoef = rep(1, ncol(survMat)),
+  cureCoef = rep(1, ncol(cureMat)),
+  ...
+)
 }
 \arguments{
 \item{nSubject}{A positive integer specifying number of subjects.}

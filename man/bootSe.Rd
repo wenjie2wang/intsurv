@@ -4,8 +4,13 @@
 \alias{bootSe}
 \title{Standard Error Estimates through Bootstrap}
 \usage{
-bootSe(object, B = 50, se = c("inter-quartile", "mad", "sd"),
-       return_beta = FALSE, ...)
+bootSe(
+  object,
+  B = 50,
+  se = c("inter-quartile", "mad", "sd"),
+  return_beta = FALSE,
+  ...
+)
 }
 \arguments{
 \item{object}{\code{\link{iCoxph-class}} object.}

@@ -5,34 +5,77 @@
 \alias{cox_cure_net.fit}
 \title{Regularized Cox Cure Rate Model}
 \usage{
-cox_cure_net(surv_formula, cure_formula, time, event,
-             data, subset, contrasts = NULL,
-             surv_lambda, surv_alpha = 1, surv_nlambda = 10,
-             surv_lambda_min_ratio = 1e-1, surv_l1_penalty_factor,
-             cure_lambda, cure_alpha = 1, cure_nlambda = 10,
-             cure_lambda_min_ratio = 1e-1, cure_l1_penalty_factor,
-             surv_start, cure_start,
-             surv_standardize = TRUE, cure_standardize = TRUE,
-             em_max_iter = 200, em_rel_tol = 1e-5,
-             surv_max_iter = 10, surv_rel_tol = 1e-5,
-             cure_max_iter = 10, cure_rel_tol = 1e-5,
-             tail_completion = c("zero", "exp", "zero-tau"),
-             tail_tau = NULL, pmin = 1e-5, early_stop = TRUE,
-             verbose = FALSE, ...)
+cox_cure_net(
+  surv_formula,
+  cure_formula,
+  time,
+  event,
+  data,
+  subset,
+  contrasts = NULL,
+  surv_lambda = NULL,
+  surv_alpha = 1,
+  surv_nlambda = 10,
+  surv_lambda_min_ratio = 0.1,
+  surv_l1_penalty_factor = NULL,
+  cure_lambda = NULL,
+  cure_alpha = 1,
+  cure_nlambda = 10,
+  cure_lambda_min_ratio = 0.1,
+  cure_l1_penalty_factor = NULL,
+  cv_nfolds = 0,
+  surv_start = NULL,
+  cure_start = NULL,
+  surv_standardize = TRUE,
+  cure_standardize = TRUE,
+  em_max_iter = 200,
+  em_rel_tol = 1e-05,
+  surv_max_iter = 10,
+  surv_rel_tol = 1e-05,
+  cure_max_iter = 10,
+  cure_rel_tol = 1e-05,
+  tail_completion = c("zero", "exp", "zero-tau"),
+  tail_tau = NULL,
+  pmin = 1e-05,
+  early_stop = TRUE,
+  verbose = FALSE,
+  ...
+)
 
-cox_cure_net.fit(surv_x, cure_x, time, event, cure_intercept = TRUE,
-                 surv_lambda, surv_alpha = 1, surv_nlambda = 10,
-                 surv_lambda_min_ratio = 1e-1, surv_l1_penalty_factor,
-                 cure_lambda, cure_alpha = 1, cure_nlambda = 10,
-                 cure_lambda_min_ratio = 1e-1, cure_l1_penalty_factor,
-                 surv_start, cure_start,
-                 surv_standardize = TRUE, cure_standardize = TRUE,
-                 em_max_iter = 200, em_rel_tol = 1e-5,
-                 surv_max_iter = 10, surv_rel_tol = 1e-5,
-                 cure_max_iter = 10, cure_rel_tol = 1e-5,
-                 tail_completion = c("zero", "exp", "zero-tau"),
-                 tail_tau = NULL, pmin = 1e-5, early_stop = TRUE,
-                 verbose = FALSE, ...)
+cox_cure_net.fit(
+  surv_x,
+  cure_x,
+  time,
+  event,
+  cure_intercept = TRUE,
+  surv_lambda = NULL,
+  surv_alpha = 1,
+  surv_nlambda = 10,
+  surv_lambda_min_ratio = 0.1,
+  surv_l1_penalty_factor = NULL,
+  cure_lambda = NULL,
+  cure_alpha = 1,
+  cure_nlambda = 10,
+  cure_lambda_min_ratio = 0.1,
+  cure_l1_penalty_factor = NULL,
+  cv_nfolds = 0,
+  surv_start = NULL,
+  cure_start = NULL,
+  surv_standardize = TRUE,
+  cure_standardize = TRUE,
+  em_max_iter = 200,
+  em_rel_tol = 1e-05,
+  surv_max_iter = 10,
+  surv_rel_tol = 1e-05,
+  cure_max_iter = 10,
+  cure_rel_tol = 1e-05,
+  tail_completion = c("zero", "exp", "zero-tau"),
+  tail_tau = NULL,
+  pmin = 1e-05,
+  early_stop = TRUE,
+  verbose = FALSE,
+  ...
+)
 }
 \arguments{
 \item{surv_formula}{A formula object starting with \code{~} for the model
@@ -87,7 +130,7 @@ numbers for penalty factors (or weights) on L1-norm for the coefficient
 estimate vector in the survival model part.  The penalty is applied to
 the coefficient estimate divided by the specified weights.  The
 specified weights are re-scaled internally so that their summation
-equals the length of coefficients.  If it is left unspecified, the
+equals the length of coefficients.  If \code{NULL} is specified, the
 weights are all set to be one.}
 
 \item{cure_lambda}{A numeric vector consists of non-negative values
@@ -111,17 +154,22 @@ numbers for penalty factors (or weights) on L1-norm for the coefficient
 estimate vector in the cure model part.  The penalty is applied to the
 coefficient estimate divided by the specified weights.  The specified
 weights are re-scaled internally so that their summation equals the
-length of coefficients.  If it is left unspecified, the weights are all
-set to be one.}
+length of coefficients.  If \code{NULL} is specified by default, the
+weights are all set to be one.}
+
+\item{cv_nfolds}{An non-negative integer specifying number of folds in
+cross-validation (CV).  The default value is \code{0} and the CV
+procedure is not enabled.}
 
 \item{surv_start}{An optional numeric vector representing the starting
-values for the Cox model component.  If not specified, the starting
-values will be obtained from fitting a regular Cox model to events only.}
+values for the Cox model component.  If \code{NULL} is specified , the
+starting values will be obtained from fitting a regular Cox model to
+events only.}
 
 \item{cure_start}{An optional numeric vector representing the starting
-values for the logistic model component.  If not specified, the starting
-values will be obtained from fitting a regular logistic model to the
-non-missing event indicators.}
+values for the logistic model component.  If \code{NULL} is specified,
+the starting values will be obtained from fitting a regular logistic
+model to the non-missing event indicators.}
 
 \item{surv_standardize}{A logical value specifying whether to standardize
 the covariates for the survival model part.  If \code{FALSE}, the

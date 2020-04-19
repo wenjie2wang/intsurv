@@ -4,8 +4,12 @@
 \alias{iCoxph.start}
 \title{Auxiliary for Starting iCoxph Fitting}
 \usage{
-iCoxph.start(beta_vec = NULL, beta_mat = NULL,
-             methods = c("nearest_hazard", "unit_hazard"), ...)
+iCoxph.start(
+  beta_vec = NULL,
+  beta_mat = NULL,
+  methods = c("nearest_hazard", "unit_hazard"),
+  ...
+)
 }
 \arguments{
 \item{beta_vec}{A numeric vector for starting values of coefficient
