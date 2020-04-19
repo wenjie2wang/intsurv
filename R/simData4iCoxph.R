@@ -25,17 +25,6 @@
 ##' given shape and baseline scale.  The censoring times follow uniform
 ##' distribution of specified boundaries.
 ##'
-##' @usage
-##' simData4iCoxph(nSubject = 1e3, beta0Vec, xMat,
-##'                maxNum = 2, nRecordProb = c(0.9, 0.1),
-##'                matchCensor = 0.1, matchEvent = 0.1,
-##'                censorMin = 0.5, censorMax = 12.5,
-##'                lambda = 0.005, rho = 0.7,
-##'                fakeLambda1 = lambda * exp(- 3), fakeRho1 = rho,
-##'                fakeLambda2 = lambda * exp(3), fakeRho2 = rho,
-##'                mixture = 0.5, randomMiss = TRUE,
-##'                eventOnly = FALSE, ...)
-##'
 ##' @param nSubject Number of subjects.
 ##' @param beta0Vec Time-invariant covariate coefficients.
 ##' @param xMat Design matrix. By default, three continuous variables following

@@ -27,10 +27,6 @@ NULL
 ##' right-censored survival data with uncertain event times due to imperfect
 ##' data integration.
 ##'
-##' @usage
-##' iCoxph(formula, data, subset, na.action, contrasts = NULL,
-##'        start = iCoxph.start(), control = iCoxph.control(), ...)
-##'
 ##' @param formula \code{Survi} object specifying the covariates and response
 ##'     variable in the model, such as \code{Survi(ID, time, event) ~ x1 + x2}.
 ##' @param data An optional data frame, list, or environment that contains the
@@ -331,11 +327,6 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
 ##' \code{gradtol}, \code{stepmax}, \code{steptol}, and \code{iterlim},
 ##' respectively.
 ##'
-##' @usage
-##' iCoxph.control(tol_beta = 1e-6, tol_pi = 1e-8, cm_gradtol = 1e-6,
-##'                cm_stepmax = 1e2, cm_steptol = 1e-6, cm_max_iter = 1e2,
-##'                ecm_max_iter = 2e2, ...)
-##'
 ##' @param tol_beta A positive value specifying the tolerance that concludes the
 ##'     convergence of the covariate coefficient estimates. The tolerance is
 ##'     compared with the relative change between the estimates from two
@@ -422,10 +413,6 @@ iCoxph.control <- function(tol_beta = 1e-6,
 ##'
 ##' Auxiliary function for \code{\link{iCoxph}} that enable users
 ##' to specify the starting values of the model estimation procedure.
-##'
-##' @usage
-##' iCoxph.start(beta_vec = NULL, beta_mat = NULL,
-##'              methods = c("nearest_hazard", "unit_hazard"), ...)
 ##'
 ##' @param beta_vec A numeric vector for starting values of coefficient
 ##'     estimates. The default values are the coefficient estimates from the

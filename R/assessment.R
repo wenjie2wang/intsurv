@@ -38,9 +38,6 @@ NULL
 ##' comparable pair satisfying \eqn{t_i<t_j,\delta_i=1}, we count 0.5 in the
 ##' numerator of the concordance index for tied risk scores (\eqn{r_i=r_j}).
 ##'
-##' @usage
-##' cIndex(time, event = NULL, risk_score, weight = NULL)
-##'
 ##' @param time A numeric vector for observed times
 ##' @param event A numeric vector for event indicators.  If it is \code{NULL}
 ##'     (by default) or \code{NA}, \code{event} will be treated all as ones and

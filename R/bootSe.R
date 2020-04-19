@@ -36,10 +36,6 @@ NULL
 ##' their own.  The \code{return_beta = TRUE} is implied, when \code{B = 1} is
 ##' specified.
 ##'
-##' @usage
-##' bootSe(object, B = 50, se = c("inter-quartile", "mad", "sd"),
-##'        return_beta = FALSE, ...)
-##'
 ##' @param object \code{\link{iCoxph-class}} object.
 ##' @param B A positive integer specifying number of bootstrap samples used for
 ##'     SE estimates.  A large number, such as 200, is often needed for a more
