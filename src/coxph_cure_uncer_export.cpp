@@ -296,6 +296,7 @@ Rcpp::List coxph_cure_uncer_vs(
     const unsigned int& cure_nlambda = 1,
     const double& cure_lambda_min_ratio = 1e-4,
     const arma::vec& cure_l1_penalty_factor = 0,
+    const unsigned long cv_nfolds = 0,
     const arma::vec& cox_start = 0,
     const arma::vec& cure_start = 0,
     const unsigned int& em_max_iter = 500,
@@ -380,6 +381,7 @@ Rcpp::List coxph_cure_uncer_vs(
     arma::vec bic1 { arma::zeros(n_lambda) }, bic2 { bic1 }, aic { bic1 };
     arma::vec coef_df { bic1 }, negLogL { bic1 };
     arma::mat lambda_mat { arma::zeros(n_lambda, 4) };
+    arma::vec cv_loglik { arma::zeros(n_lambda) };
 
     // warm starts
     arma::vec cox_warm_start0 { cox_start };
@@ -411,6 +413,25 @@ Rcpp::List coxph_cure_uncer_vs(
                 tail_completion, tail_tau,
                 pmin, early_stop, verbose
                 );
+            // cross-validation
+            arma::vec cv_vec;
+            if (cv_nfolds > 1) {
+                cv_vec = Intsurv::cv_coxph_cure_uncer_reg(
+                    time, event, cox_x, cure_x,
+                    cure_intercept, cv_nfolds,
+                    cox_l1_lambda, cox_l2_lambda,
+                    cox_l1_penalty_factor,
+                    cure_l1_lambda, cure_l2_lambda,
+                    cure_l1_penalty_factor,
+                    cox_warm_start, cure_warm_start,
+                    cox_standardize, cure_standardize,
+                    em_max_iter, em_rel_tol,
+                    cox_mstep_max_iter, cox_mstep_rel_tol,
+                    cure_mstep_max_iter, cure_mstep_rel_tol,
+                    tail_completion, tail_tau,
+                    pmin, early_stop, 0
+                    );
+            }
             // update starting value
             cox_warm_start = obj.cox_coef;
             cure_warm_start = obj.cure_coef;
@@ -433,6 +454,7 @@ Rcpp::List coxph_cure_uncer_vs(
             lambda_mat(iter, 1) = cox_l2_lambda;
             lambda_mat(iter, 2) = cure_l1_lambda;
             lambda_mat(iter, 3) = cure_l2_lambda;
+            cv_loglik(iter) = arma::sum(cv_vec);
             // update iterators
             iter++;
         }
@@ -450,7 +472,8 @@ Rcpp::List coxph_cure_uncer_vs(
             Rcpp::Named("negLogL") = Intsurv::arma2rvec(negLogL),
             Rcpp::Named("aic") = Intsurv::arma2rvec(aic),
             Rcpp::Named("bic1") = Intsurv::arma2rvec(bic1),
-            Rcpp::Named("bic2") = Intsurv::arma2rvec(bic2)
+            Rcpp::Named("bic2") = Intsurv::arma2rvec(bic2),
+            Rcpp::Named("cv_logL") = Intsurv::arma2rvec(cv_loglik)
             ),
         Rcpp::Named("penalty") = Rcpp::List::create(
             Rcpp::Named("lambda_mat") = lambda_mat,

@@ -23,17 +23,6 @@
 ##' with uncertain event status, fit the Cox cure model proposed by Wang et
 ##' al. (2019+).
 ##'
-##' @usage
-##' cox_cure(surv_formula, cure_formula,
-##'          time, event, data, subset, contrasts = NULL,
-##'          bootstrap = 0, firth = FALSE, surv_start, cure_start,
-##'          em_max_iter = 200, em_rel_tol = 1e-5,
-##'          surv_max_iter = 30, surv_rel_tol = 1e-5,
-##'          cure_max_iter = 30, cure_rel_tol = 1e-5,
-##'          tail_completion = c("zero", "exp", "zero-tau"),
-##'          tail_tau = NULL, pmin = 1e-5, early_stop = TRUE,
-##'          verbose = FALSE, ...)
-##'
 ##' @param surv_formula A formula object starting with \code{~} for the model
 ##'     formula in survival model part.  For Cox model, no intercept term is
 ##'     included even if an intercept is specified or implied in the model
@@ -69,12 +58,13 @@
 ##'     Notice that this argument is experimental and only available for regular
 ##'     Cox cure rate model currently.
 ##' @param surv_start An optional numeric vector representing the starting
-##'     values for the Cox model component.  If not specified, the starting
-##'     values will be obtained from fitting a regular Cox model to events only.
+##'     values for the Cox model component.  If \code{NULL} is specified, the
+##'     starting values will be obtained from fitting a regular Cox model to
+##'     events only.
 ##' @param cure_start An optional numeric vector representing the starting
-##'     values for the logistic model component.  If not specified, the starting
-##'     values will be obtained from fitting a regular logistic model to the
-##'     non-missing event indicators.
+##'     values for the logistic model component.  If \code{NULL} is specified,
+##'     the starting values will be obtained from fitting a regular logistic
+##'     model to the non-missing event indicators.
 ##' @param em_max_iter A positive integer specifying the maximum iteration
 ##'     number of the EM algorithm.  The default value is \code{200}.
 ##' @param em_rel_tol A positive number specifying the tolerance that determines
@@ -157,11 +147,17 @@
 ##' elastic-net penalty.
 ##'
 ##' @example inst/examples/cox_cure.R
+##'
 ##' @export
-cox_cure <- function(surv_formula, cure_formula, time, event,
-                     data, subset, contrasts = NULL,
-                     bootstrap = 0, firth = FALSE,
-                     surv_start, cure_start,
+cox_cure <- function(surv_formula,
+                     cure_formula,
+                     time, event,
+                     data, subset,
+                     contrasts = NULL,
+                     bootstrap = 0,
+                     firth = FALSE,
+                     surv_start = NULL,
+                     cure_start = NULL,
                      em_max_iter = 200,
                      em_rel_tol = 1e-5,
                      surv_max_iter = 30,
@@ -172,7 +168,8 @@ cox_cure <- function(surv_formula, cure_formula, time, event,
                      tail_tau = NULL,
                      pmin = 1e-5,
                      early_stop = TRUE,
-                     verbose = FALSE, ...)
+                     verbose = FALSE,
+                     ...)
 {
     ## warning on `...`
     warn_dots(...)
@@ -231,12 +228,12 @@ cox_cure <- function(surv_formula, cure_formula, time, event,
         stop("No event can be found.")
     }
     ## starting values
-    if (missing(surv_start)) {
+    if (is.null(surv_start)) {
         surv_start <- 0
     } else if (length(surv_start) != ncol(surv_x)) {
         stop("The length of 'surv_start' is inappropriate.")
     }
-    if (missing(cure_start)) {
+    if (is.null(cure_start)) {
         cure_start <- 0
     } else if (length(cure_start) != ncol(cure_x) +
                as.integer(cure_intercept)) {
@@ -350,18 +347,6 @@ cox_cure <- function(surv_formula, cure_formula, time, event,
 
 ##' @rdname cox_cure
 ##'
-##' @usage
-##' cox_cure.fit(surv_x, cure_x, time, event, cure_intercept = TRUE,
-##'              bootstrap = 0, firth = FALSE, surv_start, cure_start,
-##'              surv_standardize = TRUE, cure_standardize = TRUE,
-##'              em_max_iter = 200, em_rel_tol = 1e-5,
-##'              surv_max_iter = 30, surv_rel_tol = 1e-5,
-##'              cure_max_iter = 30, cure_rel_tol = 1e-5,
-##'              tail_completion = c("zero", "exp", "zero-tau"),
-##'              tail_tau = NULL, pmin = 1e-5, early_stop = TRUE,
-##'              verbose = FALSE, ...)
-##'
-##'
 ##' @param surv_x A numeric matrix for the design matrix of the survival model
 ##'     component.
 ##' @param cure_x A numeric matrix for the design matrix of the cure rate model
@@ -382,12 +367,13 @@ cox_cure <- function(surv_formula, cure_formula, time, event,
 ##'     zero and standard deviation one.
 ##'
 ##' @export
-cox_cure.fit <- function(surv_x, cure_x, time, event,
+cox_cure.fit <- function(surv_x, cure_x,
+                         time, event,
                          cure_intercept = TRUE,
                          bootstrap = 0,
                          firth = FALSE,
-                         surv_start,
-                         cure_start,
+                         surv_start = NULL,
+                         cure_start = NULL,
                          surv_standardize = TRUE,
                          cure_standardize = TRUE,
                          em_max_iter = 200,
@@ -400,7 +386,8 @@ cox_cure.fit <- function(surv_x, cure_x, time, event,
                          tail_tau = NULL,
                          pmin = 1e-5,
                          early_stop = TRUE,
-                         verbose = FALSE, ...)
+                         verbose = FALSE,
+                         ...)
 {
     ## warning on `...`
     warn_dots(...)
@@ -417,12 +404,12 @@ cox_cure.fit <- function(surv_x, cure_x, time, event,
         stop("No event can be found.")
     }
     ## starting values
-    if (missing(surv_start)) {
+    if (is.null(surv_start)) {
         surv_start <- 0
     } else if (length(surv_start) != ncol(surv_x)) {
         stop("The length of 'surv_start' is inappropriate.")
     }
-    if (missing(cure_start)) {
+    if (is.null(cure_start)) {
         cure_start <- 0
     } else if (length(cure_start) != ncol(cure_x) +
                as.integer(cure_intercept)) {

@@ -30,23 +30,6 @@
 ##' net penalty is developed based on cyclic coordinate descent and
 ##' majorization-minimization (MM) algorithm.
 ##'
-##' @usage
-##'
-##' cox_cure_net(surv_formula, cure_formula, time, event,
-##'              data, subset, contrasts = NULL,
-##'              surv_lambda, surv_alpha = 1, surv_nlambda = 10,
-##'              surv_lambda_min_ratio = 1e-1, surv_l1_penalty_factor,
-##'              cure_lambda, cure_alpha = 1, cure_nlambda = 10,
-##'              cure_lambda_min_ratio = 1e-1, cure_l1_penalty_factor,
-##'              surv_start, cure_start,
-##'              surv_standardize = TRUE, cure_standardize = TRUE,
-##'              em_max_iter = 200, em_rel_tol = 1e-5,
-##'              surv_max_iter = 10, surv_rel_tol = 1e-5,
-##'              cure_max_iter = 10, cure_rel_tol = 1e-5,
-##'              tail_completion = c("zero", "exp", "zero-tau"),
-##'              tail_tau = NULL, pmin = 1e-5, early_stop = TRUE,
-##'              verbose = FALSE, ...)
-##'
 ##' @param surv_formula A formula object starting with \code{~} for the model
 ##'     formula in survival model part.  For Cox model, no intercept term is
 ##'     included even if an intercept is specified or implied in the model
@@ -88,7 +71,7 @@
 ##'     estimate vector in the survival model part.  The penalty is applied to
 ##'     the coefficient estimate divided by the specified weights.  The
 ##'     specified weights are re-scaled internally so that their summation
-##'     equals the length of coefficients.  If it is left unspecified, the
+##'     equals the length of coefficients.  If \code{NULL} is specified, the
 ##'     weights are all set to be one.
 ##' @param cure_lambda A numeric vector consists of non-negative values
 ##'     representing the tuning parameter sequence for the cure model part.
@@ -107,15 +90,19 @@
 ##'     estimate vector in the cure model part.  The penalty is applied to the
 ##'     coefficient estimate divided by the specified weights.  The specified
 ##'     weights are re-scaled internally so that their summation equals the
-##'     length of coefficients.  If it is left unspecified, the weights are all
-##'     set to be one.
+##'     length of coefficients.  If \code{NULL} is specified by default, the
+##'     weights are all set to be one.
+##' @param cv_nfolds An non-negative integer specifying number of folds in
+##'     cross-validation (CV).  The default value is \code{0} and the CV
+##'     procedure is not enabled.
 ##' @param surv_start An optional numeric vector representing the starting
-##'     values for the Cox model component.  If not specified, the starting
-##'     values will be obtained from fitting a regular Cox model to events only.
+##'     values for the Cox model component.  If \code{NULL} is specified , the
+##'     starting values will be obtained from fitting a regular Cox model to
+##'     events only.
 ##' @param cure_start An optional numeric vector representing the starting
-##'     values for the logistic model component.  If not specified, the starting
-##'     values will be obtained from fitting a regular logistic model to the
-##'     non-missing event indicators.
+##'     values for the logistic model component.  If \code{NULL} is specified,
+##'     the starting values will be obtained from fitting a regular logistic
+##'     model to the non-missing event indicators.
 ##' @param surv_standardize A logical value specifying whether to standardize
 ##'     the covariates for the survival model part.  If \code{FALSE}, the
 ##'     covariates will be standardized internally to have mean zero and
@@ -213,20 +200,23 @@
 ##' @example inst/examples/cox_cure_net.R
 ##' @export
 cox_cure_net <-
-    function(surv_formula, cure_formula, time, event,
-             data, subset, contrasts = NULL,
-             surv_lambda,
+    function(surv_formula, cure_formula,
+             time, event,
+             data, subset,
+             contrasts = NULL,
+             surv_lambda = NULL,
              surv_alpha = 1,
              surv_nlambda = 10,
              surv_lambda_min_ratio = 1e-1,
-             surv_l1_penalty_factor,
-             cure_lambda,
+             surv_l1_penalty_factor = NULL,
+             cure_lambda = NULL,
              cure_alpha = 1,
              cure_nlambda = 10,
              cure_lambda_min_ratio = 1e-1,
-             cure_l1_penalty_factor,
-             surv_start,
-             cure_start,
+             cure_l1_penalty_factor = NULL,
+             cv_nfolds = 0,
+             surv_start = NULL,
+             cure_start = NULL,
              surv_standardize = TRUE,
              cure_standardize = TRUE,
              em_max_iter = 200,
@@ -299,12 +289,12 @@ cox_cure_net <-
         stop("No event can be found.")
     }
     ## starting values
-    if (missing(surv_start)) {
+    if (is.null(surv_start)) {
         surv_start <- 0
     } else if (length(surv_start) != surv_x) {
         stop("The length of 'surv_start' is inappropriate.")
     }
-    if (missing(cure_start)) {
+    if (is.null(cure_start)) {
         cure_start <- 0
     } else if (length(cure_start) != cure_x + as.integer(cure_intercept)) {
         stop("The length of 'cure_start' is inappropriate.")
@@ -329,22 +319,22 @@ cox_cure_net <-
     }
 
     ## lambda sequence
-    if (missing(surv_lambda)) {
+    if (is.null(surv_lambda)) {
         surv_lambda <- 0
     } else {
         surv_nlambda <- 1
     }
-    if (missing(cure_lambda)) {
+    if (is.null(cure_lambda)) {
         cure_lambda <- 0
     } else {
         cure_nlambda <- 1
     }
 
     ## penalty factor
-    if (missing(surv_l1_penalty_factor)) {
+    if (is.null(surv_l1_penalty_factor)) {
         surv_l1_penalty_factor <- 0
     }
-    if (missing(cure_l1_penalty_factor)) {
+    if (is.null(cure_l1_penalty_factor)) {
         cure_l1_penalty_factor <- 0
     }
 
@@ -366,6 +356,7 @@ cox_cure_net <-
             cure_nlambda = cure_nlambda,
             cure_lambda_min_ratio = cure_lambda_min_ratio,
             cure_l1_penalty_factor = cure_l1_penalty_factor,
+            cv_nfolds = cv_nfolds,
             cox_start = surv_start,
             cure_start = cure_start,
             cox_standardize = surv_standardize,
@@ -400,6 +391,7 @@ cox_cure_net <-
             cure_nlambda = cure_nlambda,
             cure_lambda_min_ratio = cure_lambda_min_ratio,
             cure_l1_penalty_factor = cure_l1_penalty_factor,
+            cv_nfolds = cv_nfolds,
             cox_start = surv_start,
             cure_start = cure_start,
             cox_standardize = surv_standardize,
@@ -449,22 +441,6 @@ cox_cure_net <-
 
 ##' @rdname cox_cure_net
 ##'
-##' @usage
-##'
-##' cox_cure_net.fit(surv_x, cure_x, time, event, cure_intercept = TRUE,
-##'                  surv_lambda, surv_alpha = 1, surv_nlambda = 10,
-##'                  surv_lambda_min_ratio = 1e-1, surv_l1_penalty_factor,
-##'                  cure_lambda, cure_alpha = 1, cure_nlambda = 10,
-##'                  cure_lambda_min_ratio = 1e-1, cure_l1_penalty_factor,
-##'                  surv_start, cure_start,
-##'                  surv_standardize = TRUE, cure_standardize = TRUE,
-##'                  em_max_iter = 200, em_rel_tol = 1e-5,
-##'                  surv_max_iter = 10, surv_rel_tol = 1e-5,
-##'                  cure_max_iter = 10, cure_rel_tol = 1e-5,
-##'                  tail_completion = c("zero", "exp", "zero-tau"),
-##'                  tail_tau = NULL, pmin = 1e-5, early_stop = TRUE,
-##'                  verbose = FALSE, ...)
-##'
 ##' @param surv_x A numeric matrix for the design matrix of the survival model
 ##'     component.
 ##' @param cure_x A numeric matrix for the design matrix of the cure rate model
@@ -480,18 +456,19 @@ cox_cure_net <-
 cox_cure_net.fit <-
     function(surv_x, cure_x, time, event,
              cure_intercept = TRUE,
-             surv_lambda,
+             surv_lambda = NULL,
              surv_alpha = 1,
              surv_nlambda = 10,
              surv_lambda_min_ratio = 1e-1,
-             surv_l1_penalty_factor,
-             cure_lambda,
+             surv_l1_penalty_factor = NULL,
+             cure_lambda = NULL,
              cure_alpha = 1,
              cure_nlambda = 10,
              cure_lambda_min_ratio = 1e-1,
-             cure_l1_penalty_factor,
-             surv_start,
-             cure_start,
+             cure_l1_penalty_factor = NULL,
+             cv_nfolds = 0,
+             surv_start = NULL,
+             cure_start = NULL,
              surv_standardize = TRUE,
              cure_standardize = TRUE,
              em_max_iter = 200,
@@ -522,12 +499,12 @@ cox_cure_net.fit <-
         stop("No event can be found.")
     }
     ## starting values
-    if (missing(surv_start)) {
+    if (is.null(surv_start)) {
         surv_start <- 0
     } else if (length(surv_start) != surv_x) {
         stop("The length of 'surv_start' is inappropriate.")
     }
-    if (missing(cure_start)) {
+    if (is.null(cure_start)) {
         cure_start <- 0
     } else if (length(cure_start) != cure_x + as.integer(cure_intercept)) {
         stop("The length of 'cure_start' is inappropriate.")
@@ -552,22 +529,22 @@ cox_cure_net.fit <-
     }
 
     ## lambda sequence
-    if (missing(surv_lambda)) {
+    if (is.null(surv_lambda)) {
         surv_lambda <- 0
     } else {
         surv_nlambda <- 1
     }
-    if (missing(cure_lambda)) {
+    if (is.null(cure_lambda)) {
         cure_lambda <- 0
     } else {
         cure_nlambda <- 1
     }
 
     ## penalty factor
-    if (missing(surv_l1_penalty_factor)) {
+    if (is.null(surv_l1_penalty_factor)) {
         surv_l1_penalty_factor <- 0
     }
-    if (missing(cure_l1_penalty_factor)) {
+    if (is.null(cure_l1_penalty_factor)) {
         cure_l1_penalty_factor <- 0
     }
 
@@ -589,6 +566,7 @@ cox_cure_net.fit <-
             cure_nlambda = cure_nlambda,
             cure_lambda_min_ratio = cure_lambda_min_ratio,
             cure_l1_penalty_factor = cure_l1_penalty_factor,
+            cv_nfolds = cv_nfolds,
             cox_start = surv_start,
             cure_start = cure_start,
             cox_standardize = surv_standardize,
@@ -623,6 +601,7 @@ cox_cure_net.fit <-
             cure_nlambda = cure_nlambda,
             cure_lambda_min_ratio = cure_lambda_min_ratio,
             cure_l1_penalty_factor = cure_l1_penalty_factor,
+            cv_nfolds = cv_nfolds,
             cox_start = surv_start,
             cure_start = cure_start,
             cox_standardize = surv_standardize,
