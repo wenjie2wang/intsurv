@@ -41,9 +41,6 @@ namespace Intsurv {
         const double& cure_mstep_rel_tol = 1e-5,
         const bool& cox_standardize = true,
         const bool& cure_standardize = true,
-        const bool& spline_start = false,
-        const unsigned int& iSpline_num_knots = 3,
-        const unsigned int& iSpline_degree = 2,
         const unsigned int& tail_completion = 1,
         double tail_tau = -1,
         const double& pmin = 1e-5,
@@ -160,7 +157,6 @@ namespace Intsurv {
                 em_max_iter, em_rel_tol,
                 cox_mstep_max_iter, cox_mstep_rel_tol,
                 cure_mstep_max_iter, cure_mstep_rel_tol,
-                spline_start, iSpline_num_knots, iSpline_degree,
                 tail_completion, tail_tau,
                 pmin, early_stop, verbose
                 );
@@ -196,9 +192,6 @@ namespace Intsurv {
         const double& cure_mstep_rel_tol = 1e-4,
         const bool cox_standardize = true,
         const bool cure_standardize = true,
-        const bool& spline_start = false,
-        const unsigned int& iSpline_num_knots = 3,
-        const unsigned int& iSpline_degree = 2,
         const unsigned int& tail_completion = 1,
         double tail_tau = -1,
         const double& pmin = 1e-5,
@@ -318,7 +311,6 @@ namespace Intsurv {
                 em_max_iter, em_rel_tol,
                 cox_mstep_max_iter, cox_mstep_rel_tol,
                 cure_mstep_max_iter, cure_mstep_rel_tol,
-                spline_start, iSpline_num_knots, iSpline_degree,
                 tail_completion, tail_tau,
                 pmin, early_stop, verbose
                 );

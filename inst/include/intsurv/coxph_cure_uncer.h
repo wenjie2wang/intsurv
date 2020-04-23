@@ -24,7 +24,6 @@
 #include "logistic_reg.h"
 #include "nonparametric.h"
 #include "utils.h"
-#include "splines.h"
 
 
 namespace Intsurv {
@@ -156,9 +155,6 @@ namespace Intsurv {
             const double& cox_mstep_rel_tol,
             const unsigned int& cure_mstep_max_iter,
             const double& cure_mstep_rel_tol,
-            const bool& spline_start,
-            const unsigned int& iSpline_num_knots,
-            const unsigned int& iSpline_degree,
             const unsigned int& tail_completion,
             double tail_tau,
             const double& pmin,
@@ -183,9 +179,6 @@ namespace Intsurv {
             const double& cox_mstep_rel_tol,
             const unsigned int& cure_mstep_max_iter,
             const double& cure_mstep_rel_tol,
-            const bool& spline_start,
-            const unsigned int& iSpline_num_knots,
-            const unsigned int& iSpline_degree,
             const unsigned int& tail_completion,
             double tail_tau,
             const double& pmin,
@@ -233,9 +226,6 @@ namespace Intsurv {
         const double& cox_mstep_rel_tol = 1e-3,
         const unsigned int& cure_mstep_max_iter = 50,
         const double& cure_mstep_rel_tol = 1e-3,
-        const bool& spline_start = false,
-        const unsigned int& iSpline_num_knots = 3,
-        const unsigned int& iSpline_degree = 2,
         const unsigned int& tail_completion = 1,
         double tail_tau = -1,
         const double& pmin = 1e-5,
@@ -297,51 +287,6 @@ namespace Intsurv {
         cox_obj.S0_time = arma::exp(- cox_obj.H0_time);
         cox_obj.S_time = arma::exp(- cox_obj.H_time);
         cox_obj.Sc_time = arma::exp(- cox_obj.Hc_time);
-
-        // further smooth hazard and survival estimates by splines
-        if (spline_start) {
-            // set up spline bases
-            arma::vec internal_knots_event {
-                get_internal_knots(time.elem(case1_ind), iSpline_num_knots)
-            };
-            arma::vec internal_knots_censor {
-                get_internal_knots(time.elem(case2_ind), iSpline_num_knots)
-            };
-            arma::vec boundary_knots { get_boundary_knots(time) };
-            arma::mat iSpline_mat_event {
-                iSpline(time, iSpline_degree,
-                        internal_knots_event, boundary_knots)
-            };
-            arma::mat iSpline_mat_censor {
-                iSpline(time, iSpline_degree,
-                        internal_knots_censor, boundary_knots)
-            };
-            // fit non-negative least square
-            arma::vec H0_coef {
-                nnls(cox_obj.H0_time, iSpline_mat_event)
-            };
-            arma::vec Hc_coef {
-                nnls(cox_obj.Hc_time, iSpline_mat_censor)
-            };
-            arma::mat mSpline_mat_event {
-                mSpline(time, iSpline_degree,
-                        internal_knots_event, boundary_knots)
-            };
-            arma::mat mSpline_mat_censor {
-                mSpline(time, iSpline_degree,
-                        internal_knots_censor, boundary_knots)
-            };
-            // update H0, Hc, h0, and hc, etc.
-            cox_obj.h0_time = mSpline_mat_event * H0_coef;
-            cox_obj.h_time = cox_obj.h0_time % cox_exp_x_beta;
-            cox_obj.H0_time = iSpline_mat_event * H0_coef;
-            cox_obj.H_time = cox_obj.H0_time % cox_exp_x_beta;
-            cox_obj.S0_time = arma::exp(- cox_obj.H0_time);
-            cox_obj.S_time = arma::exp(- cox_obj.H_time);
-            cox_obj.hc_time = mSpline_mat_censor * Hc_coef;
-            cox_obj.Hc_time = iSpline_mat_censor * Hc_coef;
-            cox_obj.Sc_time = arma::exp(- cox_obj.Hc_time);
-        }
 
         // intialization for the main loop
         arma::vec p_vec { arma::zeros(nObs) };
@@ -680,9 +625,6 @@ namespace Intsurv {
         const double& cox_mstep_rel_tol = 1e-5,
         const unsigned int& cure_mstep_max_iter = 200,
         const double& cure_mstep_rel_tol = 1e-5,
-        const bool& spline_start = false,
-        const unsigned int& iSpline_num_knots = 3,
-        const unsigned int& iSpline_degree = 2,
         const unsigned int& tail_completion = 1,
         double tail_tau = -1,
         const double& pmin = 1e-5,
@@ -773,51 +715,6 @@ namespace Intsurv {
         cox_obj.S_time = arma::exp(- cox_obj.H_time);
         cox_obj.Sc_time = arma::exp(- cox_obj.Hc_time);
 
-        // further smooth hazard and survival estimates by splines
-        if (spline_start) {
-            // set up spline bases
-            arma::vec internal_knots_event {
-                get_internal_knots(time.elem(case1_ind), iSpline_num_knots)
-            };
-            arma::vec internal_knots_censor {
-                get_internal_knots(time.elem(case2_ind), iSpline_num_knots)
-            };
-            arma::vec boundary_knots { get_boundary_knots(time) };
-            arma::mat iSpline_mat_event {
-                iSpline(time, iSpline_degree,
-                        internal_knots_event, boundary_knots)
-            };
-            arma::mat iSpline_mat_censor {
-                iSpline(time, iSpline_degree,
-                        internal_knots_censor, boundary_knots)
-            };
-            // fit non-negative least square
-            arma::vec H0_coef {
-                nnls(cox_obj.H0_time, iSpline_mat_event)
-            };
-            arma::vec Hc_coef {
-                nnls(cox_obj.Hc_time, iSpline_mat_censor)
-            };
-            arma::mat mSpline_mat_event {
-                mSpline(time, iSpline_degree,
-                        internal_knots_event, boundary_knots)
-            };
-            arma::mat mSpline_mat_censor {
-                mSpline(time, iSpline_degree,
-                        internal_knots_censor, boundary_knots)
-            };
-            // update H0, Hc, h0, and hc, etc.
-            cox_obj.h0_time = mSpline_mat_event * H0_coef;
-            cox_obj.h_time = cox_obj.h0_time % cox_exp_x_beta;
-            cox_obj.H0_time = iSpline_mat_event * H0_coef;
-            cox_obj.H_time = cox_obj.H0_time % cox_exp_x_beta;
-            cox_obj.S0_time = arma::exp(- cox_obj.H0_time);
-            cox_obj.S_time = arma::exp(- cox_obj.H_time);
-            cox_obj.hc_time = mSpline_mat_censor * Hc_coef;
-            cox_obj.Hc_time = iSpline_mat_censor * Hc_coef;
-            cox_obj.Sc_time = arma::exp(- cox_obj.Hc_time);
-        }
-
         // intialization for the main loop
         arma::vec p_vec { arma::zeros(nObs) };
         arma::vec estep_m { event };
@@ -840,7 +737,6 @@ namespace Intsurv {
 
         // main loop of EM algorithm
         while (true) {
-
             // update to the latest estimates
             p_vec = cure_obj.predict(cure_obj.coef, pmin);
             cox_obj.compute_haz_surv_time();
