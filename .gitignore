@@ -24,6 +24,10 @@ vignettes/*.pdf
 
 # other directories
 testing/
+working/
+
+# other files
+misc/remove_copyright_header.sh
 
 # ignore tags
 TAGS
