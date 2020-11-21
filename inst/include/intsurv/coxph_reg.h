@@ -814,10 +814,14 @@ namespace Intsurv {
 
         // the maximum (large enough) lambda that results in all-zero estimates
         arma::vec beta { arma::zeros(x.n_cols) };
-        arma::vec grad_beta { beta }, strong_rhs { beta };
-        this->l1_lambda_max =
-            arma::max(arma::abs(this->gradient(beta)) /
-                      l1_penalty) / this->x.n_rows;
+        arma::vec grad_beta { beta }, strong_rhs { beta }, grad_zero { beta };
+        // excluding variable with zero penalty factor
+        arma::uvec active_l1_penalty { arma::find(l1_penalty > 0) };
+        grad_zero = arma::abs(this->gradient(beta));
+        this->l1_lambda_max = arma::max(
+            grad_zero.elem(active_l1_penalty) /
+            l1_penalty.elem(active_l1_penalty)
+            ) / this->x.n_rows;
 
         // early exit for large lambda greater than lambda_max
         this->coef0 = beta;

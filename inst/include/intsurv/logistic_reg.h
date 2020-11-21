@@ -682,9 +682,13 @@ namespace Intsurv {
         arma::vec grad_beta { grad_zero }, strong_rhs { grad_beta };
 
         // large enough lambda for all-zero coef (except intercept)
-        this->l1_lambda_max =
-            arma::max(grad_zero.tail(n_predictor) /
-                      l1_penalty) / this->x.n_rows;
+        // excluding variable with zero penalty factor
+        arma::uvec active_l1_penalty { arma::find(l1_penalty > 0) };
+        grad_zero = grad_zero.tail(n_predictor);
+        this->l1_lambda_max = arma::max(
+            grad_zero.elem(active_l1_penalty) /
+            l1_penalty.elem(active_l1_penalty)
+            ) / this->x.n_rows;
 
         if (this->intercept) {
             l1_penalty = arma::join_vert(arma::zeros(1), l1_penalty);

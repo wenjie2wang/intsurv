@@ -560,14 +560,21 @@ namespace Intsurv {
 
         // compute the large enough lambdas that result in all-zero estimates
         arma::vec cox_grad_zero { arma::abs(cox_obj.gradient(cox_beta)) };
-        this->cox_l1_lambda_max =
-            arma::max(cox_grad_zero / cox_l1_penalty) / this->nObs;
         arma::vec cure_grad_zero {
             arma::abs(cure_obj.gradient(cure_beta, pmin))
         };
-        this->cure_l1_lambda_max =
-            arma::max(cure_grad_zero.tail(cure_l1_penalty.n_elem) /
-                      cure_l1_penalty) / this->nObs;
+        cure_grad_zero = cure_grad_zero.tail(cure_l1_penalty.n_elem);
+        // excluding variable with zero penalty factor
+        arma::uvec cox_active_l1_penalty { arma::find(cox_l1_penalty > 0) };
+        arma::uvec cure_active_l1_penalty { arma::find(cure_l1_penalty > 0) };
+        this->cox_l1_lambda_max = arma::max(
+            cox_grad_zero.elem(cox_active_l1_penalty) /
+            cox_l1_penalty.elem(cox_active_l1_penalty)
+            ) / this->nObs;
+        this->cure_l1_lambda_max = arma::max(
+            cure_grad_zero.elem(cure_active_l1_penalty) /
+            cure_l1_penalty.elem(cure_active_l1_penalty)
+            ) / this->nObs;
 
         // early stop: return lambda_max if em_max_iter = 0
         if (em_max_iter == 0) {
