@@ -12,6 +12,7 @@
 ^\.\#
 ^\.clang_complete$
 ^\.git$
+^\.github$
 ^\.gitignore$
 ^\.gitlab-ci\.yml
 ^\.travis\.yml$
