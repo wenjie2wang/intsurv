@@ -7,8 +7,8 @@
 
 The R package **intsurv** contains implementations of
 
-- integrative Cox model with uncertain event times (Wang et al., 2019)
-- Cox cure rate model with uncertain event status (Wang et al., 2019+)
+- integrative Cox model with uncertain event times (Wang et al., 2020)
+- Cox cure rate model with uncertain event status (Wang et al., 2020)
 
 and other survival analysis routines, including
 
