@@ -1,7 +1,8 @@
 library(intsurv)
 
 ## create a new environment for evaluation
-env_a <- new.env(parent = .GlobalEnv)
+## env_a <- new.env(parent = .GlobalEnv)
+env_a <- new.env()
 env_b <- new.env(parent = env_a)
 
 with(env_b, {

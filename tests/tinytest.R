@@ -4,8 +4,7 @@ if (requireNamespace("tinytest", quietly = TRUE) &&
     ## Set a seed to make the test deterministic
     set.seed(808)
 
-    tinytest::test_package("intsurv"
-                           ## ncpu = getOption("Ncpus", 1),
-                           ## side_effects = TRUE
-                           )
+    tinytest::test_package("intsurv",
+                           ncup = getOption("Ncpus", 1),
+                           side_effects = TRUE)
 }
