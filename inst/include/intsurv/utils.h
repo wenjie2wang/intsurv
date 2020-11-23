@@ -749,7 +749,7 @@ namespace Intsurv {
         // observation indices random permuted
         arma::uvec obs_idx { arma::randperm(n_obs) };
         // remaining number of observations
-        unsigned long re_n_obs { n_obs };
+        size_t re_n_obs { n_obs };
         // determine the size of folds and indices one by one
         for (size_t i {0}; i < n_folds; ++i) {
             unsigned long fold_i { re_n_obs / (n_folds - i) };
