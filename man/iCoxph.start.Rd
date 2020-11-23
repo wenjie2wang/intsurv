@@ -28,7 +28,7 @@ probabilities of uncertain records being true.  The available methods
 are \code{"nearest_hazard"} for initializing baseline hazard by nearest
 (left) neighbor, and \code{"unit_hazard"} for initializing unit baseline
 hazard.  Partial matching on method names is supported for ease of
-typing.  By default, both methods are used.  See Wang et al. (2019+) for
+typing.  By default, both methods are used.  See Wang et al. (2020) for
 details of the initialization methods.}
 
 \item{...}{Other arguments for future usage.  A warning will be thrown if

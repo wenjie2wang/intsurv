@@ -90,7 +90,7 @@ Simulate Data from Cox Cure Model with Uncertain Event Status
 ## see examples of function cox_cure
 }
 \references{
-Wang, W., Chen, K., Luo, C., & Yan, J. (2019+). Cox Cure Model with
-Uncertain Event Status with application to a Suicide Risk
-Study. \emph{Working in Progress}.
+Wang, W., Luo, C., Aseltine, R. H., Wang, F., Yan, J., & Chen, K. (2020).
+Suicide Risk Modeling with Uncertain Diagnostic Records. \emph{arXiv
+preprint arXiv:2009.02597}.
 }

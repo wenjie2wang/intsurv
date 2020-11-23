@@ -204,7 +204,7 @@ zero and standard deviation one.}
 For right-censored data, fit a regular Cox cure rate model (Kuk and Chen,
 1992; Sy and Taylor, 2000) via an EM algorithm.  For right-censored data
 with uncertain event status, fit the Cox cure model proposed by Wang et
-al. (2019+).
+al. (2020).
 }
 \examples{
 library(intsurv)
@@ -299,9 +299,9 @@ cure models. \emph{Computational Statistics & Data Analysis}, 42(1-2),
 Sy, J. P., & Taylor, J. M. (2000). Estimation in a Cox proportional hazards
 cure model. \emph{Biometrics}, 56(1), 227--236.
 
-Wang, W., Chen, K., Luo, C., & Yan, J. (2019+). Cox Cure Model with
-Uncertain Event Status with application to a Suicide Risk
-Study. \emph{Working in Progress}.
+Wang, W., Luo, C., Aseltine, R. H., Wang, F., Yan, J., & Chen, K. (2020).
+Suicide Risk Modeling with Uncertain Diagnostic Records. \emph{arXiv
+preprint arXiv:2009.02597}.
 }
 \seealso{
 \code{\link{cox_cure_net}} for regularized Cox cure rate model with
