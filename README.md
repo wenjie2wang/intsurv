@@ -2,9 +2,8 @@
 
 [![CRAN Version][cran-version]][cran]
 [![Dependence][tinyverse-dep]][cran]
-[![Travis Build][travis-master]][travis]
-[![AppVeyor Build][appveyor-master]][appveyor]
-[![Code Coverage][codecov-master]][codecov]
+[![R Build Status][gha-icon]][gha-url]
+[![Code Coverage][codecov-main]][codecov]
 
 The R package **intsurv** contains implementations of
 
@@ -53,20 +52,18 @@ remotes::install_github("wenjie2wang/intsurv")
 
 ## References
 
-Wang, W., Aseltine, R., Chen, K., & Yan, J. (2019).  Integrative Survival
-Analysis with Uncertain Event Times in Application to a Suicide Risk
-Study. *Annals of Applied Statistics*. (in press)
-
-Wang, W., Chen, K., Luo, C., & Yan, J. (2019+). Cox Cure Model with Uncertain
-Event Status with application to a Suicide Risk Study. *Working in Progress*.
+- Wang, W., Aseltine, R., Chen, K., & Yan, J. (2020). Integrative Survival
+  Analysis with Uncertain Event Times in Application to A Suicide Risk
+  Study. *Annals of Applied Statistics*, 14(1), 51–73.
+- Wang, W., Luo, C., Aseltine, R. H., Wang, F., Yan, J., & Chen,
+  K. (2020). Suicide Risk Modeling with Uncertain Diagnostic Records. *arXiv
+  preprint arXiv:2009.02597*.
 
 
 [cran]: https://cran.r-project.org/package=intsurv
 [cran-version]: https://www.r-pkg.org/badges/version/intsurv
 [tinyverse-dep]: https://tinyverse.netlify.com/badge/intsurv
-[travis]: https://travis-ci.org/wenjie2wang/intsurv
-[travis-master]: https://travis-ci.org/wenjie2wang/intsurv.svg?branch=master
-[appveyor]: https://ci.appveyor.com/project/wenjie2wang/intsurv
-[appveyor-master]: https://ci.appveyor.com/api/projects/status/744io3y0l83s0huq/branch/master?svg=true
+[gha-icon]: https://github.com/wenjie2wang/intsurv/workflows/R-CMD-check/badge.svg
+[gha-url]: https://github.com/wenjie2wang/intsurv/actions
 [codecov]: https://codecov.io/gh/wenjie2wang/intsurv
-[codecov-master]: https://codecov.io/gh/wenjie2wang/intsurv/branch/master/graph/badge.svg
+[codecov-main]: https://codecov.io/gh/wenjie2wang/intsurv/branch/main/graph/badge.svg
