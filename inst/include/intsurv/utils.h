@@ -752,8 +752,8 @@ namespace Intsurv {
         size_t re_n_obs { n_obs };
         // determine the size of folds and indices one by one
         for (size_t i {0}; i < n_folds; ++i) {
-            unsigned long fold_i { re_n_obs / (n_folds - i) };
-            unsigned long j { n_obs - re_n_obs };
+            size_t fold_i { re_n_obs / (n_folds - i) };
+            size_t j { n_obs - re_n_obs };
             arma::uvec idx_i { obs_idx.subvec(j, j + fold_i - 1) };
             out.push_back(idx_i);
             re_n_obs -= fold_i;

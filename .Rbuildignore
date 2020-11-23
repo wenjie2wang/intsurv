@@ -16,7 +16,6 @@
 ^\.gitignore$
 ^\.gitlab-ci\.yml
 ^\.travis\.yml$
-^\.travis\.yml$
 ^_pkgdown\.yml$
 ^appveyor\.yml$
 ^docs$
