@@ -23,7 +23,7 @@ NULL
 
 ##' Integrative Cox Model for Uncertain Event Times
 ##'
-##' Fit an integrative Cox model proposed by Wang et al. (2019) for
+##' Fit an integrative Cox model proposed by Wang et al. (2020) for
 ##' right-censored survival data with uncertain event times due to imperfect
 ##' data integration.
 ##'
@@ -96,9 +96,9 @@ NULL
 ##'
 ##' @references
 ##'
-##' Wang, W., Aseltine, R., Chen, K., & Yan, J. (2019).  Integrative Survival
-##' Analysis with Uncertain Event Times in Application to a Suicide Risk
-##' Study. \emph{Annals of Applied Statistics}. (in press)
+##' Wang, W., Aseltine, R. H., Chen, K., & Yan, J. (2020). Integrative Survival
+##' Analysis with Uncertain Event Times in Application to A Suicide Risk
+##' Study. \emph{Annals of Applied Statistics}, 14(1), 51--73.
 ##'
 ##' @example inst/examples/iCoxph.R
 ##'
@@ -428,7 +428,7 @@ iCoxph.control <- function(tol_beta = 1e-6,
 ##'     are \code{"nearest_hazard"} for initializing baseline hazard by nearest
 ##'     (left) neighbor, and \code{"unit_hazard"} for initializing unit baseline
 ##'     hazard.  Partial matching on method names is supported for ease of
-##'     typing.  By default, both methods are used.  See Wang et al. (2019+) for
+##'     typing.  By default, both methods are used.  See Wang et al. (2020) for
 ##'     details of the initialization methods.
 ##' @param ... Other arguments for future usage.  A warning will be thrown if
 ##'     any invalid argument is specified.

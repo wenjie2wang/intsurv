@@ -22,9 +22,9 @@
 ##'
 ##' \itemize{
 ##'
-##' \item integrative Cox model with uncertain event times (Wang et al., 2019)
+##' \item integrative Cox model with uncertain event times (Wang et al., 2020)
 ##'
-##' \item Cox cure rate model with uncertain event status (Wang et al., 2019+)
+##' \item Cox cure rate model with uncertain event status (Wang et al., 2020)
 ##'
 ##' }
 ##'
@@ -34,13 +34,13 @@
 ##'
 ##' @references
 ##'
-##' Wang, W., Aseltine, R., Chen, K., & Yan, J. (2019).  Integrative Survival
-##' Analysis with Uncertain Event Times in Application to a Suicide Risk
-##' Study. \emph{Annals of Applied Statistics}. (in press)
+##' Wang, W., Aseltine, R. H., Chen, K., & Yan, J. (2020). Integrative Survival
+##' Analysis with Uncertain Event Times in Application to A Suicide Risk
+##' Study. \emph{Annals of Applied Statistics}, 14(1), 51--73.
 ##'
-##' Wang, W., Chen, K., Luo, C., & Yan, J. (2019+). Cox Cure Model with
-##' Uncertain Event Status with application to a Suicide Risk
-##' Study. \emph{Working in Progress}.
+##' Wang, W., Luo, C., Aseltine, R. H., Wang, F., Yan, J., & Chen, K. (2020).
+##' Suicide Risk Modeling with Uncertain Diagnostic Records. \emph{arXiv
+##' preprint arXiv:2009.02597}.
 ##'
 ##' @importFrom Rcpp sourceCpp
 ##' @useDynLib intsurv

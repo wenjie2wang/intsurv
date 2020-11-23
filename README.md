@@ -2,7 +2,7 @@
 
 [![CRAN Version][cran-version]][cran]
 [![Dependence][tinyverse-dep]][cran]
-[![R Build Status][gha-icon]][gha-url]
+[![Build Status][gha-icon]][gha-url]
 [![Code Coverage][codecov-main]][codecov]
 
 The R package **intsurv** contains implementations of
@@ -41,8 +41,8 @@ library(intsurv)
 
 ## Development
 
-If the version under development is able to pass the building check by Travis
-CI, you may consider installing it with the help of **remotes** by
+If the version under development is able to pass the automated package checks,
+one may consider installing it with the help of **remotes** by
 
 ```R
 if (! require(remotes)) install.packages("remotes")
@@ -52,9 +52,9 @@ remotes::install_github("wenjie2wang/intsurv")
 
 ## References
 
-- Wang, W., Aseltine, R., Chen, K., & Yan, J. (2020). Integrative Survival
+- Wang, W., Aseltine, R. H., Chen, K., & Yan, J. (2020). Integrative Survival
   Analysis with Uncertain Event Times in Application to A Suicide Risk
-  Study. *Annals of Applied Statistics*, 14(1), 51–73.
+  Study. *Annals of Applied Statistics*, 14(1), 51-73.
 - Wang, W., Luo, C., Aseltine, R. H., Wang, F., Yan, J., & Chen,
   K. (2020). Suicide Risk Modeling with Uncertain Diagnostic Records. *arXiv
   preprint arXiv:2009.02597*.

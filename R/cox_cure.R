@@ -21,7 +21,7 @@
 ##' For right-censored data, fit a regular Cox cure rate model (Kuk and Chen,
 ##' 1992; Sy and Taylor, 2000) via an EM algorithm.  For right-censored data
 ##' with uncertain event status, fit the Cox cure model proposed by Wang et
-##' al. (2019+).
+##' al. (2020).
 ##'
 ##' @param surv_formula A formula object starting with \code{~} for the model
 ##'     formula in survival model part.  For Cox model, no intercept term is
@@ -137,9 +137,9 @@
 ##' Sy, J. P., & Taylor, J. M. (2000). Estimation in a Cox proportional hazards
 ##' cure model. \emph{Biometrics}, 56(1), 227--236.
 ##'
-##' Wang, W., Chen, K., Luo, C., & Yan, J. (2019+). Cox Cure Model with
-##' Uncertain Event Status with application to a Suicide Risk
-##' Study. \emph{Working in Progress}.
+##' Wang, W., Luo, C., Aseltine, R. H., Wang, F., Yan, J., & Chen, K. (2020).
+##' Suicide Risk Modeling with Uncertain Diagnostic Records. \emph{arXiv
+##' preprint arXiv:2009.02597}.
 ##'
 ##' @seealso
 ##'
