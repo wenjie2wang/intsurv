@@ -29,6 +29,7 @@ namespace Intsurv {
     private:
         arma::mat x;            // (standardized) x
         arma::vec y;
+        arma::vec offset;       // offset term
         bool intercept;
         unsigned int int_intercept;
         bool standardize;       // is x standardized
@@ -98,10 +99,25 @@ namespace Intsurv {
             if (intercept) {
                 x = arma::join_horiz(arma::ones(x.n_rows), x);
             }
+            // initialize offset
+            this->set_offset(arma::zeros(1));
             y = y_;
         }
 
         // function members
+        // set offset
+        inline void set_offset(const arma::vec& offset_)
+        {
+            if (offset_.n_elem == x.n_rows) {
+                offset = offset_;
+            } else {
+                offset = arma::zeros(y.n_elem);
+            }
+        }
+        inline void reset_offset() {
+            set_offset(arma::zeros(y.n_elem));
+        }
+
         // transfer coef for standardized data to coef for non-standardized data
         inline void rescale_coef()
         {
@@ -278,7 +294,7 @@ namespace Intsurv {
     inline arma::vec LogisticReg::linkinv(const arma::vec& beta,
                                           const double& pmin = 1e-5) const
     {
-        arma::vec p_vec { 1 / (1 + arma::exp(- mat2vec(x * beta))) };
+        arma::vec p_vec { 1 / (1 + arma::exp(- mat2vec(x * beta) - offset)) };
         // special care prevents coef diverging
         // reference: Friedman, J., Hastie, T., & Tibshirani, R. (2010)
         for (size_t i {0}; i < p_vec.n_elem; ++i) {
@@ -306,7 +322,7 @@ namespace Intsurv {
         double res { 0 };
         arma::vec tmp { arma::zeros(2) };
         for (size_t i { 0 }; i < x.n_rows; ++i) {
-            double x_beta { arma::as_scalar(x.row(i) * beta) };
+            double x_beta { arma::as_scalar(x.row(i) * beta + offset(i)) };
             tmp[1] = x_beta;
             res += log_sum_exp(tmp) - y(i) * x_beta;
         }
@@ -361,7 +377,7 @@ namespace Intsurv {
     inline double LogisticReg::objective(const arma::vec& beta,
                                          arma::vec& grad) const
     {
-        arma::vec x_beta {x * beta};
+        arma::vec x_beta {x * beta + offset};
         arma::vec exp_x_beta {arma::exp(x_beta)};
         grad = x.t() * (exp_x_beta / (1 + exp_x_beta) - y);
         arma::vec y_x_beta {y % x_beta};
@@ -465,7 +481,7 @@ namespace Intsurv {
         // rescale coef back
         this->rescale_coef();
         // compute score and prob
-        this->xBeta = x * beta;
+        this->xBeta = x * beta + offset;
         this->prob_vec = this->linkinv(beta);
         // compute negative log-likelihood
         this->negLogL = ell;
@@ -504,7 +520,7 @@ namespace Intsurv {
         // rescale coef back
         this->rescale_coef();
         // compute score and prob
-        this->xBeta = x * beta;
+        this->xBeta = x * beta + offset;
         this->prob_vec = this->linkinv(beta);
         // compute negative log-likelihood
         this->negLogL = this->objective();
@@ -712,7 +728,7 @@ namespace Intsurv {
             this->en_coef = this->coef;
             this->coef_df = 0;
             // compute score and prob
-            this->xBeta = x * beta;
+            this->xBeta = x * beta + offset;
             this->prob_vec = this->linkinv(beta);
             // compute negative log-likelihood
             this->negLogL = this->objective();
@@ -783,7 +799,7 @@ namespace Intsurv {
         this->coef0 = beta;
         this->rescale_coef();
         // compute score and prob
-        this->xBeta = x * beta;
+        this->xBeta = x * beta + offset;
         this->prob_vec = this->linkinv(beta);
         // compute negative log-likelihood
         this->negLogL = this->objective();
