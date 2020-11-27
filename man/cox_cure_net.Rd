@@ -26,6 +26,8 @@ cox_cure_net(
   cv_nfolds = 0,
   surv_start = NULL,
   cure_start = NULL,
+  surv_offset = NULL,
+  cure_offset = NULL,
   surv_standardize = TRUE,
   cure_standardize = TRUE,
   em_max_iter = 200,
@@ -61,6 +63,8 @@ cox_cure_net.fit(
   cv_nfolds = 0,
   surv_start = NULL,
   cure_start = NULL,
+  surv_offset = NULL,
+  cure_offset = NULL,
   surv_standardize = TRUE,
   cure_standardize = TRUE,
   em_max_iter = 200,
@@ -170,6 +174,12 @@ events only.}
 values for the logistic model component.  If \code{NULL} is specified,
 the starting values will be obtained from fitting a regular logistic
 model to the non-missing event indicators.}
+
+\item{surv_offset}{An optional numeric vector representing the offset term
+in the Cox model compoent.}
+
+\item{cure_offset}{An optional numeric vector representing the offset term
+in the logistic model compoent.}
 
 \item{surv_standardize}{A logical value specifying whether to standardize
 the covariates for the survival model part.  If \code{FALSE}, the

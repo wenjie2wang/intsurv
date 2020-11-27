@@ -17,6 +17,8 @@ cox_cure(
   firth = FALSE,
   surv_start = NULL,
   cure_start = NULL,
+  surv_offset = NULL,
+  cure_offset = NULL,
   em_max_iter = 200,
   em_rel_tol = 1e-05,
   surv_max_iter = 30,
@@ -41,6 +43,8 @@ cox_cure.fit(
   firth = FALSE,
   surv_start = NULL,
   cure_start = NULL,
+  surv_offset = NULL,
+  cure_offset = NULL,
   surv_standardize = TRUE,
   cure_standardize = TRUE,
   em_max_iter = 200,
@@ -110,6 +114,12 @@ events only.}
 values for the logistic model component.  If \code{NULL} is specified,
 the starting values will be obtained from fitting a regular logistic
 model to the non-missing event indicators.}
+
+\item{surv_offset}{An optional numeric vector representing the offset term
+in the Cox model compoent.}
+
+\item{cure_offset}{An optional numeric vector representing the offset term
+in the logistic model compoent.}
 
 \item{em_max_iter}{A positive integer specifying the maximum iteration
 number of the EM algorithm.  The default value is \code{200}.}
