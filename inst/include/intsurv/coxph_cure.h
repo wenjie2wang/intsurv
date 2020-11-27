@@ -260,7 +260,7 @@ namespace Intsurv {
         double obs_ell {0}, obs_ell_old { - arma::datum::inf };
         double tol1 { arma::datum::inf }, tol2 { tol1 };
         arma::vec s0_wi_tail, s_wi_tail;
-        arma::vec offset0 { cox_obj.get_offset() };
+        // arma::vec offset0 { cox_obj.get_offset() };
 
         // prepare for tail completion
         double max_event_time { time(this->max_event_time_ind) };
@@ -438,7 +438,7 @@ namespace Intsurv {
                 Rcpp::Rcout << "\n" << std::string(40, '-')
                             << "\nRunning M-step for the survival layer:";
             }
-            cox_obj.set_offset(arma::log(estep_v) + offset0);
+            cox_obj.set_offset_haz(arma::log(estep_v));
             cox_obj.fit(cox_beta, cox_mstep_max_iter, cox_mstep_rel_tol,
                         early_stop == 1, verbose > 2);
             if (verbose > 1) {
@@ -476,8 +476,8 @@ namespace Intsurv {
         } // end of the EM algorithm
 
         // reset cox_obj and cure_obj in case of further usage
-        // cox_obj.reset_offset();
-        cox_obj.set_offset(offset0);
+        cox_obj.reset_offset_haz();
+        // cox_obj.set_offset(offset0);
         cure_obj.update_y(cox_obj.get_event());
 
         // prepare outputs
@@ -614,7 +614,7 @@ namespace Intsurv {
         double tol1 { arma::datum::inf }, tol2 { tol1 };
         arma::vec s0_wi_tail, s_wi_tail;
         bool verbose_mstep { verbose > 2 };
-        arma::vec offset0 { cox_obj.get_offset() };
+        // arma::vec offset0 { cox_obj.get_offset() };
 
         // prepare for tail completion
         double max_event_time { time(this->max_event_time_ind) };
@@ -833,7 +833,7 @@ namespace Intsurv {
                 Rcpp::Rcout << "\n" << std::string(40, '-')
                             << "\nRunning the M-step for the survival layer:";
             }
-            cox_obj.set_offset(arma::log(estep_v) + offset0);
+            cox_obj.set_offset_haz(arma::log(estep_v));
             cox_obj.regularized_fit(
                 cox_l1_lambda, cox_l2_lambda, cox_l1_penalty_factor,
                 cox_beta, cox_mstep_max_iter, cox_mstep_rel_tol,
@@ -872,8 +872,8 @@ namespace Intsurv {
         } // end of the EM algorithm
 
         // reset cox_obj and cure_obj in case of further usage
-        // cox_obj.reset_offset();
-        cox_obj.set_offset(offset0);
+        cox_obj.reset_offset_haz();
+        // cox_obj.set_offset(offset0);
         cure_obj.update_y(cox_obj.get_event());
 
         // prepare outputs
