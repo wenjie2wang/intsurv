@@ -65,6 +65,10 @@
 ##'     values for the logistic model component.  If \code{NULL} is specified,
 ##'     the starting values will be obtained from fitting a regular logistic
 ##'     model to the non-missing event indicators.
+##' @param surv_offset An optional numeric vector representing the offset term
+##'     in the Cox model compoent.
+##' @param cure_offset An optional numeric vector representing the offset term
+##'     in the logistic model compoent.
 ##' @param em_max_iter A positive integer specifying the maximum iteration
 ##'     number of the EM algorithm.  The default value is \code{200}.
 ##' @param em_rel_tol A positive number specifying the tolerance that determines
@@ -158,6 +162,8 @@ cox_cure <- function(surv_formula,
                      firth = FALSE,
                      surv_start = NULL,
                      cure_start = NULL,
+                     surv_offset = NULL,
+                     cure_offset = NULL,
                      em_max_iter = 200,
                      em_rel_tol = 1e-5,
                      surv_max_iter = 30,
@@ -239,6 +245,17 @@ cox_cure <- function(surv_formula,
                as.integer(cure_intercept)) {
         stop("The length of 'cure_start' is inappropriate.")
     }
+    ## offset terms
+    if (is.null(surv_offset)) {
+        surv_offset <- rep(0, nrow(surv_x))
+    } else if (length(surv_offset) != nrow(surv_x)) {
+        stop("The length of 'surv_offset' is inappropriate.")
+    }
+    if (is.null(cure_offset)) {
+        cure_offset <- rep(0, nrow(cure_x))
+    } else if (length(cure_offset) != nrow(cure_x)) {
+        stop("The length of 'cure_start' is inappropriate.")
+    }
     ## on tail completion
     all_tails <- c("zero", "exp", "zero-tau")
     tail_completion <- match(match.arg(tail_completion, all_tails),
@@ -269,6 +286,8 @@ cox_cure <- function(surv_formula,
             bootstrap = bootstrap,
             cox_start = surv_start,
             cure_start = cure_start,
+            cox_offset = surv_offset,
+            cure_offset = cure_offset,
             cox_standardize = TRUE,
             cure_standardize = cure_standardize,
             em_max_iter = em_max_iter,
@@ -295,6 +314,8 @@ cox_cure <- function(surv_formula,
             firth = firth,
             cox_start = surv_start,
             cure_start = cure_start,
+            cox_offset = surv_offset,
+            cure_offset = cure_offset,
             cox_standardize = TRUE,
             cure_standardize = cure_standardize,
             em_max_iter = em_max_iter,
@@ -374,6 +395,8 @@ cox_cure.fit <- function(surv_x, cure_x,
                          firth = FALSE,
                          surv_start = NULL,
                          cure_start = NULL,
+                         surv_offset = NULL,
+                         cure_offset = NULL,
                          surv_standardize = TRUE,
                          cure_standardize = TRUE,
                          em_max_iter = 200,
@@ -415,6 +438,17 @@ cox_cure.fit <- function(surv_x, cure_x,
                as.integer(cure_intercept)) {
         stop("The length of 'cure_start' is inappropriate.")
     }
+    ## offset terms
+    if (is.null(surv_offset)) {
+        surv_offset <- rep(0, nrow(surv_x))
+    } else if (length(surv_offset) != nrow(surv_x)) {
+        stop("The length of 'surv_offset' is inappropriate.")
+    }
+    if (is.null(cure_offset)) {
+        cure_offset <- rep(0, nrow(cure_x))
+    } else if (length(cure_offset) != nrow(cure_x)) {
+        stop("The length of 'cure_start' is inappropriate.")
+    }
     ## on tail completion
     all_tails <- c("zero", "exp", "zero-tau")
     tail_completion <- match(match.arg(tail_completion, all_tails),
@@ -445,6 +479,8 @@ cox_cure.fit <- function(surv_x, cure_x,
             bootstrap = bootstrap,
             cox_start = surv_start,
             cure_start = cure_start,
+            cox_offset = surv_offset,
+            cure_offset = cure_offset,
             cox_standardize = surv_standardize,
             cure_standardize = cure_standardize,
             em_max_iter = em_max_iter,
@@ -471,6 +507,8 @@ cox_cure.fit <- function(surv_x, cure_x,
             firth = firth,
             cox_start = surv_start,
             cure_start = cure_start,
+            cox_offset = surv_offset,
+            cure_offset = cure_offset,
             cox_standardize = surv_standardize,
             cure_standardize = cure_standardize,
             em_max_iter = em_max_iter,

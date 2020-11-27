@@ -481,7 +481,7 @@ namespace Intsurv {
         // rescale coef back
         this->rescale_coef();
         // compute score and prob
-        this->xBeta = x * beta + offset;
+        this->xBeta = x * beta;
         this->prob_vec = this->linkinv(beta);
         // compute negative log-likelihood
         this->negLogL = ell;
@@ -520,7 +520,7 @@ namespace Intsurv {
         // rescale coef back
         this->rescale_coef();
         // compute score and prob
-        this->xBeta = x * beta + offset;
+        this->xBeta = x * beta;
         this->prob_vec = this->linkinv(beta);
         // compute negative log-likelihood
         this->negLogL = this->objective();
@@ -728,7 +728,7 @@ namespace Intsurv {
             this->en_coef = this->coef;
             this->coef_df = 0;
             // compute score and prob
-            this->xBeta = x * beta + offset;
+            this->xBeta = x * beta;
             this->prob_vec = this->linkinv(beta);
             // compute negative log-likelihood
             this->negLogL = this->objective();
@@ -799,7 +799,7 @@ namespace Intsurv {
         this->coef0 = beta;
         this->rescale_coef();
         // compute score and prob
-        this->xBeta = x * beta + offset;
+        this->xBeta = x * beta;
         this->prob_vec = this->linkinv(beta);
         // compute negative log-likelihood
         this->negLogL = this->objective();

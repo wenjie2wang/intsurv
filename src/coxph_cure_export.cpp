@@ -32,6 +32,8 @@ Rcpp::List rcpp_coxph_cure(
     const bool& firth = false,
     const arma::vec& cox_start = 0,
     const arma::vec& cure_start = 0,
+    const arma::vec& cox_offset = 0,
+    const arma::vec& cure_offset = 0,
     const bool& cox_standardize = true,
     const bool& cure_standardize = true,
     const unsigned int& em_max_iter = 1000,
@@ -50,7 +52,8 @@ Rcpp::List rcpp_coxph_cure(
     // define object
     Intsurv::CoxphCure obj {
         time, event, cox_x, cure_x, cure_intercept,
-        cox_standardize, cure_standardize
+        cox_standardize, cure_standardize,
+        cox_offset, cure_offset
     };
     // model-fitting
     obj.fit(cox_start, cure_start,
@@ -79,7 +82,11 @@ Rcpp::List rcpp_coxph_cure(
                 event.elem(boot_ind),
                 cox_x.rows(boot_ind),
                 cure_x.rows(boot_ind),
-                cure_intercept
+                cure_intercept,
+                cox_standardize,
+                cure_standardize,
+                cox_offset.elem(boot_ind),
+                cure_offset.elem(boot_ind),
             };
             // fit the bootstarp sample
             boot_obj.fit(cox_start, cure_start,
@@ -151,14 +158,16 @@ Rcpp::List rcpp_coxph_cure_reg(
     const unsigned long cv_nfolds = 0,
     const arma::vec& cox_start = 0,
     const arma::vec& cure_start = 0,
+    const arma::vec& cox_offset = 0,
+    const arma::vec& cure_offset = 0,
+    const bool cox_standardize = true,
+    const bool cure_standardize = true,
     const unsigned int& em_max_iter = 500,
     const double& em_rel_tol = 1e-5,
     const unsigned int& cox_mstep_max_iter = 200,
     const double& cox_mstep_rel_tol = 1e-4,
     const unsigned int& cure_mstep_max_iter = 200,
     const double& cure_mstep_rel_tol = 1e-4,
-    const bool cox_standardize = true,
-    const bool cure_standardize = true,
     const unsigned int& tail_completion = 1,
     double tail_tau = -1,
     const double& pmin = 1e-5,
@@ -168,7 +177,8 @@ Rcpp::List rcpp_coxph_cure_reg(
 {
     Intsurv::CoxphCure obj {
         time, event, cox_x, cure_x, cure_intercept,
-        cox_standardize, cure_standardize
+        cox_standardize, cure_standardize,
+        cox_offset, cure_offset
     };
     obj.regularized_fit(
         cox_l1_lambda, cox_l2_lambda,
@@ -192,6 +202,7 @@ Rcpp::List rcpp_coxph_cure_reg(
             cure_l1_lambda, cure_l2_lambda,
             cure_l1_penalty_factor,
             cox_start, cure_start,
+            cox_offset, cure_offset,
             cox_standardize, cure_standardize,
             em_max_iter, em_rel_tol,
             cox_mstep_max_iter, cox_mstep_rel_tol,
@@ -275,14 +286,16 @@ Rcpp::List rcpp_coxph_cure_vs(
     const unsigned long cv_nfolds = 0,
     const arma::vec& cox_start = 0,
     const arma::vec& cure_start = 0,
+    const arma::vec& cox_offset = 0,
+    const arma::vec& cure_offset = 0,
+    const bool cox_standardize = true,
+    const bool cure_standardize = true,
     const unsigned int& em_max_iter = 500,
     const double& em_rel_tol = 1e-4,
     const unsigned int& cox_mstep_max_iter = 200,
     const double& cox_mstep_rel_tol = 1e-4,
     const unsigned int& cure_mstep_max_iter = 200,
     const double& cure_mstep_rel_tol = 1e-4,
-    const bool cox_standardize = true,
-    const bool cure_standardize = true,
     const unsigned int& tail_completion = 1,
     double tail_tau = -1,
     const double& pmin = 1e-5,
@@ -293,7 +306,8 @@ Rcpp::List rcpp_coxph_cure_vs(
     // define object
     Intsurv::CoxphCure obj {
         time, event, cox_x, cure_x, cure_intercept,
-        cox_standardize, cure_standardize
+        cox_standardize, cure_standardize,
+        cox_offset, cure_offset
     };
     // get the maximum lambdas by setting em_max_iter = 0
     obj.regularized_fit(0, 0, 0, 0,
@@ -394,6 +408,7 @@ Rcpp::List rcpp_coxph_cure_vs(
                     cure_l1_lambda, cure_l2_lambda,
                     cure_l1_penalty_factor,
                     cox_warm_start, cure_warm_start,
+                    cox_offset, cure_offset,
                     cox_standardize, cure_standardize,
                     em_max_iter, em_rel_tol,
                     cox_mstep_max_iter, cox_mstep_rel_tol,

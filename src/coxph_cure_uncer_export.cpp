@@ -31,14 +31,16 @@ Rcpp::List coxph_cure_uncer(
     const unsigned int& bootstrap = 0,
     const arma::vec& cox_start = 0,
     const arma::vec& cure_start = 0,
+    const arma::vec& cox_offset = 0,
+    const arma::vec& cure_offset = 0,
+    const bool cox_standardize = true,
+    const bool cure_standardize = true,
     const unsigned int& em_max_iter = 300,
     const double& em_rel_tol = 1e-5,
     const unsigned int& cox_mstep_max_iter = 100,
     const double& cox_mstep_rel_tol = 1e-5,
     const unsigned int& cure_mstep_max_iter = 100,
     const double& cure_mstep_rel_tol = 1e-5,
-    const bool cox_standardize = true,
-    const bool cure_standardize = true,
     const unsigned int& tail_completion = 1,
     double tail_tau = -1,
     const double& pmin = 1e-5,
@@ -49,7 +51,8 @@ Rcpp::List coxph_cure_uncer(
     // define object
     Intsurv::CoxphCureUncer obj {
         time, event, cox_x, cure_x, cure_intercept,
-        cox_standardize, cure_standardize
+        cox_standardize, cure_standardize,
+        cox_offset, cure_offset
     };
     // model-fitting
     obj.fit(cox_start, cure_start,
@@ -87,7 +90,9 @@ Rcpp::List coxph_cure_uncer(
                 cure_x.rows(boot_ind),
                 cure_intercept,
                 cox_standardize,
-                cure_standardize
+                cure_standardize,
+                cox_offset.elem(boot_ind),
+                cure_offset.elem(boot_ind)
             };
             boot_obj.fit(cox_start, cure_start,
                          em_max_iter, em_rel_tol,
@@ -160,14 +165,16 @@ Rcpp::List coxph_cure_uncer_reg(
     const unsigned long cv_nfolds = 0,
     const arma::vec& cox_start = 0,
     const arma::vec& cure_start = 0,
+    const arma::vec& cox_offset = 0,
+    const arma::vec& cure_offset = 0,
+    const bool cox_standardize = true,
+    const bool cure_standardize = true,
     const unsigned int& em_max_iter = 500,
     const double& em_rel_tol = 1e-4,
     const unsigned int& cox_mstep_max_iter = 200,
     const double& cox_mstep_rel_tol = 1e-4,
     const unsigned int& cure_mstep_max_iter = 200,
     const double& cure_mstep_rel_tol = 1e-4,
-    const bool cox_standardize = true,
-    const bool cure_standardize = true,
     const unsigned int& tail_completion = 1,
     double tail_tau = -1,
     const double& pmin = 1e-5,
@@ -178,7 +185,8 @@ Rcpp::List coxph_cure_uncer_reg(
     // define object
     Intsurv::CoxphCureUncer obj {
         time, event, cox_x, cure_x, cure_intercept,
-        cox_standardize, cure_standardize
+        cox_standardize, cure_standardize,
+        cox_offset, cure_offset
     };
     // model-fitting
     obj.regularized_fit(
@@ -202,10 +210,11 @@ Rcpp::List coxph_cure_uncer_reg(
             cure_l1_lambda, cure_l2_lambda,
             cure_l1_penalty_factor,
             cox_start, cure_start,
+            cox_offset, cure_offset,
+            cox_standardize, cure_standardize,
             em_max_iter, em_rel_tol,
             cox_mstep_max_iter, cox_mstep_rel_tol,
             cure_mstep_max_iter, cure_mstep_rel_tol,
-            cox_standardize, cure_standardize,
             tail_completion, tail_tau,
             pmin, early_stop, verbose
             );
@@ -289,14 +298,16 @@ Rcpp::List coxph_cure_uncer_vs(
     const unsigned long cv_nfolds = 0,
     const arma::vec& cox_start = 0,
     const arma::vec& cure_start = 0,
+    const arma::vec& cox_offset = 0,
+    const arma::vec& cure_offset = 0,
+    const bool cox_standardize = true,
+    const bool cure_standardize = true,
     const unsigned int& em_max_iter = 500,
     const double& em_rel_tol = 1e-4,
     const unsigned int& cox_mstep_max_iter = 200,
     const double& cox_mstep_rel_tol = 1e-4,
     const unsigned int& cure_mstep_max_iter = 200,
     const double& cure_mstep_rel_tol = 1e-4,
-    const bool cox_standardize = true,
-    const bool cure_standardize = true,
     const unsigned int& tail_completion = 1,
     double tail_tau = -1,
     const double& pmin = 1e-5,
@@ -307,7 +318,8 @@ Rcpp::List coxph_cure_uncer_vs(
     // define object
     Intsurv::CoxphCureUncer obj {
         time, event, cox_x, cure_x, cure_intercept,
-        cox_standardize, cure_standardize
+        cox_standardize, cure_standardize,
+        cox_offset, cure_offset
     };
     // get the maximum lambdas by setting em_max_iter = 0
     obj.regularized_fit(
@@ -409,6 +421,7 @@ Rcpp::List coxph_cure_uncer_vs(
                     cure_l1_lambda, cure_l2_lambda,
                     cure_l1_penalty_factor,
                     cox_warm_start, cure_warm_start,
+                    cox_offset, cure_offset,
                     cox_standardize, cure_standardize,
                     em_max_iter, em_rel_tol,
                     cox_mstep_max_iter, cox_mstep_rel_tol,

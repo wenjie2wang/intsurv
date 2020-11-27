@@ -103,6 +103,10 @@
 ##'     values for the logistic model component.  If \code{NULL} is specified,
 ##'     the starting values will be obtained from fitting a regular logistic
 ##'     model to the non-missing event indicators.
+##' @param surv_offset An optional numeric vector representing the offset term
+##'     in the Cox model compoent.
+##' @param cure_offset An optional numeric vector representing the offset term
+##'     in the logistic model compoent.
 ##' @param surv_standardize A logical value specifying whether to standardize
 ##'     the covariates for the survival model part.  If \code{FALSE}, the
 ##'     covariates will be standardized internally to have mean zero and
@@ -217,6 +221,8 @@ cox_cure_net <-
              cv_nfolds = 0,
              surv_start = NULL,
              cure_start = NULL,
+             surv_offset = NULL,
+             cure_offset = NULL,
              surv_standardize = TRUE,
              cure_standardize = TRUE,
              em_max_iter = 200,
@@ -299,6 +305,17 @@ cox_cure_net <-
     } else if (length(cure_start) != cure_x + as.integer(cure_intercept)) {
         stop("The length of 'cure_start' is inappropriate.")
     }
+    ## offset terms
+    if (is.null(surv_offset)) {
+        surv_offset <- rep(0, nrow(surv_x))
+    } else if (length(surv_offset) != nrow(surv_x)) {
+        stop("The length of 'surv_offset' is inappropriate.")
+    }
+    if (is.null(cure_offset)) {
+        cure_offset <- rep(0, nrow(cure_x))
+    } else if (length(cure_offset) != nrow(cure_x)) {
+        stop("The length of 'cure_start' is inappropriate.")
+    }
     ## on tail completion
     all_tails <- c("zero", "exp", "zero-tau")
     tail_completion <- match(match.arg(tail_completion, all_tails),
@@ -359,6 +376,8 @@ cox_cure_net <-
             cv_nfolds = cv_nfolds,
             cox_start = surv_start,
             cure_start = cure_start,
+            cox_offset = surv_offset,
+            cure_offset = cure_offset,
             cox_standardize = surv_standardize,
             cure_standardize = cure_standardize,
             em_max_iter = em_max_iter,
@@ -394,6 +413,8 @@ cox_cure_net <-
             cv_nfolds = cv_nfolds,
             cox_start = surv_start,
             cure_start = cure_start,
+            cox_offset = surv_offset,
+            cure_offset = cure_offset,
             cox_standardize = surv_standardize,
             cure_standardize = cure_standardize,
             em_max_iter = em_max_iter,
@@ -469,6 +490,8 @@ cox_cure_net.fit <-
              cv_nfolds = 0,
              surv_start = NULL,
              cure_start = NULL,
+             surv_offset = NULL,
+             cure_offset = NULL,
              surv_standardize = TRUE,
              cure_standardize = TRUE,
              em_max_iter = 200,
@@ -507,6 +530,17 @@ cox_cure_net.fit <-
     if (is.null(cure_start)) {
         cure_start <- 0
     } else if (length(cure_start) != cure_x + as.integer(cure_intercept)) {
+        stop("The length of 'cure_start' is inappropriate.")
+    }
+    ## offset terms
+    if (is.null(surv_offset)) {
+        surv_offset <- rep(0, nrow(surv_x))
+    } else if (length(surv_offset) != nrow(surv_x)) {
+        stop("The length of 'surv_offset' is inappropriate.")
+    }
+    if (is.null(cure_offset)) {
+        cure_offset <- rep(0, nrow(cure_x))
+    } else if (length(cure_offset) != nrow(cure_x)) {
         stop("The length of 'cure_start' is inappropriate.")
     }
     ## on tail completion
@@ -569,6 +603,8 @@ cox_cure_net.fit <-
             cv_nfolds = cv_nfolds,
             cox_start = surv_start,
             cure_start = cure_start,
+            cox_offset = surv_offset,
+            cure_offset = cure_offset,
             cox_standardize = surv_standardize,
             cure_standardize = cure_standardize,
             em_max_iter = em_max_iter,
@@ -604,6 +640,8 @@ cox_cure_net.fit <-
             cv_nfolds = cv_nfolds,
             cox_start = surv_start,
             cure_start = cure_start,
+            cox_offset = surv_offset,
+            cure_offset = cure_offset,
             cox_standardize = surv_standardize,
             cure_standardize = cure_standardize,
             em_max_iter = em_max_iter,

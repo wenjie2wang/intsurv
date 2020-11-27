@@ -240,6 +240,9 @@ namespace Intsurv {
         inline void reset_offset() {
             set_offset(arma::zeros(time.n_elem));
         }
+        inline arma::vec get_offset() {
+            return this->offset;
+        }
 
         // function that computes baseline estimates
         inline void compute_haz_surv_time(const arma::vec& beta);
@@ -392,14 +395,13 @@ namespace Intsurv {
                 this->xBeta = x * this->coef;
             }
         }
-        arma::vec exp_x_beta { arma::exp(this->xBeta) };
-
+        arma::vec exp_risk_score { arma::exp(this->xBeta + this->offset) };
         // 1. hazard rate function
         arma::vec h0_numer { aggregate_sum(event, time, false) };
-        arma::vec h0_denom { exp_x_beta % arma::exp(this->offset) };
+        arma::vec h0_denom { exp_risk_score };
         h0_denom = aggregate_sum(h0_denom, time, false, true, true);
         this->h0_time = h0_numer / h0_denom;
-        this->h_time = this->h0_time % exp_x_beta;
+        this->h_time = this->h0_time % exp_risk_score;
 
         // 2. baseline cumulative hazard function
         this->H0_time = arma::zeros(h0_time.n_elem);
@@ -407,7 +409,7 @@ namespace Intsurv {
             this->H0_time(i) = h0_time(i);
         }
         this->H0_time = cum_sum(this->H0_time);
-        this->H_time = this->H0_time % exp_x_beta;
+        this->H_time = this->H0_time % exp_risk_score;
 
         // 3. baseline survival function
         this->S0_time = arma::exp(- this->H0_time);

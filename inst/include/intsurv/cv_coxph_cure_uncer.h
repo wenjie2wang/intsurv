@@ -33,14 +33,16 @@ namespace Intsurv {
         const unsigned long n_folds = 10,
         const arma::vec& cox_start = 0,
         const arma::vec& cure_start = 0,
+        const arma::vec& cox_offset = 0,
+        const arma::vec& cure_offset = 0,
+        const bool& cox_standardize = true,
+        const bool& cure_standardize = true,
         const unsigned int& em_max_iter = 300,
         const double& em_rel_tol = 1e-5,
         const unsigned int& cox_mstep_max_iter = 100,
         const double& cox_mstep_rel_tol = 1e-5,
         const unsigned int& cure_mstep_max_iter = 100,
         const double& cure_mstep_rel_tol = 1e-5,
-        const bool& cox_standardize = true,
-        const bool& cure_standardize = true,
         const unsigned int& tail_completion = 1,
         double tail_tau = -1,
         const double& pmin = 1e-5,
@@ -72,6 +74,24 @@ namespace Intsurv {
         const arma::mat cure_x_case1 { cure_x.rows(case1_ind) };
         const arma::mat cure_x_case2 { cure_x.rows(case2_ind) };
         const arma::mat cure_x_case3 { cure_x.rows(case3_ind) };
+
+        // process offset terms
+        arma::vec cox_offset_case1 { arma::zeros(1) },
+            cox_offset_case2 { cox_offset_case1 },
+            cox_offset_case3 { cox_offset_case1 },
+            cure_offset_case1 { cox_offset_case1 },
+            cure_offset_case2 { cox_offset_case1 },
+            cure_offset_case3 { cox_offset_case1 };
+        if (cox_offset.n_elem == cox_x.n_rows) {
+            cox_offset_case1 = cox_offset.elem(case1_ind);
+            cox_offset_case2 = cox_offset.elem(case2_ind);
+            cox_offset_case3 = cox_offset.elem(case3_ind);
+        }
+        if (cure_offset.n_elem == cure_x.n_rows) {
+            cure_offset_case1 = cure_offset.elem(case1_ind);
+            cure_offset_case2 = cure_offset.elem(case2_ind);
+            cure_offset_case3 = cure_offset.elem(case3_ind);
+        }
 
         // get the index of the largest event time
         const arma::uvec which_time_max { time_case1.index_max() };
@@ -117,6 +137,20 @@ namespace Intsurv {
                     cure_x_case3.rows(cv_obj_case3.train_index.at(i))
                     )
             };
+            arma::vec train_cox_offset {
+                arma::join_vert(
+                    cox_offset_case1.elem(cv_obj_case1.train_index.at(i)),
+                    cox_offset_case2.elem(cv_obj_case2.train_index.at(i)),
+                    cox_offset_case3.elem(cv_obj_case3.train_index.at(i))
+                    )
+            };
+            arma::vec train_cure_offset {
+                arma::join_vert(
+                    cure_offset_case1.elem(cv_obj_case1.train_index.at(i)),
+                    cure_offset_case2.elem(cv_obj_case2.train_index.at(i)),
+                    cure_offset_case3.elem(cv_obj_case2.train_index.at(i))
+                    )
+            };
             // testing set
             arma::vec test_time {
                 arma::join_vert(
@@ -146,10 +180,25 @@ namespace Intsurv {
                     cure_x_case3.rows(cv_obj_case3.test_index.at(i))
                     )
             };
+            arma::vec test_cox_offset {
+                arma::join_vert(
+                    cox_offset_case1.elem(cv_obj_case1.test_index.at(i)),
+                    cox_offset_case2.elem(cv_obj_case2.test_index.at(i)),
+                    cox_offset_case3.elem(cv_obj_case3.test_index.at(i))
+                    )
+            };
+            arma::vec test_cure_offset {
+                arma::join_vert(
+                    cure_offset_case1.elem(cv_obj_case1.test_index.at(i)),
+                    cure_offset_case2.elem(cv_obj_case2.test_index.at(i)),
+                    cure_offset_case3.elem(cv_obj_case2.test_index.at(i))
+                    )
+            };
             // define object
             CoxphCureUncer cc_obj {
                 train_time, train_event, train_cox_x, train_cure_x,
-                cure_intercept, cox_standardize, cure_standardize
+                cure_intercept, cox_standardize, cure_standardize,
+                train_cox_offset, train_cure_offset
             };
             // model-fitting
             cc_obj.fit(
@@ -162,7 +211,8 @@ namespace Intsurv {
                 );
             // compute observed log-likelihood function for the test data
             cv_vec(i) = cc_obj.obs_log_likelihood(
-                test_time, test_event, test_cox_x, test_cure_x, pmin
+                test_time, test_event, test_cox_x, test_cure_x,
+                test_cox_offset, test_cure_offset, pmin
                 );
         }
         return cv_vec;
@@ -184,14 +234,16 @@ namespace Intsurv {
         const arma::vec& cure_l1_penalty_factor = 0,
         const arma::vec& cox_start = 0,
         const arma::vec& cure_start = 0,
+        const arma::vec& cox_offset = 0,
+        const arma::vec& cure_offset = 0,
+        const bool cox_standardize = true,
+        const bool cure_standardize = true,
         const unsigned int& em_max_iter = 500,
         const double& em_rel_tol = 1e-4,
         const unsigned int& cox_mstep_max_iter = 200,
         const double& cox_mstep_rel_tol = 1e-4,
         const unsigned int& cure_mstep_max_iter = 200,
         const double& cure_mstep_rel_tol = 1e-4,
-        const bool cox_standardize = true,
-        const bool cure_standardize = true,
         const unsigned int& tail_completion = 1,
         double tail_tau = -1,
         const double& pmin = 1e-5,
@@ -223,6 +275,24 @@ namespace Intsurv {
         const arma::mat cure_x_case1 { cure_x.rows(case1_ind) };
         const arma::mat cure_x_case2 { cure_x.rows(case2_ind) };
         const arma::mat cure_x_case3 { cure_x.rows(case3_ind) };
+
+        // process offset terms
+        arma::vec cox_offset_case1 { arma::zeros(1) },
+            cox_offset_case2 { cox_offset_case1 },
+            cox_offset_case3 { cox_offset_case1 },
+            cure_offset_case1 { cox_offset_case1 },
+            cure_offset_case2 { cox_offset_case1 },
+            cure_offset_case3 { cox_offset_case1 };
+        if (cox_offset.n_elem == cox_x.n_rows) {
+            cox_offset_case1 = cox_offset.elem(case1_ind);
+            cox_offset_case2 = cox_offset.elem(case2_ind);
+            cox_offset_case3 = cox_offset.elem(case3_ind);
+        }
+        if (cure_offset.n_elem == cure_x.n_rows) {
+            cure_offset_case1 = cure_offset.elem(case1_ind);
+            cure_offset_case2 = cure_offset.elem(case2_ind);
+            cure_offset_case3 = cure_offset.elem(case3_ind);
+        }
 
         // get the index of the largest event time
         const arma::uvec which_time_max { time_case1.index_max() };
@@ -268,6 +338,20 @@ namespace Intsurv {
                     cure_x_case3.rows(cv_obj_case3.train_index.at(i))
                     )
             };
+            arma::vec train_cox_offset {
+                arma::join_vert(
+                    cox_offset_case1.elem(cv_obj_case1.train_index.at(i)),
+                    cox_offset_case2.elem(cv_obj_case2.train_index.at(i)),
+                    cox_offset_case3.elem(cv_obj_case3.train_index.at(i))
+                    )
+            };
+            arma::vec train_cure_offset {
+                arma::join_vert(
+                    cure_offset_case1.elem(cv_obj_case1.train_index.at(i)),
+                    cure_offset_case2.elem(cv_obj_case2.train_index.at(i)),
+                    cure_offset_case3.elem(cv_obj_case2.train_index.at(i))
+                    )
+            };
             // testing set
             arma::vec test_time {
                 arma::join_vert(
@@ -297,10 +381,25 @@ namespace Intsurv {
                     cure_x_case3.rows(cv_obj_case3.test_index.at(i))
                     )
             };
+            arma::vec test_cox_offset {
+                arma::join_vert(
+                    cox_offset_case1.elem(cv_obj_case1.test_index.at(i)),
+                    cox_offset_case2.elem(cv_obj_case2.test_index.at(i)),
+                    cox_offset_case3.elem(cv_obj_case3.test_index.at(i))
+                    )
+            };
+            arma::vec test_cure_offset {
+                arma::join_vert(
+                    cure_offset_case1.elem(cv_obj_case1.test_index.at(i)),
+                    cure_offset_case2.elem(cv_obj_case2.test_index.at(i)),
+                    cure_offset_case3.elem(cv_obj_case2.test_index.at(i))
+                    )
+            };
             // define object
             CoxphCureUncer cc_obj {
                 train_time, train_event, train_cox_x, train_cure_x,
-                cure_intercept, cox_standardize, cure_standardize
+                cure_intercept, cox_standardize, cure_standardize,
+                train_cox_offset, train_cure_offset
             };
             // model-fitting
             cc_obj.regularized_fit(
@@ -316,7 +415,8 @@ namespace Intsurv {
                 );
             // compute observed log-likelihood function for the test data
             cv_vec(i) = cc_obj.obs_log_likelihood(
-                test_time, test_event, test_cox_x, test_cure_x, pmin
+                test_time, test_event, test_cox_x, test_cure_x,
+                test_cox_offset, test_cure_offset, pmin
                 );
         }
         return cv_vec;

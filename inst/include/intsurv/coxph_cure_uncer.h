@@ -102,7 +102,9 @@ namespace Intsurv {
             const arma::mat& cure_x,
             const bool& cure_intercept = true,
             const bool& cox_standardize = true,
-            const bool& cure_standardize = true
+            const bool& cure_standardize = true,
+            const arma::vec& cox_offset = 0,
+            const arma::vec& cure_offset = 0
             )
         {
             // replace NA or NaN event indicator with 0.5
@@ -113,7 +115,7 @@ namespace Intsurv {
 
             // create the CoxphReg object
             this->cox_obj = CoxphReg(time, event0na, cox_x, cox_standardize);
-
+            this->cox_obj.set_offset(cox_offset, false);
             // pre-process x and y
             this->cox_p = cox_x.n_cols;
             this->cure_p0 = cure_x.n_cols;
@@ -132,7 +134,7 @@ namespace Intsurv {
             // create the LogisticReg object
             this->cure_obj = LogisticReg(cure_xx, s_event, cure_intercept,
                                          cure_standardize);
-
+            this->cure_obj.set_offset(cure_offset);
         }
 
 
@@ -198,6 +200,8 @@ namespace Intsurv {
             arma::vec new_event,
             arma::mat new_cox_x,
             arma::mat new_cure_x,
+            arma::vec new_cox_offset,
+            arma::vec new_cure_offset,
             const double pmin
             ) const;
 
@@ -295,6 +299,7 @@ namespace Intsurv {
         double obs_ell {0}, obs_ell_old { - arma::datum::inf };
         double tol1 { arma::datum::inf }, tol2 { tol1 };
         arma::vec s0_wi_tail, s_wi_tail;
+        arma::vec offset0 { cox_obj.get_offset() };
 
         // prepare for tail completion
         const arma::uvec case23_ind { vec_union(case2_ind, case3_ind) };
@@ -507,7 +512,7 @@ namespace Intsurv {
                             << "\nRunning the M-step for the survival layer:"
                             << std::endl;
             }
-            cox_obj.set_offset(arma::log(estep_m));
+            cox_obj.set_offset(arma::log(estep_m) + offset0);
             cox_obj.update_event_weight(event);
             cox_obj.fit(cox_beta, cox_mstep_max_iter, cox_mstep_rel_tol,
                         early_stop == 1, verbose > 2);
@@ -541,7 +546,8 @@ namespace Intsurv {
         } // end of the EM algorithm
 
         // reset cox_obj and cure_obj in case of further usage
-        cox_obj.reset_offset();
+        // cox_obj.reset_offset();
+        cox_obj.set_offset(offset0);
         cure_obj.update_y(cox_obj.get_event());
 
         // prepare outputs
@@ -732,6 +738,7 @@ namespace Intsurv {
         double bic1_old { arma::datum::inf }, bic2_old { bic1_old };
         double tol1 { arma::datum::inf }, tol2 { tol1 };
         arma::vec s0_wi_tail, s_wi_tail;
+        arma::vec offset0 { cox_obj.get_offset() };
 
         // prepare for tail completion
         const arma::uvec case23_ind { vec_union(case2_ind, case3_ind) };
@@ -984,7 +991,7 @@ namespace Intsurv {
                             << "\nRunning the M-step for the survival layer:"
                             << std::endl;
             }
-            cox_obj.set_offset(arma::log(estep_m));
+            cox_obj.set_offset(arma::log(estep_m) + offset0);
             cox_obj.update_event_weight(event);
             cox_obj.regularized_fit(
                 cox_l1_lambda, cox_l2_lambda, cox_l1_penalty_factor,
@@ -1024,7 +1031,8 @@ namespace Intsurv {
         } // end of the EM algorithm
 
         // reset cox_obj and cure_obj in case of further usage
-        cox_obj.reset_offset();
+        // cox_obj.reset_offset();
+        cox_obj.set_offset(offset0);
         cure_obj.update_y(cox_obj.get_event());
 
         // prepare outputs
@@ -1136,6 +1144,8 @@ namespace Intsurv {
         arma::vec new_event,
         arma::mat new_cox_x,
         arma::mat new_cure_x,
+        arma::vec new_cox_offset = 0,
+        arma::vec new_cure_offset = 0,
         const double pmin = 1e-5
         ) const
     {
@@ -1175,6 +1185,17 @@ namespace Intsurv {
         new_event = new_event.elem(ord);
         new_cox_x = new_cox_x.rows(ord);
         new_cure_x = new_cure_x.rows(ord);
+        // process offset terms
+        if (new_cox_offset.n_elem != new_cox_x.n_rows) {
+            new_cox_offset = arma::zeros(new_cox_x.n_rows);
+        } else {
+            new_cox_offset = new_cox_offset(ord);
+        }
+        if (new_cure_offset.n_elem != new_cure_x.n_rows) {
+            new_cure_offset = arma::zeros(new_cure_x.n_rows);
+        } else {
+            new_cure_offset = new_cure_offset(ord);
+        }
 
         // add intercept if needed
         if (this->cure_p > this->cure_p0) {
@@ -1218,12 +1239,16 @@ namespace Intsurv {
         };
         // apply x * beta
         // compute parts for the new data
-        arma::vec new_cox_xbeta { mat2vec(new_cox_x * this->cox_coef) };
+        arma::vec new_cox_xbeta {
+            mat2vec(new_cox_x * this->cox_coef) + new_cox_offset
+        };
         arma::vec exp_cox_xbeta { arma::exp(new_cox_xbeta) };
         h_vec %= exp_cox_xbeta;
         H_vec %= exp_cox_xbeta;
         S_vec = arma::exp(- H_vec);
-        arma::vec new_cure_xgamma { mat2vec(new_cure_x * this->cure_coef) };
+        arma::vec new_cure_xgamma {
+            mat2vec(new_cure_x * this->cure_coef) + new_cure_offset
+        };
         arma::vec p_vec { 1 / (1 + arma::exp(- new_cure_xgamma)) };
         for (size_t i {0}; i < p_vec.n_elem; ++i) {
             if (p_vec(i) < pmin) {
