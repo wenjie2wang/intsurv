@@ -1,3 +1,21 @@
+# intsurv 0.2.2.9000
+
+## New features
+
+- Added AIC to outputs of fitted Cox cure models.
+- Added a new argument named `cv_nfolds` to `cox_cure_net()` and
+  `cox_cure_net.fit()` for model selection by cross-validation.
+- Added new arguments named `surv_offset` and `cure_offset` for optional offset
+  terms in survival model component and incidence model component, respectively,
+  to `cox_cure()`, `cox_cure.fit()`, `cox_cure_net()`, and `cox_cure_net.fit()`.
+
+## Bug fixes
+
+- Fixed issue caused by zeros in specified `surv_l1_penalty_factor` and
+  `cure_l1_penalty_factor` for `cox_cure_net()` and `cox_cure_net.fit()`. Thank
+  Steven Chious for reporting this issue.
+
+
 # intsurv 0.2.1
 
 ## Minor changes
