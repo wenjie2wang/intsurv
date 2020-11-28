@@ -125,7 +125,7 @@ namespace Intsurv {
             arma::uvec cox_sort_ind { cox_obj.get_sort_index() };
             arma::mat cure_xx { cure_x.rows(cox_sort_ind) };
             arma::vec s_event { event0na.elem(cox_sort_ind) };
-            arma::vec s_offset { cure_offset.elem(cox_sort_ind) };
+            arma::vec s_cure_offset { cure_offset.elem(cox_sort_ind) };
             this->case1_ind = arma::find(s_event > const4na);
             this->case2_ind = arma::find(s_event < const4na);
             this->nEvent = case1_ind.n_elem;
