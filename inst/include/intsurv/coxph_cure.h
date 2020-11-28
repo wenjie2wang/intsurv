@@ -110,6 +110,7 @@ namespace Intsurv {
             arma::uvec cox_sort_ind { cox_obj.get_sort_index() };
             arma::mat cure_xx { cure_x.rows(cox_sort_ind) };
             arma::vec s_event { event.elem(cox_sort_ind) };
+            arma::vec s_cure_offset { cure_offset.elem(cox_sort_ind) };
             this->case1_ind = arma::find(s_event > 0);
             this->case2_ind = arma::find(s_event < 1);
             this->nEvent = this->case1_ind.n_elem;
@@ -117,7 +118,7 @@ namespace Intsurv {
             // create the LogisticReg object
             this->cure_obj = LogisticReg(cure_xx, s_event, cure_intercept,
                                          cure_standardize);
-            this->cure_obj.set_offset(cure_offset);
+            this->cure_obj.set_offset(s_cure_offset);
         }
 
         // function members

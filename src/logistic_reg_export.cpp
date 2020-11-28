@@ -45,6 +45,7 @@ Rcpp::List rcpp_logistic(
     return Rcpp::List::create(
         Rcpp::Named("coef") = Intsurv::arma2rvec(object.coef),
         Rcpp::Named("model") = Rcpp::List::create(
+            Rcpp::Named("fitted") = Intsurv::arma2rvec(object.prob_vec),
             Rcpp::Named("nObs") = object.nObs,
             Rcpp::Named("negLogL") = object.negLogL,
             Rcpp::Named("coef_df") = object.coef_df
@@ -74,6 +75,7 @@ Rcpp::List rcpp_firth_logistic(
     return Rcpp::List::create(
         Rcpp::Named("coef") = Intsurv::arma2rvec(object.coef),
         Rcpp::Named("model") = Rcpp::List::create(
+            Rcpp::Named("fitted") = Intsurv::arma2rvec(object.prob_vec),
             Rcpp::Named("nObs") = object.nObs,
             Rcpp::Named("negLogL") = object.negLogL,
             Rcpp::Named("coef_df") = object.coef_df
