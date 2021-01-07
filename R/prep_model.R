@@ -18,8 +18,10 @@
 
 ### prepare design matrix and response from formula inputs for survival models
 ##' @importFrom stats model.matrix.default model.frame.default .getXlevels
+##'     model.offset
 prep_cure_model <- function(surv_formula, cure_formula,
                             obs_time, obs_event,
+                            surv_offset, cure_offset,
                             data, subset, contrasts = NULL,
                             eval_env = parent.frame())
 {
@@ -46,7 +48,8 @@ prep_cure_model <- function(surv_formula, cure_formula,
     if (missing(data)) {
         this_call$data <- eval_env
     }
-    matched_call <- match(c("formula", "data", "subset",
+    names(this_call)[names(this_call) == "surv_offset"] <- "offset"
+    matched_call <- match(c("formula", "data", "subset", "offset",
                             "obs_time", "obs_event"),
                           names(this_call), nomatch = 0L)
     this_call <- this_call[c(1L, matched_call)]
@@ -56,13 +59,12 @@ prep_cure_model <- function(surv_formula, cure_formula,
     this_call[[1L]] <- quote(stats::model.frame.default)
     mf <- eval(this_call, eval_env)
     surv_formula <- attr(mf, "terms")
-    mf2 <- stats::model.frame.default(surv_formula, mf,
-                                      na.action = na.fail)
     ## suppress warnings on not used contrasts
     suppressWarnings({
-        mm <- stats::model.matrix(surv_formula, data = mf2,
-                                  contrasts.arg = contrasts)
+        mm <- stats::model.matrix.default(surv_formula, data = mf,
+                                          contrasts.arg = contrasts)
     })
+    mm <- na.fail(mm)
     ## output: contrasts
     contrasts <- attr(mm, "contrasts")
     ## surv list
@@ -70,6 +72,7 @@ prep_cure_model <- function(surv_formula, cure_formula,
         obs_time = mf[["(obs_time)"]],
         obs_event = mf[["(obs_event)"]],
         xMat = mm,
+        offset = model.offset(mf),
         contrasts = contrasts,
         xlevels = stats::.getXlevels(attr(mf, "terms"), mf)
     )
@@ -77,10 +80,11 @@ prep_cure_model <- function(surv_formula, cure_formula,
     ## 2. process cure formula
     this_call <- call0
     names(this_call)[names(this_call) == "cure_formula"] <- "formula"
+    names(this_call)[names(this_call) == "surv_offset"] <- "offset"
     if (missing(data)) {
         this_call$data <- eval_env
     }
-    matched_call <- match(c("formula", "data", "subset"),
+    matched_call <- match(c("formula", "data", "subset", "offset"),
                           names(this_call), nomatch = 0L)
     this_call <- this_call[c(1L, matched_call)]
     ## drop unused levels in factors
@@ -99,6 +103,7 @@ prep_cure_model <- function(surv_formula, cure_formula,
     ## cure list
     cure_list <- list(
         xMat = mm,
+        offset = model.offset(mf),
         contrasts = contrasts,
         xlevels = stats::.getXlevels(attr(mf, "terms"), mf)
     )

@@ -30,91 +30,38 @@
 ##' net penalty is developed based on cyclic coordinate descent and
 ##' majorization-minimization (MM) algorithm.
 ##'
-##' @param surv_formula A formula object starting with \code{~} for the model
-##'     formula in survival model part.  For Cox model, no intercept term is
-##'     included even if an intercept is specified or implied in the model
-##'     formula.  A model formula with an intercept term only is not allowed.
-##' @param cure_formula A formula object starting with \code{~} for the model
-##'     formula in cure rate model part.  For logistic model, an intercept term
-##'     is included by default and can be excluded by adding \code{+ 0} or
-##'     \code{- 1} to the model formula.
-##' @param time A numeric vector for the observed survival times.
-##' @param event A numeric vector for the event indicators.  \code{NA}'s are
-##'     allowed and represent uncertain event status.
-##' @param data An optional data frame, list, or environment that contains the
-##'     covariates and response variables (\code{time} and \code{event}),
-##'     included in the model. If they are not found in data, the variables are
-##'     taken from the environment of the specified formula, usually the
-##'     environment from which this function is called.
-##' @param subset An optional logical vector specifying a subset of observations
-##'     to be used in the fitting process.
-##' @param contrasts An optional list, whose entries are values (numeric
-##'     matrices or character strings naming functions) to be used as
-##'     replacement values for the contrasts replacement function and whose
-##'     names are the names of columns of data containing factors.  See
-##'     \code{contrasts.arg} of \code{\link[stats]{model.matrix.default}} for
-##'     details.
-##' @param surv_lambda A numeric vector consists of non-negative values
-##'     representing the tuning parameter sequence for the survival model part.
-##' @param surv_alpha A number between 0 and 1 for tuning the elastic net
-##'     penalty for the survival model part.  If it is one, the elastic penalty
-##'     will reduce to the well-known lasso penalty.  If it is zero, the ridge
-##'     penalty will be used.
-##' @param surv_nlambda A positive number specifying the number of
-##'     \code{surv_lambda} if \code{surv_lambda} is not specified.  The default
-##'     value is 10.
-##' @param surv_lambda_min_ratio The ratio of the minimum \code{surv_lambda} to
-##'     the large enough \code{surv_lambda} that produces all-zero estimates on
-##'     log scale.  The default value is \code{1e-1}.
-##' @param surv_l1_penalty_factor A numeric vector that consists of positive
-##'     numbers for penalty factors (or weights) on L1-norm for the coefficient
-##'     estimate vector in the survival model part.  The penalty is applied to
-##'     the coefficient estimate divided by the specified weights.  The
-##'     specified weights are re-scaled internally so that their summation
-##'     equals the length of coefficients.  If \code{NULL} is specified, the
-##'     weights are all set to be one.
-##' @param cure_lambda A numeric vector consists of non-negative values
-##'     representing the tuning parameter sequence for the cure model part.
-##' @param cure_alpha A number between 0 and 1 for tuning the elastic net
-##'     penalty for the cure model part.  If it is one, the elastic penalty will
-##'     reduce to the well-known lasso penalty.  If it is zero, the ridge
-##'     penalty will be used.
-##' @param cure_nlambda A positive number specifying the number of
-##'     \code{cure_lambda} if \code{cure_lambda} is not specified.  The default
-##'     value is 10.
-##' @param cure_lambda_min_ratio The ratio of the minimum \code{cure_lambda} to
-##'     the large enough \code{cure_lambda} that produces all-zero estimates on
-##'     log scale.  The default value is \code{1e-1}.
-##' @param cure_l1_penalty_factor A numeric vector that consists of positive
-##'     numbers for penalty factors (or weights) on L1-norm for the coefficient
-##'     estimate vector in the cure model part.  The penalty is applied to the
-##'     coefficient estimate divided by the specified weights.  The specified
-##'     weights are re-scaled internally so that their summation equals the
-##'     length of coefficients.  If \code{NULL} is specified by default, the
-##'     weights are all set to be one.
+##'
+##' @inheritParams cox_cure
+##'
+##' @param surv_lambda,cure_lambda A numeric vector consists of nonnegative
+##'     values representing the tuning parameter sequence for the survival model
+##'     part or the incidence model part.
+##' @param surv_alpha,cure_alpha A number between 0 and 1 for tuning the elastic
+##'     net penalty for the survival model part or the incidence model part.  If
+##'     it is one, the elastic penalty will reduce to the well-known lasso
+##'     penalty.  If it is zero, the ridge penalty will be used.
+##' @param surv_nlambda,cure_nlambda A positive number specifying the number of
+##'     \code{surv_lambda} or \code{cure_lambda} if \code{surv_lambda} or
+##'     \code{cure_lambda} is not specified, respectively.  The default value is
+##'     10.
+##' @param surv_lambda_min_ratio,cure_lambda_min_ratio The ratio of the minimum
+##'     \code{surv_lambda} (or \code{cure_lambda}) to the large enough
+##'     \code{surv_lambda} (or code{cure_lambda}) that produces all-zero
+##'     estimates on log scale.  The default value is \code{1e-1}.
+##' @param surv_l1_penalty_factor,cure_l1_penalty_factor A numeric vector that
+##'     consists of nonnegative penalty factors (or weights) on L1-norm for the
+##'     coefficient estimate vector in the survival model part or the incidence
+##'     model part.  The penalty is applied to the coefficient estimate divided
+##'     by the specified weights.  The specified weights are re-scaled
+##'     internally so that their summation equals the length of coefficients.
+##'     If \code{NULL} is specified, the weights are all set to be one.
 ##' @param cv_nfolds An non-negative integer specifying number of folds in
 ##'     cross-validation (CV).  The default value is \code{0} and the CV
 ##'     procedure is not enabled.
-##' @param surv_start An optional numeric vector representing the starting
-##'     values for the Cox model component.  If \code{NULL} is specified , the
-##'     starting values will be obtained from fitting a regular Cox model to
-##'     events only.
-##' @param cure_start An optional numeric vector representing the starting
-##'     values for the logistic model component.  If \code{NULL} is specified,
-##'     the starting values will be obtained from fitting a regular logistic
-##'     model to the non-missing event indicators.
-##' @param surv_offset An optional numeric vector representing the offset term
-##'     in the Cox model compoent.
-##' @param cure_offset An optional numeric vector representing the offset term
-##'     in the logistic model compoent.
-##' @param surv_standardize A logical value specifying whether to standardize
-##'     the covariates for the survival model part.  If \code{FALSE}, the
-##'     covariates will be standardized internally to have mean zero and
-##'     standard deviation one.
-##' @param cure_standardize A logical value specifying whether to standardize
-##'     the covariates for the cure rate model part.  If \code{TRUE} (by
-##'     default), the covariates will be standardized internally to have mean
-##'     zero and standard deviation one.
+##' @param surv_standardize,cure_standardize A logical value specifying whether
+##'     to standardize the covariates for the survival model part or the
+##'     incidence model part.  If \code{FALSE}, the covariates will be
+##'     standardized internally to have mean zero and standard deviation one.
 ##' @param em_max_iter A positive integer specifying the maximum iteration
 ##'     number of the EM algorithm.  The default value is \code{200}.
 ##' @param em_rel_tol A positive number specifying the tolerance that determines
@@ -123,48 +70,10 @@
 ##'     relative change between estimates from two consecutive iterations, which
 ##'     is measured by ratio of the L1-norm of their difference to the sum of
 ##'     their L1-norm.  The default value is \code{1e-5}.
-##' @param surv_max_iter A positive integer specifying the maximum iteration
-##'     number of the M-step routine related to the survival model component.
-##'     The default value is \code{10} to encourage faster convergence.
-##' @param surv_rel_tol A positive number specifying the tolerance that
-##'     determines the convergence of the M-step related to the survival model
-##'     component in terms of the convergence of the covariate coefficient
-##'     estimates.  The tolerance is compared with the relative change between
-##'     estimates from two consecutive iterations, which is measured by ratio of
-##'     the L1-norm of their difference to the sum of their L1-norm.  The
-##'     default value is \code{1e-5}.
-##' @param cure_max_iter A positive integer specifying the maximum iteration
-##'     number of the M-step routine related to the cure rate model component.
-##'     The default value is \code{10} to encourage faster convergence.
-##' @param cure_rel_tol A positive number specifying the tolerance that
-##'     determines the convergence of the M-step related to the cure rate model
-##'     component in terms of the convergence of the covariate coefficient
-##'     estimates.  The tolerance is compared with the relative change between
-##'     estimates from two consecutive iterations, which is measured by ratio of
-##'     the L1-norm of their difference to the sum of their L1-norm.  The
-##'     default value is \code{1e-5}.
-##' @param tail_completion A character string specifying the tail completion
-##'     method for conditional survival function.  The available methods are
-##'     \code{"zero"} for zero-tail completion after the largest event times (Sy
-##'     and Taylor, 2000), \code{"exp"} for exponential-tail completion (Peng,
-##'     2003), and \code{"zero-tau"} for zero-tail completion after a specified
-##'     \code{tail_tau}.  The default method is the zero-tail completion
-##'     proposed by Sy and Taylor (2000).
-##' @param tail_tau A numeric number specifying the time of zero-tail
-##'     completion.  It will be used only if \code{tail_completion =
-##'     "zero-tau"}.  A reasonable choice must be a time point between the
-##'     largest event time and the largest survival time.
-##' @param pmin A numeric number specifying the minimum value of probabilities
-##'     for sake of numerical stability.  The default value is \code{1e-5}.
-##' @param early_stop A logical value specifying whether to stop the iteration
-##'     once the negative log-likelihood unexpectedly increases, which may
-##'     suggest convergence on likelihood, or indicate numerical issues or
-##'     implementation bugs.  The default value is \code{TRUE}.
-##' @param verbose A logical value.  If \code{TRUE}, a verbose information will
-##'     be given along iterations for tracing the convergence.  The default
-##'     value is \code{FALSE}.
-##' @param ... Other arguments for future usage.  A warning will be thrown if
-##'     any invalid argument is specified.
+##' @param surv_max_iter,cure_max_iter A positive integer specifying the maximum
+##'     iteration number of the M-step routine related to the survival model
+##'     component or the incidence model component.  The default value is
+##'     \code{10} to encourage faster convergence.
 ##'
 ##' @return
 ##'
@@ -261,6 +170,8 @@ cox_cure_net <-
     obs_event <- model_list$surv$obs_event
     surv_x <- model_list$surv$xMat
     cure_x <- model_list$cure$xMat
+    surv_offset <- model_list$surv$offset
+    cure_offset <- model_list$surv$offset
 
     ## cox model does not have an intercept
     surv_is_intercept <- colnames(surv_x) == "(Intercept)"

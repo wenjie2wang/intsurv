@@ -28,7 +28,7 @@
 ##'     included even if an intercept is specified or implied in the model
 ##'     formula.  A model formula with an intercept term only is not allowed.
 ##' @param cure_formula A formula object starting with \code{~} for the model
-##'     formula in cure rate model part.  For logistic model, an intercept term
+##'     formula in incidence model part.  For logistic model, an intercept term
 ##'     is included by default and can be excluded by adding \code{+ 0} or
 ##'     \code{- 1} to the model formula.
 ##' @param time A numeric vector for the observed survival times.
@@ -57,18 +57,20 @@
 ##'     The default value is \code{FALSE} for fitting a regular logistic model.
 ##'     Notice that this argument is experimental and only available for regular
 ##'     Cox cure rate model currently.
-##' @param surv_start An optional numeric vector representing the starting
-##'     values for the Cox model component.  If \code{NULL} is specified, the
-##'     starting values will be obtained from fitting a regular Cox model to
-##'     events only.
-##' @param cure_start An optional numeric vector representing the starting
-##'     values for the logistic model component.  If \code{NULL} is specified,
-##'     the starting values will be obtained from fitting a regular logistic
-##'     model to the non-missing event indicators.
-##' @param surv_offset An optional numeric vector representing the offset term
-##'     in the Cox model compoent.
-##' @param cure_offset An optional numeric vector representing the offset term
-##'     in the logistic model compoent.
+##' @param surv_start,cure_start An optional numeric vector representing the
+##'     starting values for the survival model component or the incidence model
+##'     component.  If \code{surv_start = NULL} is specified, the starting
+##'     values will be obtained from fitting a regular Cox to events only.
+##'     Similarly, if \code{cure_start = NULL} is specified, the starting values
+##'     will be obtained from fitting a regular logistic model to the
+##'     non-missing event indicators.
+##' @param surv_offset,cure_offset An optional numeric vector representing the
+##'     offset term in the survival model compoent or the incidence model
+##'     component.  The function will internally try to find values of the
+##'     specified variable in the \code{data} first.  Alternatively, one or more
+##'     \code{offset} terms can be specified in the formula (by
+##'     \code{stats::offset()}).  If more than one offset terms are specified,
+##'     their sum will be used.
 ##' @param em_max_iter A positive integer specifying the maximum iteration
 ##'     number of the EM algorithm.  The default value is \code{200}.
 ##' @param em_rel_tol A positive number specifying the tolerance that determines
@@ -77,26 +79,18 @@
 ##'     relative change between estimates from two consecutive iterations, which
 ##'     is measured by ratio of the L1-norm of their difference to the sum of
 ##'     their L1-norm.  The default value is \code{1e-5}.
-##' @param surv_max_iter A positive integer specifying the maximum iteration
-##'     number of the M-step routine related to the survival model component.
-##'     The default value is \code{200}.
-##' @param surv_rel_tol A positive number specifying the tolerance that
-##'     determines the convergence of the M-step related to the survival model
-##'     component in terms of the convergence of the covariate coefficient
-##'     estimates.  The tolerance is compared with the relative change between
-##'     estimates from two consecutive iterations, which is measured by ratio of
-##'     the L1-norm of their difference to the sum of their L1-norm.  The
-##'     default value is \code{1e-5}.
-##' @param cure_max_iter A positive integer specifying the maximum iteration
-##'     number of the M-step routine related to the cure rate model component.
-##'     The default value is \code{200}.
-##' @param cure_rel_tol A positive number specifying the tolerance that
-##'     determines the convergence of the M-step related to the cure rate model
-##'     component in terms of the convergence of the covariate coefficient
-##'     estimates.  The tolerance is compared with the relative change between
-##'     estimates from two consecutive iterations, which is measured by ratio of
-##'     the L1-norm of their difference to the sum of their L1-norm.  The
-##'     default value is \code{1e-5}.
+##' @param surv_max_iter,cure_max_iter A positive integer specifying the maximum
+##'     iteration number of the M-step routine related to the survival model
+##'     component or the incidence model component.  The default value is
+##'     \code{200}.
+##' @param surv_rel_tol,cure_rel_tol A positive number specifying the tolerance
+##'     that determines the convergence of the M-step related to the survival
+##'     model component or the incidence model component in terms of the
+##'     convergence of the covariate coefficient estimates.  The tolerance is
+##'     compared with the relative change between estimates from two consecutive
+##'     iterations, which is measured by ratio of the L1-norm of their
+##'     difference to the sum of their L1-norm.  The default value is
+##'     \code{1e-5}.
 ##' @param tail_completion A character string specifying the tail completion
 ##'     method for conditional survival function.  The available methods are
 ##'     \code{"zero"} for zero-tail completion after the largest event times (Sy
@@ -200,6 +194,8 @@ cox_cure <- function(surv_formula,
     obs_event <- model_list$surv$obs_event
     surv_x <- model_list$surv$xMat
     cure_x <- model_list$cure$xMat
+    surv_offset <- model_list$surv$offset
+    cure_offset <- model_list$surv$offset
 
     ## cox model does not have an intercept
     surv_is_intercept <- colnames(surv_x) == "(Intercept)"
