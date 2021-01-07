@@ -23,6 +23,7 @@ vignettes/*.pdf
 *.so
 
 # other directories
+docs/
 testing/
 working/
 
