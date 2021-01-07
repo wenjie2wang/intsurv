@@ -40,13 +40,13 @@ cIndex(time = obs_time, event = event,
 ## 2. create a toy dataset
 toy_dat <- data.frame(time = obs_time, status = event)
 toy_dat$group <- cut(abs(x_mat[, 1L]), breaks = c(0, 0.5, 1, 3, Inf),
-                     labels = c("A", "B", "C", "D"))
+                     labels = LETTERS[1:4])
 toy_dat <- cbind(toy_dat, as.data.frame(x_mat[, - 1L, drop = FALSE]))
 
 ## model-fitting from given model formula
-fit2 <- cox_cure(~ x2 + x3 + x4 + group, ~ x2 + x3 + group,
-                 time = time, event = status, data = toy_dat,
-                 subset = group != "D", bootstrap = 30)
+fit2 <- cox_cure(~ x3 + x4 + group, ~ group + x3 + offset(x2),
+                 time = time, event = status, surv_offset = x2,
+                 data = toy_dat, subset = group != "D", bootstrap = 30)
 summary(fit2)
 
 ## get BIC's
