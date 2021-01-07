@@ -8,12 +8,13 @@
 - Added new arguments named `surv_offset` and `cure_offset` for optional offset
   terms in survival model component and incidence model component, respectively,
   to `cox_cure()`, `cox_cure.fit()`, `cox_cure_net()`, and `cox_cure_net.fit()`.
+  One or more `offset` terms can be also specified via corresponding formula.
 
 ## Bug fixes
 
 - Fixed issue caused by zeros in specified `surv_l1_penalty_factor` and
   `cure_l1_penalty_factor` for `cox_cure_net()` and `cox_cure_net.fit()`. Thank
-  Steven Chious for reporting this issue.
+  Sy Han Chiou for reporting this issue.
 
 
 # intsurv 0.2.1

@@ -54,7 +54,8 @@ Collate:
     'simData4cure.R'
     'simData4iCoxph.R'
     'summary.R'
-URL: https://github.com/wenjie2wang/intsurv
+URL: https://wwang.org/intsurv/,
+    https://github.com/wenjie2wang/intsurv
 BugReports: https://github.com/wenjie2wang/intsurv/issues
 Encoding: UTF-8
 RoxygenNote: 7.1.1
