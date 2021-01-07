@@ -35,10 +35,6 @@ $(tar): $(objects)
 	R CMD build .
 
 $(checkLog): $(tar)
-	R CMD check $(tar)
-
-.PHONY: check-as-cran
-check-as-cran: $(tar)
 	R CMD check --as-cran $(tar)
 
 # $(vignettes): $(rmd)
