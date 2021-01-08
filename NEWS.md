@@ -1,4 +1,4 @@
-# intsurv 0.2.2.9000
+# intsurv 0.2.2
 
 ## New features
 
