@@ -242,7 +242,7 @@ cox_cure_net <-
                  "the largest event time.")
         } else if (tail_tau > max(obs_time)) {
             warning("The specified 'tail_tau' is greater than",
-                    "the largest survival time, which ")
+                    "the largest survival time.")
         }
     }
 
@@ -469,7 +469,7 @@ cox_cure_net.fit <-
                  "the largest event time.")
         } else if (tail_tau > max(time)) {
             warning("The specified 'tail_tau' is greater than",
-                    "the largest survival time, which ")
+                    "the largest survival time.")
         }
     }
 
