@@ -1,15 +1,14 @@
 Package: intsurv
 Title: Integrative Survival Modeling
 Version: 0.2.3.9000
-Date: 2021-01-26
 Authors@R: c(
     person(given = "Wenjie", family = "Wang",
            email = "wang@wwenjie.org",
            role = c("aut", "cre"),
            comment = c(ORCID = "0000-0003-0363-3180")),
-    person(given = "Kun", family = "Chen", role = "ctb",
+    person(given = "Kun", family = "Chen", role = "ths",
            comment = c(ORCID = "0000-0003-3579-5467")),
-    person(given = "Jun", family = "Yan", role = "ctb",
+    person(given = "Jun", family = "Yan", role = "ths",
            comment = c(ORCID = "0000-0003-4401-7296"))
     )
 Description: Contains implementations of
@@ -35,7 +34,6 @@ LinkingTo:
     Rcpp,
     RcppArmadillo
 License: GPL (>= 3)
-LazyData: true
 Collate:
     'RcppExports.R'
     'class.R'
