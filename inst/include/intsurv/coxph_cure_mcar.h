@@ -15,8 +15,8 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 //
 
-#ifndef COXPH_CURE_UNCER_H
-#define COXPH_CURE_UNCER_H
+#ifndef COXPH_CURE_MCAR_H
+#define COXPH_CURE_MCAR_H
 
 #include <RcppArmadillo.h>
 #include "assessment.h"
@@ -28,7 +28,7 @@
 
 namespace Intsurv {
 
-    class CoxphCureUncer {
+    class CoxphCureMcar {
     private:
         CoxphReg cox_obj;
         LogisticReg cure_obj;
@@ -92,10 +92,10 @@ namespace Intsurv {
         arma::vec cure_l1_penalty_factor;
 
         // default constructor
-        CoxphCureUncer() {}
+        CoxphCureMcar() {}
 
         // constructors
-        CoxphCureUncer(
+        CoxphCureMcar(
             const arma::vec& time,
             const arma::vec& event,
             const arma::mat& cox_x,
@@ -148,7 +148,7 @@ namespace Intsurv {
             return this->cure_p;
         }
 
-        // fit the Cox cure mode with uncertain events by EM algorithm
+        // fit the Cox cure mode with mcartain events by EM algorithm
         inline void fit(
             const arma::vec& cox_start,
             const arma::vec& cure_start,
@@ -222,7 +222,7 @@ namespace Intsurv {
 
 
     // fit the Cox cure mode by EM algorithm
-    inline void CoxphCureUncer::fit(
+    inline void CoxphCureMcar::fit(
         const arma::vec& cox_start = 0,
         const arma::vec& cure_start = 0,
         const unsigned int& em_max_iter = 500,
@@ -614,10 +614,10 @@ namespace Intsurv {
     }
 
 
-    // fit regularized Cox cure model with uncertain events
+    // fit regularized Cox cure model with mcartain events
     // with adaptive elastic net penalty for perticular lambda's
     // lambda_1 * lasso * factors + lambda_2 * ridge
-    inline void CoxphCureUncer::regularized_fit(
+    inline void CoxphCureMcar::regularized_fit(
         const double& cox_l1_lambda = 0,
         const double& cox_l2_lambda = 0,
         const double& cure_l1_lambda = 0,
@@ -1106,7 +1106,7 @@ namespace Intsurv {
 
     // function to compute the observe data log-likelihood function
     // for given fitted model and estimates
-    inline double CoxphCureUncer::obs_log_likelihood() const
+    inline double CoxphCureMcar::obs_log_likelihood() const
     {
         double obs_ell { 0 };
         arma::vec sus_prob { cure_obj.prob_vec };
@@ -1138,7 +1138,7 @@ namespace Intsurv {
     }
 
     // for given fitted model and a new set of data
-    inline double CoxphCureUncer::obs_log_likelihood(
+    inline double CoxphCureMcar::obs_log_likelihood(
         // all the inputs will be sorted inside of the function
         // so their copies are asked here
         arma::vec new_time,

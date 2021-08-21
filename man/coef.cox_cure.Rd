@@ -2,12 +2,12 @@
 % Please edit documentation in R/coef.R
 \name{coef.cox_cure}
 \alias{coef.cox_cure}
-\alias{coef.cox_cure_uncer}
+\alias{coef.cox_cure_mcar}
 \title{Estimated Covariate Coefficients}
 \usage{
 \method{coef}{cox_cure}(object, part = c("both", "survival", "cure"), ...)
 
-\method{coef}{cox_cure_uncer}(object, part = c("both", "survival", "cure"), ...)
+\method{coef}{cox_cure_mcar}(object, part = c("both", "survival", "cure"), ...)
 }
 \arguments{
 \item{object}{Object representing a fitted model.}

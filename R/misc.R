@@ -44,17 +44,17 @@ is_cox_cure <- function(x)
 {
     inherits(x, "cox_cure")
 }
-is_cox_cure_uncer <- function(x)
+is_cox_cure_mcar <- function(x)
 {
-    inherits(x, "cox_cure_uncer")
+    inherits(x, "cox_cure_mcar")
 }
 is_cox_cure_net <- function(x)
 {
     inherits(x, "cox_cure_net")
 }
-is_cox_cure_net_uncer <- function(x)
+is_cox_cure_net_mcar <- function(x)
 {
-    inherits(x, "cox_cure_net_uncer")
+    inherits(x, "cox_cure_net_mcar")
 }
 
 ## remove NA's from vector `x`

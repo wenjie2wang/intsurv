@@ -22,7 +22,7 @@
 
 // Cox cure model with uncertain events without regularization
 // [[Rcpp::export]]
-Rcpp::List coxph_cure_uncer(
+Rcpp::List coxph_cure_mcar(
     const arma::vec& time,
     const arma::vec& event,
     const arma::mat& cox_x,
@@ -49,7 +49,7 @@ Rcpp::List coxph_cure_uncer(
     )
 {
     // define object
-    Intsurv::CoxphCureUncer obj {
+    Intsurv::CoxphCureMcar obj {
         time, event, cox_x, cure_x, cure_intercept,
         cox_standardize, cure_standardize,
         cox_offset, cure_offset
@@ -83,7 +83,7 @@ Rcpp::List coxph_cure_uncer(
             };
             boot_ind = Intsurv::vec_union(
                 boot_ind, Intsurv::bootstrap_sample(case3_ind));
-            Intsurv::CoxphCureUncer boot_obj {
+            Intsurv::CoxphCureMcar boot_obj {
                 time.elem(boot_ind),
                 event.elem(boot_ind),
                 cox_x.rows(boot_ind),
@@ -150,7 +150,7 @@ Rcpp::List coxph_cure_uncer(
 // fit regularized Cox cure rate model with uncertain events
 // by EM algorithm, where the M-step utilized CMD algoritm
 // [[Rcpp::export]]
-Rcpp::List coxph_cure_uncer_reg(
+Rcpp::List coxph_cure_mcar_reg(
     const arma::vec& time,
     const arma::vec& event,
     const arma::mat& cox_x,
@@ -183,7 +183,7 @@ Rcpp::List coxph_cure_uncer_reg(
     )
 {
     // define object
-    Intsurv::CoxphCureUncer obj {
+    Intsurv::CoxphCureMcar obj {
         time, event, cox_x, cure_x, cure_intercept,
         cox_standardize, cure_standardize,
         cox_offset, cure_offset
@@ -202,7 +202,7 @@ Rcpp::List coxph_cure_uncer_reg(
     // cross-validation
     arma::vec cv_vec;
     if (cv_nfolds > 1) {
-        cv_vec = Intsurv::cv_coxph_cure_uncer_reg(
+        cv_vec = Intsurv::cv_coxph_cure_mcar_reg(
             time, event, cox_x, cure_x, cure_intercept,
             cv_nfolds,
             cox_l1_lambda, cox_l2_lambda,
@@ -279,7 +279,7 @@ Rcpp::List coxph_cure_uncer_reg(
 // for a sequence of lambda's
 // lambda * (penalty_factor * alpha * lasso + (1 - alpha) / 2 * ridge)
 // [[Rcpp::export]]
-Rcpp::List coxph_cure_uncer_vs(
+Rcpp::List coxph_cure_mcar_vs(
     const arma::vec& time,
     const arma::vec& event,
     const arma::mat& cox_x,
@@ -316,7 +316,7 @@ Rcpp::List coxph_cure_uncer_vs(
     )
 {
     // define object
-    Intsurv::CoxphCureUncer obj {
+    Intsurv::CoxphCureMcar obj {
         time, event, cox_x, cure_x, cure_intercept,
         cox_standardize, cure_standardize,
         cox_offset, cure_offset
@@ -413,7 +413,7 @@ Rcpp::List coxph_cure_uncer_vs(
             // cross-validation
             arma::vec cv_vec;
             if (cv_nfolds > 1) {
-                cv_vec = Intsurv::cv_coxph_cure_uncer_reg(
+                cv_vec = Intsurv::cv_coxph_cure_mcar_reg(
                     time, event, cox_x, cure_x,
                     cure_intercept, cv_nfolds,
                     cox_l1_lambda, cox_l2_lambda,

@@ -198,7 +198,7 @@ zero and standard deviation one.}
 }
 \value{
 \code{cox_cure} object for regular Cox cure rate model or
-\code{cox_cure_uncer} object for Cox cure rate model with uncertain events.
+\code{cox_cure_mcar} object for Cox cure rate model with uncertain events.
 }
 \description{
 For right-censored data, fit a regular Cox cure rate model (Kuk and Chen,

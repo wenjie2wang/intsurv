@@ -667,7 +667,7 @@ namespace Intsurv {
     }
 
     // regularized logistic model by coordinate-majorization-descent algorithm
-    // for perticular lambda's for lasso penalty and ridge penalty
+    // for particular lambda's for lasso penalty and ridge penalty
     // lambda_1 * factor * lasso + lambda_2 * ridge
     inline void LogisticReg::regularized_fit(
         const double& l1_lambda = 0,
@@ -683,9 +683,9 @@ namespace Intsurv {
     {
         // set penalty terms
         unsigned int n_predictor { x.n_cols - int_intercept };
-        if (n_predictor < 1) {
-            throw std::range_error("Predictors not found.");
-        }
+        // if (n_predictor < 1) {
+        //     throw std::range_error("Predictors not found.");
+        // }
         arma::vec l1_penalty { arma::ones(n_predictor) };
         if (l1_penalty_factor.n_elem == l1_penalty.n_elem) {
             l1_penalty = l1_penalty_factor * x.n_cols /

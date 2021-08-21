@@ -257,7 +257,7 @@ intercept term is included.}
 }
 \value{
 \code{cox_cure_net} object for regular Cox cure rate model or
-\code{cox_cure_net_uncer} object for Cox cure rate model with uncertain
+\code{cox_cure_net_mcar} object for Cox cure rate model with uncertain
 events.
 }
 \description{

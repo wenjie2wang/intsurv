@@ -117,7 +117,7 @@
 ##' @return
 ##'
 ##' \code{cox_cure} object for regular Cox cure rate model or
-##' \code{cox_cure_uncer} object for Cox cure rate model with uncertain events.
+##' \code{cox_cure_mcar} object for Cox cure rate model with uncertain events.
 ##'
 ##' @references
 ##'
@@ -273,7 +273,7 @@ cox_cure <- function(surv_formula,
 
     ## call the routine
     if (anyNA(obs_event)) {
-        out <- coxph_cure_uncer(
+        out <- coxph_cure_mcar(
             time = obs_time,
             event = obs_event,
             cox_x = surv_x,
@@ -298,7 +298,7 @@ cox_cure <- function(surv_formula,
             verbose = verbose
         )
         ## add class
-        class(out) <- "cox_cure_uncer"
+        class(out) <- "cox_cure_mcar"
     } else {
         out <- rcpp_coxph_cure(
             time = obs_time,
@@ -466,7 +466,7 @@ cox_cure.fit <- function(surv_x, cure_x,
 
     ## call the routine
     if (anyNA(event)) {
-        out <- coxph_cure_uncer(
+        out <- coxph_cure_mcar(
             time = time,
             event = event,
             cox_x = surv_x,
@@ -491,7 +491,7 @@ cox_cure.fit <- function(surv_x, cure_x,
             verbose = verbose
         )
         ## add class
-        class(out) <- "cox_cure_uncer"
+        class(out) <- "cox_cure_mcar"
     } else {
         out <- rcpp_coxph_cure(
             time = time,

@@ -2,12 +2,12 @@
 % Please edit documentation in R/assessment.R
 \name{BIC.cox_cure}
 \alias{BIC.cox_cure}
-\alias{BIC.cox_cure_uncer}
+\alias{BIC.cox_cure_mcar}
 \title{Bayesian Information Criterion (BIC)}
 \usage{
 \method{BIC}{cox_cure}(object, ..., method = c("obs", "effective"))
 
-\method{BIC}{cox_cure_uncer}(object, ..., method = c("obs", "certain-event"))
+\method{BIC}{cox_cure_mcar}(object, ..., method = c("obs", "certain-event"))
 }
 \arguments{
 \item{object}{An object for a fitted model.}
@@ -21,7 +21,7 @@ must be specified as a named argument.  The available options for
 number of observations, and \code{"effective"} for using BIC based on
 the number of effective sample size for censored data (number of
 uncensored events) proposed by Volinsky and Raftery (2000).  The
-available options for \code{cox_cure_uncer} objects are \code{"obs"} for
+available options for \code{cox_cure_mcar} objects are \code{"obs"} for
 regular BIC based on the number of observations, and
 \code{"certain-event"} for a variant of BIC based on the number of
 certain uncensored events.  For objects of either class, the former

@@ -11,7 +11,7 @@ bibentry(
         ),
     year = "2021",
     url = "https://github.com/wenjie2wang/intsurv",
-    note = "{R} package version 0.2.2"
+    note = "{R} package version 0.2.3.9000"
 )
 
 bibentry(

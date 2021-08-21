@@ -15,16 +15,16 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 //
 
-#ifndef CV_COXPH_CURE_UNCER_H
-#define CV_COXPH_CURE_UNCER_H
+#ifndef CV_COXPH_CURE_MCAR_H
+#define CV_COXPH_CURE_MCAR_H
 
 #include <RcppArmadillo.h>
 #include "cross-validation.h"
-#include "coxph_cure_uncer.h"
+#include "coxph_cure_mcar.h"
 
 namespace Intsurv {
     // estimation from cross-validation
-    inline arma::vec cv_coxph_cure_uncer(
+    inline arma::vec cv_coxph_cure_mcar(
         const arma::vec& time,
         const arma::vec& event,
         const arma::mat& cox_x,
@@ -195,7 +195,7 @@ namespace Intsurv {
                     )
             };
             // define object
-            CoxphCureUncer cc_obj {
+            CoxphCureMcar cc_obj {
                 train_time, train_event, train_cox_x, train_cure_x,
                 cure_intercept, cox_standardize, cure_standardize,
                 train_cox_offset, train_cure_offset
@@ -219,7 +219,7 @@ namespace Intsurv {
     }
 
     // reguaralized fit
-    inline arma::vec cv_coxph_cure_uncer_reg(
+    inline arma::vec cv_coxph_cure_mcar_reg(
         const arma::vec& time,
         const arma::vec& event,
         const arma::mat& cox_x,
@@ -396,7 +396,7 @@ namespace Intsurv {
                     )
             };
             // define object
-            CoxphCureUncer cc_obj {
+            CoxphCureMcar cc_obj {
                 train_time, train_event, train_cox_x, train_cure_x,
                 cure_intercept, cox_standardize, cure_standardize,
                 train_cox_offset, train_cure_offset
@@ -426,4 +426,4 @@ namespace Intsurv {
 }  // Intsurv
 
 
-#endif /* CV_COXPH_CURE_UNCER_H */
+#endif /* CV_COXPH_CURE_MCAR_H */

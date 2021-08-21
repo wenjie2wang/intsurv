@@ -107,7 +107,7 @@ cIndex <- function(time, event = NULL, risk_score, weight = NULL)
 ##'     number of observations, and \code{"effective"} for using BIC based on
 ##'     the number of effective sample size for censored data (number of
 ##'     uncensored events) proposed by Volinsky and Raftery (2000).  The
-##'     available options for \code{cox_cure_uncer} objects are \code{"obs"} for
+##'     available options for \code{cox_cure_mcar} objects are \code{"obs"} for
 ##'     regular BIC based on the number of observations, and
 ##'     \code{"certain-event"} for a variant of BIC based on the number of
 ##'     certain uncensored events.  For objects of either class, the former
@@ -148,16 +148,16 @@ BIC.cox_cure <- function(object, ..., method = c("obs", "effective"))
 
 ##' @rdname BIC.cox_cure
 ##' @export
-BIC.cox_cure_uncer <- function(object, ..., method = c("obs", "certain-event"))
+BIC.cox_cure_mcar <- function(object, ..., method = c("obs", "certain-event"))
 {
     method <- match.arg(method)
     bic_name <- switch(method, "obs" = "bic1", "certain-event" = "bic2")
     if (! missing(...)) {
         inpList <- list(object, ...)
         ## check on object class
-        checkRes <- sapply(inpList, is_cox_cure_uncer)
+        checkRes <- sapply(inpList, is_cox_cure_mcar)
         if (any(! checkRes))
-            stop("All objects must be of the 'cox_cure_uncer' class.")
+            stop("All objects must be of the 'cox_cure_mcar' class.")
         bics <- sapply(inpList, function(a) a$model[[bic_name]])
         dfs <- sapply(inpList, function(a) a$model$coef_df)
         val <- data.frame(df = dfs, BIC = bics)
@@ -184,7 +184,7 @@ BIC.cox_cure_uncer <- function(object, ..., method = c("obs", "certain-event"))
 ##'     number of observations, and \code{"effective"} for using BIC based on
 ##'     the number of effective sample size for censored data (number of
 ##'     uncensored events) proposed by Volinsky and Raftery (2000).  The
-##'     available options for \code{cox_cure_uncer} objects are \code{"obs"} for
+##'     available options for \code{cox_cure_mcar} objects are \code{"obs"} for
 ##'     regular BIC based on the number of observations, and
 ##'     \code{"certain-event"} for a variant of BIC based on the number of
 ##'     certain uncensored events.  For objects of either class, the former
@@ -219,7 +219,7 @@ BIC.cox_cure_net <- function(object, ..., method = c("obs", "effective"))
 
 ##' @rdname BIC.cox_cure_net
 ##' @export
-BIC.cox_cure_net_uncer <- function(object, ...,
+BIC.cox_cure_net_mcar <- function(object, ...,
                                    method = c("obs", "certain-event"))
 {
     warn_dots()

@@ -91,9 +91,9 @@ coef.cox_cure <- function(object, part = c("both", "survival", "cure"), ...)
 
 
 ##' @rdname coef.cox_cure
-##' @method coef cox_cure_uncer
+##' @method coef cox_cure_mcar
 ##' @export
-coef.cox_cure_uncer <- coef.cox_cure
+coef.cox_cure_mcar <- coef.cox_cure
 
 
 ##' Estimated Covariate Coefficients
@@ -152,6 +152,6 @@ coef.cox_cure_net <- function(object, naive_en = FALSE,
 
 ##' @rdname coef.cox_cure_net
 ##' @importFrom stats coef
-##' @method coef cox_cure_net_uncer
+##' @method coef cox_cure_net_mcar
 ##' @export
-coef.cox_cure_net_uncer <- coef.cox_cure_net
+coef.cox_cure_net_mcar <- coef.cox_cure_net

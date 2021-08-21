@@ -2,12 +2,12 @@
 % Please edit documentation in R/summary.R
 \name{summary.cox_cure}
 \alias{summary.cox_cure}
-\alias{summary.cox_cure_uncer}
+\alias{summary.cox_cure_mcar}
 \title{Summary of a Fitted Model}
 \usage{
 \method{summary}{cox_cure}(object, ...)
 
-\method{summary}{cox_cure_uncer}(object, ...)
+\method{summary}{cox_cure_mcar}(object, ...)
 }
 \arguments{
 \item{object}{Object representing a fitted model.}
