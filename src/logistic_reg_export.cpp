@@ -43,12 +43,12 @@ Rcpp::List rcpp_logistic(
     object.set_offset(offset);
     object.fit(start, max_iter, rel_tol, pmin, early_stop, verbose);
     return Rcpp::List::create(
-        Rcpp::Named("coef") = Intsurv::arma2rvec(object.coef),
+        Rcpp::Named("coef") = Intsurv::arma2rvec(object.coef_),
         Rcpp::Named("model") = Rcpp::List::create(
-            Rcpp::Named("fitted") = Intsurv::arma2rvec(object.prob_vec),
-            Rcpp::Named("nObs") = object.nObs,
-            Rcpp::Named("negLogL") = object.negLogL,
-            Rcpp::Named("coef_df") = object.coef_df
+            Rcpp::Named("fitted") = Intsurv::arma2rvec(object.prob_vec_),
+            Rcpp::Named("nObs") = object.n_obs_,
+            Rcpp::Named("negLogL") = object.neg_ll_,
+            Rcpp::Named("coef_df") = object.coef_df_
             )
         );
 }
@@ -73,12 +73,12 @@ Rcpp::List rcpp_firth_logistic(
     object.set_offset(offset);
     object.firth_fit(start, max_iter, rel_tol);
     return Rcpp::List::create(
-        Rcpp::Named("coef") = Intsurv::arma2rvec(object.coef),
+        Rcpp::Named("coef") = Intsurv::arma2rvec(object.coef_),
         Rcpp::Named("model") = Rcpp::List::create(
-            Rcpp::Named("fitted") = Intsurv::arma2rvec(object.prob_vec),
-            Rcpp::Named("nObs") = object.nObs,
-            Rcpp::Named("negLogL") = object.negLogL,
-            Rcpp::Named("coef_df") = object.coef_df
+            Rcpp::Named("fitted") = Intsurv::arma2rvec(object.prob_vec_),
+            Rcpp::Named("nObs") = object.n_obs_,
+            Rcpp::Named("negLogL") = object.neg_ll_,
+            Rcpp::Named("coef_df") = object.coef_df_
             )
         );
 }
@@ -108,19 +108,19 @@ Rcpp::List rcpp_reg_logistic1(const arma::mat& x,
                            start, max_iter, rel_tol, pmin,
                            early_stop, verbose);
     return Rcpp::List::create(
-        Rcpp::Named("coef") = Intsurv::arma2rvec(object.coef),
-        Rcpp::Named("en_coef") = Intsurv::arma2rvec(object.en_coef),
+        Rcpp::Named("coef") = Intsurv::arma2rvec(object.coef_),
+        Rcpp::Named("en_coef") = Intsurv::arma2rvec(object.en_coef_),
         Rcpp::Named("model") = Rcpp::List::create(
-            Rcpp::Named("nObs") = object.nObs,
-            Rcpp::Named("negLogL") = object.negLogL,
-            Rcpp::Named("coef_df") = object.coef_df
+            Rcpp::Named("nObs") = object.n_obs_,
+            Rcpp::Named("negLogL") = object.neg_ll_,
+            Rcpp::Named("coef_df") = object.coef_df_
             ),
         Rcpp::Named("penalty") = Rcpp::List::create(
-            Rcpp::Named("l1_lambda_max") = object.l1_lambda_max,
-            Rcpp::Named("l1_lambda") = object.l1_lambda,
-            Rcpp::Named("l2_lambda") = object.l2_lambda,
+            Rcpp::Named("l1_lambda_max") = object.l1_lambda_max_,
+            Rcpp::Named("l1_lambda") = object.l1_lambda_,
+            Rcpp::Named("l2_lambda") = object.l2_lambda_,
             Rcpp::Named("l1_penalty_factor") =
-            Intsurv::arma2rvec(object.l1_penalty_factor)
+            Intsurv::arma2rvec(object.l1_penalty_factor_)
             )
         );
 }
@@ -140,6 +140,7 @@ Rcpp::List rcpp_reg_logistic2(const arma::mat& x,
                               const arma::vec& offset = 0,
                               const unsigned int max_iter = 300,
                               const double rel_tol = 1e-5,
+                              const double pmin = 1e-5,
                               const bool& early_stop = false,
                               const bool& verbose = false)
 {
@@ -147,21 +148,21 @@ Rcpp::List rcpp_reg_logistic2(const arma::mat& x,
     object.set_offset(offset);
     object.regularized_fit(lambda, alpha, nlambda, lambda_min_ratio,
                            penalty_factor, max_iter, rel_tol,
-                           early_stop, verbose);
+                           pmin, early_stop, verbose);
     return Rcpp::List::create(
-        Rcpp::Named("coef") = object.coef_mat,
-        Rcpp::Named("en_coef") = object.en_coef_mat,
+        Rcpp::Named("coef") = object.coef_mat_,
+        Rcpp::Named("en_coef") = object.en_coef_mat_,
         Rcpp::Named("model") = Rcpp::List::create(
-            Rcpp::Named("nObs") = object.nObs,
-            Rcpp::Named("negLogL") = Intsurv::arma2rvec(object.negLogL_vec),
-            Rcpp::Named("coef_df") = Intsurv::arma2rvec(object.coef_df_vec)
+            Rcpp::Named("nObs") = object.n_obs_,
+            Rcpp::Named("negLogL") = Intsurv::arma2rvec(object.neg_ll_vec_),
+            Rcpp::Named("coef_df") = Intsurv::arma2rvec(object.coef_df_vec_)
             ),
         Rcpp::Named("penalty") = Rcpp::List::create(
-            Rcpp::Named("lambda_max") = object.l1_lambda_max,
-            Rcpp::Named("lambda") = Intsurv::arma2rvec(object.lambda_vec),
-            Rcpp::Named("alpha") = object.alpha,
+            Rcpp::Named("lambda_max") = object.l1_lambda_max_,
+            Rcpp::Named("lambda") = Intsurv::arma2rvec(object.lambda_vec_),
+            Rcpp::Named("alpha") = object.alpha_,
             Rcpp::Named("l1_penalty_factor") =
-            Intsurv::arma2rvec(object.l1_penalty_factor)
+            Intsurv::arma2rvec(object.l1_penalty_factor_)
             )
         );
 }

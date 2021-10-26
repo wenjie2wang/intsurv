@@ -15,8 +15,8 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 //
 
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef INTSURV_UTILS_H
+#define INTSURV_UTILS_H
 
 #include <algorithm>            // std::max, std::set_union, etc.
 #include <cmath>                // std::pow and std::sqrt, etc.
@@ -78,11 +78,12 @@ namespace Intsurv {
         return res;
     }
     // returns indices of duplicated elements
-    inline arma::uvec duplicated(const arma::vec& x, bool fromLast = false)
+    inline arma::uvec duplicated(const arma::vec& x,
+                                 const bool from_last = false)
     {
         std::unordered_set<double> seen;
         std::vector<unsigned int> res;
-        if (fromLast) {
+        if (from_last) {
             for (size_t i {1}; i <= x.n_rows; ++i) {
                 if (! seen.insert(x(x.n_rows - i)).second) {
                     // if duplicated, add index to vector res
@@ -180,7 +181,7 @@ namespace Intsurv {
     // dim = 0 for column-wise sum; dim = 1 for row-wise sum
     inline arma::mat cum_sum(const arma::mat& x,
                              const bool reversely = false,
-                             unsigned int dim = 0)
+                             const unsigned int dim = 0)
     {
         // if cumsum reversely
         if (reversely) {
@@ -392,7 +393,8 @@ namespace Intsurv {
     }
 
     // inline handy functions
-    inline arma::vec mat2vec(const arma::mat& x) {
+    inline arma::vec mat2vec(const arma::mat& x)
+    {
         return arma::conv_to<arma::vec>::from(x);
     }
 
@@ -450,7 +452,8 @@ namespace Intsurv {
     }
 
     // function that computes L1-norm
-    inline double l1_norm(const arma::vec& x)
+    template <typename T>
+    inline double l1_norm(const T& x)
     {
         return arma::sum(arma::abs(x));
     }
@@ -468,32 +471,25 @@ namespace Intsurv {
 
 
     // sign function
-    inline double sign(const double& x)
+    inline double sign(const double x)
     {
         if (x < 0) {
             return - 1.0;
-        } else if (x > 0) {
+        }
+        if (x > 0) {
             return 1.0;
-        } else {
-            return 0.0;
         }
-    }
-
-    // positive part
-    template <typename T_scalar>
-    inline T_scalar positive(T_scalar x)
-    {
-        if (x < 0) {
-            return 0;
-        } else {
-            return x;
-        }
+        return 0.0;
     }
 
     // soft-thresholding operator
-    inline double soft_threshold(const double& beta, const double& lambda)
+    inline double soft_threshold(const double beta, const double lambda)
     {
-        return positive(std::abs(beta) - lambda) * sign(beta);
+        double tmp { std::abs(beta) - lambda };
+        if (tmp > 0) {
+            return tmp * sign(beta);
+        }
+        return 0.0;
     }
 
     // convert uvec from logical comparison to uvec indices
@@ -563,7 +559,8 @@ namespace Intsurv {
     }
 
     // compute reverse difference for a vector
-    inline arma::vec rev_diff(const arma::vec& x) {
+    inline arma::vec rev_diff(const arma::vec& x)
+    {
         if (x.n_elem <= 1) {
             throw std::range_error("The length of 'x' should be >= 1.");
         }
@@ -589,10 +586,12 @@ namespace Intsurv {
     }
 
     // repeat a number into a vector
-    inline arma::vec rep_double(const double& x, const unsigned int& n) {
+    inline arma::vec rep_double(const double x, const unsigned int n)
+    {
         return x * arma::ones(n);
     }
-    inline arma::vec rep_each(const arma::vec& x, const unsigned int& n) {
+    inline arma::vec rep_each(const arma::vec& x, const unsigned int n)
+    {
         arma::vec res { arma::ones(n * x.n_elem) };
         for (size_t i {0}; i < res.n_elem; ++i) {
             size_t ind { i / n };
@@ -654,7 +653,8 @@ namespace Intsurv {
     // quantile function
     // type 5 in quantile
     // reference: Hyndman and Fan (1996)
-    inline double arma_quantile(const arma::vec& x, const double prob) {
+    inline double arma_quantile(const arma::vec& x, const double prob)
+    {
         const double alpha { 0.5 };
         const unsigned int n { x.n_elem };
         if (prob < (1 - alpha) / n) {
@@ -669,7 +669,8 @@ namespace Intsurv {
         double w { (prob - pk) * n };
         return (1 - w) * inc_x(k - 1) + w * inc_x(k);
     }
-    inline arma::vec arma_quantile(const arma::vec& x, const arma::vec& probs) {
+    inline arma::vec arma_quantile(const arma::vec& x, const arma::vec& probs)
+    {
         arma::vec res { arma::zeros(probs.n_elem) };
         for (size_t i {0}; i < probs.n_elem; ++i) {
             res(i) = arma_quantile(x, probs(i));
@@ -679,17 +680,20 @@ namespace Intsurv {
 
     // convert arma vector type to Rcpp vector type
     template <typename T>
-    inline Rcpp::NumericVector arma2rvec(const T& x) {
+    inline Rcpp::NumericVector arma2rvec(const T& x)
+    {
         return Rcpp::NumericVector(x.begin(), x.end());
     }
     // convert Rcpp::NumericVector to arma::colvec
     template <typename T>
-    inline arma::vec rvec2arma(const T& x) {
+    inline arma::vec rvec2arma(const T& x)
+    {
         return arma::vec(x.begin(), x.size(), false);
     }
 
     // count non-zero coef estimates
-    inline unsigned int get_coef_df(const arma::vec& x) {
+    inline unsigned int get_coef_df(const arma::vec& x)
+    {
         unsigned int res {0};
         for (size_t i {0}; i < x.n_elem; ++i) {
             if (! isAlmostEqual(x(i), 0.0)) {
@@ -702,20 +706,35 @@ namespace Intsurv {
     // compute regular BIC for given negLogL and df
     inline double get_bic(const double negLogL,
                           const unsigned int coef_df,
-                          const unsigned int nObs) {
+                          const unsigned int nObs)
+    {
         return std::log(static_cast<double>(nObs)) *
             static_cast<double>(coef_df) + 2 * negLogL;
     }
 
     // set a value within [a, b]
-    inline double ge_le(const double x, const double a, const double b) {
+    inline double ge_le(const double x, const double a, const double b)
+    {
         if (x < a) return a;
         if (x > b) return b;
         return x;
     }
 
+    inline void set_pmin_bound(arma::vec& x, const double pmin = 1e-5)
+    {
+        arma::vec::iterator it { x.begin() }, it_end { x.end() };
+        for (; it != it_end; ++it) {
+            if (*it < pmin) {
+                *it = pmin;
+            } else if (*it > 1 - pmin) {
+                *it = 1 - pmin;
+            }
+        }
+    }
+
     // get a boostrap sample with help of Rcpp sugar
-    inline arma::uvec bootstrap_sample(const arma::uvec& x) {
+    inline arma::uvec bootstrap_sample(const arma::uvec& x)
+    {
         Rcpp::IntegerVector xx { Rcpp::IntegerVector(x.begin(), x.end()) };
         Rcpp::IntegerVector ran_xx { Rcpp::sample(xx, xx.size(), true) };
         arma::uvec out { x };
