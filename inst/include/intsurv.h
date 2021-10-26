@@ -28,6 +28,6 @@
 #include "intsurv/cv_coxph_cure.h"
 #include "intsurv/cv_coxph_cure_mcar.h"
 #include "intsurv/nonparametric.h"
-
+#include "intsurv/mar_reg.h"
 
 #endif
