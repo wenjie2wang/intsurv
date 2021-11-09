@@ -385,8 +385,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_reg_logistic2
-Rcpp::List rcpp_reg_logistic2(const arma::mat& x, const arma::vec& y, arma::vec lambda, const double alpha, const unsigned int& nlambda, double lambda_min_ratio, const arma::vec& penalty_factor, const bool intercept, const bool standardize, const arma::vec& offset, const unsigned int max_iter, const double rel_tol, const bool& early_stop, const bool& verbose);
-RcppExport SEXP _intsurv_rcpp_reg_logistic2(SEXP xSEXP, SEXP ySEXP, SEXP lambdaSEXP, SEXP alphaSEXP, SEXP nlambdaSEXP, SEXP lambda_min_ratioSEXP, SEXP penalty_factorSEXP, SEXP interceptSEXP, SEXP standardizeSEXP, SEXP offsetSEXP, SEXP max_iterSEXP, SEXP rel_tolSEXP, SEXP early_stopSEXP, SEXP verboseSEXP) {
+Rcpp::List rcpp_reg_logistic2(const arma::mat& x, const arma::vec& y, arma::vec lambda, const double alpha, const unsigned int& nlambda, double lambda_min_ratio, const arma::vec& penalty_factor, const bool intercept, const bool standardize, const arma::vec& offset, const unsigned int max_iter, const double rel_tol, const double pmin, const bool& early_stop, const bool& verbose);
+RcppExport SEXP _intsurv_rcpp_reg_logistic2(SEXP xSEXP, SEXP ySEXP, SEXP lambdaSEXP, SEXP alphaSEXP, SEXP nlambdaSEXP, SEXP lambda_min_ratioSEXP, SEXP penalty_factorSEXP, SEXP interceptSEXP, SEXP standardizeSEXP, SEXP offsetSEXP, SEXP max_iterSEXP, SEXP rel_tolSEXP, SEXP pminSEXP, SEXP early_stopSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -402,9 +402,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::vec& >::type offset(offsetSEXP);
     Rcpp::traits::input_parameter< const unsigned int >::type max_iter(max_iterSEXP);
     Rcpp::traits::input_parameter< const double >::type rel_tol(rel_tolSEXP);
+    Rcpp::traits::input_parameter< const double >::type pmin(pminSEXP);
     Rcpp::traits::input_parameter< const bool& >::type early_stop(early_stopSEXP);
     Rcpp::traits::input_parameter< const bool& >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_reg_logistic2(x, y, lambda, alpha, nlambda, lambda_min_ratio, penalty_factor, intercept, standardize, offset, max_iter, rel_tol, early_stop, verbose));
+    rcpp_result_gen = Rcpp::wrap(rcpp_reg_logistic2(x, y, lambda, alpha, nlambda, lambda_min_ratio, penalty_factor, intercept, standardize, offset, max_iter, rel_tol, pmin, early_stop, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -461,7 +462,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_intsurv_rcpp_logistic", (DL_FUNC) &_intsurv_rcpp_logistic, 11},
     {"_intsurv_rcpp_firth_logistic", (DL_FUNC) &_intsurv_rcpp_firth_logistic, 8},
     {"_intsurv_rcpp_reg_logistic1", (DL_FUNC) &_intsurv_rcpp_reg_logistic1, 14},
-    {"_intsurv_rcpp_reg_logistic2", (DL_FUNC) &_intsurv_rcpp_reg_logistic2, 14},
+    {"_intsurv_rcpp_reg_logistic2", (DL_FUNC) &_intsurv_rcpp_reg_logistic2, 15},
     {"_intsurv_rcpp_mcf_right", (DL_FUNC) &_intsurv_rcpp_mcf_right, 2},
     {"_intsurv_aggregateSum", (DL_FUNC) &_intsurv_aggregateSum, 5},
     {"_intsurv_revcumsum", (DL_FUNC) &_intsurv_revcumsum, 1},

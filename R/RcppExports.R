@@ -53,8 +53,8 @@ rcpp_reg_logistic1 <- function(x, y, l1_lambda = 0, l2_lambda = 0, l1_penalty_fa
     .Call('_intsurv_rcpp_reg_logistic1', PACKAGE = 'intsurv', x, y, l1_lambda, l2_lambda, l1_penalty_factor, start, intercept, standardize, offset, max_iter, rel_tol, pmin, early_stop, verbose)
 }
 
-rcpp_reg_logistic2 <- function(x, y, lambda = 0L, alpha = 1, nlambda = 1L, lambda_min_ratio = 1e-4, penalty_factor = 0L, intercept = TRUE, standardize = TRUE, offset = 0L, max_iter = 300L, rel_tol = 1e-5, early_stop = FALSE, verbose = FALSE) {
-    .Call('_intsurv_rcpp_reg_logistic2', PACKAGE = 'intsurv', x, y, lambda, alpha, nlambda, lambda_min_ratio, penalty_factor, intercept, standardize, offset, max_iter, rel_tol, early_stop, verbose)
+rcpp_reg_logistic2 <- function(x, y, lambda = 0L, alpha = 1, nlambda = 1L, lambda_min_ratio = 1e-4, penalty_factor = 0L, intercept = TRUE, standardize = TRUE, offset = 0L, max_iter = 300L, rel_tol = 1e-5, pmin = 1e-5, early_stop = FALSE, verbose = FALSE) {
+    .Call('_intsurv_rcpp_reg_logistic2', PACKAGE = 'intsurv', x, y, lambda, alpha, nlambda, lambda_min_ratio, penalty_factor, intercept, standardize, offset, max_iter, rel_tol, pmin, early_stop, verbose)
 }
 
 rcpp_mcf_right <- function(time, event) {
