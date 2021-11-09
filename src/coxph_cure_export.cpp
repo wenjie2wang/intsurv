@@ -65,8 +65,8 @@ Rcpp::List rcpp_coxph_cure(
     // initialize bootstrap estimates
     arma::mat boot_cox_coef_mat, boot_cure_coef_mat;
     if (bootstrap > 0) {
-        boot_cox_coef_mat = arma::zeros(obj.cox_coef.n_elem, bootstrap);
-        boot_cure_coef_mat = arma::zeros(obj.cure_coef.n_elem, bootstrap);
+        boot_cox_coef_mat = arma::zeros(obj.cox_coef_.n_elem, bootstrap);
+        boot_cure_coef_mat = arma::zeros(obj.cure_coef_.n_elem, bootstrap);
         arma::uvec case1_ind { arma::find(event > 0) };
         arma::uvec case2_ind { arma::find(event < 1) };
         for (size_t i {0}; i < bootstrap; ++i) {
@@ -95,38 +95,38 @@ Rcpp::List rcpp_coxph_cure(
                          cure_mstep_max_iter, cure_mstep_rel_tol,
                          firth, tail_completion, tail_tau,
                          pmin, early_stop, 0);
-            boot_cox_coef_mat.col(i) = boot_obj.cox_coef;
-            boot_cure_coef_mat.col(i) = boot_obj.cure_coef;
+            boot_cox_coef_mat.col(i) = boot_obj.cox_coef_;
+            boot_cure_coef_mat.col(i) = boot_obj.cure_coef_;
         }
     }
     return Rcpp::List::create(
-        Rcpp::Named("surv_coef") = Intsurv::arma2rvec(obj.cox_coef),
-        Rcpp::Named("cure_coef") = Intsurv::arma2rvec(obj.cure_coef),
+        Rcpp::Named("surv_coef") = Intsurv::arma2rvec(obj.cox_coef_),
+        Rcpp::Named("cure_coef") = Intsurv::arma2rvec(obj.cure_coef_),
         Rcpp::Named("baseline") = Rcpp::List::create(
-            Rcpp::Named("time") = Intsurv::arma2rvec(obj.unique_time),
-            Rcpp::Named("h0") = Intsurv::arma2rvec(obj.h0_est),
-            Rcpp::Named("H0") = Intsurv::arma2rvec(obj.H0_est),
-            Rcpp::Named("S0") = Intsurv::arma2rvec(obj.S0_est)
+            Rcpp::Named("time") = Intsurv::arma2rvec(obj.unique_time_),
+            Rcpp::Named("h0") = Intsurv::arma2rvec(obj.h0_est_),
+            Rcpp::Named("H0") = Intsurv::arma2rvec(obj.H0_est_),
+            Rcpp::Named("S0") = Intsurv::arma2rvec(obj.S0_est_)
             ),
         Rcpp::Named("fitted") = Rcpp::List::create(
-            Rcpp::Named("surv_xBeta") = Intsurv::arma2rvec(obj.cox_xBeta),
-            Rcpp::Named("cure_xBeta") = Intsurv::arma2rvec(obj.cure_xBeta),
+            Rcpp::Named("surv_xBeta") = Intsurv::arma2rvec(obj.cox_xbeta_),
+            Rcpp::Named("cure_xBeta") = Intsurv::arma2rvec(obj.cure_xbeta_),
             Rcpp::Named("susceptible_prob") =
-            Intsurv::arma2rvec(obj.susceptible_prob),
+            Intsurv::arma2rvec(obj.susceptible_prob_),
             Rcpp::Named("estep_cured") =
-            Intsurv::arma2rvec(obj.estep_cured),
+            Intsurv::arma2rvec(obj.estep_cured_),
             Rcpp::Named("estep_susceptible") =
-            Intsurv::arma2rvec(obj.estep_susceptible)
+            Intsurv::arma2rvec(obj.estep_susceptible_)
             ),
         Rcpp::Named("model") = Rcpp::List::create(
-            Rcpp::Named("nObs") = obj.nObs,
-            Rcpp::Named("nEvent") = obj.nEvent,
-            Rcpp::Named("coef_df") = obj.coef_df,
-            Rcpp::Named("negLogL") = obj.negLogL,
-            Rcpp::Named("c_index") = obj.c_index,
-            Rcpp::Named("aic") = obj.aic,
-            Rcpp::Named("bic1") = obj.bic1,
-            Rcpp::Named("bic2") = obj.bic2
+            Rcpp::Named("nObs") = obj.n_obs_,
+            Rcpp::Named("nEvent") = obj.n_event_,
+            Rcpp::Named("coef_df") = obj.coef_df_,
+            Rcpp::Named("negLogL") = obj.neg_ll_,
+            Rcpp::Named("c_index") = obj.c_index_,
+            Rcpp::Named("aic") = obj.aic_,
+            Rcpp::Named("bic1") = obj.bic1_,
+            Rcpp::Named("bic2") = obj.bic2_
             ),
         Rcpp::Named("bootstrap") = Rcpp::List::create(
             Rcpp::Named("B") = bootstrap,
@@ -134,7 +134,7 @@ Rcpp::List rcpp_coxph_cure(
             Rcpp::Named("cure_coef_mat") = boot_cure_coef_mat.t()
             ),
         Rcpp::Named("convergence") = Rcpp::List::create(
-            Rcpp::Named("num_iter") = obj.num_iter
+            Rcpp::Named("num_iter") = obj.n_iter_
             )
         );
 }
@@ -212,51 +212,51 @@ Rcpp::List rcpp_coxph_cure_reg(
             );
     }
     return Rcpp::List::create(
-        Rcpp::Named("cox_coef") = Intsurv::arma2rvec(obj.cox_coef),
-        Rcpp::Named("cure_coef") = Intsurv::arma2rvec(obj.cure_coef),
-        Rcpp::Named("cox_en_coef") = Intsurv::arma2rvec(obj.cox_en_coef),
-        Rcpp::Named("cure_en_coef") = Intsurv::arma2rvec(obj.cure_en_coef),
+        Rcpp::Named("cox_coef") = Intsurv::arma2rvec(obj.cox_coef_),
+        Rcpp::Named("cure_coef") = Intsurv::arma2rvec(obj.cure_coef_),
+        Rcpp::Named("cox_en_coef") = Intsurv::arma2rvec(obj.cox_en_coef_),
+        Rcpp::Named("cure_en_coef") = Intsurv::arma2rvec(obj.cure_en_coef_),
         Rcpp::Named("baseline") = Rcpp::List::create(
-            Rcpp::Named("time") = Intsurv::arma2rvec(obj.unique_time),
-            Rcpp::Named("h0_est") = Intsurv::arma2rvec(obj.h0_est),
-            Rcpp::Named("H0_est") = Intsurv::arma2rvec(obj.H0_est),
-            Rcpp::Named("S0_est") = Intsurv::arma2rvec(obj.S0_est)
+            Rcpp::Named("time") = Intsurv::arma2rvec(obj.unique_time_),
+            Rcpp::Named("h0_est") = Intsurv::arma2rvec(obj.h0_est_),
+            Rcpp::Named("H0_est") = Intsurv::arma2rvec(obj.H0_est_),
+            Rcpp::Named("S0_est") = Intsurv::arma2rvec(obj.S0_est_)
             ),
         Rcpp::Named("fitted") = Rcpp::List::create(
-            Rcpp::Named("cox_xBeta") = Intsurv::arma2rvec(obj.cox_xBeta),
-            Rcpp::Named("cure_xBeta") = Intsurv::arma2rvec(obj.cure_xBeta),
+            Rcpp::Named("cox_xBeta") = Intsurv::arma2rvec(obj.cox_xbeta_),
+            Rcpp::Named("cure_xBeta") = Intsurv::arma2rvec(obj.cure_xbeta_),
             Rcpp::Named("susceptible_prob") =
-            Intsurv::arma2rvec(obj.susceptible_prob),
+            Intsurv::arma2rvec(obj.susceptible_prob_),
             Rcpp::Named("estep_cured") =
-            Intsurv::arma2rvec(obj.estep_cured),
+            Intsurv::arma2rvec(obj.estep_cured_),
             Rcpp::Named("estep_susceptible") =
-            Intsurv::arma2rvec(obj.estep_susceptible)
+            Intsurv::arma2rvec(obj.estep_susceptible_)
             ),
         Rcpp::Named("model") = Rcpp::List::create(
-            Rcpp::Named("nObs") = obj.nObs,
-            Rcpp::Named("nEvent") = obj.nEvent,
-            Rcpp::Named("coef_df") = obj.coef_df,
-            Rcpp::Named("negLogL") = obj.negLogL,
-            Rcpp::Named("c_index") = obj.c_index,
-            Rcpp::Named("aic") = obj.aic,
-            Rcpp::Named("bic1") = obj.bic1,
-            Rcpp::Named("bic2") = obj.bic2,
+            Rcpp::Named("nObs") = obj.n_obs_,
+            Rcpp::Named("nEvent") = obj.n_event_,
+            Rcpp::Named("coef_df") = obj.coef_df_,
+            Rcpp::Named("negLogL") = obj.neg_ll_,
+            Rcpp::Named("c_index") = obj.c_index_,
+            Rcpp::Named("aic") = obj.aic_,
+            Rcpp::Named("bic1") = obj.bic1_,
+            Rcpp::Named("bic2") = obj.bic2_,
             Rcpp::Named("cv_logL") = Intsurv::arma2rvec(cv_vec)
             ),
         Rcpp::Named("penalty") = Rcpp::List::create(
-            Rcpp::Named("cox_l1_lambda_max") = obj.cox_l1_lambda_max,
-            Rcpp::Named("cox_l1_lambda") = obj.cox_l1_lambda,
-            Rcpp::Named("cox_l2_lambda") = obj.cox_l2_lambda,
+            Rcpp::Named("cox_l1_lambda_max") = obj.cox_l1_lambda_max_,
+            Rcpp::Named("cox_l1_lambda") = obj.cox_l1_lambda_,
+            Rcpp::Named("cox_l2_lambda") = obj.cox_l2_lambda_,
             Rcpp::Named("cox_l1_penalty_factor") =
-            Intsurv::arma2rvec(obj.cox_l1_penalty_factor),
-            Rcpp::Named("cure_l1_lambda_max") = obj.cure_l1_lambda_max,
-            Rcpp::Named("cure_l1_lambda") = obj.cure_l1_lambda,
-            Rcpp::Named("cure_l2_lambda") = obj.cure_l2_lambda,
+            Intsurv::arma2rvec(obj.cox_l1_penalty_factor_),
+            Rcpp::Named("cure_l1_lambda_max") = obj.cure_l1_lambda_max_,
+            Rcpp::Named("cure_l1_lambda") = obj.cure_l1_lambda_,
+            Rcpp::Named("cure_l2_lambda") = obj.cure_l2_lambda_,
             Rcpp::Named("cure_l1_penalty_factor") =
-            Intsurv::arma2rvec(obj.cure_l1_penalty_factor)
+            Intsurv::arma2rvec(obj.cure_l1_penalty_factor_)
             ),
         Rcpp::Named("convergence") = Rcpp::List::create(
-            Rcpp::Named("num_iter") = obj.num_iter
+            Rcpp::Named("num_iter") = obj.n_iter_
             )
         );
 }
@@ -320,10 +320,10 @@ Rcpp::List rcpp_coxph_cure_vs(
                         pmin, early_stop, verbose);
     // already considered penalty factor
     const double cox_lambda_max {
-        obj.cox_l1_lambda_max / std::max(cox_alpha, 1e-10)
+        obj.cox_l1_lambda_max_ / std::max(cox_alpha, 1e-10)
     };
     const double cure_lambda_max {
-        obj.cure_l1_lambda_max / std::max(cure_alpha, 1e-10)
+        obj.cure_l1_lambda_max_ / std::max(cure_alpha, 1e-10)
     };
     // construct lambda sequence
     arma::vec cox_lambda_seq, cure_lambda_seq;
@@ -418,23 +418,23 @@ Rcpp::List rcpp_coxph_cure_vs(
                     );
             }
             // update starting value
-            cox_warm_start = obj.cox_coef;
-            cure_warm_start = obj.cure_coef;
+            cox_warm_start = obj.cox_coef_;
+            cure_warm_start = obj.cure_coef_;
             if (j == 0) {
                 // save starting value for next i
-                cox_warm_start0 = obj.cox_coef;
-                cure_warm_start0 = obj.cure_coef;
+                cox_warm_start0 = obj.cox_coef_;
+                cure_warm_start0 = obj.cure_coef_;
             }
             // store results
-            cox_coef_mat.col(iter) = obj.cox_coef;
-            cure_coef_mat.col(iter) = obj.cure_coef;
-            cox_en_coef_mat.col(iter) = obj.cox_en_coef;
-            cure_en_coef_mat.col(iter) = obj.cure_en_coef;
-            aic(iter) = obj.aic;
-            bic1(iter) = obj.bic1;
-            bic2(iter) = obj.bic2;
-            coef_df(iter) = obj.coef_df;
-            negLogL(iter) = obj.negLogL;
+            cox_coef_mat.col(iter) = obj.cox_coef_;
+            cure_coef_mat.col(iter) = obj.cure_coef_;
+            cox_en_coef_mat.col(iter) = obj.cox_en_coef_;
+            cure_en_coef_mat.col(iter) = obj.cure_en_coef_;
+            aic(iter) = obj.aic_;
+            bic1(iter) = obj.bic1_;
+            bic2(iter) = obj.bic2_;
+            coef_df(iter) = obj.coef_df_;
+            negLogL(iter) = obj.neg_ll_;
             lambda_mat(iter, 0) = cox_l1_lambda;
             lambda_mat(iter, 1) = cox_l2_lambda;
             lambda_mat(iter, 2) = cure_l1_lambda;
@@ -451,8 +451,8 @@ Rcpp::List rcpp_coxph_cure_vs(
         Rcpp::Named("surv_en_coef") = cox_en_coef_mat.t(),
         Rcpp::Named("cure_en_coef") = cure_en_coef_mat.t(),
         Rcpp::Named("model") = Rcpp::List::create(
-            Rcpp::Named("nObs") = obj.nObs,
-            Rcpp::Named("nEvent") = obj.nEvent,
+            Rcpp::Named("nObs") = obj.n_obs_,
+            Rcpp::Named("nEvent") = obj.n_event_,
             Rcpp::Named("coef_df") = Intsurv::arma2rvec(coef_df),
             Rcpp::Named("negLogL") = Intsurv::arma2rvec(negLogL),
             Rcpp::Named("aic") = Intsurv::arma2rvec(aic),
@@ -464,12 +464,12 @@ Rcpp::List rcpp_coxph_cure_vs(
             Rcpp::Named("lambda_mat") = lambda_mat,
             Rcpp::Named("surv_alpha") = cox_alpha,
             Rcpp::Named("cure_alpha") = cure_alpha,
-            Rcpp::Named("surv_l1_lambda_max") = obj.cox_l1_lambda_max,
-            Rcpp::Named("cure_l1_lambda_max") = obj.cure_l1_lambda_max,
+            Rcpp::Named("surv_l1_lambda_max") = obj.cox_l1_lambda_max_,
+            Rcpp::Named("cure_l1_lambda_max") = obj.cure_l1_lambda_max_,
             Rcpp::Named("surv_l1_penalty_factor") =
-            Intsurv::arma2rvec(obj.cox_l1_penalty_factor),
+            Intsurv::arma2rvec(obj.cox_l1_penalty_factor_),
             Rcpp::Named("cure_l1_penalty_factor") =
-            Intsurv::arma2rvec(obj.cure_l1_penalty_factor)
+            Intsurv::arma2rvec(obj.cure_l1_penalty_factor_)
             )
         );
 }

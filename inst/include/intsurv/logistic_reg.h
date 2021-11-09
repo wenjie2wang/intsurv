@@ -119,6 +119,8 @@ namespace Intsurv {
         {
             if (offset.n_elem == n_obs_) {
                 offset_ = offset;
+            } else if (offset.n_elem == 1 || offset.empty()) {
+                offset_ = arma::zeros(n_obs_);
             } else {
                 throw std::length_error(
                     "The length of the specified offset must match sample size."
@@ -470,10 +472,9 @@ namespace Intsurv {
                 }
                 if (ell_old < ell) {
                     if (verbose) {
-                        Rcpp::Rcout
-                            << "\nEarly stopped the algorithm"
-                            << " with estimates from"
-                            << " iteration " << i << ".\n";
+                        Rcpp::Rcout << "\nEarly stopped the algorithm"
+                                    << " with estimates from"
+                                    << " iteration " << i << ".\n";
                     }
                     beta = beta0;
                     ell = ell_old;

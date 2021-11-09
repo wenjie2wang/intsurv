@@ -15,8 +15,8 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 //
 
-#ifndef COXPH_CURE_MCAR_H
-#define COXPH_CURE_MCAR_H
+#ifndef INTSURV_COXPH_CURE_MCAR_H
+#define INTSURV_COXPH_CURE_MCAR_H
 
 #include <RcppArmadillo.h>
 #include "assessment.h"
@@ -30,66 +30,66 @@ namespace Intsurv {
 
     class CoxphCureMcar {
     private:
-        CoxphReg cox_obj;
-        LogisticReg cure_obj;
+        CoxphReg cox_obj_;
+        LogisticReg cure_obj_;
         // number of predictors in survival layer
-        unsigned int cox_p;
+        unsigned int cox_p_;
         // number of predictors in cure layer with possible intercept
-        unsigned int cure_p;
+        unsigned int cure_p_;
         // number of predictors in cure layer without possible intercept
-        unsigned int cure_p0;
-        arma::uvec case1_ind;
-        arma::uvec case2_ind;
-        arma::uvec cer_ind;     // index of rows with correct event indicators
-        arma::uvec case3_ind;
-        unsigned int max_event_time_ind; // index of the maximum event time
+        unsigned int cure_p0_;
+        arma::uvec case1_ind_;
+        arma::uvec case2_ind_;
+        arma::uvec cer_ind_;    // index of rows with correct event indicators
+        arma::uvec case3_ind_;
+        unsigned int max_event_time_ind_; // index of the maximum event time
 
     public:
-        arma::vec cox_coef;
-        arma::vec cure_coef;
-        unsigned int coef_df;     // degree of freedom of coef estimates
-        double negLogL;           // negative log-likelihood
-        unsigned int nObs;        // number of observations
-        unsigned int nEvent;      // number of certain events
-        unsigned int num_iter;    // number of iterations
-        // BIC: log(num_obs) * coef_df + 2 * negLogL
-        double bic1;
-        // BIC: log(num_certain_event) * coef_df + 2 * negLogL
-        double bic2;
-        double aic;               // AIC: 2 * coef_df + 2 * negLogL
-        double c_index;           // weighted C-index
+        arma::vec cox_coef_;
+        arma::vec cure_coef_;
+        unsigned int coef_df_;  // degree of freedom of coef estimates
+        double neg_ll_;         // negative log-likelihood
+        unsigned int n_obs_;    // number of observations
+        unsigned int n_event_;  // number of certain events
+        unsigned int n_iter_;   // number of iterations
+        // BIC: log(num_obs) * coef_df_ + 2 * neg_ll_
+        double bic1_;
+        // BIC: log(num_certain_event) * coef_df_ + 2 * neg_ll_
+        double bic2_;
+        double aic_;            // AIC: 2 * coef_df_ + 2 * neg_ll_
+        double c_index_;        // weighted C-index
 
         // for each subject and in the original order of X
-        arma::vec cox_xBeta;        // score from the survival layer
-        arma::vec cure_xBeta;       // score from the cure layer
-        arma::vec susceptible_prob; // probability of being susceptible
+        arma::vec cox_xbeta_;        // score from the survival layer
+        arma::vec cure_xbeta_;       // score from the cure layer
+        arma::vec susceptible_prob_; // probability of being susceptible
         // values in the last E-step
-        arma::vec estep_cured;
-        arma::vec estep_event;
-        arma::vec estep_censor;
+        arma::vec estep_cured_;
+        arma::vec estep_event_;
+        arma::vec estep_censor_;
 
         // hazard and survival function estimates at unique time
-        arma::vec unique_time;
-        arma::vec h0_est;
-        arma::vec H0_est;
-        arma::vec S0_est;
-        arma::vec hc_est;
-        arma::vec Hc_est;
-        arma::vec Sc_est;
+        arma::vec unique_time_;
+        arma::vec h0_est_;
+        arma::vec H0_est_;
+        arma::vec S0_est_;
+        arma::vec hc_est_;
+        arma::vec Hc_est_;
+        arma::vec Sc_est_;
 
         // the "big enough" L1 lambda => zero coef
-        double cox_l1_lambda_max;
-        double cure_l1_lambda_max;
+        double cox_l1_lambda_max_;
+        double cure_l1_lambda_max_;
 
         // regularized by particular lambdas
-        arma::vec cox_en_coef;  // elastic net estimates
-        arma::vec cure_en_coef; // elastic net estimates
-        double cox_l1_lambda;
-        double cox_l2_lambda;
-        arma::vec cox_l1_penalty_factor;
-        double cure_l1_lambda;
-        double cure_l2_lambda;
-        arma::vec cure_l1_penalty_factor;
+        arma::vec cox_en_coef_;  // elastic net estimates
+        arma::vec cure_en_coef_; // elastic net estimates
+        double cox_l1_lambda_;
+        double cox_l2_lambda_;
+        arma::vec cox_l1_penalty_factor_;
+        double cure_l1_lambda_;
+        double cure_l2_lambda_;
+        arma::vec cure_l1_penalty_factor_;
 
         // default constructor
         CoxphCureMcar() {}
@@ -100,9 +100,9 @@ namespace Intsurv {
             const arma::vec& event,
             const arma::mat& cox_x,
             const arma::mat& cure_x,
-            const bool& cure_intercept = true,
-            const bool& cox_standardize = true,
-            const bool& cure_standardize = true,
+            const bool cure_intercept = true,
+            const bool cox_standardize = true,
+            const bool cure_standardize = true,
             const arma::vec& cox_offset = 0,
             const arma::vec& cure_offset = 0
             )
@@ -114,79 +114,79 @@ namespace Intsurv {
             event0na.replace(arma::datum::nan, const4na);
 
             // create the CoxphReg object
-            this->cox_obj = CoxphReg(time, event0na, cox_x, cox_standardize);
-            this->cox_obj.set_offset(cox_offset, false);
+            cox_obj_ = CoxphReg(time, event0na, cox_x, cox_standardize);
+            cox_obj_.set_offset(cox_offset, false);
             // pre-process x and y
-            this->cox_p = cox_x.n_cols;
-            this->cure_p0 = cure_x.n_cols;
-            this->cure_p = this->cure_p0 +
+            cox_p_ = cox_x.n_cols;
+            cure_p0_ = cure_x.n_cols;
+            cure_p_ = cure_p0_ +
                 static_cast<unsigned int>(cure_intercept);
-            this->nObs = cox_x.n_rows;
-            arma::uvec cox_sort_ind { cox_obj.get_sort_index() };
+            n_obs_ = cox_x.n_rows;
+            arma::uvec cox_sort_ind { cox_obj_.get_sort_index() };
             arma::mat cure_xx { cure_x.rows(cox_sort_ind) };
             arma::vec s_event { event0na.elem(cox_sort_ind) };
             arma::vec s_cure_offset { cure_offset.elem(cox_sort_ind) };
-            this->case1_ind = arma::find(s_event > const4na);
-            this->case2_ind = arma::find(s_event < const4na);
-            this->nEvent = case1_ind.n_elem;
-            this->cer_ind = vec_union(case1_ind, case2_ind);
-            this->case3_ind = arma::find(s_event == const4na);
-            this->max_event_time_ind = arma::max(this->case1_ind);
+            case1_ind_ = arma::find(s_event > const4na);
+            case2_ind_ = arma::find(s_event < const4na);
+            n_event_ = case1_ind_.n_elem;
+            cer_ind_ = vec_union(case1_ind_, case2_ind_);
+            case3_ind_ = arma::find(s_event == const4na);
+            max_event_time_ind_ = arma::max(case1_ind_);
             // create the LogisticReg object
-            this->cure_obj = LogisticReg(cure_xx, s_event, cure_intercept,
-                                         cure_standardize);
-            this->cure_obj.set_offset(s_cure_offset);
+            cure_obj_ = LogisticReg(cure_xx, s_event, cure_intercept,
+                                          cure_standardize);
+            cure_obj_.set_offset(s_cure_offset);
         }
 
 
         // function members
         // helper functions
         inline unsigned int get_cox_p() {
-            return this->cox_p;
+            return cox_p_;
         }
         inline unsigned int get_cure_p() {
-            return this->cure_p;
+            return cure_p_;
         }
 
         // fit the Cox cure mode with mcartain events by EM algorithm
         inline void fit(
             const arma::vec& cox_start,
             const arma::vec& cure_start,
-            const unsigned int& em_max_iter,
-            const double& em_rel_tol,
-            const unsigned int& cox_mstep_max_iter,
-            const double& cox_mstep_rel_tol,
-            const unsigned int& cure_mstep_max_iter,
-            const double& cure_mstep_rel_tol,
-            const unsigned int& tail_completion,
+            const unsigned int em_max_iter,
+            const double em_rel_tol,
+            const unsigned int cox_mstep_max_iter,
+            const double cox_mstep_rel_tol,
+            const unsigned int cure_mstep_max_iter,
+            const double cure_mstep_rel_tol,
+            const unsigned int tail_completion,
             double tail_tau,
-            const double& pmin,
-            const unsigned int& early_stop,
-            const unsigned int& verbose
+            const double pmin,
+            const unsigned int early_stop,
+            const unsigned int verbose
             );
 
         // fit regularized Cox cure model with adaptive elastic net penalty
         // for perticular lambda's
         inline void regularized_fit(
-            const double& cox_l1_lambda,
-            const double& cox_l2_lambda,
-            const double& cure_l1_lambda,
-            const double& cure_l2_lambda,
+            const double cox_l1_lambda,
+            const double cox_l2_lambda,
+            const double cure_l1_lambda,
+            const double cure_l2_lambda,
             const arma::vec& cox_l1_penalty_factor,
             const arma::vec& cure_l1_penalty_factor,
             const arma::vec& cox_start,
             const arma::vec& cure_start,
-            const unsigned int& em_max_iter,
-            const double& em_rel_tol,
-            const unsigned int& cox_mstep_max_iter,
-            const double& cox_mstep_rel_tol,
-            const unsigned int& cure_mstep_max_iter,
-            const double& cure_mstep_rel_tol,
-            const unsigned int& tail_completion,
+            const unsigned int em_max_iter,
+            const double em_rel_tol,
+            const unsigned int cox_mstep_max_iter,
+            const double cox_mstep_rel_tol,
+            const unsigned int cure_mstep_max_iter,
+            const double cure_mstep_rel_tol,
+            const unsigned int tail_completion,
             double tail_tau,
-            const double& pmin,
-            const unsigned int& early_stop,
-            const unsigned int& verbose
+            const double pmin,
+            const unsigned int early_stop,
+            const unsigned int verbose
             );
 
         // function to compute the observe data log-likelihood function
@@ -208,14 +208,14 @@ namespace Intsurv {
 
         // compute BIC
         inline void compute_bic1() {
-            this->bic1 = std::log(nObs) * coef_df + 2 * negLogL;
+            bic1_ = std::log(n_obs_) * coef_df_ + 2 * neg_ll_;
         }
         inline void compute_bic2() {
-            this->bic2 = std::log(case1_ind.n_elem) *
-                coef_df + 2 * negLogL;
+            bic2_ = std::log(case1_ind_.n_elem) *
+                coef_df_ + 2 * neg_ll_;
         }
         inline void compute_aic() {
-            this->aic = 2 * (coef_df + negLogL);
+            aic_ = 2 * (coef_df_ + neg_ll_);
         }
 
     };                          // end of class definition
@@ -225,86 +225,86 @@ namespace Intsurv {
     inline void CoxphCureMcar::fit(
         const arma::vec& cox_start = 0,
         const arma::vec& cure_start = 0,
-        const unsigned int& em_max_iter = 500,
-        const double& em_rel_tol = 1e-5,
-        const unsigned int& cox_mstep_max_iter = 50,
-        const double& cox_mstep_rel_tol = 1e-3,
-        const unsigned int& cure_mstep_max_iter = 50,
-        const double& cure_mstep_rel_tol = 1e-3,
-        const unsigned int& tail_completion = 1,
+        const unsigned int em_max_iter = 500,
+        const double em_rel_tol = 1e-5,
+        const unsigned int cox_mstep_max_iter = 50,
+        const double cox_mstep_rel_tol = 1e-3,
+        const unsigned int cure_mstep_max_iter = 50,
+        const double cure_mstep_rel_tol = 1e-3,
+        const unsigned int tail_completion = 1,
         double tail_tau = -1,
-        const double& pmin = 1e-5,
-        const unsigned int& early_stop = 0,
-        const unsigned int& verbose = 0
+        const double pmin = 1e-5,
+        const unsigned int early_stop = 0,
+        const unsigned int verbose = 0
         )
     {
         // get pre-processed design matrix, time, and event
-        const arma::vec time { cox_obj.get_time() };
-        arma::vec event { cox_obj.get_event() };
+        const arma::vec time { cox_obj_.get_time() };
+        arma::vec event { cox_obj_.get_event() };
 
         // initialize cox_beta
-        arma::vec cox_beta { arma::zeros(this->cox_p) };
-        if (cox_start.n_elem == this->cox_p) {
+        arma::vec cox_beta { arma::zeros(cox_p_) };
+        if (cox_start.n_elem == cox_p_) {
             cox_beta = cox_start;
         } else {
             CoxphReg tmp_object {
-                time.elem(case1_ind),
-                event.elem(case1_ind),
-                cox_obj.get_x().rows(case1_ind)
+                time.elem(case1_ind_),
+                event.elem(case1_ind_),
+                cox_obj_.get_x().rows(case1_ind_)
             };
             tmp_object.fit(cox_beta, cox_mstep_max_iter, cox_mstep_rel_tol);
-            cox_beta = tmp_object.coef;
+            cox_beta = tmp_object.coef_;
         }
-        arma::vec cox_exp_x_beta = arma::exp(cox_obj.get_x() * cox_beta);
+        arma::vec cox_exp_x_beta = arma::exp(cox_obj_.get_x() * cox_beta);
 
         // initialize cure_beta
-        arma::vec cure_beta { arma::zeros(this->cure_p) };
-        if (cure_start.n_elem == this->cure_p) {
+        arma::vec cure_beta { arma::zeros(cure_p_) };
+        if (cure_start.n_elem == cure_p_) {
             cure_beta = cure_start;
         } else {
-            cure_obj.fit(cure_beta, cure_mstep_max_iter,
-                         cure_mstep_rel_tol);
-            cure_beta = cure_obj.coef;
+            cure_obj_.fit(cure_beta, cure_mstep_max_iter,
+                          cure_mstep_rel_tol);
+            cure_beta = cure_obj_.coef_;
         }
 
         // initialize coef estimates
-        cure_obj.coef = cure_beta;
-        cox_obj.coef = cox_beta;
+        cure_obj_.coef_ = cure_beta;
+        cox_obj_.coef_ = cox_beta;
 
         // initialize baseline hazard functions for the E-step
         // for events
         NelsonAalen nelen_event {
-            NelsonAalen(time.elem(this->cer_ind),
-                        event.elem(this->cer_ind))
+            NelsonAalen(time.elem(cer_ind_),
+                        event.elem(cer_ind_))
         };
-        cox_obj.h0_time = nelen_event.step_inst_rate(time);
-        cox_obj.H0_time = nelen_event.step_cum_rate(time);
+        cox_obj_.h0_time_ = nelen_event.step_inst_rate(time);
+        cox_obj_.H0_time_ = nelen_event.step_cum_rate(time);
         // for censoring
         NelsonAalen nelen_censor {
-            NelsonAalen(time.elem(this->cer_ind),
-                        1 - event.elem(this->cer_ind))
+            NelsonAalen(time.elem(cer_ind_),
+                        1 - event.elem(cer_ind_))
         };
-        cox_obj.hc_time = nelen_censor.step_inst_rate(time);
-        cox_obj.Hc_time = nelen_censor.step_cum_rate(time);
+        cox_obj_.hc_time_ = nelen_censor.step_inst_rate(time);
+        cox_obj_.Hc_time_ = nelen_censor.step_cum_rate(time);
         // update related function values
-        cox_obj.h_time = cox_obj.h0_time % cox_exp_x_beta;
-        cox_obj.H_time = cox_obj.H0_time % cox_exp_x_beta;
-        cox_obj.S0_time = arma::exp(- cox_obj.H0_time);
-        cox_obj.S_time = arma::exp(- cox_obj.H_time);
-        cox_obj.Sc_time = arma::exp(- cox_obj.Hc_time);
+        cox_obj_.h_time_ = cox_obj_.h0_time_ % cox_exp_x_beta;
+        cox_obj_.H_time_ = cox_obj_.H0_time_ % cox_exp_x_beta;
+        cox_obj_.S0_time_ = arma::exp(- cox_obj_.H0_time_);
+        cox_obj_.S_time_ = arma::exp(- cox_obj_.H_time_);
+        cox_obj_.Sc_time_ = arma::exp(- cox_obj_.Hc_time_);
 
         // intialization for the main loop
-        arma::vec p_vec { arma::zeros(nObs) };
+        arma::vec p_vec { arma::zeros(n_obs_) };
         arma::vec estep_m { event };
         size_t i {0};
         double obs_ell {0}, obs_ell_old { - arma::datum::inf };
         double tol1 { arma::datum::inf }, tol2 { tol1 };
         arma::vec s0_wi_tail, s_wi_tail;
-        // arma::vec offset0 { cox_obj.get_offset() };
+        // arma::vec offset0 { cox_obj_.get_offset() };
 
         // prepare for tail completion
-        const arma::uvec case23_ind { vec_union(case2_ind, case3_ind) };
-        double max_event_time { time(this->max_event_time_ind) };
+        const arma::uvec case23_ind { vec_union(case2_ind_, case3_ind_) };
+        double max_event_time { time(max_event_time_ind_) };
         if (tail_tau < 0)
             tail_tau = arma::datum::inf;
 
@@ -315,14 +315,14 @@ namespace Intsurv {
         while (true) {
 
             // update to the latest estimates
-            p_vec = cure_obj.predict(cure_obj.coef, pmin);
-            cox_obj.compute_haz_surv_time();
-            cox_obj.compute_censor_haz_surv_time();
+            p_vec = cure_obj_.predict(cure_obj_.coef_, pmin);
+            cox_obj_.compute_haz_surv_time();
+            cox_obj_.compute_censor_haz_surv_time();
 
             // prepare for exponential tail completion method
             double s0_tau {0}, etail_lambda {0};
             if (tail_completion == 2) {
-                s0_tau = cox_obj.S0_time(max_event_time_ind);
+                s0_tau = cox_obj_.S0_time_(max_event_time_ind_);
                 etail_lambda = - std::log(s0_tau / max_event_time);
             }
             // tail completion for the conditional survival function
@@ -334,26 +334,26 @@ namespace Intsurv {
                         // tail completion after the given tail_tau
                         // by default, it means no tail completion
                         if (time(j) > tail_tau) {
-                            cox_obj.S_time(j) = 0;
-                            cox_obj.S0_time(j) = 0;
+                            cox_obj_.S_time_(j) = 0;
+                            cox_obj_.S0_time_(j) = 0;
                         }
                         break;
                     case 1:
                         // zero-tail constraint
                         if (time(j) > max_event_time) {
-                            cox_obj.S_time(j) = 0;
-                            cox_obj.S0_time(j) = 0;
+                            cox_obj_.S_time_(j) = 0;
+                            cox_obj_.S0_time_(j) = 0;
                         }
                         break;
                     case 2:
                         // exponential tail by Peng (2003)
                         if (time(j) > max_event_time) {
-                            cox_obj.S0_time(j) = std::exp(
+                            cox_obj_.S0_time_(j) = std::exp(
                                 - etail_lambda * time(j)
                                 );
-                            cox_obj.S_time(j) = std::pow(
-                                cox_obj.S0_time(j),
-                                std::exp(cox_obj.xBeta(j))
+                            cox_obj_.S_time_(j) = std::pow(
+                                cox_obj_.S0_time_(j),
+                                std::exp(cox_obj_.xbeta_(j))
                                 );
                         }
                         break;
@@ -365,26 +365,26 @@ namespace Intsurv {
             // compute observed data log-likelihood
             obs_ell = 0;
             // for case 1
-            for (size_t j: case1_ind) {
+            for (size_t j: case1_ind_) {
                 obs_ell += std::log(p_vec(j)) +
-                    std::log(cox_obj.h_time(j)) -
-                    cox_obj.H_time(j) - cox_obj.Hc_time(j);
+                    std::log(cox_obj_.h_time_(j)) -
+                    cox_obj_.H_time_(j) - cox_obj_.Hc_time_(j);
             }
             // for case 2
-            for (size_t j: case2_ind) {
+            for (size_t j: case2_ind_) {
                 obs_ell +=
-                    std::log(p_vec(j) * cox_obj.S_time(j) + 1 - p_vec(j)) -
-                    cox_obj.Hc_time(j) + std::log(cox_obj.hc_time(j));
+                    std::log(p_vec(j) * cox_obj_.S_time_(j) + 1 - p_vec(j)) -
+                    cox_obj_.Hc_time_(j) + std::log(cox_obj_.hc_time_(j));
             }
             // for case 3
-            for (size_t j: case3_ind) {
+            for (size_t j: case3_ind_) {
                 double m12_common {
-                    p_vec(j) * cox_obj.S0_time(j) * cox_obj.Sc_time(j)
+                    p_vec(j) * cox_obj_.S0_time_(j) * cox_obj_.Sc_time_(j)
                 };
-                double m1 { cox_obj.h_time(j) * m12_common };
-                double m2 { cox_obj.hc_time(j) * m12_common };
+                double m1 { cox_obj_.h_time_(j) * m12_common };
+                double m2 { cox_obj_.hc_time_(j) * m12_common };
                 double m3 {
-                    (1 - p_vec(j)) * cox_obj.hc_time(j) * cox_obj.Sc_time(j)
+                    (1 - p_vec(j)) * cox_obj_.hc_time_(j) * cox_obj_.Sc_time_(j)
                 };
                 obs_ell += std::log(m1 + m2 + m3);
             }
@@ -394,23 +394,23 @@ namespace Intsurv {
                 Rcpp::Rcout << "\n" << std::string(50, '=')
                             << "\niteration: " << i
                             << "\n  Cox coef: "
-                            << arma2rvec(cox_obj.coef)
+                            << arma2rvec(cox_obj_.coef_)
                             << "\n    relative diff: " << tol1
                             << "\n  cure coef: "
-                            << arma2rvec(cure_obj.coef)
+                            << arma2rvec(cure_obj_.coef_)
                             << "\n    relative diff: " << tol2
                             << "\n  observed negative log-likelihood: "
                             << - obs_ell
-                            << std::endl;
+                            << "\n";
             }
 
             bool early_exit { false };
             // early exit if has any `nan`
-            if (cox_obj.coef.has_nan() || cure_obj.coef.has_nan()) {
+            if (cox_obj_.coef_.has_nan() || cure_obj_.coef_.has_nan()) {
                 obs_ell = - arma::datum::inf;
                 Rcpp::Rcout << "Warning: Found NA's in coef. "
                             << "The objective function went to infinite."
-                            << std::endl;
+                            << "\n";
                 early_exit = true;
             }
             // early exit if the regularized objective function increased, which
@@ -419,7 +419,7 @@ namespace Intsurv {
                 if (verbose) {
                     Rcpp::Rcout << "Warning: "
                                 << "The observed data log-likelihood decreased."
-                                << std::endl;
+                                << "\n";
                 }
                 early_exit = early_exit || early_stop;
             }
@@ -429,17 +429,17 @@ namespace Intsurv {
                     Rcpp::Rcout << "Ended the EM algorithm after iteration "
                                 << i
                                 << " with estimates from last step."
-                                << std::endl;
+                                << "\n";
                 }
                 // take the estimates from the last step
-                cox_obj.coef = cox_beta;
-                cure_obj.coef = cure_beta;
+                cox_obj_.coef_ = cox_beta;
+                cure_obj_.coef_ = cure_beta;
                 // update hazard and survival function estimates
-                cox_obj.compute_haz_surv_time();
-                cox_obj.S0_time = s0_wi_tail;
-                cox_obj.S_time = s_wi_tail;
-                cox_obj.compute_censor_haz_surv_time();
-                cox_obj.est_haz_surv();
+                cox_obj_.compute_haz_surv_time();
+                cox_obj_.S0_time_ = s0_wi_tail;
+                cox_obj_.S_time_ = s_wi_tail;
+                cox_obj_.compute_censor_haz_surv_time();
+                cox_obj_.est_haz_surv();
                 // use old obs likelihood
                 obs_ell = obs_ell_old;
                 // break here
@@ -451,15 +451,15 @@ namespace Intsurv {
                     if (i < em_max_iter) {
                         Rcpp::Rcout << "\n" << std::string(50, '=') << "\n"
                                     << "reached convergence after " << i
-                                    << " iterations\n" << std::endl;
+                                    << " iterations\n" << "\n";
                     } else {
                         Rcpp::Rcout << "\n" << std::string(50, '=') << "\n"
                                     << "reached the max iteration number."
-                                    << std::endl;
+                                    << "\n";
                     }
                 }
                 // compute hazard and survival function estimates
-                cox_obj.est_haz_surv();
+                cox_obj_.est_haz_surv();
                 // get out of the loop here
                 break;
             }
@@ -468,30 +468,30 @@ namespace Intsurv {
             Rcpp::checkUserInterrupt();
 
             // record estimates from last step
-            cox_beta = cox_obj.coef;
-            cure_beta = cure_obj.coef;
+            cox_beta = cox_obj_.coef_;
+            cure_beta = cure_obj_.coef_;
             obs_ell_old = obs_ell;
-            s0_wi_tail = cox_obj.S0_time;
-            s_wi_tail = cox_obj.S_time;
+            s0_wi_tail = cox_obj_.S0_time_;
+            s_wi_tail = cox_obj_.S_time_;
 
             // update iter for the next iteration
             ++i;
 
             // E-step: compute the v vector for case 2
-            for (size_t j: case2_ind) {
-                double numer_j { p_vec(j) * cox_obj.S_time(j)};
+            for (size_t j: case2_ind_) {
+                double numer_j { p_vec(j) * cox_obj_.S_time_(j)};
                 estep_m(j) = numer_j / (1 - p_vec(j) + numer_j);
             }
 
             // E-step: compute the w vector for case 3
-            for (size_t j: case3_ind) {
+            for (size_t j: case3_ind_) {
                 double m12_common {
-                    p_vec(j) * cox_obj.S_time(j) * cox_obj.Sc_time(j)
+                    p_vec(j) * cox_obj_.S_time_(j) * cox_obj_.Sc_time_(j)
                 };
-                double m1 { cox_obj.h_time(j) * m12_common };
-                double m2 { cox_obj.hc_time(j) * m12_common };
+                double m1 { cox_obj_.h_time_(j) * m12_common };
+                double m2 { cox_obj_.hc_time_(j) * m12_common };
                 double m3 {
-                    (1 - p_vec(j)) * cox_obj.hc_time(j) * cox_obj.Sc_time(j)
+                    (1 - p_vec(j)) * cox_obj_.hc_time_(j) * cox_obj_.Sc_time_(j)
                 };
                 double m { m1 + m2 + m3 };
                 double w1 { m1 / m };
@@ -511,16 +511,16 @@ namespace Intsurv {
             if (verbose > 1) {
                 Rcpp::Rcout << "\n" << std::string(40, '-')
                             << "\nRunning the M-step for the survival layer:"
-                            << std::endl;
+                            << "\n";
             }
-            cox_obj.set_offset_haz(arma::log(estep_m));
-            cox_obj.update_event_weight(event);
-            cox_obj.fit(cox_beta, cox_mstep_max_iter, cox_mstep_rel_tol,
-                        early_stop == 1, verbose > 2);
+            cox_obj_.set_offset_haz(arma::log(estep_m));
+            cox_obj_.update_event_weight(event);
+            cox_obj_.fit(cox_beta, cox_mstep_max_iter, cox_mstep_rel_tol,
+                         early_stop == 1, verbose > 2);
             if (verbose > 1) {
                 Rcpp::Rcout << "\n" << std::string(40, '-')
                             << "\nThe M-step for the survival layer was done."
-                            << std::endl;
+                            << "\n";
             }
 
             // allow users to stop the main loop
@@ -531,66 +531,66 @@ namespace Intsurv {
                 Rcpp::Rcout << "\n" << std::string(40, '-')
                             << "\nRunning M-step for the cure layer:";
             }
-            cure_obj.update_y(estep_m);
-            cure_obj.fit(cure_beta, cure_mstep_max_iter, cure_mstep_rel_tol,
-                         pmin, early_stop == 1, verbose > 2);
+            cure_obj_.update_y(estep_m);
+            cure_obj_.fit(cure_beta, cure_mstep_max_iter, cure_mstep_rel_tol,
+                          pmin, early_stop == 1, verbose > 2);
             if (verbose > 1) {
                 Rcpp::Rcout << std::string(40, '-')
                             << "\nThe M-step for the cure layer was done."
-                            << std::endl;
+                            << "\n";
             }
 
             // update tolerance
-            tol1 = rel_l2_norm(cox_obj.coef, cox_beta);
-            tol2 = rel_l2_norm(cure_obj.coef, cure_beta);
+            tol1 = rel_l2_norm(cox_obj_.coef_, cox_beta);
+            tol2 = rel_l2_norm(cure_obj_.coef_, cure_beta);
 
         } // end of the EM algorithm
 
-        // reset cox_obj and cure_obj in case of further usage
-        cox_obj.reset_offset_haz();
-        // cox_obj.set_offset(offset0);
-        cure_obj.update_y(cox_obj.get_event());
+        // reset cox_obj_ and cure_obj_ in case of further usage
+        cox_obj_.reset_offset_haz();
+        // cox_obj_.set_offset(offset0);
+        cure_obj_.update_y(cox_obj_.get_event());
 
         // prepare outputs
-        this->cox_coef = cox_beta;
-        this->cure_coef = cure_beta;
-        this->unique_time = cox_obj.unique_time;
-        this->h0_est = cox_obj.h0_est;
-        this->H0_est = cox_obj.H0_est;
-        this->S0_est = cox_obj.S0_est;
-        this->hc_est = cox_obj.hc_est;
-        this->Hc_est = cox_obj.Hc_est;
-        this->Sc_est = cox_obj.Sc_est;
-        this->negLogL = - obs_ell;
-        this->coef_df = cox_obj.coef_df + cure_obj.coef_df;
-        this->num_iter = i;
-        this->compute_bic1();
-        this->compute_bic2();
-        this->compute_aic();
+        cox_coef_ = cox_beta;
+        cure_coef_ = cure_beta;
+        unique_time_ = cox_obj_.unique_time_;
+        h0_est_ = cox_obj_.h0_est_;
+        H0_est_ = cox_obj_.H0_est_;
+        S0_est_ = cox_obj_.S0_est_;
+        hc_est_ = cox_obj_.hc_est_;
+        Hc_est_ = cox_obj_.Hc_est_;
+        Sc_est_ = cox_obj_.Sc_est_;
+        neg_ll_ = - obs_ell;
+        coef_df_ = cox_obj_.coef_df_ + cure_obj_.coef_df_;
+        n_iter_ = i;
+        compute_bic1();
+        compute_bic2();
+        compute_aic();
 
         // prepare scores and prob in their original order
-        arma::uvec rev_ord { cox_obj.get_rev_sort_index() };
-        this->cox_xBeta = cox_obj.xBeta.elem(rev_ord);
-        this->cure_xBeta = cure_obj.xBeta.elem(rev_ord);
+        arma::uvec rev_ord { cox_obj_.get_rev_sort_index() };
+        cox_xbeta_ = cox_obj_.xbeta_.elem(rev_ord);
+        cure_xbeta_ = cure_obj_.xbeta_.elem(rev_ord);
 
         // set prob to be 1 for events for computing C-index
-        arma::vec p_vec_event { cure_obj.prob_vec };
-        p_vec_event.elem(case1_ind).ones();
-        this->susceptible_prob = cure_obj.prob_vec.elem(rev_ord);
+        arma::vec p_vec_event { cure_obj_.prob_vec_ };
+        p_vec_event.elem(case1_ind_).ones();
+        susceptible_prob_ = cure_obj_.prob_vec_.elem(rev_ord);
 
         // compute posterior probabilities from E-step
-        for (size_t j: case2_ind) {
-            double numer_j { p_vec(j) *  cox_obj.S_time(j)};
+        for (size_t j: case2_ind_) {
+            double numer_j { p_vec(j) *  cox_obj_.S_time_(j)};
             estep_m(j) = numer_j / (1 - p_vec(j) + numer_j);
         }
-        for (size_t j: case3_ind) {
+        for (size_t j: case3_ind_) {
             double m12_common {
-                p_vec(j) * cox_obj.S_time(j) * cox_obj.Sc_time(j)
+                p_vec(j) * cox_obj_.S_time_(j) * cox_obj_.Sc_time_(j)
             };
-            double m1 { cox_obj.h_time(j) * m12_common };
-            double m2 { cox_obj.hc_time(j) * m12_common };
+            double m1 { cox_obj_.h_time_(j) * m12_common };
+            double m2 { cox_obj_.hc_time_(j) * m12_common };
             double m3 {
-                (1 - p_vec(j)) * cox_obj.hc_time(j) * cox_obj.Sc_time(j)
+                (1 - p_vec(j)) * cox_obj_.hc_time_(j) * cox_obj_.Sc_time_(j)
             };
             double m { m1 + m2 + m3 };
             double w1 { m1 / m };
@@ -600,17 +600,17 @@ namespace Intsurv {
             estep_m(j) = w1 + w2;
             event(j) = w1;
         }
-        this->estep_cured = 1 - estep_m.elem(rev_ord);
-        this->estep_event = event(rev_ord);
-        this->estep_censor = 1 - this->estep_cured - this->estep_event;
+        estep_cured_ = 1 - estep_m.elem(rev_ord);
+        estep_event_ = event(rev_ord);
+        estep_censor_ = 1 - estep_cured_ - estep_event_;
 
         // compute weighted c-index over the certain records
-        this->c_index = Intsurv::Concordance(
-            cox_obj.get_time().elem(cer_ind),
-            cox_obj.get_event().elem(cer_ind),
-            cox_obj.xBeta.elem(cer_ind),
-            p_vec_event.elem(cer_ind)
-            ).index;
+        c_index_ = Intsurv::Concordance(
+            cox_obj_.get_time().elem(cer_ind_),
+            cox_obj_.get_event().elem(cer_ind_),
+            cox_obj_.xbeta_.elem(cer_ind_),
+            p_vec_event.elem(cer_ind_)
+            ).index_;
     }
 
 
@@ -618,69 +618,69 @@ namespace Intsurv {
     // with adaptive elastic net penalty for perticular lambda's
     // lambda_1 * lasso * factors + lambda_2 * ridge
     inline void CoxphCureMcar::regularized_fit(
-        const double& cox_l1_lambda = 0,
-        const double& cox_l2_lambda = 0,
-        const double& cure_l1_lambda = 0,
-        const double& cure_l2_lambda = 0,
+        const double cox_l1_lambda = 0,
+        const double cox_l2_lambda = 0,
+        const double cure_l1_lambda = 0,
+        const double cure_l2_lambda = 0,
         const arma::vec& cox_l1_penalty_factor = 0,
         const arma::vec& cure_l1_penalty_factor = 0,
         const arma::vec& cox_start = 0,
         const arma::vec& cure_start = 0,
-        const unsigned int& em_max_iter = 500,
-        const double& em_rel_tol = 1e-5,
-        const unsigned int& cox_mstep_max_iter = 200,
-        const double& cox_mstep_rel_tol = 1e-5,
-        const unsigned int& cure_mstep_max_iter = 200,
-        const double& cure_mstep_rel_tol = 1e-5,
-        const unsigned int& tail_completion = 1,
+        const unsigned int em_max_iter = 500,
+        const double em_rel_tol = 1e-5,
+        const unsigned int cox_mstep_max_iter = 200,
+        const double cox_mstep_rel_tol = 1e-5,
+        const unsigned int cure_mstep_max_iter = 200,
+        const double cure_mstep_rel_tol = 1e-5,
+        const unsigned int tail_completion = 1,
         double tail_tau = -1,
-        const double& pmin = 1e-5,
-        const unsigned int& early_stop = 0,
-        const unsigned int& verbose = 0
+        const double pmin = 1e-5,
+        const unsigned int early_stop = 0,
+        const unsigned int verbose = 0
         )
     {
         // get pre-processed design matrix, time, and event
-        const arma::vec& time { cox_obj.get_time() };
-        arma::vec event { cox_obj.get_event() };
+        const arma::vec time { cox_obj_.get_time() };
+        arma::vec event { cox_obj_.get_event() };
 
         // L1 penalty factor for Cox model
-        arma::vec cox_l1_penalty { arma::ones(this->cox_p) };
-        if (cox_l1_penalty_factor.n_elem == cox_p) {
+        arma::vec cox_l1_penalty { arma::ones(cox_p_) };
+        if (cox_l1_penalty_factor.n_elem == cox_p_) {
             // re-scale so that sum(factor) = number of predictors
-            cox_l1_penalty = cox_l1_penalty_factor * cox_p /
+            cox_l1_penalty = cox_l1_penalty_factor * cox_p_ /
                 arma::sum(cox_l1_penalty_factor);
         }
-        this->cox_l1_penalty_factor = cox_l1_penalty;
+        cox_l1_penalty_factor_ = cox_l1_penalty;
         // L1 penalty factor for cure model
-        arma::vec cure_l1_penalty { arma::ones(this->cure_p0) };
-        if (cure_l1_penalty_factor.n_elem == this->cure_p0) {
+        arma::vec cure_l1_penalty { arma::ones(cure_p0_) };
+        if (cure_l1_penalty_factor.n_elem == cure_p0_) {
             // re-scale so that sum(factor) = number of predictors
-            cure_l1_penalty = cure_l1_penalty_factor * cure_p0 /
+            cure_l1_penalty = cure_l1_penalty_factor * cure_p0_ /
                 arma::sum(cure_l1_penalty_factor);
         }
-        this->cure_l1_penalty_factor = cure_l1_penalty;
+        cure_l1_penalty_factor_ = cure_l1_penalty;
 
         // initialized with all zeros coef
-        arma::vec cox_beta { arma::zeros(this->cox_p) };
-        arma::vec cure_beta { arma::zeros(this->cure_p) };
+        arma::vec cox_beta { arma::zeros(cox_p_) };
+        arma::vec cure_beta { arma::zeros(cure_p_) };
 
         // compute the large enough lambdas that result in all-zero estimates
-        arma::vec cox_grad_zero { arma::abs(cox_obj.gradient(cox_beta)) };
+        arma::vec cox_grad_zero { arma::abs(cox_obj_.gradient(cox_beta)) };
         arma::vec cure_grad_zero {
-            arma::abs(cure_obj.gradient(cure_beta, pmin))
+            arma::abs(cure_obj_.gradient(cure_beta, pmin))
         };
         cure_grad_zero = cure_grad_zero.tail(cure_l1_penalty.n_elem);
         // excluding variable with zero penalty factor
         arma::uvec cox_active_l1_penalty { arma::find(cox_l1_penalty > 0) };
         arma::uvec cure_active_l1_penalty { arma::find(cure_l1_penalty > 0) };
-        this->cox_l1_lambda_max = arma::max(
+        cox_l1_lambda_max_ = arma::max(
             cox_grad_zero.elem(cox_active_l1_penalty) /
             cox_l1_penalty.elem(cox_active_l1_penalty)
-            ) / this->nObs;
-        this->cure_l1_lambda_max = arma::max(
+            ) / n_obs_;
+        cure_l1_lambda_max_ = arma::max(
             cure_grad_zero.elem(cure_active_l1_penalty) /
             cure_l1_penalty.elem(cure_active_l1_penalty)
-            ) / this->nObs;
+            ) / n_obs_;
 
         // early stop if we want lambda_max by setting em_max_iter = 0
         if (em_max_iter == 0) {
@@ -688,49 +688,49 @@ namespace Intsurv {
         }
 
         // initialize cox_beta
-        if (cox_start.n_elem == this->cox_p) {
+        if (cox_start.n_elem == cox_p_) {
             cox_beta = cox_start;
         } else {
-            cox_beta = arma::zeros(this->cox_p);
+            cox_beta = arma::zeros(cox_p_);
         }
-        arma::vec cox_exp_x_beta = arma::exp(cox_obj.get_x() * cox_beta);
+        arma::vec cox_exp_x_beta = arma::exp(cox_obj_.get_x() * cox_beta);
         // initialize cure_beta
-        if (cure_start.n_elem == this->cure_p) {
+        if (cure_start.n_elem == cure_p_) {
             cure_beta = cure_start;
         } else {
-            cure_beta = arma::zeros(this->cure_p);
+            cure_beta = arma::zeros(cure_p_);
         }
 
         // initialize coef estimates
-        cure_obj.coef = cure_beta;
-        cox_obj.coef = cox_beta;
-        cure_obj.coef_df = get_coef_df(cure_beta);
-        cox_obj.coef_df = get_coef_df(cox_beta);
+        cure_obj_.coef_ = cure_beta;
+        cox_obj_.coef_ = cox_beta;
+        cure_obj_.coef_df_ = get_coef_df(cure_beta);
+        cox_obj_.coef_df_ = get_coef_df(cox_beta);
 
         // initialize baseline hazard functions for the E-step
         // for events
         NelsonAalen nelen_event {
-            NelsonAalen(time.elem(this->cer_ind),
-                        event.elem(this->cer_ind))
+            NelsonAalen(time.elem(cer_ind_),
+                        event.elem(cer_ind_))
         };
-        cox_obj.h0_time = nelen_event.step_inst_rate(time);
-        cox_obj.H0_time = nelen_event.step_cum_rate(time);
+        cox_obj_.h0_time_ = nelen_event.step_inst_rate(time);
+        cox_obj_.H0_time_ = nelen_event.step_cum_rate(time);
         // for censoring
         NelsonAalen nelen_censor {
-            NelsonAalen(time.elem(this->cer_ind),
-                        1 - event.elem(this->cer_ind))
+            NelsonAalen(time.elem(cer_ind_),
+                        1 - event.elem(cer_ind_))
         };
-        cox_obj.hc_time = nelen_censor.step_inst_rate(time);
-        cox_obj.Hc_time = nelen_censor.step_cum_rate(time);
+        cox_obj_.hc_time_ = nelen_censor.step_inst_rate(time);
+        cox_obj_.Hc_time_ = nelen_censor.step_cum_rate(time);
         // update related function values
-        cox_obj.h_time = cox_obj.h0_time % cox_exp_x_beta;
-        cox_obj.H_time = cox_obj.H0_time % cox_exp_x_beta;
-        cox_obj.S0_time = arma::exp(- cox_obj.H0_time);
-        cox_obj.S_time = arma::exp(- cox_obj.H_time);
-        cox_obj.Sc_time = arma::exp(- cox_obj.Hc_time);
+        cox_obj_.h_time_ = cox_obj_.h0_time_ % cox_exp_x_beta;
+        cox_obj_.H_time_ = cox_obj_.H0_time_ % cox_exp_x_beta;
+        cox_obj_.S0_time_ = arma::exp(- cox_obj_.H0_time_);
+        cox_obj_.S_time_ = arma::exp(- cox_obj_.H_time_);
+        cox_obj_.Sc_time_ = arma::exp(- cox_obj_.Hc_time_);
 
         // intialization for the main loop
-        arma::vec p_vec { arma::zeros(nObs) };
+        arma::vec p_vec { arma::zeros(n_obs_) };
         arma::vec estep_m { event };
         size_t i {0};
         double obs_ell {0};
@@ -739,11 +739,11 @@ namespace Intsurv {
         double bic1_old { arma::datum::inf }, bic2_old { bic1_old };
         double tol1 { arma::datum::inf }, tol2 { tol1 };
         arma::vec s0_wi_tail, s_wi_tail;
-        // arma::vec offset0 { cox_obj.get_offset() };
+        // arma::vec offset0 { cox_obj_.get_offset() };
 
         // prepare for tail completion
-        const arma::uvec case23_ind { vec_union(case2_ind, case3_ind) };
-        double max_event_time { time(this->max_event_time_ind) };
+        const arma::uvec case23_ind { vec_union(case2_ind_, case3_ind_) };
+        double max_event_time { time(max_event_time_ind_) };
         if (tail_tau < 0)
             tail_tau = arma::datum::inf;
 
@@ -753,14 +753,14 @@ namespace Intsurv {
         // main loop of EM algorithm
         while (true) {
             // update to the latest estimates
-            p_vec = cure_obj.predict(cure_obj.coef, pmin);
-            cox_obj.compute_haz_surv_time();
-            cox_obj.compute_censor_haz_surv_time();
+            p_vec = cure_obj_.predict(cure_obj_.coef_, pmin);
+            cox_obj_.compute_haz_surv_time();
+            cox_obj_.compute_censor_haz_surv_time();
 
             // prepare for exponential tail completion method
             double s0_tau {0}, etail_lambda {0};
             if (tail_completion == 2) {
-                s0_tau = cox_obj.S0_time(max_event_time_ind);
+                s0_tau = cox_obj_.S0_time_(max_event_time_ind_);
                 etail_lambda = - std::log(s0_tau / max_event_time);
             }
             // tail completion for the conditional survival function
@@ -771,26 +771,26 @@ namespace Intsurv {
                         // tail completion after the given tail_tau
                         // by default, it means no tail completion
                         if (time(j) > tail_tau) {
-                            cox_obj.S_time(j) = 0;
-                            cox_obj.S0_time(j) = 0;
+                            cox_obj_.S_time_(j) = 0;
+                            cox_obj_.S0_time_(j) = 0;
                         }
                         break;
                     case 1:
                         // zero-tail constraint
                         if (time(j) > max_event_time) {
-                            cox_obj.S_time(j) = 0;
-                            cox_obj.S0_time(j) = 0;
+                            cox_obj_.S_time_(j) = 0;
+                            cox_obj_.S0_time_(j) = 0;
                         }
                         break;
                     case 2:
                         // exponential tail by Peng (2003)
                         if (time(j) > max_event_time) {
-                            cox_obj.S0_time(j) = std::exp(
+                            cox_obj_.S0_time_(j) = std::exp(
                                 - etail_lambda * time(j)
                                 );
-                            cox_obj.S_time(j) = std::pow(
-                                cox_obj.S0_time(j),
-                                std::exp(cox_obj.xBeta(j))
+                            cox_obj_.S_time_(j) = std::pow(
+                                cox_obj_.S0_time_(j),
+                                std::exp(cox_obj_.xbeta_(j))
                                 );
                         }
                         break;
@@ -802,63 +802,63 @@ namespace Intsurv {
             // compute observed data log-likelihood
             obs_ell = 0;
             // for case 1
-            for (size_t j: case1_ind) {
+            for (size_t j: case1_ind_) {
                 obs_ell += std::log(p_vec(j)) +
-                    std::log(cox_obj.h_time(j)) +
-                    std::log(cox_obj.S_time(j)) +
-                    std::log(cox_obj.Sc_time(j));
+                    std::log(cox_obj_.h_time_(j)) +
+                    std::log(cox_obj_.S_time_(j)) +
+                    std::log(cox_obj_.Sc_time_(j));
             }
             // for case 2
-            for (size_t j: case2_ind) {
+            for (size_t j: case2_ind_) {
                 obs_ell +=
-                    std::log(p_vec(j) * cox_obj.S_time(j) + 1 - p_vec(j)) +
-                    std::log(cox_obj.Sc_time(j)) +
-                    std::log(cox_obj.hc_time(j));
+                    std::log(p_vec(j) * cox_obj_.S_time_(j) + 1 - p_vec(j)) +
+                    std::log(cox_obj_.Sc_time_(j)) +
+                    std::log(cox_obj_.hc_time_(j));
             }
             // for case 3
-            for (size_t j: case3_ind) {
+            for (size_t j: case3_ind_) {
                 double m1 {
-                    p_vec(j) * cox_obj.h_time(j) *
-                    cox_obj.S_time(j) * cox_obj.Sc_time(j)
+                    p_vec(j) * cox_obj_.h_time_(j) *
+                    cox_obj_.S_time_(j) * cox_obj_.Sc_time_(j)
                 };
                 double m2 {
-                    p_vec(j) * cox_obj.hc_time(j) *
-                    cox_obj.Sc_time(j) * cox_obj.S_time(j)
+                    p_vec(j) * cox_obj_.hc_time_(j) *
+                    cox_obj_.Sc_time_(j) * cox_obj_.S_time_(j)
                 };
                 double m3 {
-                    (1 - p_vec(j)) * cox_obj.hc_time(j) * cox_obj.Sc_time(j)
+                    (1 - p_vec(j)) * cox_obj_.hc_time_(j) * cox_obj_.Sc_time_(j)
                 };
                 obs_ell += std::log(m1 + m2 + m3);
             }
             // compuete the regularized objective function
             double reg_cox {
-                cox_l1_lambda * l1_norm(cox_obj.coef % cox_l1_penalty) +
-                cox_l2_lambda * sum_of_square(cox_obj.coef)
+                cox_l1_lambda_ * l1_norm(cox_obj_.coef_ % cox_l1_penalty) +
+                cox_l2_lambda_ * sum_of_square(cox_obj_.coef_)
             };
             double reg_cure {
-                cure_l1_lambda *
-                l1_norm(cure_obj.coef.tail(cure_p0) % cure_l1_penalty) +
-                cure_l2_lambda *
-                sum_of_square(cure_obj.coef.tail(cure_p0))
+                cure_l1_lambda_ *
+                l1_norm(cure_obj_.coef_.tail(cure_p0_) % cure_l1_penalty) +
+                cure_l2_lambda_ *
+                sum_of_square(cure_obj_.coef_.tail(cure_p0_))
             };
-            reg_obj = - obs_ell / this->nObs + reg_cox + reg_cure;
+            reg_obj = - obs_ell / n_obs_ + reg_cox + reg_cure;
 
             // compute bic
-            this->negLogL = - obs_ell;
-            this->coef_df = cox_obj.coef_df + cure_obj.coef_df;
-            this->compute_bic1();
-            this->compute_bic2();
-            this->compute_aic();
+            neg_ll_ = - obs_ell;
+            coef_df_ = cox_obj_.coef_df_ + cure_obj_.coef_df_;
+            compute_bic1();
+            compute_bic2();
+            compute_aic();
 
             // if verbose
             if (verbose) {
                 Rcpp::Rcout << "\n" << std::string(50, '=')
                             << "\niteration: " << i
                             << "\n  Cox coef: "
-                            << arma2rvec(cox_obj.coef)
+                            << arma2rvec(cox_obj_.coef_)
                             << "\n    relative diff: " << tol1
                             << "\n  cure coef: "
-                            << arma2rvec(cure_obj.coef)
+                            << arma2rvec(cure_obj_.coef_)
                             << "\n    relative diff: " << tol2
                             << "\n  observed negative log-likelihood: "
                             << - obs_ell
@@ -868,16 +868,16 @@ namespace Intsurv {
                             << reg_cox
                             << "\n    penalty on cure layer: "
                             << reg_cure
-                            << std::endl;
+                            << "\n";
             }
 
             bool early_exit { false };
             // early exit if has any `nan`
-            if (cox_obj.coef.has_nan() || cure_obj.coef.has_nan()) {
+            if (cox_obj_.coef_.has_nan() || cure_obj_.coef_.has_nan()) {
                 obs_ell = - arma::datum::inf;
                 Rcpp::Rcout << "Warning: Found NA's in coef. "
                             << "The objective function went to infinite."
-                            << std::endl;
+                            << "\n";
                 early_exit = true;
             }
             // early exit if the regularized objective function increased, which
@@ -886,15 +886,15 @@ namespace Intsurv {
                 if (verbose) {
                     Rcpp::Rcout << "Warning: "
                                 << "The observed data log-likelihood decreased."
-                                << std::endl;
+                                << "\n";
                 }
                 early_exit = early_exit || early_stop == 1;
             }
             // early exit if bic increased
-            if (this->bic1 > bic1_old && this->bic2 > bic2_old) {
+            if (bic1_ > bic1_old && bic2_ > bic2_old) {
                 if (verbose) {
                     Rcpp::Rcout << "The BIC increased."
-                                << std::endl;
+                                << "\n";
                 }
                 early_exit = early_exit || early_stop == 2;
             }
@@ -904,20 +904,20 @@ namespace Intsurv {
                     Rcpp::Rcout << "Ended the EM algorithm after iteration "
                                 << i
                                 << " with estimates from last step."
-                                << std::endl;
+                                << "\n";
                 }
                 // take the estimates from the last step
-                cox_obj.coef = cox_beta;
-                cure_obj.coef = cure_beta;
-                // update coef_df and en_coef
-                cox_obj.update_from_coef(cox_l2_lambda);
-                cure_obj.update_from_coef(cure_l2_lambda);
+                cox_obj_.coef_ = cox_beta;
+                cure_obj_.coef_ = cure_beta;
+                // update coef_df_ and en_coef
+                cox_obj_.update_from_coef(cox_l2_lambda_);
+                cure_obj_.update_from_coef(cure_l2_lambda_);
                 // update hazard and survival function estimates
-                cox_obj.compute_haz_surv_time();
-                cox_obj.S0_time = s0_wi_tail;
-                cox_obj.S_time = s_wi_tail;
-                cox_obj.compute_censor_haz_surv_time();
-                cox_obj.est_haz_surv();
+                cox_obj_.compute_haz_surv_time();
+                cox_obj_.S0_time_ = s0_wi_tail;
+                cox_obj_.S_time_ = s_wi_tail;
+                cox_obj_.compute_censor_haz_surv_time();
+                cox_obj_.est_haz_surv();
                 // use old obs likelihood
                 obs_ell = obs_ell_old;
                 // break here
@@ -929,15 +929,15 @@ namespace Intsurv {
                     if (i < em_max_iter) {
                         Rcpp::Rcout << "\n" << std::string(50, '=') << "\n"
                                     << "reached convergence after " << i
-                                    << " iterations\n" << std::endl;
+                                    << " iterations\n" << "\n";
                     } else {
                         Rcpp::Rcout << "\n" << std::string(50, '=') << "\n"
                                     << "reached the max iteration number."
-                                    << std::endl;
+                                    << "\n";
                     }
                 }
                 // compute hazard and survival function estimates
-                cox_obj.est_haz_surv();
+                cox_obj_.est_haz_surv();
                 // get out of the loop here
                 break;
             }
@@ -946,31 +946,31 @@ namespace Intsurv {
             Rcpp::checkUserInterrupt();
 
             // record estimates from last step
-            cox_beta = cox_obj.coef;
-            cure_beta = cure_obj.coef;
+            cox_beta = cox_obj_.coef_;
+            cure_beta = cure_obj_.coef_;
             obs_ell_old = obs_ell;
             reg_obj_old = reg_obj;
-            s0_wi_tail = cox_obj.S0_time;
-            s_wi_tail = cox_obj.S_time;
+            s0_wi_tail = cox_obj_.S0_time_;
+            s_wi_tail = cox_obj_.S_time_;
 
             // update iter for the next iteration
             ++i;
 
             // E-step: compute the v vector for case 2
-            for (size_t j: case2_ind) {
-                double numer_j { p_vec(j) * cox_obj.S_time(j)};
+            for (size_t j: case2_ind_) {
+                double numer_j { p_vec(j) * cox_obj_.S_time_(j)};
                 estep_m(j) = numer_j / (1 - p_vec(j) + numer_j);
             }
 
             // E-step: compute the w vector for case 3
-            for (size_t j: case3_ind) {
+            for (size_t j: case3_ind_) {
                 double m12_common {
-                    p_vec(j) * cox_obj.S0_time(j) * cox_obj.Sc_time(j)
+                    p_vec(j) * cox_obj_.S0_time_(j) * cox_obj_.Sc_time_(j)
                 };
-                double m1 { cox_obj.h_time(j) * m12_common };
-                double m2 { cox_obj.hc_time(j) * m12_common };
+                double m1 { cox_obj_.h_time_(j) * m12_common };
+                double m2 { cox_obj_.hc_time_(j) * m12_common };
                 double m3 {
-                    (1 - p_vec(j)) * cox_obj.hc_time(j) * cox_obj.Sc_time(j)
+                    (1 - p_vec(j)) * cox_obj_.hc_time_(j) * cox_obj_.Sc_time_(j)
                 };
                 double m { m1 + m2 + m3 };
                 double w1 { m1 / m };
@@ -990,19 +990,19 @@ namespace Intsurv {
             if (verbose > 1) {
                 Rcpp::Rcout << "\n" << std::string(40, '-')
                             << "\nRunning the M-step for the survival layer:"
-                            << std::endl;
+                            << "\n";
             }
-            cox_obj.set_offset_haz(arma::log(estep_m));
-            cox_obj.update_event_weight(event);
-            cox_obj.regularized_fit(
-                cox_l1_lambda, cox_l2_lambda, cox_l1_penalty_factor,
+            cox_obj_.set_offset_haz(arma::log(estep_m));
+            cox_obj_.update_event_weight(event);
+            cox_obj_.regularized_fit(
+                cox_l1_lambda_, cox_l2_lambda_, cox_l1_penalty_factor_,
                 cox_beta, cox_mstep_max_iter, cox_mstep_rel_tol,
                 early_stop == 1, verbose > 2
                 );
             if (verbose > 1) {
                 Rcpp::Rcout << "\n" << std::string(40, '-')
                             << "\nThe M-step for the survival layer was done."
-                            << std::endl;
+                            << "\n";
             }
 
             // allow users to stop the main loop
@@ -1013,77 +1013,77 @@ namespace Intsurv {
                 Rcpp::Rcout << "\n" << std::string(40, '-')
                             << "\nRunning M-step for the cure layer:";
             }
-            cure_obj.update_y(estep_m);
-            cure_obj.regularized_fit(
-                cure_l1_lambda, cure_l2_lambda, cure_l1_penalty_factor,
+            cure_obj_.update_y(estep_m);
+            cure_obj_.regularized_fit(
+                cure_l1_lambda_, cure_l2_lambda_, cure_l1_penalty_factor_,
                 cure_beta, cure_mstep_max_iter, cure_mstep_rel_tol,
                 pmin, early_stop == 1, verbose > 2
                 );
             if (verbose > 1) {
                 Rcpp::Rcout << std::string(40, '-')
                             << "\nThe M-step for the cure layer was done."
-                            << std::endl;
+                            << "\n";
             }
 
             // update tolerance
-            tol1 = rel_l2_norm(cox_obj.coef, cox_beta);
-            tol2 = rel_l2_norm(cure_obj.coef, cure_beta);
+            tol1 = rel_l2_norm(cox_obj_.coef_, cox_beta);
+            tol2 = rel_l2_norm(cure_obj_.coef_, cure_beta);
 
         } // end of the EM algorithm
 
-        // reset cox_obj and cure_obj in case of further usage
-        cox_obj.reset_offset_haz();
-        // cox_obj.set_offset(offset0);
-        cure_obj.update_y(cox_obj.get_event());
+        // reset cox_obj_ and cure_obj_ in case of further usage
+        cox_obj_.reset_offset_haz();
+        // cox_obj_.set_offset(offset0);
+        cure_obj_.update_y(cox_obj_.get_event());
 
         // prepare outputs
-        this->cox_coef = cox_obj.coef;
-        this->cure_coef = cure_obj.coef;
-        this->cox_en_coef = cox_obj.en_coef;
-        this->cure_en_coef = cure_obj.en_coef;
+        cox_coef_ = cox_obj_.coef_;
+        cure_coef_ = cure_obj_.coef_;
+        cox_en_coef_ = cox_obj_.en_coef_;
+        cure_en_coef_ = cure_obj_.en_coef_;
 
-        this->unique_time = cox_obj.unique_time;
-        this->h0_est = cox_obj.h0_est;
-        this->H0_est = cox_obj.H0_est;
-        this->S0_est = cox_obj.S0_est;
-        this->hc_est = cox_obj.hc_est;
-        this->Hc_est = cox_obj.Hc_est;
-        this->Sc_est = cox_obj.Sc_est;
+        unique_time_ = cox_obj_.unique_time_;
+        h0_est_ = cox_obj_.h0_est_;
+        H0_est_ = cox_obj_.H0_est_;
+        S0_est_ = cox_obj_.S0_est_;
+        hc_est_ = cox_obj_.hc_est_;
+        Hc_est_ = cox_obj_.Hc_est_;
+        Sc_est_ = cox_obj_.Sc_est_;
 
-        this->negLogL = - obs_ell;
-        this->coef_df = cox_obj.coef_df + cure_obj.coef_df;
-        this->cox_l1_lambda = cox_l1_lambda;
-        this->cox_l2_lambda = cox_l2_lambda;
-        this->cure_l1_lambda = cure_l1_lambda;
-        this->cure_l2_lambda = cure_l2_lambda;
-        this->num_iter = i;
-        this->compute_bic1();
-        this->compute_bic2();
-        this->compute_aic();
+        neg_ll_ = - obs_ell;
+        coef_df_ = cox_obj_.coef_df_ + cure_obj_.coef_df_;
+        cox_l1_lambda_ = cox_l1_lambda;
+        cox_l2_lambda_ = cox_l2_lambda;
+        cure_l1_lambda_ = cure_l1_lambda;
+        cure_l2_lambda_ = cure_l2_lambda;
+        n_iter_ = i;
+        compute_bic1();
+        compute_bic2();
+        compute_aic();
 
         // prepare scores and prob in their original order
-        arma::uvec rev_ord { cox_obj.get_rev_sort_index() };
-        this->cox_xBeta = cox_obj.xBeta.elem(rev_ord);
-        this->cure_xBeta = cure_obj.xBeta.elem(rev_ord);
+        arma::uvec rev_ord { cox_obj_.get_rev_sort_index() };
+        cox_xbeta_ = cox_obj_.xbeta_.elem(rev_ord);
+        cure_xbeta_ = cure_obj_.xbeta_.elem(rev_ord);
 
         // set prob to be 1 for events for computing C-index
-        arma::vec p_vec_event { cure_obj.prob_vec };
-        p_vec_event.elem(case1_ind).ones();
-        this->susceptible_prob = cure_obj.prob_vec.elem(rev_ord);
+        arma::vec p_vec_event { cure_obj_.prob_vec_ };
+        p_vec_event.elem(case1_ind_).ones();
+        susceptible_prob_ = cure_obj_.prob_vec_.elem(rev_ord);
 
         // compute posterior probabilities from E-step
-        for (size_t j: case2_ind) {
-            double numer_j { p_vec(j) *  cox_obj.S_time(j)};
+        for (size_t j: case2_ind_) {
+            double numer_j { p_vec(j) *  cox_obj_.S_time_(j)};
             estep_m(j) = numer_j / (1 - p_vec(j) + numer_j);
         }
-        for (size_t j: case3_ind) {
+        for (size_t j: case3_ind_) {
             double m12_common {
-                p_vec(j) * cox_obj.S0_time(j) * cox_obj.Sc_time(j)
+                p_vec(j) * cox_obj_.S0_time_(j) * cox_obj_.Sc_time_(j)
             };
-            double m1 { cox_obj.h_time(j) * m12_common };
-            double m2 { cox_obj.hc_time(j) * m12_common };
+            double m1 { cox_obj_.h_time_(j) * m12_common };
+            double m2 { cox_obj_.hc_time_(j) * m12_common };
             double m3 {
-                (1 - p_vec(j)) * cox_obj.hc_time(j) * cox_obj.Sc_time(j)
+                (1 - p_vec(j)) * cox_obj_.hc_time_(j) * cox_obj_.Sc_time_(j)
             };
             double m { m1 + m2 + m3 };
             double w1 { m1 / m };
@@ -1091,17 +1091,17 @@ namespace Intsurv {
             estep_m(j) = w1 + w2;
             event(j) = w1;
         }
-        this->estep_cured = 1 - estep_m.elem(rev_ord);
-        this->estep_event = event(rev_ord);
-        this->estep_censor = 1 - this->estep_cured - this->estep_event;
+        estep_cured_ = 1 - estep_m.elem(rev_ord);
+        estep_event_ = event(rev_ord);
+        estep_censor_ = 1 - estep_cured_ - estep_event_;
 
         // compute weighted c-index over the certain records
-        this->c_index = Intsurv::Concordance(
-            cox_obj.get_time().elem(cer_ind),
-            cox_obj.get_event().elem(cer_ind),
-            cox_obj.xBeta.elem(cer_ind),
-            p_vec_event.elem(cer_ind)
-            ).index;
+        c_index_ = Intsurv::Concordance(
+            cox_obj_.get_time().elem(cer_ind_),
+            cox_obj_.get_event().elem(cer_ind_),
+            cox_obj_.xbeta_.elem(cer_ind_),
+            p_vec_event.elem(cer_ind_)
+            ).index_;
     }
 
     // function to compute the observe data log-likelihood function
@@ -1109,28 +1109,28 @@ namespace Intsurv {
     inline double CoxphCureMcar::obs_log_likelihood() const
     {
         double obs_ell { 0 };
-        arma::vec sus_prob { cure_obj.prob_vec };
+        arma::vec sus_prob { cure_obj_.prob_vec_ };
         // for case 1
-        for (size_t j: case1_ind) {
+        for (size_t j: case1_ind_) {
             obs_ell += std::log(sus_prob(j)) +
-                std::log(cox_obj.h_time(j)) -
-                cox_obj.H_time(j) - cox_obj.Hc_time(j);
+                std::log(cox_obj_.h_time_(j)) -
+                cox_obj_.H_time_(j) - cox_obj_.Hc_time_(j);
         }
         // for case 2
-        for (size_t j: case2_ind) {
+        for (size_t j: case2_ind_) {
             obs_ell +=
-                std::log(sus_prob(j) * cox_obj.S_time(j) + 1 - sus_prob(j)) -
-                cox_obj.Hc_time(j) + std::log(cox_obj.hc_time(j));
+                std::log(sus_prob(j) * cox_obj_.S_time_(j) + 1 - sus_prob(j)) -
+                cox_obj_.Hc_time_(j) + std::log(cox_obj_.hc_time_(j));
         }
         // for case 3
-        for (size_t j: case3_ind) {
+        for (size_t j: case3_ind_) {
             double m12_common {
-                sus_prob(j) * cox_obj.S0_time(j) * cox_obj.Sc_time(j)
+                sus_prob(j) * cox_obj_.S0_time_(j) * cox_obj_.Sc_time_(j)
             };
-            double m1 { cox_obj.h_time(j) * m12_common };
-            double m2 { cox_obj.hc_time(j) * m12_common };
+            double m1 { cox_obj_.h_time_(j) * m12_common };
+            double m2 { cox_obj_.hc_time_(j) * m12_common };
             double m3 {
-                (1 - sus_prob(j)) * cox_obj.hc_time(j) * cox_obj.Sc_time(j)
+                (1 - sus_prob(j)) * cox_obj_.hc_time_(j) * cox_obj_.Sc_time_(j)
             };
             obs_ell += std::log(m1 + m2 + m3);
         }
@@ -1151,12 +1151,12 @@ namespace Intsurv {
         ) const
     {
         // check if the number of covariates matchs the fitted model
-        if (new_cox_x.n_cols != this->cox_p) {
+        if (new_cox_x.n_cols != cox_p_) {
             throw std::range_error(
                 "The number of columns ('new_cox_x') must match the model."
                 );
         }
-        if (new_cure_x.n_cols != this->cure_p0) {
+        if (new_cure_x.n_cols != cure_p0_) {
             throw std::range_error(
                 "The number of columns ('new_cure_x') must match the model."
                 );
@@ -1199,7 +1199,7 @@ namespace Intsurv {
         }
 
         // add intercept if needed
-        if (this->cure_p > this->cure_p0) {
+        if (cure_p_ > cure_p0_) {
             new_cure_x = arma::join_horiz(
                 arma::ones(new_cure_x.n_rows), new_cure_x
                 );
@@ -1209,46 +1209,46 @@ namespace Intsurv {
         arma::uvec new_case3_ind { arma::find(new_event == const4na) };
 
         // construct the baseline survival curve
-        // tail completion has already been applied to this->S0_est
+        // tail completion has already been applied to S0_est_
         arma::vec S0_vec {
-            arma::join_cols(arma::ones<arma::vec>(1), this->S0_est)
+            arma::join_cols(arma::ones<arma::vec>(1), S0_est_)
         };
         arma::vec Sc0_vec {
-            arma::join_cols(arma::ones<arma::vec>(1), this->Sc_est)
+            arma::join_cols(arma::ones<arma::vec>(1), Sc_est_)
         };
         // baseline estimates
         arma::vec S_vec {
-            step_fun(new_time, this->unique_time, S0_vec)
+            step_fun(new_time, unique_time_, S0_vec)
         };
         arma::vec Sc_vec {
-            step_fun(new_time, this->unique_time, Sc0_vec)
+            step_fun(new_time, unique_time_, Sc0_vec)
         };
         arma::vec H_vec { - arma::log(S_vec) };
         arma::vec Hc_vec { - arma::log(Sc_vec) };
         // only consider positive values
-        arma::uvec which_h { arma::find(this->h0_est > 0) };
-        arma::uvec which_hc { arma::find(this->hc_est > 0) };
+        arma::uvec which_h { arma::find(h0_est_ > 0) };
+        arma::uvec which_hc { arma::find(hc_est_ > 0) };
         arma::vec h_vec {
             step_fun2(new_time,
-                      this->unique_time.elem(which_h),
-                      this->h0_est.elem(which_h))
+                      unique_time_.elem(which_h),
+                      h0_est_.elem(which_h))
         };
         arma::vec hc_vec {
             step_fun2(new_time,
-                      this->unique_time.elem(which_hc),
-                      this->hc_est.elem(which_hc))
+                      unique_time_.elem(which_hc),
+                      hc_est_.elem(which_hc))
         };
         // apply x * beta
         // compute parts for the new data
         arma::vec new_cox_xbeta {
-            mat2vec(new_cox_x * this->cox_coef) + new_cox_offset
+            mat2vec(new_cox_x * cox_coef_) + new_cox_offset
         };
         arma::vec exp_cox_xbeta { arma::exp(new_cox_xbeta) };
         h_vec %= exp_cox_xbeta;
         H_vec %= exp_cox_xbeta;
         S_vec = arma::exp(- H_vec);
         arma::vec new_cure_xgamma {
-            mat2vec(new_cure_x * this->cure_coef) + new_cure_offset
+            mat2vec(new_cure_x * cure_coef_) + new_cure_offset
         };
         arma::vec p_vec { 1 / (1 + arma::exp(- new_cure_xgamma)) };
         for (size_t i {0}; i < p_vec.n_elem; ++i) {
@@ -1262,7 +1262,7 @@ namespace Intsurv {
         for (size_t j: new_case1_ind) {
             obs_ell += std::log(p_vec(j)) +
                 std::log(h_vec(j)) -
-                cox_obj.H_time(j) - cox_obj.Hc_time(j);
+                cox_obj_.H_time_(j) - cox_obj_.Hc_time_(j);
         }
         // for case 2
         for (size_t j: new_case2_ind) {

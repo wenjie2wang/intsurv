@@ -15,8 +15,8 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 //
 
-#ifndef CV_COXPH_CURE_H
-#define CV_COXPH_CURE_H
+#ifndef INTSURV_CV_COXPH_CURE_H
+#define INTSURV_CV_COXPH_CURE_H
 
 #include <RcppArmadillo.h>
 #include "cross-validation.h"
@@ -88,75 +88,75 @@ namespace Intsurv {
             // training set
             arma::vec train_time {
                 arma::join_vert(
-                    time_case1.elem(cv_obj_case1.train_index.at(i)),
-                    time_case2.elem(cv_obj_case2.train_index.at(i))
+                    time_case1.elem(cv_obj_case1.train_index_.at(i)),
+                    time_case2.elem(cv_obj_case2.train_index_.at(i))
                     )
             };
             arma::vec train_event {
                 arma::join_vert(
-                    event_case1.elem(cv_obj_case1.train_index.at(i)),
-                    event_case2.elem(cv_obj_case2.train_index.at(i))
+                    event_case1.elem(cv_obj_case1.train_index_.at(i)),
+                    event_case2.elem(cv_obj_case2.train_index_.at(i))
                     )
             };
             arma::mat train_cox_x {
                 arma::join_vert(
-                    cox_x_case1.rows(cv_obj_case1.train_index.at(i)),
-                    cox_x_case2.rows(cv_obj_case2.train_index.at(i))
+                    cox_x_case1.rows(cv_obj_case1.train_index_.at(i)),
+                    cox_x_case2.rows(cv_obj_case2.train_index_.at(i))
                     )
             };
             arma::mat train_cure_x {
                 arma::join_vert(
-                    cure_x_case1.rows(cv_obj_case1.train_index.at(i)),
-                    cure_x_case2.rows(cv_obj_case2.train_index.at(i))
+                    cure_x_case1.rows(cv_obj_case1.train_index_.at(i)),
+                    cure_x_case2.rows(cv_obj_case2.train_index_.at(i))
                     )
             };
             arma::vec train_cox_offset {
                 arma::join_vert(
-                    cox_offset_case1.elem(cv_obj_case1.train_index.at(i)),
-                    cox_offset_case2.elem(cv_obj_case2.train_index.at(i))
+                    cox_offset_case1.elem(cv_obj_case1.train_index_.at(i)),
+                    cox_offset_case2.elem(cv_obj_case2.train_index_.at(i))
                     )
             };
             arma::vec train_cure_offset {
                 arma::join_vert(
-                    cure_offset_case1.elem(cv_obj_case1.train_index.at(i)),
-                    cure_offset_case2.elem(cv_obj_case2.train_index.at(i))
+                    cure_offset_case1.elem(cv_obj_case1.train_index_.at(i)),
+                    cure_offset_case2.elem(cv_obj_case2.train_index_.at(i))
                     )
             };
             // testing set
             arma::vec test_time {
                 arma::join_vert(
-                    time_case1.elem(cv_obj_case1.test_index.at(i)),
-                    time_case2.elem(cv_obj_case2.test_index.at(i))
+                    time_case1.elem(cv_obj_case1.test_index_.at(i)),
+                    time_case2.elem(cv_obj_case2.test_index_.at(i))
                     )
             };
             arma::vec test_event {
                 arma::join_vert(
-                    event_case1.elem(cv_obj_case1.test_index.at(i)),
-                    event_case2.elem(cv_obj_case2.test_index.at(i))
+                    event_case1.elem(cv_obj_case1.test_index_.at(i)),
+                    event_case2.elem(cv_obj_case2.test_index_.at(i))
                     )
             };
             arma::mat test_cox_x {
                 arma::join_vert(
-                    cox_x_case1.rows(cv_obj_case1.test_index.at(i)),
-                    cox_x_case2.rows(cv_obj_case2.test_index.at(i))
+                    cox_x_case1.rows(cv_obj_case1.test_index_.at(i)),
+                    cox_x_case2.rows(cv_obj_case2.test_index_.at(i))
                     )
             };
             arma::mat test_cure_x {
                 arma::join_vert(
-                    cure_x_case1.rows(cv_obj_case1.test_index.at(i)),
-                    cure_x_case2.rows(cv_obj_case2.test_index.at(i))
+                    cure_x_case1.rows(cv_obj_case1.test_index_.at(i)),
+                    cure_x_case2.rows(cv_obj_case2.test_index_.at(i))
                     )
             };
             arma::vec test_cox_offset {
                 arma::join_vert(
-                    cox_offset_case1.elem(cv_obj_case1.test_index.at(i)),
-                    cox_offset_case2.elem(cv_obj_case2.test_index.at(i))
+                    cox_offset_case1.elem(cv_obj_case1.test_index_.at(i)),
+                    cox_offset_case2.elem(cv_obj_case2.test_index_.at(i))
                     )
             };
             arma::vec test_cure_offset {
                 arma::join_vert(
-                    cure_offset_case1.elem(cv_obj_case1.test_index.at(i)),
-                    cure_offset_case2.elem(cv_obj_case2.test_index.at(i))
+                    cure_offset_case1.elem(cv_obj_case1.test_index_.at(i)),
+                    cure_offset_case2.elem(cv_obj_case2.test_index_.at(i))
                     )
             };
             // define object
@@ -251,75 +251,75 @@ namespace Intsurv {
             // training set
             arma::vec train_time {
                 arma::join_vert(
-                    time_case1.elem(cv_obj_case1.train_index.at(i)),
-                    time_case2.elem(cv_obj_case2.train_index.at(i))
+                    time_case1.elem(cv_obj_case1.train_index_.at(i)),
+                    time_case2.elem(cv_obj_case2.train_index_.at(i))
                     )
             };
             arma::vec train_event {
                 arma::join_vert(
-                    event_case1.elem(cv_obj_case1.train_index.at(i)),
-                    event_case2.elem(cv_obj_case2.train_index.at(i))
+                    event_case1.elem(cv_obj_case1.train_index_.at(i)),
+                    event_case2.elem(cv_obj_case2.train_index_.at(i))
                     )
             };
             arma::mat train_cox_x {
                 arma::join_vert(
-                    cox_x_case1.rows(cv_obj_case1.train_index.at(i)),
-                    cox_x_case2.rows(cv_obj_case2.train_index.at(i))
+                    cox_x_case1.rows(cv_obj_case1.train_index_.at(i)),
+                    cox_x_case2.rows(cv_obj_case2.train_index_.at(i))
                     )
             };
             arma::mat train_cure_x {
                 arma::join_vert(
-                    cure_x_case1.rows(cv_obj_case1.train_index.at(i)),
-                    cure_x_case2.rows(cv_obj_case2.train_index.at(i))
+                    cure_x_case1.rows(cv_obj_case1.train_index_.at(i)),
+                    cure_x_case2.rows(cv_obj_case2.train_index_.at(i))
                     )
             };
             arma::vec train_cox_offset {
                 arma::join_vert(
-                    cox_offset_case1.elem(cv_obj_case1.train_index.at(i)),
-                    cox_offset_case2.elem(cv_obj_case2.train_index.at(i))
+                    cox_offset_case1.elem(cv_obj_case1.train_index_.at(i)),
+                    cox_offset_case2.elem(cv_obj_case2.train_index_.at(i))
                     )
             };
             arma::vec train_cure_offset {
                 arma::join_vert(
-                    cure_offset_case1.elem(cv_obj_case1.train_index.at(i)),
-                    cure_offset_case2.elem(cv_obj_case2.train_index.at(i))
+                    cure_offset_case1.elem(cv_obj_case1.train_index_.at(i)),
+                    cure_offset_case2.elem(cv_obj_case2.train_index_.at(i))
                     )
             };
             // testing set
             arma::vec test_time {
                 arma::join_vert(
-                    time_case1.elem(cv_obj_case1.test_index.at(i)),
-                    time_case2.elem(cv_obj_case2.test_index.at(i))
+                    time_case1.elem(cv_obj_case1.test_index_.at(i)),
+                    time_case2.elem(cv_obj_case2.test_index_.at(i))
                     )
             };
             arma::vec test_event {
                 arma::join_vert(
-                    event_case1.elem(cv_obj_case1.test_index.at(i)),
-                    event_case2.elem(cv_obj_case2.test_index.at(i))
+                    event_case1.elem(cv_obj_case1.test_index_.at(i)),
+                    event_case2.elem(cv_obj_case2.test_index_.at(i))
                     )
             };
             arma::mat test_cox_x {
                 arma::join_vert(
-                    cox_x_case1.rows(cv_obj_case1.test_index.at(i)),
-                    cox_x_case2.rows(cv_obj_case2.test_index.at(i))
+                    cox_x_case1.rows(cv_obj_case1.test_index_.at(i)),
+                    cox_x_case2.rows(cv_obj_case2.test_index_.at(i))
                     )
             };
             arma::mat test_cure_x {
                 arma::join_vert(
-                    cure_x_case1.rows(cv_obj_case1.test_index.at(i)),
-                    cure_x_case2.rows(cv_obj_case2.test_index.at(i))
+                    cure_x_case1.rows(cv_obj_case1.test_index_.at(i)),
+                    cure_x_case2.rows(cv_obj_case2.test_index_.at(i))
                     )
             };
             arma::vec test_cox_offset {
                 arma::join_vert(
-                    cox_offset_case1.elem(cv_obj_case1.test_index.at(i)),
-                    cox_offset_case2.elem(cv_obj_case2.test_index.at(i))
+                    cox_offset_case1.elem(cv_obj_case1.test_index_.at(i)),
+                    cox_offset_case2.elem(cv_obj_case2.test_index_.at(i))
                     )
             };
             arma::vec test_cure_offset {
                 arma::join_vert(
-                    cure_offset_case1.elem(cv_obj_case1.test_index.at(i)),
-                    cure_offset_case2.elem(cv_obj_case2.test_index.at(i))
+                    cure_offset_case1.elem(cv_obj_case1.test_index_.at(i)),
+                    cure_offset_case2.elem(cv_obj_case2.test_index_.at(i))
                     )
             };
             // define object
@@ -353,4 +353,4 @@ namespace Intsurv {
 }  // Intsurv
 
 
-#endif /* CV_COXPH_CURE_H */
+#endif

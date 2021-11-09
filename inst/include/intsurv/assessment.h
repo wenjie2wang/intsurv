@@ -15,21 +15,21 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 //
 
-#ifndef ASSESSMENT_H
-#define ASSESSMENT_H
+#ifndef INTSURV_ASSESSMENT_H
+#define INTSURV_ASSESSMENT_H
 
 #include <RcppArmadillo.h>
 #include "utils.h"
 
 namespace Intsurv {
-// A straightforward implementation of Harrel's C-index that allows weights
+// A straightforward implementation of Harrel's C-index_ that allows weights
     class Concordance {
     public:
-        double index {0.0};      // C-index result
-        double comparable {0.0}; // number of comparable pairs
-        double concordant {0.0}; // number of concordant pairs
-        // number of comparable pairs with tied risk scores
-        double tied_risk {0.0};
+        double index_ {0.0};      // C-index_ result
+        double comparable_ {0.0}; // number of comparable_ pairs
+        double concordant_ {0.0}; // number of concordant_ pairs
+        // number of comparable_ pairs with tied risk scores
+        double tied_risk_ {0.0};
 
         // constructors with weight
         Concordance(arma::vec time,
@@ -55,34 +55,34 @@ namespace Intsurv {
             // do the actual computation
             unsigned int nObs { time.n_elem };
             for (size_t i { 0 }; i < nObs - 1; ++i) {
-                // only comparable when event(i) > 0
+                // only comparable_ when event(i) > 0
                 if (event(i) > 0) {
                     for (size_t j { i + 1 }; j < nObs; ++j) {
-                        // not comparable if time(i) = time(j) and event(j) = 1
+                        // not comparable_ if time(i) = time(j) and event(j) = 1
                         if (isAlmostEqual(time(i), time(j)) && event(j) > 0) {
                             continue;
                         }
-                        // otherwise, comparable
-                        this->comparable += weight(j);
+                        // otherwise, comparable_
+                        comparable_ += weight(j);
                         // determine the concordance
                         if (isAlmostEqual(time(i), time(j))) {
                             // case 1. tied times but event(j) = 0
                             if (is_gt(risk_score(i), risk_score(j))) {
-                                this->concordant += weight(j);
+                                concordant_ += weight(j);
                             }
                         } else {
                             // case 2. distinct times
                             if (isAlmostEqual(risk_score(i), risk_score(j))) {
-                                this->tied_risk += weight(j);
+                                tied_risk_ += weight(j);
                             } else if (risk_score(i) > risk_score(j)) {
-                                this->concordant += weight(j);
+                                concordant_ += weight(j);
                             }
                         }
                     }
                 }
             }
-            this->index = (this->concordant + this->tied_risk / 2) /
-                this->comparable;
+            index_ = (concordant_ + tied_risk_ / 2) /
+                comparable_;
         }
 
         // constructor without weight

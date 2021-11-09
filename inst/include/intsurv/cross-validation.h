@@ -15,8 +15,8 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 //
 
-#ifndef CROSS_VALIDATION_H
-#define CROSS_VALIDATION_H
+#ifndef INTSURV_CROSS_VALIDATION_H
+#define INTSURV_CROSS_VALIDATION_H
 
 #include <vector>
 #include <RcppArmadillo.h>
@@ -24,12 +24,13 @@
 
 namespace Intsurv {
     class CrossValidation {
-    private:
+    protected:
         unsigned long n_obs_;
         unsigned long n_folds_ = 10;
+
     public:
-        std::vector<arma::uvec> train_index;
-        std::vector<arma::uvec> test_index;
+        std::vector<arma::uvec> train_index_;
+        std::vector<arma::uvec> test_index_;
 
         // default constructor
         CrossValidation();
@@ -40,13 +41,13 @@ namespace Intsurv {
             n_obs_ { n_obs },
             n_folds_ { n_folds }
         {
-            this->test_index = get_cv_test_index(n_obs_, n_folds_);
+            test_index_ = get_cv_test_index(n_obs_, n_folds_);
             arma::uvec all_index {
                 arma::regspace<arma::uvec>(0, n_obs - 1)
             };
             for (size_t i {0}; i < n_folds_; ++i) {
-                this->train_index.push_back(
-                    vec_diff(all_index, this->test_index.at(i))
+                train_index_.push_back(
+                    vec_diff(all_index, test_index_.at(i))
                     );
             }
         }
@@ -66,19 +67,19 @@ namespace Intsurv {
             n_obs_ { n_obs },
             n_folds_ { n_folds }
         {
-            this->test_index = get_cv_test_index(n_obs_, n_folds_);
+            test_index_ = get_cv_test_index(n_obs_, n_folds_);
             // remove static train index from test index
             for (size_t i {0}; i < n_folds_; ++i) {
-                this->test_index.at(i) = vec_diff(
-                    this->test_index.at(i), static_train_index
+                test_index_.at(i) = vec_diff(
+                    test_index_.at(i), static_train_index
                     );
             }
             arma::uvec all_index {
                 arma::regspace<arma::uvec>(0, n_obs - 1)
             };
             for (size_t i {0}; i < n_folds_; ++i) {
-                this->train_index.push_back(
-                    vec_diff(all_index, this->test_index.at(i))
+                train_index_.push_back(
+                    vec_diff(all_index, test_index_.at(i))
                     );
             }
         }
@@ -96,4 +97,4 @@ namespace Intsurv {
     };
 }
 
-#endif /* CROSS_VALIDATION_H */
+#endif
