@@ -23,7 +23,6 @@
 
 namespace Intsurv {
 
-    // define class for inputs and outputs
     class LogisticReg
     {
     public:
@@ -170,7 +169,7 @@ namespace Intsurv {
 
         // additional methods for coxph_cure
         // update coef0, en_coef, and coef_df from a new coef
-        inline void update_from_coef(const double l2_lambda = 0)
+        inline void set_en_coef(const double l2_lambda = 0)
         {
             // update coef0_
             coef0_ = rev_rescale_coef(coef_);

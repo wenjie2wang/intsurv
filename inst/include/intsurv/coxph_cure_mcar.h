@@ -125,7 +125,16 @@ namespace Intsurv {
             arma::uvec cox_sort_ind { cox_obj_.get_sort_index() };
             arma::mat cure_xx { cure_x.rows(cox_sort_ind) };
             arma::vec s_event { event0na.elem(cox_sort_ind) };
-            arma::vec s_cure_offset { cure_offset.elem(cox_sort_ind) };
+            // initialize offset terms
+            arma::vec s_cure_offset;
+            if (cure_offset.n_elem == 1 || cure_offset.empty()) {
+                s_cure_offset = arma::zeros(n_obs_);
+            } else if (cure_offset.n_elem == n_obs_) {
+                s_cure_offset = cure_offset.elem(cox_sort_ind);
+            } else {
+                throw std::length_error(
+                    "The length of offset must match sample size.");
+            }
             case1_ind_ = arma::find(s_event > const4na);
             case2_ind_ = arma::find(s_event < const4na);
             n_event_ = case1_ind_.n_elem;
@@ -910,8 +919,8 @@ namespace Intsurv {
                 cox_obj_.coef_ = cox_beta;
                 cure_obj_.coef_ = cure_beta;
                 // update coef_df_ and en_coef
-                cox_obj_.update_from_coef(cox_l2_lambda_);
-                cure_obj_.update_from_coef(cure_l2_lambda_);
+                cox_obj_.set_en_coef(cox_l2_lambda_);
+                cure_obj_.set_en_coef(cure_l2_lambda_);
                 // update hazard and survival function estimates
                 cox_obj_.compute_haz_surv_time();
                 cox_obj_.S0_time_ = s0_wi_tail;

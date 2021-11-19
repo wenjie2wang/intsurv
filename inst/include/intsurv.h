@@ -19,15 +19,16 @@
 #define INTSURV_H
 
 #include "intsurv/assessment.h"
-#include "intsurv/utils.h"
-#include "intsurv/cross-validation.h"
-#include "intsurv/logistic_reg.h"
 #include "intsurv/coxph_cure.h"
+#include "intsurv/coxph_cure_mar.h"
 #include "intsurv/coxph_cure_mcar.h"
 #include "intsurv/coxph_reg.h"
+#include "intsurv/cross-validation.h"
 #include "intsurv/cv_coxph_cure.h"
 #include "intsurv/cv_coxph_cure_mcar.h"
-#include "intsurv/nonparametric.h"
+#include "intsurv/logistic_reg.h"
 #include "intsurv/mar_reg.h"
+#include "intsurv/nonparametric.h"
+#include "intsurv/utils.h"
 
 #endif

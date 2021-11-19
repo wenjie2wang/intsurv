@@ -23,38 +23,34 @@
 
 namespace Intsurv {
 
-    // define class for inputs and outputs
     class CoxphReg {
-    protected:
-        arma::uvec ord_;        // index sorting the rows by time and event
-        arma::uvec rev_ord_;    // index reverting the sorting
+    public:
+        // model data ========================================================
         // all the following data are sorted accordingly
         arma::mat x_;           // (sorted and standardized) design matrix
         arma::vec time_;        // (sorted) observed times
         arma::vec event_;       // (sorted) event indicators
 
+        // internals that depend on the data =================================
+        unsigned int n_obs_;    // number of observations
+        double dn_obs_;         // double version of n_obs
+        arma::uvec ord_;        // index sorting the rows by time and event
+        arma::uvec rev_ord_;    // index reverting the sorting
         bool has_ties_ {false}; // if there exists ties on event_ times
-
-        // control
-        bool standardize_;      // is x standardized
         arma::rowvec x_center_; // the column center of x
         arma::rowvec x_scale_;  // the scale of x
-
-        // outputs
-        arma::vec coef0_;       // coef for the standardized x
-
+        // does event contrain values other than 0 and 1
+        bool is_event_binary_;
         // at each unique time_ point
         arma::uvec event_ind_;  // indices of event times
         // index indicating the first record on each distinct event time
         arma::uvec uni_event_ind_;
         // index indicating the first record on each time if event/censored
         arma::uvec uni_time_ind_;
-        arma::vec offset_;      // offset term
-        arma::vec offset_haz_;  // offset term for baseline hazard only
         // size of risk-set at each time point
         arma::vec riskset_size_time_;
-
         // at each unique event time point
+        arma::vec unique_time_;
         arma::vec d_time0_;      // event times
         arma::vec d_time_;       // distinct event times
         arma::mat d_x_;          // design matrix aggregated at d_time
@@ -68,14 +64,21 @@ namespace Intsurv {
         // for regularized regression
         arma::vec cmd_lowerbound_;
 
-    public:
-        unsigned int n_obs_;          // number of observations
+        // control parameters that do not depend on data =====================
+        bool standardize_;      // is x standardized
         arma::vec l1_penalty_factor_; // adaptive weights for lasso penalty
-        double l1_lambda_max_;        // the "big enough" lambda => zero coef_
-
-        // for a single l1_lambda_ and l2_lambda_
+        arma::vec offset_;      // offset term
+        arma::vec offset_haz_;  // offset term for baseline hazard only
         double l1_lambda_;      // tuning parameter for lasso penalty
         double l2_lambda_;      // tuning parameter for ridge penalty
+        double alpha_;          // tuning parameter
+        arma::vec lambda_vec_;   // lambda sequence
+
+        // outputs ===========================================================
+        arma::vec coef0_;       // coef for the standardized x
+        double l1_lambda_max_;  // the "big enough" lambda => zero coef_
+
+        // for a single l1_lambda_ and l2_lambda_
         arma::vec coef_;        // covariate coefficient estimates
         arma::vec en_coef_;     // (rescaled) elastic net estimates
         double neg_ll_;         // partial negative log-likelihood
@@ -84,15 +87,13 @@ namespace Intsurv {
         double bic_;            // log(num_event) * coef_df_ + 2 * neg_ll_
 
         // for a lambda sequence
-        double alpha_;           // tuning parameter
-        arma::vec lambda_vec_;   // lambda sequence
         arma::mat coef_mat_;     // coef_ matrix (rescaled for origin x_)
         arma::mat en_coef_mat_;  // elastic net estimates
         arma::vec neg_ll_vec_;   // negative log-likelihood vector
         arma::uvec coef_df_vec_; // coef_ df vector
         arma::vec bic_vec_;      // log(num_event) * coef_df_ + 2 * neg_ll_
 
-        // hazard and survival estimates at every time_ point (unique or not)
+        // hazard and survival estimates at every time point (unique or not)
         arma::vec h0_time_;
         arma::vec S0_time_;
         arma::vec H0_time_;
@@ -102,9 +103,7 @@ namespace Intsurv {
         arma::vec hc_time_;
         arma::vec Hc_time_;
         arma::vec Sc_time_;
-
         // baseline estimates at unique times only
-        arma::vec unique_time_;
         arma::vec h0_est_;
         arma::vec H0_est_;
         arma::vec S0_est_;
@@ -135,6 +134,7 @@ namespace Intsurv {
             event_ = event.elem(ord_);
             x_ = x.rows(ord_);
             n_obs_ = x_.n_rows;
+            dn_obs_ = static_cast<double>(n_obs_);
             // standardize covariates
             standardize_ = standardize;
             if (standardize_) {
@@ -160,8 +160,12 @@ namespace Intsurv {
             d_time_ = d_time0_;
             delta_n_ = event_.elem(event_ind_);
             d_x_ = x_.rows(event_ind_);
-            for (size_t j {0}; j < x_.n_cols; ++j) {
-                d_x_.col(j) = d_x_.col(j) % delta_n_;
+            arma::vec uni_event { arma::unique(event_) };
+            is_event_binary_ = uni_event.n_elem == 2;
+            if (! is_event_binary_) {
+                for (size_t j {0}; j < x_.n_cols; ++j) {
+                    d_x_.col(j) %= delta_n_;
+                }
             }
             uni_time_ind_ = find_first_unique(time_);
             if (has_ties_) {
@@ -191,7 +195,7 @@ namespace Intsurv {
         }
 
         // partially update event non-zero-one indicators
-        // assuming only old event weights strictly between 0 and 1 need update
+        // assuming only old event weights strictly > 0 need update
         inline void update_event_weight(const arma::vec& event,
                                         const bool is_sorted = true)
         {
@@ -202,8 +206,12 @@ namespace Intsurv {
             // need to update delta_n_ and d_x_
             delta_n_ = event_.elem(event_ind_);
             d_x_ = x_.rows(event_ind_);
-            for (size_t j {0}; j < x_.n_cols; ++j) {
-                d_x_.col(j) = d_x_.col(j) % delta_n_;
+            arma::vec uni_event { arma::unique(event_) };
+            is_event_binary_ = uni_event.n_elem == 2;
+            if (is_event_binary_) {
+                for (size_t j {0}; j < x_.n_cols; ++j) {
+                    d_x_.col(j) %= delta_n_;
+                }
             }
             if (has_ties_) {
                 // aggregate at distinct event_ times
@@ -314,7 +322,7 @@ namespace Intsurv {
         inline void compute_cmd_lowerbound(const bool force_update);
 
         // some simple functions
-        inline unsigned int sample_size() const { return time_.n_elem; }
+        inline unsigned int sample_size() const { return n_obs_; }
         inline void compute_bic() {
             bic_ = std::log(arma::sum(event_)) * coef_df_ + 2 * neg_ll_;
         }
@@ -338,7 +346,7 @@ namespace Intsurv {
             }
         }
         // update coef0_, en_coef_, and coef_df_ from a new coef_
-        inline void update_from_coef(const double l2_lambda = 0) {
+        inline void set_en_coef(const double l2_lambda = 0) {
             // update coef0_
             rev_rescale_coef();
             arma::vec beta { coef0_ };
@@ -635,7 +643,7 @@ namespace Intsurv {
             for (size_t k {0}; k < x_.n_cols; ++k) {
                 res(k) = arma::sum(
                     pow(max_risk_x.col(k) - min_risk_x.col(k), 2) % delta_n_
-                    ) / (4 * n_obs_);
+                    ) / (4 * dn_obs_);
             }
             cmd_lowerbound_ = res;
         }
@@ -731,7 +739,7 @@ namespace Intsurv {
         arma::vec beta_old = beta;
         for (size_t j {0}; j < beta.n_elem; ++j) {
             if (is_active[j]) {
-                dlj = gradient(beta, j) / n_obs_;
+                dlj = gradient(beta, j) / dn_obs_;
                 // update beta
                 beta[j] = soft_threshold(
                     cmd_lowerbound_[j] * beta[j] - dlj,
@@ -751,11 +759,11 @@ namespace Intsurv {
         // if early stop
         if (early_stop) {
             double ell_old { objective(beta_old) };
-            ell_old = ell_old / n_obs_ +
+            ell_old = ell_old / dn_obs_ +
                 l1_lambda * l1_norm(beta_old % l1_penalty_factor) +
                 l2_lambda * sum_of_square(beta_old);
             double ell_new { objective(beta) };
-            ell_new = ell_new / n_obs_ +
+            ell_new = ell_new / dn_obs_ +
                 l1_lambda * l1_norm(beta % l1_penalty_factor) +
                 l2_lambda * sum_of_square(beta);
             if (verbose) {
