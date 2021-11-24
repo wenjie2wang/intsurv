@@ -71,6 +71,8 @@ namespace Intsurv {
             n_obs_ = x_.n_rows;
             dn_obs_ = static_cast<double>(n_obs_);
             p0_ = x_.n_cols;
+            p1_ = p0_ + int_intercept_;
+            p2_ = p1_ + 1;
             if (standardize_) {
                 if (intercept_) {
                     x_center_ = arma::mean(x_);
@@ -83,16 +85,13 @@ namespace Intsurv {
                         x_.col(j) = (x_.col(j) - x_center_(j)) / x_scale_(j);
                     } else {
                         throw std::range_error(
-                            "The design 'x' contains constant column."
-                            );
+                            "The design 'x' contains constant column.");
                     }
                 }
             }
             if (intercept_) {
-                x_ = arma::join_horiz(arma::ones(n_obs_), x);
+                x_ = arma::join_horiz(arma::ones(n_obs_), x_);
             }
-            p1_ = p0_ + int_intercept_;
-            p2_ = p1_ + 1;
             cmd_lowerbound_ = arma::mean(arma::square(x_), 0) / 2.0;
         }
 
@@ -121,12 +120,12 @@ namespace Intsurv {
         // transfer coef for standardized data to coef for non-standardized data
         inline void rescale_eta()
         {
-            arma::vec eta0 { eta_ };
             if (standardize_) {
+                arma::vec eta0 { eta_ };
                 if (intercept_) {
                     eta_(0) = eta0(0) - arma::as_scalar((x_center_ / x_scale_) *
                                                         eta0.tail_rows(p0_));
-                    for (size_t j {1}; j < p0_; ++j) {
+                    for (size_t j {1}; j < p1_; ++j) {
                         eta_(j) = eta0(j) / x_scale_(j - 1);
                     }
                 } else {
@@ -331,6 +330,7 @@ namespace Intsurv {
                                 max_iter, rel_tol);
             eta_ = eta;
             alpha0_ = alpha0;
+            rescale_eta();
             coef_ = eta_;
             coef_.resize(eta_.n_elem + 1);
             coef_(eta.n_elem) = alpha0;
