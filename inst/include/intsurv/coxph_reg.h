@@ -34,13 +34,12 @@ namespace Intsurv {
         // internals that depend on the data =================================
         unsigned int n_obs_;    // number of observations
         double dn_obs_;         // double version of n_obs
+        unsigned int p_;        // number of given predictors
         arma::uvec ord_;        // index sorting the rows by time and event
         arma::uvec rev_ord_;    // index reverting the sorting
         bool has_ties_ {false}; // if there exists ties on event_ times
         arma::rowvec x_center_; // the column center of x
         arma::rowvec x_scale_;  // the scale of x
-        // does event contrain values other than 0 and 1
-        bool is_event_binary_;
         // at each unique time_ point
         arma::uvec event_ind_;  // indices of event times
         // index indicating the first record on each distinct event time
@@ -135,6 +134,7 @@ namespace Intsurv {
             x_ = x.rows(ord_);
             n_obs_ = x_.n_rows;
             dn_obs_ = static_cast<double>(n_obs_);
+            p_ = x_.n_cols;
             // standardize covariates
             standardize_ = standardize;
             if (standardize_) {
@@ -161,8 +161,7 @@ namespace Intsurv {
             delta_n_ = event_.elem(event_ind_);
             d_x_ = x_.rows(event_ind_);
             arma::vec uni_event { arma::unique(event_) };
-            is_event_binary_ = uni_event.n_elem == 2;
-            if (! is_event_binary_) {
+            if (uni_event.n_elem != 2) {
                 for (size_t j {0}; j < x_.n_cols; ++j) {
                     d_x_.col(j) %= delta_n_;
                 }
@@ -207,8 +206,7 @@ namespace Intsurv {
             delta_n_ = event_.elem(event_ind_);
             d_x_ = x_.rows(event_ind_);
             arma::vec uni_event { arma::unique(event_) };
-            is_event_binary_ = uni_event.n_elem == 2;
-            if (is_event_binary_) {
+            if (uni_event.n_elem != 2) {
                 for (size_t j {0}; j < x_.n_cols; ++j) {
                     d_x_.col(j) %= delta_n_;
                 }
@@ -227,7 +225,8 @@ namespace Intsurv {
             if (offset.n_elem == n_obs_) {
                 offset_ = offset;
             } else if (offset.n_elem == 1 || offset.empty()) {
-                offset_ = arma::zeros(n_obs_);
+                reset_offset();
+                return;
             } else {
                 throw std::length_error(
                     "The length of the specified offset must match sample size."
@@ -264,7 +263,8 @@ namespace Intsurv {
             if (offset.n_elem == n_obs_) {
                 offset_haz_ = offset;
             } else if (offset.n_elem == 1 || offset.empty()) {
-
+                reset_offset_haz();
+                return;
             } else {
                 throw std::length_error(
                     "The length of offset must match sample size.");

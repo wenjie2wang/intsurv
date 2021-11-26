@@ -22,7 +22,7 @@
 
 // Cox cure model with uncertain events without regularization
 // [[Rcpp::export]]
-Rcpp::List coxph_cure_mcar(
+Rcpp::List rcpp_coxph_cure_mcar(
     const arma::vec& time,
     const arma::vec& event,
     const arma::mat& cox_x,
@@ -150,7 +150,7 @@ Rcpp::List coxph_cure_mcar(
 // fit regularized Cox cure rate model with uncertain events
 // by EM algorithm, where the M-step utilized CMD algoritm
 // [[Rcpp::export]]
-Rcpp::List coxph_cure_mcar_reg(
+Rcpp::List rcpp_coxph_cure_mcar_reg(
     const arma::vec& time,
     const arma::vec& event,
     const arma::mat& cox_x,
@@ -279,7 +279,7 @@ Rcpp::List coxph_cure_mcar_reg(
 // for a sequence of lambda's
 // lambda * (penalty_factor * alpha * lasso + (1 - alpha) / 2 * ridge)
 // [[Rcpp::export]]
-Rcpp::List coxph_cure_mcar_vs(
+Rcpp::List rcpp_coxph_cure_mcar_vs(
     const arma::vec& time,
     const arma::vec& event,
     const arma::mat& cox_x,

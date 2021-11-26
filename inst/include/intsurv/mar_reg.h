@@ -32,6 +32,8 @@ namespace Intsurv {
         arma::rowvec x_scale_;
         arma::vec a_;
         arma::vec b_;
+        arma::vec a_bar_;
+        arma::vec b_bar_;
         bool intercept_;
 
         // outputs
@@ -43,7 +45,6 @@ namespace Intsurv {
         arma::vec coef_;        // (eta_, alpha0)
 
         // cache variables
-        arma::vec sum_ab_;      // a_ + b_
         arma::rowvec cmd_lowerbound_;
         unsigned int int_intercept_;
         unsigned int p1_;       // p0 + int_intercept_
@@ -101,9 +102,6 @@ namespace Intsurv {
             if (a.n_elem == n_obs_) {
                 a_ = a;
             }
-            if (! b_.empty()) {
-                sum_ab_ = a_ + b_;
-            }
             return this;
         }
         inline MarReg* set_b(const arma::vec& b)
@@ -111,8 +109,19 @@ namespace Intsurv {
             if (b.n_elem == n_obs_) {
                 b_ = b;
             }
-            if (! a_.empty()) {
-                sum_ab_ = a_ + b_;
+            return this;
+        }
+        inline MarReg* set_a_bar(const arma::vec& a_bar)
+        {
+            if (a_bar.n_elem == n_obs_) {
+                a_bar_ = a_bar;
+            }
+            return this;
+        }
+        inline MarReg* set_b_bar(const arma::vec& b_bar)
+        {
+            if (b_bar.n_elem == n_obs_) {
+                b_bar_ = b_bar;
             }
             return this;
         }
@@ -142,16 +151,16 @@ namespace Intsurv {
         {
             arma::vec xeta { mat2vec(x_ * eta) };
             return - arma::mean(
-                alpha0 * a_ + xeta -
-                sum_ab_ % arma::log(1 + arma::exp(xeta + alpha0)) -
-                (2 - sum_ab_) % arma::log(1 + arma::exp(xeta)));
+                alpha0 * a_ + (a_ + a_bar_) % xeta -
+                (a_ + b_) % arma::log(1 + arma::exp(xeta + alpha0)) -
+                (a_bar_ + b_bar_) % arma::log(1 + arma::exp(xeta)));
         }
         inline double objective() const
         {
             return - arma::mean(
-                alpha0_ * a_ + xeta_ -
-                sum_ab_ % arma::log(1 + arma::exp(xeta_ + alpha0_)) -
-                (2 - sum_ab_) % arma::log(1 + arma::exp(xeta_)));
+                alpha0_ * a_ + (a_ + a_bar_) % xeta_ -
+                (a_ + b_) % arma::log(1 + arma::exp(xeta_ + alpha0_)) -
+                (a_bar_ + b_bar_) % arma::log(1 + arma::exp(xeta_)));
         }
 
         // inverse link function
@@ -174,7 +183,7 @@ namespace Intsurv {
         }
 
         // return fitted q_{j,1} and q_{j,0}
-        inline arma::vec q_vec(const int z = 0) const
+        inline arma::vec q_vec(const double z = 0.0) const
         {
             return linkinv(xeta_ + z * alpha0_);
         }
@@ -184,24 +193,29 @@ namespace Intsurv {
                                    const double alpha0,
                                    const unsigned int l) const
         {
-            return - arma::mean(x_.col(l) %
-                                (1 - sum_ab_ % linkinv(xeta + alpha0) -
-                                 (2 - sum_ab_) % linkinv(xeta)));
+            return - arma::mean(
+                x_.col(l) % (
+                    (a_ + a_bar_) -
+                    (a_ + b_)  % linkinv(xeta + alpha0) -
+                    (a_bar_ + b_bar_) % linkinv(xeta)
+                    )
+                );
         }
         inline arma::vec cmd_grad_eta(const arma::vec& xeta,
                                       const double alpha0) const
         {
             arma::vec p1 { linkinv(xeta + alpha0) };
             arma::vec p0 { linkinv(xeta) };
-            arma::vec tmp { (1 - sum_ab_ % std::move(p1) -
-                             (2 - sum_ab_) % std::move(p0)) };
+            arma::vec tmp { ((a_ + a_bar_) -
+                             (a_ + b_) % std::move(p1) -
+                             (a_bar_ + b_bar_) % std::move(p0)) };
             return - x_.t() * tmp / dn_obs_;
         }
 
         inline double cmd_grad_alpha0(const arma::vec& xeta,
                                       const double alpha0) const
         {
-            return - arma::mean(a_ - sum_ab_ % linkinv(xeta + alpha0));
+            return - arma::mean(a_ - (a_ + b_) % linkinv(xeta + alpha0));
         }
 
         // one full cycle of coordinate descent
@@ -270,6 +284,8 @@ namespace Intsurv {
         inline void regularized_fit(
             const arma::vec& a,
             const arma::vec& b,
+            const arma::vec& a_bar,
+            const arma::vec& b_bar,
             const arma::vec& start = arma::vec(),
             const double l1_lambda = 0,
             const double l2_lambda = 0,
@@ -281,7 +297,8 @@ namespace Intsurv {
         {
             a_ = a;
             b_ = b;
-            sum_ab_ = a_ + b_;
+            a_bar_ = a_bar;
+            b_bar_ = b_bar;
             l1_lambda_ = l1_lambda;
             l2_lambda_ = l2_lambda;
             pmin_ = pmin;

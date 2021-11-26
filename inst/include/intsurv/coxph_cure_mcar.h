@@ -29,7 +29,7 @@
 namespace Intsurv {
 
     class CoxphCureMcar {
-    private:
+    public:
         CoxphReg cox_obj_;
         LogisticReg cure_obj_;
         // number of predictors in survival layer
@@ -44,7 +44,7 @@ namespace Intsurv {
         arma::uvec case3_ind_;
         unsigned int max_event_time_ind_; // index of the maximum event time
 
-    public:
+        // outputs
         arma::vec cox_coef_;
         arma::vec cure_coef_;
         unsigned int coef_df_;  // degree of freedom of coef estimates
@@ -123,7 +123,6 @@ namespace Intsurv {
                 static_cast<unsigned int>(cure_intercept);
             n_obs_ = cox_x.n_rows;
             arma::uvec cox_sort_ind { cox_obj_.get_sort_index() };
-            arma::mat cure_xx { cure_x.rows(cox_sort_ind) };
             arma::vec s_event { event0na.elem(cox_sort_ind) };
             // initialize offset terms
             arma::vec s_cure_offset;
@@ -142,8 +141,9 @@ namespace Intsurv {
             case3_ind_ = arma::find(s_event == const4na);
             max_event_time_ind_ = arma::max(case1_ind_);
             // create the LogisticReg object
-            cure_obj_ = LogisticReg(cure_xx, s_event, cure_intercept,
-                                          cure_standardize);
+            cure_obj_ = LogisticReg(cure_x.rows(cox_sort_ind),
+                                    s_event, cure_intercept,
+                                    cure_standardize);
             cure_obj_.set_offset(s_cure_offset);
         }
 
@@ -157,7 +157,7 @@ namespace Intsurv {
             return cure_p_;
         }
 
-        // fit the Cox cure mode with mcartain events by EM algorithm
+        // fit the Cox cure model with uncertain events by EM algorithm
         inline void fit(
             const arma::vec& cox_start,
             const arma::vec& cure_start,
@@ -490,6 +490,7 @@ namespace Intsurv {
             for (size_t j: case2_ind_) {
                 double numer_j { p_vec(j) * cox_obj_.S_time_(j)};
                 estep_m(j) = numer_j / (1 - p_vec(j) + numer_j);
+                // estep_m(j) = ge_le(estep_m(j), pmin, 1 - pmin);
             }
 
             // E-step: compute the w vector for case 3
@@ -623,7 +624,7 @@ namespace Intsurv {
     }
 
 
-    // fit regularized Cox cure model with mcartain events
+    // fit regularized Cox cure model with uncertain events
     // with adaptive elastic net penalty for perticular lambda's
     // lambda_1 * lasso * factors + lambda_2 * ridge
     inline void CoxphCureMcar::regularized_fit(
