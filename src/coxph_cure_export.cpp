@@ -357,8 +357,8 @@ Rcpp::List rcpp_coxph_cure_vs(
     const unsigned int n_lambda { n_cox_lambda * n_cure_lambda };
 
     // initialize the coef matrices
-    const unsigned int cox_p { obj.get_cox_p() };
-    const unsigned int cure_p { obj.get_cure_p() };
+    const unsigned int cox_p { obj.cox_p_ };
+    const unsigned int cure_p { obj.cure_p_ };
     arma::mat cox_coef_mat { arma::zeros(cox_p, n_lambda) };
     arma::mat cure_coef_mat { arma::zeros(cure_p, n_lambda) };
     arma::mat cox_en_coef_mat { arma::zeros(cox_p, n_lambda) };

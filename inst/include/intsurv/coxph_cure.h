@@ -29,7 +29,8 @@
 namespace Intsurv {
 
     class CoxphCure {
-    protected:
+    public:
+        // caches
         CoxphReg cox_obj_;
         LogisticReg cure_obj_;
         unsigned int cox_p_;    // coef df of cox part
@@ -38,13 +39,15 @@ namespace Intsurv {
         arma::uvec case1_ind_;
         arma::uvec case2_ind_;
         unsigned int max_event_time_ind_; // index of the maximum event time
+        double pmin_;
 
-    public:
+        // outputs
         arma::vec cox_coef_;
         arma::vec cure_coef_;
         unsigned int coef_df_;  // degree of freedom of coef estimates
         double neg_ll_;         // negative log-likelihood
         unsigned int n_obs_;    // number of observations
+        double dn_obs_;         // double version of n_obs_
         unsigned int n_event_;  // number of events
         unsigned int n_iter_;   // number of iterations
         double bic1_;           // BIC: log(num_obs) * coef_df + 2 * neg_ll
@@ -107,8 +110,9 @@ namespace Intsurv {
             cure_p_ = cure_p0_ +
                 static_cast<unsigned int>(cure_intercept);
             n_obs_ = cox_x.n_rows;
-            arma::uvec cox_sort_ind { cox_obj_.get_sort_index() };
-            arma::vec s_event { event.elem(cox_sort_ind) };
+            dn_obs_ = static_cast<double>(n_obs_);
+            const arma::uvec& cox_sort_ind { cox_obj_.ord_ };
+            const arma::vec& s_event { cox_obj_.event_ };
             // initialize offset terms
             arma::vec s_cure_offset;
             if (cure_offset.n_elem == 1 || cure_offset.empty()) {
@@ -131,14 +135,6 @@ namespace Intsurv {
         }
 
         // function members
-        // helper functions
-        inline unsigned int get_cox_p() const {
-            return cox_p_;
-        }
-        inline unsigned int get_cure_p() const {
-            return cure_p_;
-        }
-
         // fit the Cox cure mode by EM algorithm
         inline void fit(
             const arma::vec& cox_start,
@@ -194,13 +190,12 @@ namespace Intsurv {
             arma::mat new_cox_x,
             arma::mat new_cure_x,
             arma::vec new_cox_offset,
-            arma::vec new_cure_offset,
-            const double pmin
+            arma::vec new_cure_offset
             ) const;
 
         // compute BIC
         inline void compute_bic1() {
-            bic1_ = std::log(n_obs_) * coef_df_ + 2 * neg_ll_;
+            bic1_ = std::log(dn_obs_) * coef_df_ + 2 * neg_ll_;
         }
         inline void compute_bic2() {
             bic2_ = std::log(case1_ind_.n_elem) *
@@ -231,9 +226,10 @@ namespace Intsurv {
         const unsigned int verbose = 0
         )
     {
+        pmin_ = pmin;
         // initialize cox_beta
-        const arma::vec time { cox_obj_.get_time() };
-        const arma::vec event { cox_obj_.get_event() };
+        const arma::vec& time { cox_obj_.time_ };
+        const arma::vec& event { cox_obj_.event_ };
         arma::vec cox_beta { arma::zeros(cox_p_) };
         if (cox_start.n_elem == cox_p_) {
             cox_beta = cox_start;
@@ -241,7 +237,7 @@ namespace Intsurv {
             CoxphReg tmp_object {
                 time.elem(case1_ind_),
                 event.elem(case1_ind_),
-                cox_obj_.get_x().rows(case1_ind_)
+                cox_obj_.x_.rows(case1_ind_)
             };
             tmp_object.fit(cox_beta, cox_mstep_max_iter, cox_mstep_rel_tol);
             cox_beta = tmp_object.coef_;
@@ -253,10 +249,10 @@ namespace Intsurv {
         } else {
             if (firth) {
                 cure_obj_.firth_fit(cure_beta, cure_mstep_max_iter,
-                                    cure_mstep_rel_tol, pmin);
+                                    cure_mstep_rel_tol, pmin_);
             } else {
                 cure_obj_.fit(cure_beta, cure_mstep_max_iter,
-                              cure_mstep_rel_tol, pmin);
+                              cure_mstep_rel_tol, pmin_);
             }
             cure_beta = cure_obj_.coef_;
         }
@@ -265,7 +261,7 @@ namespace Intsurv {
 
         // initialization
         arma::vec p_vec { arma::zeros(n_obs_) };
-        arma::vec estep_v { cox_obj_.get_event() };
+        arma::vec estep_v { arma::ones(n_obs_) };
         size_t i {0};
         double obs_ell {0}, obs_ell_old { - arma::datum::inf };
         double tol1 { arma::datum::inf }, tol2 { tol1 };
@@ -284,7 +280,7 @@ namespace Intsurv {
         while (true) {
 
             // update to the latest estimates
-            p_vec = cure_obj_.predict(cure_obj_.coef_, pmin);
+            p_vec = cure_obj_.predict(cure_obj_.coef_);
             cox_obj_.compute_haz_surv_time();
 
             // prepare for exponential tail completion method
@@ -301,15 +297,15 @@ namespace Intsurv {
                         // tail completion after the given tail_tau
                         // by default, it means no tail completion
                         if (time(j) > tail_tau) {
-                            cox_obj_.S_time_(j) = 0;
-                            cox_obj_.S0_time_(j) = 0;
+                            cox_obj_.S_time_(j) = 0.0;
+                            cox_obj_.S0_time_(j) = 0.0;
                         }
                         break;
                     case 1:
                         // zero-tail constraint
                         if (time(j) > max_event_time) {
-                            cox_obj_.S_time_(j) = 0;
-                            cox_obj_.S0_time_(j) = 0;
+                            cox_obj_.S_time_(j) = 0.0;
+                            cox_obj_.S0_time_(j) = 0.0;
                         }
                         break;
                     case 2:
@@ -466,10 +462,10 @@ namespace Intsurv {
             cure_obj_.update_y(estep_v);
             if (firth) {
                 cure_obj_.firth_fit(cure_beta, cure_mstep_max_iter,
-                                    cure_mstep_rel_tol, pmin);
+                                    cure_mstep_rel_tol, pmin_);
             } else {
                 cure_obj_.fit(cure_beta, cure_mstep_max_iter,
-                              cure_mstep_rel_tol, pmin,
+                              cure_mstep_rel_tol, pmin_,
                               early_stop == 1, verbose > 2);
             }
             if (verbose > 1) {
@@ -486,7 +482,7 @@ namespace Intsurv {
         // reset cox_obj_ and cure_obj_ in case of further usage
         cox_obj_.reset_offset_haz();
         // cox_obj_.set_offset(offset0);
-        cure_obj_.update_y(cox_obj_.get_event());
+        cure_obj_.update_y(cox_obj_.event_);
 
         // prepare outputs
         cox_coef_ = cox_obj_.coef_;
@@ -507,7 +503,7 @@ namespace Intsurv {
         // tail_tau = tail_tau;
 
         // prepare scores and prob in their original order
-        arma::uvec rev_ord { cox_obj_.get_rev_sort_index() };
+        const arma::uvec& rev_ord { cox_obj_.rev_ord_ };
         cox_xbeta_ = cox_obj_.xbeta_.elem(rev_ord);
         cure_xbeta_ = cure_obj_.xbeta_.elem(rev_ord);
         // set prob to be 1 for events for computing C-index
@@ -553,6 +549,7 @@ namespace Intsurv {
         const unsigned int verbose = 0
         )
     {
+        pmin_ = pmin;
         // L1 penalty factor for Cox model
         arma::vec cox_l1_penalty { arma::ones(cox_p_) };
         if (cox_l1_penalty_factor.n_elem == cox_p_) {
@@ -577,7 +574,7 @@ namespace Intsurv {
         // compute the large enough lambdas that result in all-zero estimates
         arma::vec cox_grad_zero { arma::abs(cox_obj_.gradient(cox_beta)) };
         arma::vec cure_grad_zero {
-            arma::abs(cure_obj_.gradient(cure_beta, pmin))
+            arma::abs(cure_obj_.gradient(cure_beta))
         };
         cure_grad_zero = cure_grad_zero.tail(cure_l1_penalty.n_elem);
         // excluding variable with zero penalty factor
@@ -586,11 +583,11 @@ namespace Intsurv {
         cox_l1_lambda_max_ = arma::max(
             cox_grad_zero.elem(cox_active_l1_penalty) /
             cox_l1_penalty.elem(cox_active_l1_penalty)
-            ) / n_obs_;
+            ) / dn_obs_;
         cure_l1_lambda_max_ = arma::max(
             cure_grad_zero.elem(cure_active_l1_penalty) /
             cure_l1_penalty.elem(cure_active_l1_penalty)
-            ) / n_obs_;
+            ) / dn_obs_;
 
         // early stop: return lambda_max if em_max_iter = 0
         if (em_max_iter == 0) {
@@ -606,13 +603,13 @@ namespace Intsurv {
         }
         cure_obj_.coef_ = cure_beta;
         cox_obj_.coef_ = cox_beta;
-        cure_obj_.coef_df_ = get_coef_df(cure_beta);
-        cox_obj_.coef_df_ = get_coef_df(cox_beta);
+        cure_obj_.coef_df_ = compute_coef_df(cure_beta);
+        cox_obj_.coef_df_ = compute_coef_df(cox_beta);
 
         // initialization
         arma::vec p_vec { arma::zeros(n_obs_) };
-        const arma::vec time { cox_obj_.get_time() };
-        const arma::vec event { cox_obj_.get_event() };
+        const arma::vec& time { cox_obj_.time_ };
+        const arma::vec& event { cox_obj_.event_ };
         arma::vec estep_v { event };
         size_t i {0};
         double obs_ell {0};
@@ -636,7 +633,7 @@ namespace Intsurv {
         while (true) {
 
             // update to the latest estimates
-            p_vec = cure_obj_.predict(cure_obj_.coef_, pmin);
+            p_vec = cure_obj_.predict(cure_obj_.coef_);
             cox_obj_.compute_haz_surv_time();
 
             // prepare for exponential tail completion method
@@ -706,7 +703,7 @@ namespace Intsurv {
                 cure_l2_lambda_ *
                 sum_of_square(cure_obj_.coef_.tail(cure_p0_))
             };
-            reg_obj = - obs_ell / n_obs_ + reg_cox + reg_cure;
+            reg_obj = - obs_ell / dn_obs_ + reg_cox + reg_cure;
 
             // compute bic
             neg_ll_ = - obs_ell;
@@ -820,12 +817,6 @@ namespace Intsurv {
             for (size_t j: case2_ind_) {
                 double numer_j { p_vec(j) *  cox_obj_.S_time_(j)};
                 estep_v(j) = numer_j / (1 - p_vec(j) + numer_j);
-                // special care prevents coef diverging
-                // if (estep_v(j) < pmin) {
-                //     estep_v(j) = 0;
-                // } else if (estep_v(j) > 1 - pmin) {
-                //     estep_v(j) = 1;
-                // }
             }
 
             // allow users to stop the main loop
@@ -859,7 +850,7 @@ namespace Intsurv {
             cure_obj_.regularized_fit(
                 cure_l1_lambda_, cure_l2_lambda_, cure_l1_penalty_factor_,
                 cure_beta, cure_mstep_max_iter, cure_mstep_rel_tol,
-                pmin, early_stop == 1, verbose_mstep
+                pmin_, early_stop == 1, verbose_mstep
                 );
             if (verbose > 1) {
                 Rcpp::Rcout << "\n" << std::string(40, '-')
@@ -875,7 +866,7 @@ namespace Intsurv {
         // reset cox_obj_ and cure_obj_ in case of further usage
         cox_obj_.reset_offset_haz();
         // cox_obj_.set_offset(offset0);
-        cure_obj_.update_y(cox_obj_.get_event());
+        cure_obj_.update_y(cox_obj_.event_);
 
         // prepare outputs
         cox_coef_ = cox_obj_.coef_;
@@ -906,7 +897,7 @@ namespace Intsurv {
         // tail_tau = tail_tau;
 
         // prepare scores and prob in their original order
-        arma::uvec rev_ord { cox_obj_.get_rev_sort_index() };
+        const arma::uvec& rev_ord { cox_obj_.rev_ord_ };
         cox_xbeta_ = cox_obj_.xbeta_.elem(rev_ord);
         cure_xbeta_ = cure_obj_.xbeta_.elem(rev_ord);
 
@@ -959,8 +950,7 @@ namespace Intsurv {
         arma::mat new_cox_x,
         arma::mat new_cure_x,
         arma::vec new_cox_offset = 0,
-        arma::vec new_cure_offset = 0,
-        const double pmin = 1e-5
+        arma::vec new_cure_offset = 0
         ) const
     {
         // check if the number of covariates matchs the fitted model
@@ -1046,13 +1036,7 @@ namespace Intsurv {
             mat2vec(new_cure_x * cure_coef_) + new_cure_offset
         };
         arma::vec p_vec { 1 / (1 + arma::exp(- new_cure_xgamma)) };
-        for (size_t i {0}; i < p_vec.n_elem; ++i) {
-            if (p_vec(i) < pmin) {
-                p_vec(i) = pmin;
-            } else if (p_vec(i) > 1 - pmin) {
-                p_vec(i) = 1 - pmin;
-            }
-        }
+        set_pmin_bound(p_vec, pmin_);
         // for case 1
         for (size_t j: new_case1_ind) {
             obs_ell += std::log(p_vec(j)) +

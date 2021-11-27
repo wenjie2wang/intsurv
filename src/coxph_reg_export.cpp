@@ -45,7 +45,7 @@ Rcpp::List rcpp_coxph(const arma::vec& time,
     object.compute_haz_surv_time();
     object.compute_censor_haz_surv_time();
     object.est_haz_surv();
-    arma::uvec rev_ord { object.get_rev_sort_index() };
+    arma::uvec rev_ord { object.rev_ord_ };
     arma::vec risk_score { object.xbeta_ };
     risk_score = risk_score.elem(rev_ord);
     return Rcpp::List::create(
@@ -96,7 +96,7 @@ Rcpp::List rcpp_reg_coxph1(const arma::vec& time,
     object.compute_haz_surv_time();
     object.compute_censor_haz_surv_time();
     object.est_haz_surv();
-    arma::uvec rev_ord { object.get_rev_sort_index() };
+    arma::uvec rev_ord { object.rev_ord_ };
     arma::vec risk_score { object.xbeta_ };
     risk_score = risk_score.elem(rev_ord);
     return Rcpp::List::create(

@@ -96,36 +96,6 @@ namespace Intsurv {
             cmd_lowerbound_ = arma::mean(arma::square(x_), 0) / 2.0;
         }
 
-        // setter
-        inline MarReg* set_a(const arma::vec& a)
-        {
-            if (a.n_elem == n_obs_) {
-                a_ = a;
-            }
-            return this;
-        }
-        inline MarReg* set_b(const arma::vec& b)
-        {
-            if (b.n_elem == n_obs_) {
-                b_ = b;
-            }
-            return this;
-        }
-        inline MarReg* set_a_bar(const arma::vec& a_bar)
-        {
-            if (a_bar.n_elem == n_obs_) {
-                a_bar_ = a_bar;
-            }
-            return this;
-        }
-        inline MarReg* set_b_bar(const arma::vec& b_bar)
-        {
-            if (b_bar.n_elem == n_obs_) {
-                b_bar_ = b_bar;
-            }
-            return this;
-        }
-
         // transfer coef for standardized data to coef for non-standardized data
         inline void rescale_eta()
         {
@@ -171,14 +141,7 @@ namespace Intsurv {
             };
             // special care prevents coef diverging
             // reference: Friedman, J., Hastie, T., & Tibshirani, R. (2010)
-            arma::vec::iterator it_end { p_vec.end() };
-            for (arma::vec::iterator it { p_vec.begin() }; it != it_end; ++it) {
-                if (*it < pmin_) {
-                    *it = pmin_;
-                } else if (*it > 1 - pmin_) {
-                    *it = 1 - pmin_;
-                }
-            }
+            set_pmin_bound(p_vec);
             return p_vec;
         }
 

@@ -40,7 +40,7 @@ namespace Intsurv {
         bool has_ties_ {false}; // if there exists ties on event_ times
         arma::rowvec x_center_; // the column center of x
         arma::rowvec x_scale_;  // the scale of x
-        // at each unique time_ point
+        // at each unique time point
         arma::uvec event_ind_;  // indices of event times
         // index indicating the first record on each distinct event time
         arma::uvec uni_event_ind_;
@@ -75,21 +75,21 @@ namespace Intsurv {
 
         // outputs ===========================================================
         arma::vec coef0_;       // coef for the standardized x
-        double l1_lambda_max_;  // the "big enough" lambda => zero coef_
+        double l1_lambda_max_;  // the "big enough" lambda => zero coef
 
         // for a single l1_lambda_ and l2_lambda_
         arma::vec coef_;        // covariate coefficient estimates
         arma::vec en_coef_;     // (rescaled) elastic net estimates
         double neg_ll_;         // partial negative log-likelihood
-        unsigned int coef_df_;  // number of non-zero coef_ estimates
-        arma::vec xbeta_;       // sorted x_ * coef_
-        double bic_;            // log(num_event) * coef_df_ + 2 * neg_ll_
+        unsigned int coef_df_;  // number of non-zero coef estimates
+        arma::vec xbeta_;       // sorted x * coef_
+        double bic_;            // log(num_event) * coef_df + 2 * neg_ll
 
         // for a lambda sequence
         arma::mat coef_mat_;     // coef_ matrix (rescaled for origin x_)
         arma::mat en_coef_mat_;  // elastic net estimates
         arma::vec neg_ll_vec_;   // negative log-likelihood vector
-        arma::uvec coef_df_vec_; // coef_ df vector
+        arma::uvec coef_df_vec_; // coef df vector
         arma::vec bic_vec_;      // log(num_event) * coef_df_ + 2 * neg_ll_
 
         // hazard and survival estimates at every time point (unique or not)
@@ -160,11 +160,8 @@ namespace Intsurv {
             d_time_ = d_time0_;
             delta_n_ = event_.elem(event_ind_);
             d_x_ = x_.rows(event_ind_);
-            arma::vec uni_event { arma::unique(event_) };
-            if (uni_event.n_elem != 2) {
-                for (size_t j {0}; j < x_.n_cols; ++j) {
-                    d_x_.col(j) %= delta_n_;
-                }
+            for (size_t j {0}; j < x_.n_cols; ++j) {
+                d_x_.col(j) %= delta_n_;
             }
             uni_time_ind_ = find_first_unique(time_);
             if (has_ties_) {
@@ -205,11 +202,8 @@ namespace Intsurv {
             // need to update delta_n_ and d_x_
             delta_n_ = event_.elem(event_ind_);
             d_x_ = x_.rows(event_ind_);
-            arma::vec uni_event { arma::unique(event_) };
-            if (uni_event.n_elem != 2) {
-                for (size_t j {0}; j < x_.n_cols; ++j) {
-                    d_x_.col(j) %= delta_n_;
-                }
+            for (size_t j {0}; j < x_.n_cols; ++j) {
+                d_x_.col(j) %= delta_n_;
             }
             if (has_ties_) {
                 // aggregate at distinct event_ times
@@ -218,7 +212,7 @@ namespace Intsurv {
             }
         }
 
-        // set offset_
+        // set offset
         inline void set_offset(const arma::vec& offset,
                                const bool is_sorted = true)
         {
@@ -251,10 +245,6 @@ namespace Intsurv {
                 d_offset_ = arma::zeros(event_ind_.n_elem);
             }
         }
-        inline arma::vec get_offset() const
-        {
-            return offset_;
-        }
         // set offset for denominator in baseline hazard function
         // for cure rate model
         inline void set_offset_haz(const arma::vec& offset,
@@ -273,7 +263,7 @@ namespace Intsurv {
                 // update offset_ for appropriate input
                 offset_haz_ = offset_haz_.elem(ord_);
             }
-            // update d_offset_ as well
+            // update d_offset_haz as well
             d_offset_haz_ = offset_haz_.elem(event_ind_) %
                 event_.elem(event_ind_);
             if (has_ties_) {
@@ -327,13 +317,6 @@ namespace Intsurv {
             bic_ = std::log(arma::sum(event_)) * coef_df_ + 2 * neg_ll_;
         }
 
-        // helper function to access some private members
-        inline arma::vec get_time() const { return time_; }
-        inline arma::vec get_event() const { return event_; }
-        inline arma::mat get_x() const { return x_; }
-        inline arma::uvec get_sort_index() { return ord_; }
-        inline arma::uvec get_rev_sort_index() { return rev_ord_; }
-
         // additional methods for coxph_cure
         // revserse the rescale process to get coef0_ from a new coef_
         inline void rev_rescale_coef()
@@ -361,7 +344,7 @@ namespace Intsurv {
             } else {
                 en_coef_ = coef_;
             }
-            coef_df_ = get_coef_df(beta);
+            coef_df_ = compute_coef_df(beta);
         }
 
         // fit regular Cox model
@@ -704,7 +687,7 @@ namespace Intsurv {
                     if (verbose) {
                         Rcpp::Rcout << "\nEarly stopped the algorithm"
                                     << " with estimates from"
-                                    << " iteration " << i - 1 << ".\n";
+                                    << " iteration " << i - 1 << "\n";
                     }
                     beta = beta0;
                     ell = ell_old;
@@ -774,8 +757,8 @@ namespace Intsurv {
             if (ell_new > ell_old) {
                 if (verbose) {
                     Rcpp::Rcout << "Warning: "
-                                << "the objective function somehow increased\n";
-                    Rcpp::Rcout << "\nEarly stopped the CMD iterations "
+                                << "the objective function somehow increased.\n"
+                                << "Early stopped the CMD iterations "
                                 << "with estimates from the last step.\n";
                 }
                 beta = beta_old;
@@ -893,7 +876,7 @@ namespace Intsurv {
             coef_df_ = 0;
             // compute negative log-likelihood
             neg_ll_ = objective();
-            coef_df_ = get_coef_df(beta);
+            coef_df_ = compute_coef_df(beta);
             compute_bic();
             return;
         }
@@ -960,7 +943,7 @@ namespace Intsurv {
         rescale_coef();
         // compute negative log-likelihood
         neg_ll_ = objective();
-        coef_df_ = get_coef_df(beta);
+        coef_df_ = compute_coef_df(beta);
         compute_bic();
     }
 
@@ -1051,7 +1034,7 @@ namespace Intsurv {
                 en_coef_mat_.col(k) = coef_;
                 // compute negative log-likelihood
                 neg_ll_vec_(k) = objective();
-                coef_df_vec_(k) = get_coef_df(beta);
+                coef_df_vec_(k) = compute_coef_df(beta);
                 neg_ll_ = neg_ll_vec_(k);
                 coef_df_ = coef_df_vec_(k);
                 compute_bic();
@@ -1121,7 +1104,7 @@ namespace Intsurv {
 
             // compute negative log-likelihood
             neg_ll_vec_(k) = objective();
-            coef_df_vec_(k) = get_coef_df(beta);
+            coef_df_vec_(k) = compute_coef_df(beta);
             neg_ll_ = neg_ll_vec_(k);
             coef_df_ = coef_df_vec_(k);
             compute_bic();

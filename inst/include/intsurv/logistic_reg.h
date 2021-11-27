@@ -44,6 +44,7 @@ namespace Intsurv {
         arma::mat bl_iter_mat_;
         // for regularized coordinate majorization descent
         arma::rowvec cmd_lowerbound_;
+        double pmin_;
 
         // controls ==========================================================
         bool standardize_;            // is x standardized
@@ -185,24 +186,20 @@ namespace Intsurv {
             } else {
                 en_coef_ = coef_;
             }
-            coef_df_ = get_coef_df(beta);
+            coef_df_ = compute_coef_df(beta);
         }
 
-        inline arma::vec linkinv(const arma::vec& eta,
-                                 const double pmin) const;
+        inline arma::vec linkinv(const arma::vec& eta) const;
 
         // here beta is coef_ vector for non-standardized data
-        inline arma::vec predict(const arma::vec& beta,
-                                 const double pmin) const;
+        inline arma::vec predict(const arma::vec& beta) const;
 
         inline double objective() const;
         inline double objective(const arma::vec& beta) const;
 
-        inline arma::vec gradient(const arma::vec& beta,
-                                  const double pmin) const;
+        inline arma::vec gradient(const arma::vec& beta) const;
         inline double gradient(const arma::vec& beta,
-                               const unsigned int k,
-                               const double pmin) const;
+                               const unsigned int k) const;
 
         inline double objective(const arma::vec& beta, arma::vec& grad) const;
 
@@ -238,7 +235,6 @@ namespace Intsurv {
                                            const double l2_lambda,
                                            const arma::vec& l1_penalty_factor,
                                            const bool update_active,
-                                           const double pmin,
                                            const bool early_stop,
                                            const bool verbose);
 
@@ -250,7 +246,6 @@ namespace Intsurv {
                                    const bool varying_active_set,
                                    const unsigned int max_iter,
                                    const double rel_tol,
-                                   const double pmin,
                                    const bool early_stop,
                                    const bool verbose);
 
@@ -306,23 +301,21 @@ namespace Intsurv {
     };
 
     // define inverse link function
-    inline arma::vec LogisticReg::linkinv(const arma::vec& beta,
-                                          const double pmin = 1e-5) const
+    inline arma::vec LogisticReg::linkinv(const arma::vec& beta) const
     {
         arma::vec p_vec { 1 / (1 + arma::exp(- mat2vec(x_ * beta) - offset_)) };
         // special care prevents coef_ diverging
         // reference: Friedman, J., Hastie, T., & Tibshirani, R. (2010)
-        set_pmin_bound(p_vec, pmin);
+        set_pmin_bound(p_vec, pmin_);
         return p_vec;
     }
-    inline arma::vec LogisticReg::predict(const arma::vec& beta,
-                                          const double pmin = 1e-5) const
+    inline arma::vec LogisticReg::predict(const arma::vec& beta) const
     {
         arma::vec beta0 { beta };
         if (standardize_) {
             beta0 = rev_rescale_coef(beta0);
         }
-        return linkinv(beta0, pmin);
+        return linkinv(beta0);
     }
 
     // define objective function (negative log-likehood function)
@@ -343,17 +336,15 @@ namespace Intsurv {
     }
 
     // define gradient function
-    inline arma::vec LogisticReg::gradient(const arma::vec& beta,
-                                           const double pmin) const
+    inline arma::vec LogisticReg::gradient(const arma::vec& beta) const
     {
-        return x_.t() * (linkinv(beta, pmin) - y_) / dn_obs_;
+        return x_.t() * (linkinv(beta) - y_) / dn_obs_;
     }
     // define gradient function at k-th dimension
     inline double LogisticReg::gradient(const arma::vec& beta,
-                                        const unsigned int k,
-                                        const double pmin) const
+                                        const unsigned int k) const
     {
-        return arma::mean((linkinv(beta, pmin) - y_) % x_.col(k));
+        return arma::mean((linkinv(beta) - y_) % x_.col(k));
     }
 
     // Firth-type score function
@@ -416,6 +407,7 @@ namespace Intsurv {
                                  const bool early_stop = false,
                                  const bool verbose = false)
     {
+        pmin_ = pmin;
         arma::vec beta0 { arma::zeros(x_.n_cols) };
         if (start.n_elem == x_.n_cols) {
             beta0 = start;
@@ -425,11 +417,11 @@ namespace Intsurv {
             Rcpp::Rcout << "\n" << std::string(40, '=')
                         << "\nStarting from\n"
                         << arma2rvec(beta0)
-                        << "\n.";
+                        << "\n";
             ell = objective(beta0);
             Rcpp::Rcout << "\nThe negative log-likelihood is "
                         << ell
-                        << "\n.";
+                        << "\n";
         }
         arma::vec beta { beta0 };
         arma::vec eta { arma::zeros(n_obs_) };
@@ -439,14 +431,14 @@ namespace Intsurv {
         size_t i {0};
 
         while (i < max_iter) {
-            y_hat = linkinv(beta0, pmin);
+            y_hat = linkinv(beta0);
             beta = beta0 + iter_mat * (y_ - y_hat);
             if (verbose) {
                 Rcpp::Rcout << "\n" << std::string(40, '=')
                             << "\nitartion: " << i + 1
-                            << "\n  estimated coef_: "
+                            << "\n  estimated coef: "
                             << arma2rvec(beta)
-                            << "\n.";
+                            << "\n";
             }
             // if relative tolerance is statisfied
             if (rel_l1_norm(beta, beta0) < rel_tol) {
@@ -456,7 +448,7 @@ namespace Intsurv {
                     Rcpp::Rcout << "\n  The negative log-likelihood changed\n";
                     Rprintf("  from %15.15f\n", ell_old);
                     Rprintf("    to %15.15f\n", ell);
-                    Rcpp::Rcout << "\nReached convergence criterion.\n";
+                    Rcpp::Rcout << "\nReached convergence criterion\n";
                 }
                 break;
             }
@@ -473,7 +465,7 @@ namespace Intsurv {
                     if (verbose) {
                         Rcpp::Rcout << "\nEarly stopped the algorithm"
                                     << " with estimates from"
-                                    << " iteration " << i << ".\n";
+                                    << " iteration " << i << "\n";
                     }
                     beta = beta0;
                     ell = ell_old;
@@ -503,6 +495,7 @@ namespace Intsurv {
                                        const double pmin = 1e-5
         )
     {
+        pmin_ = pmin;
         arma::vec beta0 { arma::zeros(x_.n_cols) };
         if (start.n_elem == x_.n_cols) {
             beta0 = start;
@@ -513,7 +506,7 @@ namespace Intsurv {
         compute_bl_iter_mat();
         size_t i {0};
         while (i < max_iter) {
-            y_hat = linkinv(beta0, pmin);
+            y_hat = linkinv(beta0);
             score_vec = firth_score(y_hat);
             beta = beta0 + bl_iter_mat_ * score_vec;
             if (rel_l1_norm(beta, beta0) < rel_tol) {
@@ -552,7 +545,6 @@ namespace Intsurv {
         const double l2_lambda,
         const arma::vec& l1_penalty_factor,
         const bool update_active = false,
-        const double pmin = 1e-5,
         const bool early_stop = false,
         const bool verbose = false
         )
@@ -562,7 +554,7 @@ namespace Intsurv {
         arma::vec beta_old = beta;
         for (size_t j {0}; j < p1_; ++j) {
             if (is_active[j] > 0) {
-                dlj = gradient(beta, j, pmin);
+                dlj = gradient(beta, j);
                 // update beta
                 double numer {
                     soft_threshold(cmd_lowerbound_[j] * beta[j] - dlj,
@@ -605,8 +597,8 @@ namespace Intsurv {
             if (ell_new > ell_old) {
                 if (verbose) {
                     Rcpp::Rcout << "Warning: "
-                                << "the objective function somehow increased\n";
-                    Rcpp::Rcout << "\nEarly stopped the CMD iterations "
+                                << "the objective function somehow increased.\n"
+                                << "Early stopped the CMD iterations "
                                 << "with estimates from the last step.\n";
                 }
                 beta = beta_old;
@@ -624,7 +616,6 @@ namespace Intsurv {
         const bool varying_active_set = false,
         const unsigned int max_iter = 200,
         const double rel_tol = 1e-5,
-        const double pmin = 1e-5,
         const bool early_stop = false,
         const bool verbose = false
         )
@@ -642,7 +633,7 @@ namespace Intsurv {
                 while (ii < max_iter) {
                     regularized_fit_update(beta, is_active_stored, l1_lambda,
                                            l2_lambda, l1_penalty_factor, true,
-                                           pmin, early_stop, verbose);
+                                           early_stop, verbose);
                     if (rel_l1_norm(beta, beta0) < rel_tol) {
                         break;
                     }
@@ -652,7 +643,7 @@ namespace Intsurv {
                 // run a full cycle over the converged beta
                 regularized_fit_update(beta, is_active_new, l1_lambda,
                                        l2_lambda, l1_penalty_factor, true,
-                                       pmin, early_stop, verbose);
+                                       early_stop, verbose);
                 // check two active sets coincide
                 if (l1_norm(is_active_new - is_active_stored) > 0) {
                     // if different, repeat this process
@@ -667,7 +658,7 @@ namespace Intsurv {
             while (i < max_iter) {
                 regularized_fit_update(beta, is_active_stored, l1_lambda,
                                        l2_lambda, l1_penalty_factor, false,
-                                       pmin, early_stop, verbose);
+                                       early_stop, verbose);
                 if (rel_l1_norm(beta, beta0) < rel_tol) {
                     break;
                 }
@@ -692,6 +683,7 @@ namespace Intsurv {
         const bool verbose = false
         )
     {
+        pmin_ = pmin;
         set_cmd_lowerbound();
         // set penalty terms
         arma::vec l1_penalty { arma::ones(p0_) };
@@ -702,7 +694,7 @@ namespace Intsurv {
         l1_penalty_factor_ = l1_penalty;
 
         arma::vec beta { arma::zeros(x_.n_cols) };
-        arma::vec grad_zero { arma::abs(gradient(beta, pmin)) };
+        arma::vec grad_zero { arma::abs(gradient(beta)) };
         arma::vec grad_beta { grad_zero }, strong_rhs { grad_beta };
 
         // large enough lambda for all-zero coef_ (except intercept_)
@@ -723,7 +715,7 @@ namespace Intsurv {
             is_active_strong(0) = 1;
             regularized_fit_update(beta, is_active_strong, l1_lambda_max_,
                                    l2_lambda, l1_penalty, false,
-                                   pmin, early_stop, verbose);
+                                   early_stop, verbose);
         }
         coef0_ = beta;
         // rescale coef_ back
@@ -739,7 +731,7 @@ namespace Intsurv {
             // compute negative log-likelihood
             neg_ll_ = objective();
             // compute degree of freedom
-            coef_df_ = get_coef_df(beta);
+            coef_df_ = compute_coef_df(beta);
             // record other inputs
             l1_lambda_ = l1_lambda;
             l2_lambda_ = l2_lambda;
@@ -752,7 +744,7 @@ namespace Intsurv {
         }
 
         // update active set by strong rule
-        grad_beta = arma::abs(gradient(coef0_, pmin));
+        grad_beta = arma::abs(gradient(coef0_));
         strong_rhs = (2 * l1_lambda - l1_lambda_max_) * l1_penalty;
 
         for (size_t j { int_intercept_ }; j < p1_; ++j) {
@@ -777,13 +769,13 @@ namespace Intsurv {
             // update beta
             reg_active_fit(beta, is_active_strong, l1_lambda, l2_lambda,
                            l1_penalty, varying_active_set, max_iter, rel_tol,
-                           pmin, early_stop, verbose);
+                           early_stop, verbose);
             // check kkt condition
             for (size_t j { int_intercept_ }; j < p1_; ++j) {
                 if (is_active_strong(j)) {
                     continue;
                 }
-                if (std::abs(gradient(beta, j, pmin)) > strong_rhs(j)) {
+                if (std::abs(gradient(beta, j)) > strong_rhs(j)) {
                     // update active set
                     is_active_strong_new(j) = 1;
                 }
@@ -807,7 +799,7 @@ namespace Intsurv {
         // compute negative log-likelihood
         neg_ll_ = objective();
         // compute degree of freedom
-        coef_df_ = get_coef_df(beta);
+        coef_df_ = compute_coef_df(beta);
         // record other inputs
         l1_lambda_ = l1_lambda;
         l2_lambda_ = l2_lambda;
@@ -829,6 +821,7 @@ namespace Intsurv {
         const bool verbose = false
         )
     {
+        pmin_ = pmin;
         set_cmd_lowerbound();
         // check alpha_
         if ((alpha < 0) || (alpha > 1)) {
@@ -844,7 +837,7 @@ namespace Intsurv {
 
         // construct lambda sequence
         arma::vec beta { arma::zeros(x_.n_cols) };
-        arma::vec grad_beta { arma::abs(gradient(beta, pmin)) };
+        arma::vec grad_beta { arma::abs(gradient(beta)) };
         arma::vec strong_rhs;
         l1_lambda_max_ =
             arma::max(grad_beta.tail(l1_penalty.n_elem) / l1_penalty) /
@@ -889,7 +882,7 @@ namespace Intsurv {
             regularized_fit_update(
                 beta, is_active_strong, l1_lambda_max_ * alpha_,
                 l1_lambda_max_ * (1 - alpha_) / 2, l1_penalty, false,
-                pmin, early_stop, verbose
+                early_stop, verbose
                 );
         }
         coef0_ = beta;
@@ -910,7 +903,7 @@ namespace Intsurv {
                 continue;
             }
             // update acitve set by strong rule (for lambda < lamda_max)
-            grad_beta = arma::abs(gradient(beta, pmin));
+            grad_beta = arma::abs(gradient(beta));
             if (k == 0) {
                 // use lambda_max
                 strong_rhs = alpha_ *
@@ -936,13 +929,13 @@ namespace Intsurv {
                 reg_active_fit(beta, is_active_strong, lambda_seq(k) * alpha_,
                                lambda_seq(k) * (1 - alpha_) / 2, l1_penalty,
                                varying_active_set, max_iter, rel_tol,
-                               pmin, early_stop, verbose);
+                               early_stop, verbose);
                 // check kkt condition
                 for (size_t j { int_intercept_ }; j < p1_; ++j) {
                     if (is_active_strong(j) > 0) {
                         continue;
                     }
-                    if (std::abs(gradient(beta, j, pmin)) > strong_rhs(j)) {
+                    if (std::abs(gradient(beta, j)) > strong_rhs(j)) {
                         // update active set
                         is_active_strong_new(j) = 1;
                     }
@@ -964,7 +957,7 @@ namespace Intsurv {
             // compute negative log-likelihood
             neg_ll_vec_(k) = objective();
             // compute degree of freedom
-            coef_df_vec_(k) = get_coef_df(beta);
+            coef_df_vec_(k) = compute_coef_df(beta);
         }
         // prepare outputs
 

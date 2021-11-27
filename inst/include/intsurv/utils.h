@@ -692,7 +692,7 @@ namespace Intsurv {
     }
 
     // count non-zero coef estimates
-    inline unsigned int get_coef_df(const arma::vec& x)
+    inline unsigned int compute_coef_df(const arma::vec& x)
     {
         unsigned int res {0};
         for (size_t i {0}; i < x.n_elem; ++i) {
@@ -712,14 +712,17 @@ namespace Intsurv {
             static_cast<double>(coef_df) + 2 * negLogL;
     }
 
-    // set a value within [a, b]
-    inline double ge_le(const double x, const double a, const double b)
+    inline void set_pmin_bound(double& x, const double pmin = 1e-5)
     {
-        if (x < a) return a;
-        if (x > b) return b;
-        return x;
+        if (x < pmin) {
+            x = pmin;
+            return;
+        }
+        if (x > 1 - pmin) {
+            x = 1 - pmin;
+            return;
+        }
     }
-
     inline void set_pmin_bound(arma::vec& x, const double pmin = 1e-5)
     {
         arma::vec::iterator it { x.begin() }, it_end { x.end() };

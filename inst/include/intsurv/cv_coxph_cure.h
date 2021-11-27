@@ -31,24 +31,24 @@ namespace Intsurv {
         const arma::mat& cure_x,
         const bool cure_intercept = true,
         const unsigned long n_folds = 10,
-        const bool& firth = false,
+        const bool firth = false,
         const arma::vec& cox_start = 0,
         const arma::vec& cure_start = 0,
         const arma::vec& cox_offset = 0,
         const arma::vec& cure_offset = 0,
-        const bool& cox_standardize = true,
-        const bool& cure_standardize = true,
-        const unsigned int& em_max_iter = 1000,
-        const double& em_rel_tol = 1e-4,
-        const unsigned int& cox_mstep_max_iter = 200,
-        const double& cox_mstep_rel_tol = 1e-4,
-        const unsigned int& cure_mstep_max_iter = 200,
-        const double& cure_mstep_rel_tol = 1e-4,
-        const unsigned int& tail_completion = 1,
+        const bool cox_standardize = true,
+        const bool cure_standardize = true,
+        const unsigned int em_max_iter = 1000,
+        const double em_rel_tol = 1e-4,
+        const unsigned int cox_mstep_max_iter = 200,
+        const double cox_mstep_rel_tol = 1e-4,
+        const unsigned int cure_mstep_max_iter = 200,
+        const double cure_mstep_rel_tol = 1e-4,
+        const unsigned int tail_completion = 1,
         double tail_tau = -1,
-        const double& pmin = 1e-5,
-        const unsigned int& early_stop = 0,
-        const unsigned int& verbose = 0
+        const double pmin = 1e-5,
+        const unsigned int early_stop = 0,
+        const unsigned int verbose = 0
         )
     {
         // stratify
@@ -175,7 +175,7 @@ namespace Intsurv {
             // compute observed log-likelihood function for the test data
             cv_vec(i) = cc_obj.obs_log_likelihood(
                 test_time, test_event, test_cox_x, test_cure_x,
-                test_cox_offset, test_cure_offset, pmin
+                test_cox_offset, test_cure_offset
                 );
         }
         return cv_vec;
@@ -189,29 +189,29 @@ namespace Intsurv {
         const arma::mat& cure_x,
         const bool cure_intercept = true,
         const unsigned long n_folds = 10,
-        const double& cox_l1_lambda = 0,
-        const double& cox_l2_lambda = 0,
+        const double cox_l1_lambda = 0,
+        const double cox_l2_lambda = 0,
         const arma::vec& cox_l1_penalty_factor = 0,
-        const double& cure_l1_lambda = 0,
-        const double& cure_l2_lambda = 0,
+        const double cure_l1_lambda = 0,
+        const double cure_l2_lambda = 0,
         const arma::vec& cure_l1_penalty_factor = 0,
         const arma::vec& cox_start = 0,
         const arma::vec& cure_start = 0,
         const arma::vec& cox_offset = 0,
         const arma::vec& cure_offset = 0,
-        const bool& cox_standardize = true,
-        const bool& cure_standardize = true,
-        const unsigned int& em_max_iter = 1000,
-        const double& em_rel_tol = 1e-4,
-        const unsigned int& cox_mstep_max_iter = 200,
-        const double& cox_mstep_rel_tol = 1e-4,
-        const unsigned int& cure_mstep_max_iter = 200,
-        const double& cure_mstep_rel_tol = 1e-4,
-        const unsigned int& tail_completion = 1,
+        const bool cox_standardize = true,
+        const bool cure_standardize = true,
+        const unsigned int em_max_iter = 1000,
+        const double em_rel_tol = 1e-4,
+        const unsigned int cox_mstep_max_iter = 200,
+        const double cox_mstep_rel_tol = 1e-4,
+        const unsigned int cure_mstep_max_iter = 200,
+        const double cure_mstep_rel_tol = 1e-4,
+        const unsigned int tail_completion = 1,
         double tail_tau = -1,
-        const double& pmin = 1e-5,
-        const unsigned int& early_stop = 0,
-        const unsigned int& verbose = 0
+        const double pmin = 1e-5,
+        const unsigned int early_stop = 0,
+        const unsigned int verbose = 0
         )
     {
         // stratify
@@ -343,7 +343,7 @@ namespace Intsurv {
             // compute observed log-likelihood function for the test data
             cv_vec(i) = cc_obj.obs_log_likelihood(
                 test_time, test_event, test_cox_x, test_cure_x,
-                test_cox_offset, test_cure_offset, pmin
+                test_cox_offset, test_cure_offset
                 );
         }
         return cv_vec;
