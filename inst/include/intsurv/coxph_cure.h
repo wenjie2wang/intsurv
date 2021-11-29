@@ -40,6 +40,8 @@ namespace Intsurv {
         arma::uvec case2_ind_;
         unsigned int max_event_time_ind_; // index of the maximum event time
         double pmin_;
+        bool cox_standardize_;
+        bool cure_standardize_;
 
         // outputs
         arma::vec cox_coef_;
@@ -132,6 +134,15 @@ namespace Intsurv {
                                     s_event, cure_intercept,
                                     cure_standardize);
             cure_obj_.set_offset(s_cure_offset);
+            // avoid standardization after each iteration
+            cox_standardize_ = cox_standardize;
+            if (cox_standardize_) {
+                cox_obj_.standardize_ = false;
+            }
+            cure_standardize_ = cure_standardize;
+            if (cure_standardize_) {
+                cure_obj_.standardize_ = false;
+            }
         }
 
         // function members
@@ -478,6 +489,17 @@ namespace Intsurv {
             tol2 = rel_l1_norm(cure_obj_.coef_, cure_beta);
 
         } // end of the EM algorithm
+
+        // standardize
+        if (cox_standardize_) {
+            cox_obj_.standardize_ = cox_standardize_;
+            cox_obj_.rescale_estimates();
+            cox_obj_.est_haz_surv();
+        }
+        if (cure_standardize_) {
+            cure_obj_.standardize_ = cure_standardize_;
+            cure_obj_.rescale_coef();
+        }
 
         // reset cox_obj_ and cure_obj_ in case of further usage
         cox_obj_.reset_offset_haz();
@@ -862,6 +884,17 @@ namespace Intsurv {
             tol2 = rel_l1_norm(cure_obj_.coef_, cure_beta);
 
         } // end of the EM algorithm
+
+        // standardize
+        if (cox_standardize_) {
+            cox_obj_.standardize_ = cox_standardize_;
+            cox_obj_.rescale_estimates();
+            cox_obj_.est_haz_surv();
+        }
+        if (cure_standardize_) {
+            cure_obj_.standardize_ = cure_standardize_;
+            cure_obj_.rescale_coef();
+        }
 
         // reset cox_obj_ and cure_obj_ in case of further usage
         cox_obj_.reset_offset_haz();

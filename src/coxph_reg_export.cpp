@@ -36,7 +36,7 @@ Rcpp::List rcpp_coxph(const arma::vec& time,
     // define object
     Intsurv::CoxphReg object { time, event, x };
     // set offset if it is not zero
-    if (! Intsurv::isAlmostEqual(arma::sum(arma::abs(offset)), 0.0)) {
+    if (arma::sum(arma::abs(offset)) > 0.0) {
         object.set_offset(offset, false);
     }
     // model-fitting

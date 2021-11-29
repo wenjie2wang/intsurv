@@ -189,6 +189,18 @@ namespace Intsurv {
                 }
             }
         }
+        // re-scale all estimates for the original data
+        inline void rescale_estimates()
+        {
+            rescale_coef();
+            if (standardize_) {
+                double tmp { arma::as_scalar(x_center_ * coef_) };
+                tmp = std::exp(tmp);
+                h0_time_ /= tmp;
+                H0_time_ /= tmp;
+                S0_time_ = arma::exp(- H0_time_);
+            }
+        }
 
         // partially update event non-zero-one indicators
         // assuming only old event weights strictly > 0 need update
