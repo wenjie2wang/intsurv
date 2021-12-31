@@ -35,6 +35,7 @@ namespace Intsurv {
         arma::vec a_bar_;
         arma::vec b_bar_;
         bool intercept_;
+        arma::vec offset_;      // offset term
 
         // outputs
         unsigned int n_obs_;    // number of observation
@@ -94,6 +95,8 @@ namespace Intsurv {
                 x_ = arma::join_horiz(arma::ones(n_obs_), x_);
             }
             cmd_lowerbound_ = arma::mean(arma::square(x_), 0) / 2.0;
+            // initialize offset_
+            reset_offset();
         }
 
         // transfer coef for standardized data to coef for non-standardized data
@@ -113,6 +116,25 @@ namespace Intsurv {
                     }
                 }
             }
+        }
+
+        // set offset
+        inline void set_offset(const arma::vec& offset)
+        {
+            if (offset.n_elem == n_obs_) {
+                offset_ = offset;
+            } else if (offset.n_elem == 1 || offset.empty()) {
+                offset_ = arma::zeros(n_obs_);
+            } else {
+                throw std::length_error(
+                    "The length of the specified offset must match sample size."
+                    );
+            }
+        }
+        // reset offset to zeros
+        inline void reset_offset()
+        {
+            offset_ = arma::zeros(n_obs_);
         }
 
         // objective function
@@ -282,13 +304,13 @@ namespace Intsurv {
             if (has_start) {
                 eta = start.head_rows(p1_);
                 alpha0 = start(p1_);
-                xeta = mat2vec(x_ * eta);
+                xeta = mat2vec(x_ * eta) + offset_;
                 grad_eta = cmd_grad_eta(xeta, alpha0);
                 grad_alpha0 = cmd_grad_alpha0(xeta, alpha0);
             } else {
                 eta = arma::zeros(p1_);
                 alpha0 = 0.0;
-                xeta = arma::zeros(n_obs_);
+                xeta = arma::zeros(n_obs_) + offset_;
                 grad_eta = arma::zeros(p1_);
                 grad_alpha0 = 0.0;
             }
