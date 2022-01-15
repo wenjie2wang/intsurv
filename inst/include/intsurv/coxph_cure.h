@@ -80,8 +80,8 @@ namespace Intsurv {
         double cure_l1_lambda_max_;
 
         // regularized by particular lambdas
-        arma::vec cox_en_coef_;  // elastic net estimates
-        arma::vec cure_en_coef_; // elastic net estimates
+        // arma::vec cox_en_coef_;  // elastic net estimates
+        // arma::vec cure_en_coef_; // elastic net estimates
         double cox_l1_lambda_;
         double cox_l2_lambda_;
         arma::vec cox_l1_penalty_factor_;
@@ -167,12 +167,12 @@ namespace Intsurv {
         // fit regularized Cox cure model with adaptive elastic net penalty
         // for perticular lambda's
         inline void regularized_fit(
-            const double cox_l1_lambda_,
-            const double cox_l2_lambda_,
-            const double cure_l1_lambda_,
-            const double cure_l2_lambda_,
-            const arma::vec& cox_l1_penalty_factor_,
-            const arma::vec& cure_l1_penalty_factor_,
+            const double cox_l1_lambda,
+            const double cox_l2_lambda,
+            const double cure_l1_lambda,
+            const double cure_l2_lambda,
+            const arma::vec& cox_l1_penalty_factor,
+            const arma::vec& cure_l1_penalty_factor,
             const arma::vec& cox_start,
             const arma::vec& cure_start,
             const unsigned int em_max_iter,
@@ -789,8 +789,9 @@ namespace Intsurv {
                 cox_obj_.coef_ = cox_beta;
                 cure_obj_.coef_ = cure_beta;
                 // update coef_df_ and en_coef
-                cox_obj_.set_en_coef(cox_l2_lambda_);
-                cure_obj_.set_en_coef(cure_l2_lambda_);
+                // cox_obj_.set_en_coef(cox_l2_lambda_);
+                // cure_obj_.set_en_coef(cure_l2_lambda_);
+
                 // update hazard and survival function estimates
                 cox_obj_.compute_censor_haz_surv_time();
                 cox_obj_.S0_time_ = s0_wi_tail;
@@ -904,8 +905,8 @@ namespace Intsurv {
         // prepare outputs
         cox_coef_ = cox_obj_.coef_;
         cure_coef_ = cure_obj_.coef_;
-        cox_en_coef_ = cox_obj_.en_coef_;
-        cure_en_coef_ = cure_obj_.en_coef_;
+        // cox_en_coef_ = cox_obj_.en_coef_;
+        // cure_en_coef_ = cure_obj_.en_coef_;
 
         unique_time_ = cox_obj_.unique_time_;
         h0_est_ = cox_obj_.h0_est_;

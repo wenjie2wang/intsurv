@@ -214,8 +214,8 @@ Rcpp::List rcpp_coxph_cure_reg(
     return Rcpp::List::create(
         Rcpp::Named("cox_coef") = Intsurv::arma2rvec(obj.cox_coef_),
         Rcpp::Named("cure_coef") = Intsurv::arma2rvec(obj.cure_coef_),
-        Rcpp::Named("cox_en_coef") = Intsurv::arma2rvec(obj.cox_en_coef_),
-        Rcpp::Named("cure_en_coef") = Intsurv::arma2rvec(obj.cure_en_coef_),
+        // Rcpp::Named("cox_en_coef") = Intsurv::arma2rvec(obj.cox_en_coef_),
+        // Rcpp::Named("cure_en_coef") = Intsurv::arma2rvec(obj.cure_en_coef_),
         Rcpp::Named("baseline") = Rcpp::List::create(
             Rcpp::Named("time") = Intsurv::arma2rvec(obj.unique_time_),
             Rcpp::Named("h0_est") = Intsurv::arma2rvec(obj.h0_est_),
@@ -361,8 +361,8 @@ Rcpp::List rcpp_coxph_cure_vs(
     const unsigned int cure_p { obj.cure_p_ };
     arma::mat cox_coef_mat { arma::zeros(cox_p, n_lambda) };
     arma::mat cure_coef_mat { arma::zeros(cure_p, n_lambda) };
-    arma::mat cox_en_coef_mat { arma::zeros(cox_p, n_lambda) };
-    arma::mat cure_en_coef_mat { arma::zeros(cure_p, n_lambda) };
+    // arma::mat cox_en_coef_mat { arma::zeros(cox_p, n_lambda) };
+    // arma::mat cure_en_coef_mat { arma::zeros(cure_p, n_lambda) };
     arma::vec bic1 { arma::zeros(n_lambda) }, bic2 { bic1 }, aic { bic1 };
     arma::vec coef_df { bic1 }, negLogL { bic1 };
     arma::mat lambda_mat { arma::zeros(n_lambda, 4) };
@@ -428,8 +428,8 @@ Rcpp::List rcpp_coxph_cure_vs(
             // store results
             cox_coef_mat.col(iter) = obj.cox_coef_;
             cure_coef_mat.col(iter) = obj.cure_coef_;
-            cox_en_coef_mat.col(iter) = obj.cox_en_coef_;
-            cure_en_coef_mat.col(iter) = obj.cure_en_coef_;
+            // cox_en_coef_mat.col(iter) = obj.cox_en_coef_;
+            // cure_en_coef_mat.col(iter) = obj.cure_en_coef_;
             aic(iter) = obj.aic_;
             bic1(iter) = obj.bic1_;
             bic2(iter) = obj.bic2_;
@@ -448,8 +448,8 @@ Rcpp::List rcpp_coxph_cure_vs(
     return Rcpp::List::create(
         Rcpp::Named("surv_coef") = cox_coef_mat.t(),
         Rcpp::Named("cure_coef") = cure_coef_mat.t(),
-        Rcpp::Named("surv_en_coef") = cox_en_coef_mat.t(),
-        Rcpp::Named("cure_en_coef") = cure_en_coef_mat.t(),
+        // Rcpp::Named("surv_en_coef") = cox_en_coef_mat.t(),
+        // Rcpp::Named("cure_en_coef") = cure_en_coef_mat.t(),
         Rcpp::Named("model") = Rcpp::List::create(
             Rcpp::Named("nObs") = obj.n_obs_,
             Rcpp::Named("nEvent") = obj.n_event_,

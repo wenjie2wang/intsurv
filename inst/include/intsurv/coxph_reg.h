@@ -79,7 +79,7 @@ namespace Intsurv {
 
         // for a single l1_lambda_ and l2_lambda_
         arma::vec coef_;        // covariate coefficient estimates
-        arma::vec en_coef_;     // (rescaled) elastic net estimates
+        // arma::vec en_coef_;     // (rescaled) elastic net estimates
         double neg_ll_;         // partial negative log-likelihood
         unsigned int coef_df_;  // number of non-zero coef estimates
         arma::vec xbeta_;       // sorted x * coef_
@@ -87,7 +87,7 @@ namespace Intsurv {
 
         // for a lambda sequence
         arma::mat coef_mat_;     // coef_ matrix (rescaled for origin x_)
-        arma::mat en_coef_mat_;  // elastic net estimates
+        // arma::mat en_coef_mat_;  // elastic net estimates
         arma::vec neg_ll_vec_;   // negative log-likelihood vector
         arma::uvec coef_df_vec_; // coef df vector
         arma::vec bic_vec_;      // log(num_event) * coef_df_ + 2 * neg_ll_
@@ -341,23 +341,23 @@ namespace Intsurv {
             }
         }
         // update coef0_, en_coef_, and coef_df_ from a new coef_
-        inline void set_en_coef(const double l2_lambda = 0) {
-            // update coef0_
-            rev_rescale_coef();
-            arma::vec beta { coef0_ };
-            // update en_coef_
-            if (l2_lambda > 0) {
-                coef0_ *= (1 + l2_lambda);
-                rescale_coef();
-                en_coef_ = coef_;
-                // overwrite the naive elastic net estimate
-                coef0_ = beta;
-                rescale_coef();
-            } else {
-                en_coef_ = coef_;
-            }
-            coef_df_ = compute_coef_df(beta);
-        }
+        // inline void set_en_coef(const double l2_lambda = 0) {
+        //     // update coef0_
+        //     rev_rescale_coef();
+        //     arma::vec beta { coef0_ };
+        //     // update en_coef_
+        //     if (l2_lambda > 0) {
+        //         coef0_ *= (1 + l2_lambda);
+        //         rescale_coef();
+        //         en_coef_ = coef_;
+        //         // overwrite the naive elastic net estimate
+        //         coef0_ = beta;
+        //         rescale_coef();
+        //     } else {
+        //         en_coef_ = coef_;
+        //     }
+        //     coef_df_ = compute_coef_df(beta);
+        // }
 
         // fit regular Cox model
         inline void fit(const arma::vec& start,
@@ -884,7 +884,7 @@ namespace Intsurv {
         coef_ = beta;
         if (l1_lambda > l1_lambda_max_) {
             // no need to rescale all-zero coef_
-            en_coef_ = coef_;
+            // en_coef_ = coef_;
             coef_df_ = 0;
             // compute negative log-likelihood
             neg_ll_ = objective();
@@ -947,9 +947,9 @@ namespace Intsurv {
             }
         }
         // compute elastic net estimates, then rescale them back
-        coef0_ = (1 + l2_lambda_) * beta;
-        rescale_coef();
-        en_coef_ = coef_;
+        // coef0_ = (1 + l2_lambda_) * beta;
+        // rescale_coef();
+        // en_coef_ = coef_;
         // overwrite the naive elastic net estimate
         coef0_ = beta;
         rescale_coef();
@@ -1019,7 +1019,7 @@ namespace Intsurv {
 
         // initialize the estimate matrix
         coef_mat_ = arma::zeros(x_.n_cols, lambda_seq.n_elem);
-        en_coef_mat_ = coef_mat_;
+        // en_coef_mat_ = coef_mat_;
         neg_ll_vec_ = arma::zeros(lambda_seq.n_elem);
         coef_df_vec_ = arma::zeros<arma::uvec>(lambda_seq.n_elem);
         bic_vec_ = neg_ll_vec_;
@@ -1043,7 +1043,7 @@ namespace Intsurv {
             if (alpha_ * lambda_seq(k) >= l1_lambda_max_) {
                 // no re-scale is needed
                 coef_mat_.col(k) = coef_;
-                en_coef_mat_.col(k) = coef_;
+                // en_coef_mat_.col(k) = coef_;
                 // compute negative log-likelihood
                 neg_ll_vec_(k) = objective();
                 coef_df_vec_(k) = compute_coef_df(beta);
@@ -1105,9 +1105,9 @@ namespace Intsurv {
                 }
             }
             // compute elastic net estimates
-            coef0_ = (1 + (1 - alpha_) * lambda_seq(k) / 2) * beta;
-            rescale_coef();
-            en_coef_mat_.col(k) = coef_;
+            // coef0_ = (1 + (1 - alpha_) * lambda_seq(k) / 2) * beta;
+            // rescale_coef();
+            // en_coef_mat_.col(k) = coef_;
 
             // compute naive elastic net estimates
             coef0_ = beta;

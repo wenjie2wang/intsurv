@@ -908,8 +908,9 @@ namespace Intsurv {
                 cox_obj_.coef_ = cox_beta;
                 cure_obj_.coef_ = cure_beta;
                 // update coef_df_ and en_coef
-                cox_obj_.set_en_coef(cox_l2_lambda_);
-                cure_obj_.set_en_coef(cure_l2_lambda_);
+                // cox_obj_.set_en_coef(cox_l2_lambda_);
+                // cure_obj_.set_en_coef(cure_l2_lambda_);
+
                 // update hazard and survival function estimates
                 cox_obj_.compute_haz_surv_time();
                 cox_obj_.S0_time_ = s0_wi_tail;

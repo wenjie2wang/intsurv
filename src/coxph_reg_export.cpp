@@ -101,7 +101,7 @@ Rcpp::List rcpp_reg_coxph1(const arma::vec& time,
     risk_score = risk_score.elem(rev_ord);
     return Rcpp::List::create(
         Rcpp::Named("coef") = Intsurv::arma2rvec(object.coef_),
-        Rcpp::Named("en_coef") = Intsurv::arma2rvec(object.en_coef_),
+        // Rcpp::Named("en_coef") = Intsurv::arma2rvec(object.en_coef_),
         Rcpp::Named("model") = Rcpp::List::create(
             Rcpp::Named("risk_score") = Intsurv::arma2rvec(risk_score),
             Rcpp::Named("nObs") = object.n_obs_,
@@ -156,7 +156,7 @@ Rcpp::List rcpp_reg_coxph2(const arma::vec& time,
                            early_stop, verbose);
     return Rcpp::List::create(
         Rcpp::Named("coef") = object.coef_mat_,
-        Rcpp::Named("en_coef") = object.en_coef_mat_,
+        // Rcpp::Named("en_coef") = object.en_coef_mat_,
         Rcpp::Named("model") = Rcpp::List::create(
             Rcpp::Named("nObs") = object.n_obs_,
             Rcpp::Named("negLogL") = Intsurv::arma2rvec(object.neg_ll_vec_),

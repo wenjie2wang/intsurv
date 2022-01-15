@@ -60,14 +60,14 @@ namespace Intsurv {
         arma::vec coef0_;       // coef before rescaling
         // for one solution
         arma::vec coef_;        // coef (rescaled for origin x)
-        arma::vec en_coef_;     // (rescaled) elastic net estimates
+        // arma::vec en_coef_;     // (rescaled) elastic net estimates
         arma::vec xbeta_;       // sorted x * coef
         arma::vec prob_vec_;    // sorted linkinv response
         double neg_ll_;         // negative log-likelihood
         unsigned int coef_df_;  // number of non-zero coef estimates
         // for a lambda sequence
         arma::mat coef_mat_;     // coef matrix (rescaled for origin x)
-        arma::mat en_coef_mat_;  // elastic net estimates
+        // arma::mat en_coef_mat_;  // elastic net estimates
         arma::vec neg_ll_vec_;   // negative log-likelihood vector
         arma::uvec coef_df_vec_; // coef df vector
 
@@ -170,24 +170,24 @@ namespace Intsurv {
 
         // additional methods for coxph_cure
         // update coef0, en_coef, and coef_df from a new coef
-        inline void set_en_coef(const double l2_lambda = 0)
-        {
-            // update coef0_
-            coef0_ = rev_rescale_coef(coef_);
-            arma::vec beta { coef0_ };
-            // update en_coef_
-            if (l2_lambda > 0) {
-                coef0_ *= (1 + l2_lambda);
-                rescale_coef();
-                en_coef_ = coef_;
-                // overwrite the naive elastic net estimate
-                coef0_ = beta;
-                rescale_coef();
-            } else {
-                en_coef_ = coef_;
-            }
-            coef_df_ = compute_coef_df(beta);
-        }
+        // inline void set_en_coef(const double l2_lambda = 0)
+        // {
+        //     // update coef0_
+        //     coef0_ = rev_rescale_coef(coef_);
+        //     arma::vec beta { coef0_ };
+        //     // update en_coef_
+        //     if (l2_lambda > 0) {
+        //         coef0_ *= (1 + l2_lambda);
+        //         rescale_coef();
+        //         en_coef_ = coef_;
+        //         // overwrite the naive elastic net estimate
+        //         coef0_ = beta;
+        //         rescale_coef();
+        //     } else {
+        //         en_coef_ = coef_;
+        //     }
+        //     coef_df_ = compute_coef_df(beta);
+        // }
 
         inline arma::vec linkinv(const arma::vec& eta) const;
 
@@ -723,7 +723,7 @@ namespace Intsurv {
 
         // early exit for lambda greater than lambda_max
         if (l1_lambda >= l1_lambda_max_) {
-            en_coef_ = coef_;
+            // en_coef_ = coef_;
             coef_df_ = 0;
             // compute score and prob
             xbeta_ = x_ * beta;
@@ -787,9 +787,9 @@ namespace Intsurv {
             }
         }
         // compute elastic net estimates, then rescale them back
-        coef0_ = (1 + l2_lambda) * beta;
-        rescale_coef();
-        en_coef_ = coef_;
+        // coef0_ = (1 + l2_lambda) * beta;
+        // rescale_coef();
+        // en_coef_ = coef_;
         // overwrite the naive elastic net estimate
         coef0_ = beta;
         rescale_coef();
@@ -868,7 +868,7 @@ namespace Intsurv {
 
         // initialize the estimate matrix
         coef_mat_ = arma::zeros(x_.n_cols, lambda_seq.n_elem);
-        en_coef_mat_ = coef_mat_;
+        // en_coef_mat_ = coef_mat_;
         neg_ll_vec_ = arma::zeros(lambda_seq.n_elem);
         coef_df_vec_ = arma::zeros<arma::uvec>(lambda_seq.n_elem);
 
@@ -947,9 +947,9 @@ namespace Intsurv {
                 }
             }
             // compute elastic net estimates
-            coef0_ = (1 + (1 - alpha_) * lambda_seq(k) / 2) * beta;
-            rescale_coef();
-            en_coef_mat_.col(k) = coef_;
+            // coef0_ = (1 + (1 - alpha_) * lambda_seq(k) / 2) * beta;
+            // rescale_coef();
+            // en_coef_mat_.col(k) = coef_;
             // compute naive elastic net estimates
             coef0_ = beta;
             rescale_coef();

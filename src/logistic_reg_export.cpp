@@ -109,7 +109,7 @@ Rcpp::List rcpp_reg_logistic1(const arma::mat& x,
                            early_stop, verbose);
     return Rcpp::List::create(
         Rcpp::Named("coef") = Intsurv::arma2rvec(object.coef_),
-        Rcpp::Named("en_coef") = Intsurv::arma2rvec(object.en_coef_),
+        // Rcpp::Named("en_coef") = Intsurv::arma2rvec(object.en_coef_),
         Rcpp::Named("model") = Rcpp::List::create(
             Rcpp::Named("nObs") = object.n_obs_,
             Rcpp::Named("negLogL") = object.neg_ll_,
@@ -151,7 +151,7 @@ Rcpp::List rcpp_reg_logistic2(const arma::mat& x,
                            pmin, early_stop, verbose);
     return Rcpp::List::create(
         Rcpp::Named("coef") = object.coef_mat_,
-        Rcpp::Named("en_coef") = object.en_coef_mat_,
+        // Rcpp::Named("en_coef") = object.en_coef_mat_,
         Rcpp::Named("model") = Rcpp::List::create(
             Rcpp::Named("nObs") = object.n_obs_,
             Rcpp::Named("negLogL") = Intsurv::arma2rvec(object.neg_ll_vec_),
