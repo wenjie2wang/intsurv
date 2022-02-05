@@ -26,15 +26,15 @@
 Rcpp::List rcpp_logistic(
     const arma::mat& x,
     const arma::vec& y,
-    const bool& intercept = true,
-    const bool& standardize = true,
+    const bool intercept = true,
+    const bool standardize = true,
     const arma::vec& offset = 0,
     const arma::vec& start = 0,
-    const unsigned int& max_iter = 300,
-    const double& rel_tol = 1e-6,
-    const double& pmin = 1e-5,
-    const bool& early_stop = false,
-    const bool& verbose = false
+    const unsigned int max_iter = 300,
+    const double rel_tol = 1e-6,
+    const double pmin = 1e-5,
+    const bool early_stop = false,
+    const bool verbose = false
     )
 {
     Intsurv::LogisticReg object {
@@ -62,7 +62,7 @@ Rcpp::List rcpp_firth_logistic(
     const bool intercept = true,
     const bool standardize = true,
     const arma::vec& offset = 0,
-    const arma::vec start = 0,
+    const arma::vec& start = 0,
     const unsigned int max_iter = 300,
     const double rel_tol = 1e-6
     )
@@ -87,20 +87,22 @@ Rcpp::List rcpp_firth_logistic(
 // regularized logistic model by coordinate-majorization-descent algorithm
 // for perticular lambda's
 // [[Rcpp::export]]
-Rcpp::List rcpp_reg_logistic1(const arma::mat& x,
-                              const arma::vec& y,
-                              const double& l1_lambda = 0,
-                              const double& l2_lambda = 0,
-                              const arma::vec& l1_penalty_factor = 0,
-                              const arma::vec& start = 0,
-                              const bool intercept = true,
-                              const bool standardize = true,
-                              const arma::vec& offset = 0,
-                              const unsigned int max_iter = 300,
-                              const double rel_tol = 1e-5,
-                              const double pmin = 1e-5,
-                              const bool& early_stop = false,
-                              const bool& verbose = false)
+Rcpp::List rcpp_reg_logistic1(
+    const arma::mat& x,
+    const arma::vec& y,
+    const double l1_lambda = 0,
+    const double l2_lambda = 0,
+    const arma::vec& l1_penalty_factor = 0,
+    const arma::vec& start = 0,
+    const bool intercept = true,
+    const bool standardize = true,
+    const arma::vec& offset = 0,
+    const unsigned int max_iter = 300,
+    const double rel_tol = 1e-5,
+    const double pmin = 1e-5,
+    const bool early_stop = false,
+    const bool verbose = false
+    )
 {
     Intsurv::LogisticReg object { x, y, intercept, standardize };
     object.set_offset(offset);
@@ -128,21 +130,23 @@ Rcpp::List rcpp_reg_logistic1(const arma::mat& x,
 
 // for a sequence of lambda's and a given alpha
 // [[Rcpp::export]]
-Rcpp::List rcpp_reg_logistic2(const arma::mat& x,
-                              const arma::vec& y,
-                              arma::vec lambda = 0,
-                              const double alpha = 1,
-                              const unsigned int& nlambda = 1,
-                              double lambda_min_ratio = 1e-4,
-                              const arma::vec& penalty_factor = 0,
-                              const bool intercept = true,
-                              const bool standardize = true,
-                              const arma::vec& offset = 0,
-                              const unsigned int max_iter = 300,
-                              const double rel_tol = 1e-5,
-                              const double pmin = 1e-5,
-                              const bool& early_stop = false,
-                              const bool& verbose = false)
+Rcpp::List rcpp_reg_logistic2(
+    const arma::mat& x,
+    const arma::vec& y,
+    const arma::vec& lambda = 0,
+    const double alpha = 1,
+    const unsigned int nlambda = 1,
+    const double lambda_min_ratio = 1e-4,
+    const arma::vec& penalty_factor = 0,
+    const bool intercept = true,
+    const bool standardize = true,
+    const arma::vec& offset = 0,
+    const unsigned int max_iter = 300,
+    const double rel_tol = 1e-5,
+    const double pmin = 1e-5,
+    const bool early_stop = false,
+    const bool verbose = false
+    )
 {
     Intsurv::LogisticReg object { x, y, intercept, standardize };
     object.set_offset(offset);
@@ -151,7 +155,6 @@ Rcpp::List rcpp_reg_logistic2(const arma::mat& x,
                            pmin, early_stop, verbose);
     return Rcpp::List::create(
         Rcpp::Named("coef") = object.coef_mat_,
-        // Rcpp::Named("en_coef") = object.en_coef_mat_,
         Rcpp::Named("model") = Rcpp::List::create(
             Rcpp::Named("nObs") = object.n_obs_,
             Rcpp::Named("negLogL") = Intsurv::arma2rvec(object.neg_ll_vec_),

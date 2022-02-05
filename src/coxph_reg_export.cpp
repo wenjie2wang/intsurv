@@ -22,15 +22,16 @@
 
 // fit regular Cox model that allows non-integer "event" and tied events
 // [[Rcpp::export]]
-Rcpp::List rcpp_coxph(const arma::vec& time,
-                      const arma::vec& event,
-                      const arma::mat& x,
-                      const arma::vec& offset = 0,
-                      const arma::vec& start = 0,
-                      const unsigned int& max_iter = 200,
-                      const double& rel_tol = 1e-5,
-                      const bool& early_stop = false,
-                      const bool& verbose = false
+Rcpp::List rcpp_coxph(
+    const arma::vec& time,
+    const arma::vec& event,
+    const arma::mat& x,
+    const arma::vec& offset = 0,
+    const arma::vec& start = 0,
+    const unsigned int max_iter = 200,
+    const double rel_tol = 1e-5,
+    const bool early_stop = false,
+    const bool verbose = false
     )
 {
     // define object
@@ -73,18 +74,20 @@ Rcpp::List rcpp_coxph(const arma::vec& time,
 // that allows non-integer "event" and tied events
 // for particular lambda's
 // [[Rcpp::export]]
-Rcpp::List rcpp_reg_coxph1(const arma::vec& time,
-                           const arma::vec& event,
-                           const arma::mat& x,
-                           const double& l1_lambda = 0,
-                           const double& l2_lambda = 0,
-                           arma::vec l1_penalty_factor = 0,
-                           const arma::vec& offset = 0,
-                           const arma::vec& start = 0,
-                           const unsigned int& max_iter = 200,
-                           const double& rel_tol = 1e-5,
-                           const bool& early_stop = false,
-                           const bool& verbose = false)
+Rcpp::List rcpp_reg_coxph1(
+    const arma::vec& time,
+    const arma::vec& event,
+    const arma::mat& x,
+    const double l1_lambda = 0,
+    const double l2_lambda = 0,
+    const arma::vec& l1_penalty_factor = 0,
+    const arma::vec& offset = 0,
+    const arma::vec& start = 0,
+    const unsigned int max_iter = 200,
+    const double rel_tol = 1e-5,
+    const bool early_stop = false,
+    const bool verbose = false
+    )
 {
     Intsurv::CoxphReg object { time, event, x };
     // set offset if it is not zero
@@ -131,19 +134,20 @@ Rcpp::List rcpp_reg_coxph1(const arma::vec& time,
 
 // for a sequence of lambda's and a given alpha
 // [[Rcpp::export]]
-Rcpp::List rcpp_reg_coxph2(const arma::vec& time,
-                           const arma::vec& event,
-                           const arma::mat& x,
-                           arma::vec lambda = 0,
-                           const double alpha = 1,
-                           const unsigned int& nlambda = 1,
-                           double lambda_min_ratio = 1e-4,
-                           arma::vec l1_penalty_factor = 0,
-                           const arma::vec& offset = 0,
-                           const unsigned int max_iter = 200,
-                           const double rel_tol = 1e-5,
-                           const bool& early_stop = false,
-                           const bool& verbose = false
+Rcpp::List rcpp_reg_coxph2(
+    const arma::vec& time,
+    const arma::vec& event,
+    const arma::mat& x,
+    const arma::vec& lambda = 0,
+    const double alpha = 1,
+    const unsigned int nlambda = 1,
+    const double lambda_min_ratio = 1e-4,
+    const arma::vec& l1_penalty_factor = 0,
+    const arma::vec& offset = 0,
+    const unsigned int max_iter = 200,
+    const double rel_tol = 1e-5,
+    const bool early_stop = false,
+    const bool verbose = false
     )
 {
     Intsurv::CoxphReg object { time, event, x };
