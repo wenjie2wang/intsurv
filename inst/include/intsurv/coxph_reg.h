@@ -297,7 +297,7 @@ namespace Intsurv {
         inline void compute_haz_surv_time();
         inline void compute_censor_haz_surv_time();
 
-        // prepare hazard and survival estimates on unique time_ points
+        // prepare hazard and survival estimates on unique time points
         inline void est_haz_surv();
 
         // function that computes objective function only
@@ -340,6 +340,7 @@ namespace Intsurv {
                 }
             }
         }
+
         // update coef0_, en_coef_, and coef_df_ from a new coef_
         // inline void set_en_coef(const double l2_lambda = 0) {
         //     // update coef0_
@@ -413,25 +414,15 @@ namespace Intsurv {
     // end of class definition
 
     // compute baseline hazard function and its friends
-    // here beta is coef_ estimate for non-standardized data
+    // here beta is the estimate for non-standardized data
     inline void CoxphReg::compute_haz_surv_time(const arma::vec& beta)
     {
         if (standardize_) {
-            if (! beta.is_empty() && beta.n_elem == x_.n_cols) {
-                // re-scale the input beta
-                arma::vec beta0 { beta % x_scale_.t() };
-                xbeta_ = x_ * beta0 + arma::as_scalar(x_center_ * beta);
-            } else {
-                // use estimated coef_
-                xbeta_ = x_ * coef0_ + arma::as_scalar(x_center_ * coef_);
-            }
+            // re-scale the input beta
+            arma::vec beta0 { beta % x_scale_.t() };
+            xbeta_ = x_ * beta0 + arma::as_scalar(x_center_ * beta);
         } else {
-            if (! beta.is_empty() && beta.n_elem == x_.n_cols) {
-                xbeta_ = x_ * beta;
-            } else {
-                // use estimated coef_
-                xbeta_ = x_ * coef_;
-            }
+            xbeta_ = x_ * beta;
         }
         arma::vec exp_risk_score { arma::exp(xbeta_ + offset_) };
         // 1. hazard rate function
@@ -439,6 +430,8 @@ namespace Intsurv {
         arma::vec h0_denom { exp_risk_score % arma::exp(offset_haz_) };
         h0_denom = aggregate_sum(h0_denom, time_, false, true, true);
         h0_time_ = h0_numer / h0_denom;
+        // set h0_time to be zero if h0_denom is zero
+        h0_time_.replace(arma::datum::nan, 0.0);
         h_time_ = h0_time_ % exp_risk_score;
 
         // 2. baseline cumulative hazard function
@@ -877,7 +870,7 @@ namespace Intsurv {
         l1_lambda_max_ = arma::max(
             grad_zero.elem(active_l1_penalty) /
             l1_penalty.elem(active_l1_penalty)
-            ) / x_.n_rows;
+            ) / dn_obs_;
 
         // early exit for large lambda greater than lambda_max
         coef0_ = beta;
@@ -975,9 +968,9 @@ namespace Intsurv {
         )
     {
         // check alpha_
-        if ((alpha < 0) || (alpha > 1)) {
-            throw std::range_error("Alpha must be between 0 and 1.");
-        }
+        // if ((alpha < 0) || (alpha > 1)) {
+        //     throw std::range_error("Alpha must be between 0 and 1.");
+        // }
         alpha_ = alpha;
 
         // set penalty terms

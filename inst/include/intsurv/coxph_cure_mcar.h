@@ -43,6 +43,9 @@ namespace Intsurv {
         arma::uvec cer_ind_;    // index of rows with correct event indicators
         arma::uvec case3_ind_;
         unsigned int max_event_time_ind_; // index of the maximum event time
+        double pmin_;
+        bool cox_standardize_;
+        bool cure_standardize_;
 
         // outputs
         arma::vec cox_coef_;
@@ -50,6 +53,7 @@ namespace Intsurv {
         unsigned int coef_df_;  // degree of freedom of coef estimates
         double neg_ll_;         // negative log-likelihood
         unsigned int n_obs_;    // number of observations
+        double dn_obs_;         // double version of n_obs_
         unsigned int n_event_;  // number of certain events
         unsigned int n_iter_;   // number of iterations
         // BIC: log(num_obs) * coef_df_ + 2 * neg_ll_
@@ -82,8 +86,8 @@ namespace Intsurv {
         double cure_l1_lambda_max_;
 
         // regularized by particular lambdas
-        arma::vec cox_en_coef_;  // elastic net estimates
-        arma::vec cure_en_coef_; // elastic net estimates
+        // arma::vec cox_en_coef_;  // elastic net estimates
+        // arma::vec cure_en_coef_; // elastic net estimates
         double cox_l1_lambda_;
         double cox_l2_lambda_;
         arma::vec cox_l1_penalty_factor_;
@@ -122,6 +126,7 @@ namespace Intsurv {
             cure_p_ = cure_p0_ +
                 static_cast<unsigned int>(cure_intercept);
             n_obs_ = cox_x.n_rows;
+            dn_obs_ = static_cast<double>(n_obs_);
             arma::uvec cox_sort_ind { cox_obj_.ord_ };
             arma::vec s_event { event0na.elem(cox_sort_ind) };
             // initialize offset terms
@@ -145,6 +150,11 @@ namespace Intsurv {
                                     s_event, cure_intercept,
                                     cure_standardize);
             cure_obj_.set_offset(s_cure_offset);
+            // avoid standardization after each iteration
+            cox_standardize_ = cox_standardize;
+            cox_obj_.standardize_ = false;
+            cure_standardize_ = cure_standardize;
+            cure_obj_.standardize_ = false;
         }
 
 
@@ -238,6 +248,7 @@ namespace Intsurv {
         const unsigned int verbose = 0
         )
     {
+        pmin_ = pmin;
         // get pre-processed design matrix, time, and event
         const arma::vec& time { cox_obj_.time_ };
         arma::vec event { cox_obj_.event_ };
@@ -545,14 +556,25 @@ namespace Intsurv {
 
         } // end of the EM algorithm
 
+        // standardize
+        if (cox_standardize_) {
+            cox_obj_.standardize_ = true;
+            cox_obj_.rescale_estimates();
+            cox_obj_.est_haz_surv();
+        }
+        if (cure_standardize_) {
+            cure_obj_.standardize_ = true;
+            cure_obj_.rescale_coef();
+        }
+
         // reset cox_obj_ and cure_obj_ in case of further usage
         cox_obj_.reset_offset_haz();
         // cox_obj_.set_offset(offset0);
         cure_obj_.update_y(cox_obj_.event_);
 
         // prepare outputs
-        cox_coef_ = cox_beta;
-        cure_coef_ = cure_beta;
+        cox_coef_ = cox_obj_.coef_;
+        cure_coef_ = cure_obj_.coef_;
         unique_time_ = cox_obj_.unique_time_;
         h0_est_ = cox_obj_.h0_est_;
         H0_est_ = cox_obj_.H0_est_;
@@ -638,6 +660,7 @@ namespace Intsurv {
         const unsigned int verbose = 0
         )
     {
+        pmin_ = pmin;
         // get pre-processed design matrix, time, and event
         const arma::vec& time { cox_obj_.time_ };
         arma::vec event { cox_obj_.event_ };
@@ -1030,6 +1053,17 @@ namespace Intsurv {
 
         } // end of the EM algorithm
 
+        // standardize
+        if (cox_standardize_) {
+            cox_obj_.standardize_ = cox_standardize_;
+            cox_obj_.rescale_estimates();
+            cox_obj_.est_haz_surv();
+        }
+        if (cure_standardize_) {
+            cure_obj_.standardize_ = cure_standardize_;
+            cure_obj_.rescale_coef();
+        }
+
         // reset cox_obj_ and cure_obj_ in case of further usage
         cox_obj_.reset_offset_haz();
         // cox_obj_.set_offset(offset0);
@@ -1038,8 +1072,8 @@ namespace Intsurv {
         // prepare outputs
         cox_coef_ = cox_obj_.coef_;
         cure_coef_ = cure_obj_.coef_;
-        cox_en_coef_ = cox_obj_.en_coef_;
-        cure_en_coef_ = cure_obj_.en_coef_;
+        // cox_en_coef_ = cox_obj_.en_coef_;
+        // cure_en_coef_ = cure_obj_.en_coef_;
 
         unique_time_ = cox_obj_.unique_time_;
         h0_est_ = cox_obj_.h0_est_;

@@ -136,13 +136,9 @@ namespace Intsurv {
             cure_obj_.set_offset(s_cure_offset);
             // avoid standardization after each iteration
             cox_standardize_ = cox_standardize;
-            if (cox_standardize_) {
-                cox_obj_.standardize_ = false;
-            }
+            cox_obj_.standardize_ = false;
             cure_standardize_ = cure_standardize;
-            if (cure_standardize_) {
-                cure_obj_.standardize_ = false;
-            }
+            cure_obj_.standardize_ = false;
         }
 
         // function members
@@ -888,12 +884,12 @@ namespace Intsurv {
 
         // standardize
         if (cox_standardize_) {
-            cox_obj_.standardize_ = cox_standardize_;
+            cox_obj_.standardize_ = true;
             cox_obj_.rescale_estimates();
             cox_obj_.est_haz_surv();
         }
         if (cure_standardize_) {
-            cure_obj_.standardize_ = cure_standardize_;
+            cure_obj_.standardize_ = true;
             cure_obj_.rescale_coef();
         }
 
