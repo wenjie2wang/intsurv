@@ -35,6 +35,7 @@ namespace Intsurv {
         arma::vec a_bar_;
         arma::vec b_bar_;
         bool intercept_;
+        bool cure_intercept_;   // coef of the cure indicator
         arma::vec offset_;      // offset term
 
         // outputs
@@ -44,12 +45,15 @@ namespace Intsurv {
         arma::vec eta_;
         double alpha0_;
         arma::vec coef_;        // (eta_, alpha0)
+        unsigned int coef_df_;  // #(nonzero coef)
 
         // cache variables
         arma::rowvec cmd_lowerbound_;
         unsigned int int_intercept_;
+        // TODO: allow int_cure_intercept_ = false
+        unsigned int int_cure_intercept_;
         unsigned int p1_;       // p0 + int_intercept_
-        unsigned int p2_;       // p1_ + 1
+        unsigned int p2_;       // p1_ + int_cure_intercept_
         double dn_obs_;         // double version of n_obs_
         arma::vec xeta_;
 
@@ -57,24 +61,27 @@ namespace Intsurv {
         double l1_lambda_;
         double l2_lambda_;
         arma::vec l1_penalty_factor_;
-        double pmin_ = 1e-5;
+        double pmin_;
 
         // default
         MarReg() {}
 
         MarReg(const arma::mat& x,
                const bool intercept = true,
+               const bool cure_intercept = true,
                const bool standardize = true) :
             x_ (x),
             standardize_ (standardize),
-            intercept_ (intercept)
+            intercept_ (intercept),
+            cure_intercept_ (cure_intercept)
         {
             int_intercept_ = static_cast<unsigned int>(intercept_);
+            int_cure_intercept_ = static_cast<unsigned int>(cure_intercept_);
             n_obs_ = x_.n_rows;
             dn_obs_ = static_cast<double>(n_obs_);
             p0_ = x_.n_cols;
             p1_ = p0_ + int_intercept_;
-            p2_ = p1_ + 1;
+            p2_ = p1_ + int_cure_intercept_;
             if (standardize_) {
                 if (intercept_) {
                     x_center_ = arma::mean(x_);
@@ -168,9 +175,10 @@ namespace Intsurv {
         }
 
         // return fitted q_{j,1} and q_{j,0}
-        inline arma::vec q_vec(const double z = 0.0) const
+        template <typename T>
+        inline arma::vec q_vec(const T& z = 0.0) const
         {
-            return linkinv(xeta_ + z * alpha0_);
+            return linkinv(xeta_ +  alpha0_ * z);
         }
 
         // compute gradient
@@ -201,6 +209,15 @@ namespace Intsurv {
                                       const double alpha0) const
         {
             return - arma::mean(a_ - (a_ + b_) % linkinv(xeta + alpha0));
+        }
+        inline arma::vec gradient(const arma::vec& coef) const
+        {
+            arma::vec eta { coef.head(p1_) };
+            arma::vec xeta { mat2vec(x_ * eta) + offset_ };
+            double alpha0 { coef(p1_) };
+            arma::vec tmp1 { arma::ones(1) * cmd_grad_alpha0(xeta, alpha0) };
+            arma::vec tmp0 { cmd_grad_eta(xeta, alpha0) };
+            return arma::join_cols(tmp1, tmp0);
         }
 
         // one full cycle of coordinate descent
