@@ -45,28 +45,111 @@ namespace Intsurv {
         // model data ========================================================
         arma::mat x_;           // (standardized) x
         arma::vec y_;
-        bool intercept_;
-        arma::vec offset_;      // offset term
+
+        //! @param beta coef estimates for the standardized x
+        inline arma::vec predict0(const arma::vec& beta) const
+        {
+            arma::vec p_vec {
+                1.0 / (1.0 + arma::exp(- mat2vec(x_ * beta) - offset_))
+            };
+            // special care prevents coef diverging
+            // reference: Friedman, J., Hastie, T., & Tibshirani, R. (2010)
+            set_pmin_bound(p_vec, pmin_);
+            return p_vec;
+        }
+        inline double objective0(const arma::vec& beta) const
+        {
+            double res { 0.0 };
+            for (size_t i { 0 }; i < x_.n_rows; ++i) {
+                double x_beta {
+                    arma::as_scalar(x_.row(i) * beta + offset_(i))
+                };
+                res += std::log(std::exp(x_beta) + 1.0) - y_(i) * x_beta;
+            }
+            return res / dn_obs_;
+        }
+        inline arma::vec gradient0(const arma::vec& beta) const
+        {
+            return x_.t() * (predict0(beta) - y_) / dn_obs_;
+        }
+        // define gradient0 function at k-th dimension
+        inline double gradient0(const arma::vec& beta,
+                                const unsigned int k) const
+        {
+            return arma::accu((predict0(beta) - y_) % x_.col(k)) / dn_obs_;
+        }
+        // define objective function and overwrites graidient
+        inline double objective0(const arma::vec& beta,
+                                 arma::vec& grad) const
+        {
+            arma::vec x_beta {x_ * beta + offset_};
+            arma::vec exp_x_beta {arma::exp(x_beta)};
+            grad = x_.t() * (exp_x_beta / (1.0 + exp_x_beta) - y_);
+            arma::vec y_x_beta {y_ % x_beta};
+            double res {
+                arma::as_scalar(
+                    arma::mean(arma::log(1.0 + exp_x_beta) - y_x_beta)
+                    )
+            };
+            return res;
+        }
+        // compute iteration matrix in Bohning and Lindsay (1988)
+        inline void set_bl_iter_mat(const bool force_update = false)
+        {
+            if (force_update || bl_iter_mat_.is_empty()) {
+                bl_iter_mat_ = 4 * arma::inv_sympd(x_.t() * x_);
+            }
+        }
+        // compute cov lowerbound used in regularied model
+        inline void set_cmd_lowerbound(const bool force_update = false)
+        {
+            if (force_update || cmd_lowerbound_.is_empty()) {
+                cmd_lowerbound_ = arma::sum(arma::square(x_), 0) /
+                    (4.0 * dn_obs_);
+            }
+        }
+        // update step for regularized logistic regression model
+        inline void net_one_update(arma::vec& beta,
+                                   arma::uvec& is_active,
+                                   const double l1_lambda,
+                                   const double l2_lambda,
+                                   const arma::vec& penalty_factor,
+                                   const bool update_active,
+                                   const unsigned int verbose);
+        inline void net_active_update(arma::vec& beta,
+                                      arma::uvec& is_active,
+                                      const double l1_lambda,
+                                      const double l2_lambda,
+                                      const arma::vec& penalty_factor,
+                                      const bool varying_active,
+                                      const unsigned int max_iter,
+                                      const double epsilon,
+                                      const unsigned int verbose);
 
     public:
-        // controls ==========================================================
-        bool standardize_;            // is x standardized
-        arma::vec penalty_factor_;    // adaptive weights for lasso penalty
-        double l1_lambda_max_;        // the "big enough" l1 lambda => zero coef
+        // model =============================================================
+        bool intercept_;
+        arma::vec offset_;      // offset term
+        // regularization ====================================================
+        arma::vec penalty_factor_; // adaptive weights for lasso penalty
         // for a sinle l1_lambda and l2_lambda
         double l1_lambda_;      // tuning parameter for lasso penalty
         double l2_lambda_;      // tuning parameter for ridge penalty
         // for a soltuon path
         double alpha_;          // tuning parameter
+        double l1_lambda_max_;  // the "big enough" l1 lambda => zero coef
         double lambda_max_;     // l1_lambda_max / alpha
         arma::vec lambda_vec_;  // lambda sequence
         double lambda_min_ratio_;
-
         // outputs ===========================================================
         // for a single set of l1_lambda and l2_lambda
         arma::vec coef_;        // coef (rescaled for origin x)
         // for a lambda sequence
-        arma::mat coef_mat_;     // coef matrix (rescaled for origin x)
+        arma::mat coef_mat_;    // coef matrix (rescaled for origin x)
+        // controls ==========================================================
+        bool standardize_;      // should x be standardized
+        unsigned int max_iter_;
+        double epsilon_;
 
         // default constructor
         LogisticReg() {}
@@ -166,17 +249,6 @@ namespace Intsurv {
             return beta0;
         }
 
-        //! @param beta coef estimates for the standardized x
-        inline arma::vec predict0(const arma::vec& beta) const
-        {
-            arma::vec p_vec {
-                1.0 / (1.0 + arma::exp(- mat2vec(x_ * beta) - offset_))
-            };
-            // special care prevents coef diverging
-            // reference: Friedman, J., Hastie, T., & Tibshirani, R. (2010)
-            set_pmin_bound(p_vec, pmin_);
-            return p_vec;
-        }
         inline arma::vec predict() const
         {
             return predict0(coef0_);
@@ -190,20 +262,7 @@ namespace Intsurv {
             }
             return predict0(beta0);
         }
-
         // define objective function (negative log-likehood function)
-        //! @param beta coef estimates for the standardized x
-        inline double objective0(const arma::vec& beta) const
-        {
-            double res { 0.0 };
-            for (size_t i { 0 }; i < x_.n_rows; ++i) {
-                double x_beta {
-                    arma::as_scalar(x_.row(i) * beta + offset_(i))
-                };
-                res += std::log(std::exp(x_beta) + 1.0) - y_(i) * x_beta;
-            }
-            return res / dn_obs_;
-        }
         inline double objective() const
         {
             return objective0(coef0_);
@@ -216,34 +275,6 @@ namespace Intsurv {
                 beta0 = rev_rescale_coef(beta0);
             }
             return objective0(beta0);
-        }
-
-        // define gradient0 function
-        //! @param beta coef estimates for the standardized x
-        inline arma::vec gradient0(const arma::vec& beta) const
-        {
-            return x_.t() * (predict0(beta) - y_) / dn_obs_;
-        }
-        // define gradient0 function at k-th dimension
-        inline double gradient0(const arma::vec& beta,
-                                const unsigned int k) const
-        {
-            return arma::accu((predict0(beta) - y_) % x_.col(k)) / dn_obs_;
-        }
-        // define objective function and overwrites graidient
-        inline double objective0(const arma::vec& beta,
-                                 arma::vec& grad) const
-        {
-            arma::vec x_beta {x_ * beta + offset_};
-            arma::vec exp_x_beta {arma::exp(x_beta)};
-            grad = x_.t() * (exp_x_beta / (1.0 + exp_x_beta) - y_);
-            arma::vec y_x_beta {y_ % x_beta};
-            double res {
-                arma::as_scalar(
-                    arma::mean(arma::log(1.0 + exp_x_beta) - y_x_beta)
-                    )
-            };
-            return res;
         }
         inline double net_penalty(const arma::vec& beta,
                                   const double l1_lambda,
@@ -258,23 +289,23 @@ namespace Intsurv {
             return l1_lambda * l1_norm(beta) +
                 l2_lambda * sum_of_square(beta);
         }
-
-        // compute iteration matrix in Bohning and Lindsay (1988)
-        inline void set_bl_iter_mat(const bool force_update = false)
+        inline double get_l1_lambda_max(const arma::vec& penalty_factor) const
         {
-            if (force_update || bl_iter_mat_.is_empty()) {
-                bl_iter_mat_ = 4 * arma::inv_sympd(x_.t() * x_);
+            arma::uvec active_penalty { arma::find(penalty_factor > 0.0) };
+            arma::uvec penalty_free { arma::find(penalty_factor == 0.0) };
+            arma::vec beta { arma::zeros(p1_) };
+            arma::vec grad_beta { arma::abs(gradient0(beta)) };
+            double l1_lambda_max { 0.0 };
+            for (arma::uvec::iterator it { active_penalty.begin() };
+                 it != active_penalty.end(); ++it) {
+                double tmp { grad_beta(*it) };
+                tmp /= penalty_factor_(*it);
+                if (l1_lambda_max < tmp) {
+                    l1_lambda_max = tmp;
+                }
             }
+            return l1_lambda_max;
         }
-        // compute cov lowerbound used in regularied model
-        inline void set_cmd_lowerbound(const bool force_update = false)
-        {
-            if (force_update || cmd_lowerbound_.is_empty()) {
-                cmd_lowerbound_ = arma::sum(arma::square(x_), 0) /
-                    (4.0 * dn_obs_);
-            }
-        }
-
         // generate and set penalty factor
         inline arma::vec gen_penalty_factor(
             const arma::vec& penalty_factor = arma::vec()
@@ -329,30 +360,13 @@ namespace Intsurv {
                         const double epsilon,
                         const unsigned int verbose);
 
-        // update step for regularized logistic regression model
-        inline void net_one_update(arma::vec& beta,
-                                   arma::uvec& is_active,
-                                   const double l1_lambda,
-                                   const double l2_lambda,
-                                   const arma::vec& penalty_factor,
-                                   const bool update_active,
-                                   const unsigned int verbose);
-
-        inline void net_active_update(arma::vec& beta,
-                                      arma::uvec& is_active,
-                                      const double l1_lambda,
-                                      const double l2_lambda,
-                                      const arma::vec& penalty_factor,
-                                      const bool varying_active,
-                                      const unsigned int max_iter,
-                                      const double epsilon,
-                                      const unsigned int verbose);
 
         // fit regularized logistic regression model
         // for a perticular lambda
         inline void net_fit(const double l1_lambda,
                             const double l2_lambda,
                             const arma::vec& penalty_factor,
+                            const arma::vec& start,
                             const bool varying_active,
                             const unsigned int max_iter,
                             const double epsilon,
@@ -392,7 +406,10 @@ namespace Intsurv {
             }
             return out;
         }
-        inline arma::vec get_y() const { return y_; }
+        inline arma::vec get_y() const
+        {
+            return y_;
+        }
 
     };
 
@@ -418,7 +435,7 @@ namespace Intsurv {
                         << "\n";
         }
         arma::vec beta { beta0 };
-        arma::vec eta { arma::zeros(n_obs_) }, y_hat { eta };
+        arma::vec y_hat;
         arma::mat iter_mat { bl_iter_mat_ * x_.t() };
         // main loop
         for (size_t i {0}; i < max_iter; ++i) {
@@ -627,6 +644,7 @@ namespace Intsurv {
         const double l1_lambda,
         const double l2_lambda,
         const arma::vec& penalty_factor = arma::vec(),
+        const arma::vec& start = arma::vec(),
         const bool varying_active = true,
         const unsigned int max_iter = 200,
         const double epsilon = 1e-4,
@@ -635,97 +653,21 @@ namespace Intsurv {
     {
         set_cmd_lowerbound();
         set_penalty_factor(penalty_factor);
-        // no checks for now
+        // no range checks
         l1_lambda_ = l1_lambda;
         l2_lambda_ = l2_lambda;
-        arma::uvec active_penalty { arma::find(penalty_factor_ > 0.0) };
-        arma::uvec penalty_free { arma::find(penalty_factor_ == 0.0) };
-        // initialize
-        arma::vec beta { arma::zeros(x_.n_cols) };
-        arma::vec grad_beta { arma::abs(gradient0(beta)) },
-                    strong_rhs { grad_beta };
-        // large enough lambda for all-zero coef
-        // excluding variable with zero penalty factor
-        l1_lambda_max_ = 0.0;
-        for (arma::uvec::iterator it { active_penalty.begin() };
-             it != active_penalty.end(); ++it) {
-            double tmp { grad_beta(*it) };
-                    tmp /= penalty_factor_(*it) * std::max(alpha_, 1e-2);
-            if (l1_lambda_max_ < tmp) {
-                l1_lambda_max_ = tmp;
-            }
-        }
-        // get solution of l1_lambda_max_ for a warm start
-        arma::uvec is_active_strong { arma::zeros<arma::uvec>(p1_) };
-        for (arma::uvec::iterator it { penalty_free.begin() };
-             it != penalty_free.end(); ++it) {
-            is_active_strong(*it) = 1;
-        }
-        net_active_update(beta, is_active_strong, l1_lambda_max_,
-                          l2_lambda, penalty_factor_, false,
-                          max_iter, epsilon, verbose);
-        coef0_ = beta;
-        // early exit for lambda greater than lambda_max
-        if (l1_lambda >= l1_lambda_max_) {
-            rescale_coef();
-            return;
-        }
-        // update active set by strong rule
-        grad_beta = arma::abs(gradient0(coef0_));
-        strong_rhs = (2 * l1_lambda - l1_lambda_max_) * penalty_factor_;
-        for (arma::uvec::iterator it { active_penalty.begin() };
-             it != active_penalty.end(); ++it) {
-            if (is_active_strong(*it) > 0) {
-                continue;
-            }
-            if (grad_beta(*it) >= strong_rhs(*it)) {
-                is_active_strong(*it) = 1;
-            }
-        }
-        arma::uvec is_active_strong_old { is_active_strong };
-        strong_rhs = l1_lambda * penalty_factor_;
-        bool kkt_failed { true };
-        // eventually, strong rule will guess correctly
-        while (kkt_failed) {
-            arma::uvec is_strong_rule_failed {
-                arma::zeros<arma::uvec>(p1_)
-            };
-            // update beta
-            net_active_update(beta, is_active_strong,
-                              l1_lambda, l2_lambda, penalty_factor_,
-                              varying_active, max_iter, epsilon, verbose);
-            if (verbose > 0) {
-                msg("Checking the KKT condition for the null set.");
-            }
-            // check kkt condition
-            for (arma::uvec::iterator it { active_penalty.begin() };
-                 it != active_penalty.end(); ++it) {
-                if (is_active_strong_old(*it)) {
-                    continue;
-                }
-                if (std::abs(gradient0(beta, *it)) > strong_rhs(*it)) {
-                    is_strong_rule_failed(*it) = 1;
-                }
-            }
-            if (arma::accu(is_strong_rule_failed) > 0) {
-                is_active_strong = is_active_strong_old ||
-                    is_strong_rule_failed;
-                if (verbose > 0) {
-                    Rcpp::Rcout << "The strong rule failed for "
-                                << arma::accu(is_strong_rule_failed)
-                                << " group(s)\nThe size of old active set: "
-                                << l1_norm(is_active_strong_old)
-                                << "\nThe size of new active set: "
-                                << l1_norm(is_active_strong)
-                                << "\n";
-                }
-            } else {
-                if (verbose > 0) {
-                    msg("The strong rule worked.\n");
-                }
-                kkt_failed = false;
-            }
-        }
+        // use the given starting values
+        arma::vec beta { gen_start(start) };
+        arma::uvec is_active { arma::ones<arma::uvec>(p1_) };
+        net_active_update(beta,
+                          is_active,
+                          l1_lambda_,
+                          l2_lambda_,
+                          penalty_factor_,
+                          varying_active,
+                          max_iter,
+                          epsilon,
+                          verbose);
         coef0_ = beta;
         rescale_coef();
     }

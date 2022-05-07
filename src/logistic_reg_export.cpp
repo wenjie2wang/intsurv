@@ -65,6 +65,7 @@ Rcpp::List rcpp_lognet1(
     const double l1_lambda,
     const double l2_lambda,
     const arma::vec& penalty_factor,
+    const arma::vec& start,
     const bool intercept = true,
     const bool standardize = true,
     const arma::vec& offset = 0,
@@ -78,7 +79,7 @@ Rcpp::List rcpp_lognet1(
     Intsurv::LogisticReg object { x, y, intercept, standardize };
     object.set_offset(offset);
     object.set_pmin(pmin);
-    object.net_fit(l1_lambda, l2_lambda, penalty_factor,
+    object.net_fit(l1_lambda, l2_lambda, penalty_factor, start,
                    varying_active, max_iter, epsilon, verbose);
     double neg_ll { object.objective() };
     unsigned int coef_df { Intsurv::compute_coef_df(object.coef_) };
