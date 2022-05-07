@@ -461,12 +461,8 @@ namespace Intsurv {
     // function computing relateive tolerance based on l1_norm
     inline double rel_l1_norm(const arma::vec& x_old, const arma::vec& x_new)
     {
-        double denom { l1_norm(x_new + x_old) };
-        if (isAlmostEqual(denom, 0)) {
-            return 0;
-        } else {
-            return l1_norm(x_new - x_old) / denom;
-        }
+        double denom { l1_norm(x_old) + 1.0 };
+        return l1_norm(x_new - x_old) / denom;
     }
 
 
@@ -781,6 +777,12 @@ namespace Intsurv {
             re_n_obs -= fold_i;
         }
         return out;
+    }
+
+    template <typename T>
+    inline void msg(const T& m)
+    {
+        Rcpp::Rcout << m << "\n";
     }
 
 }
