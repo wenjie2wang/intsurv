@@ -18,7 +18,8 @@
 #include <RcppArmadillo.h>
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::plugins(cpp11)]]
-#include <intsurv.h>
+#include <intsurv/coxph_reg.h>
+#include <intsurv/utils.h>
 
 // fit regular Cox model that allows non-integer "event" and tied events
 // [[Rcpp::export]]
@@ -26,36 +27,29 @@ Rcpp::List rcpp_coxph(
     const arma::vec& time,
     const arma::vec& event,
     const arma::mat& x,
-    const arma::vec& offset = 0,
-    const arma::vec& start = 0,
+    const arma::vec& offset,
+    const arma::vec& start,
     const unsigned int max_iter = 200,
-    const double rel_tol = 1e-5,
-    const bool early_stop = false,
-    const bool verbose = false
+    const double epsilon = 1e-4,
+    const unsigned int verbose = 0
     )
 {
     // define object
     Intsurv::CoxphReg object { time, event, x };
     // set offset if it is not zero
-    if (arma::sum(arma::abs(offset)) > 0.0) {
+    if (! offset.is_empty()) {
         object.set_offset(offset, false);
     }
     // model-fitting
-    object.fit(start, max_iter, rel_tol, early_stop, verbose);
+    object.fit(start, max_iter, epsilon, verbose);
     // compute baseline hazard and survival function
     object.compute_haz_surv_time();
     object.compute_censor_haz_surv_time();
     object.est_haz_surv();
-    arma::uvec rev_ord { object.rev_ord_ };
-    arma::vec risk_score { object.xbeta_ };
-    risk_score = risk_score.elem(rev_ord);
     return Rcpp::List::create(
         Rcpp::Named("coef") = Intsurv::arma2rvec(object.coef_),
         Rcpp::Named("model") = Rcpp::List::create(
-            Rcpp::Named("risk_score") = Intsurv::arma2rvec(risk_score),
-            Rcpp::Named("nObs") = object.n_obs_,
-            Rcpp::Named("negLogL") = object.neg_ll_,
-            Rcpp::Named("bic") = object.bic_
+            Rcpp::Named("nObs") = object.sample_size()
             ),
         Rcpp::Named("baseline") = Rcpp::List::create(
             Rcpp::Named("time") = Intsurv::arma2rvec(object.unique_time_),
@@ -74,19 +68,19 @@ Rcpp::List rcpp_coxph(
 // that allows non-integer "event" and tied events
 // for particular lambda's
 // [[Rcpp::export]]
-Rcpp::List rcpp_reg_coxph1(
+Rcpp::List rcpp_coxnet1(
     const arma::vec& time,
     const arma::vec& event,
     const arma::mat& x,
-    const double l1_lambda = 0,
-    const double l2_lambda = 0,
-    const arma::vec& l1_penalty_factor = 0,
-    const arma::vec& offset = 0,
-    const arma::vec& start = 0,
+    const double l1_lambda,
+    const double l2_lambda,
+    const arma::vec& penalty_factor,
+    const arma::vec& offset,
+    const arma::vec& start,
+    const bool varying_active = true,
     const unsigned int max_iter = 200,
-    const double rel_tol = 1e-5,
-    const bool early_stop = false,
-    const bool verbose = false
+    const double epsilon = 1e-4,
+    const unsigned int verbose = 0
     )
 {
     Intsurv::CoxphReg object { time, event, x };
@@ -94,23 +88,16 @@ Rcpp::List rcpp_reg_coxph1(
     if (! Intsurv::isAlmostEqual(arma::sum(arma::abs(offset)), 0.0)) {
         object.set_offset(offset, false);
     }
-    object.regularized_fit(l1_lambda, l2_lambda, l1_penalty_factor,
-                           start, max_iter, rel_tol, early_stop, verbose);
+    object.net_fit(l1_lambda, l2_lambda, penalty_factor,
+                   start, varying_active, max_iter, epsilon, verbose);
     object.compute_haz_surv_time();
     object.compute_censor_haz_surv_time();
     object.est_haz_surv();
-    arma::uvec rev_ord { object.rev_ord_ };
-    arma::vec risk_score { object.xbeta_ };
-    risk_score = risk_score.elem(rev_ord);
     return Rcpp::List::create(
         Rcpp::Named("coef") = Intsurv::arma2rvec(object.coef_),
         // Rcpp::Named("en_coef") = Intsurv::arma2rvec(object.en_coef_),
         Rcpp::Named("model") = Rcpp::List::create(
-            Rcpp::Named("risk_score") = Intsurv::arma2rvec(risk_score),
-            Rcpp::Named("nObs") = object.n_obs_,
-            Rcpp::Named("negLogL") = object.neg_ll_,
-            Rcpp::Named("coef_df") = object.coef_df_,
-            Rcpp::Named("bic") = object.bic_
+            Rcpp::Named("nObs") = object.sample_size()
             ),
         Rcpp::Named("baseline") = Rcpp::List::create(
             Rcpp::Named("time") = Intsurv::arma2rvec(object.unique_time_),
@@ -122,11 +109,10 @@ Rcpp::List rcpp_reg_coxph1(
             Rcpp::Named("Sc") = Intsurv::arma2rvec(object.Sc_est_)
             ),
         Rcpp::Named("penalty") = Rcpp::List::create(
-            Rcpp::Named("l1_lambda_max") = object.l1_lambda_max_,
             Rcpp::Named("l1_lambda") = object.l1_lambda_,
             Rcpp::Named("l2_lambda") = object.l2_lambda_,
-            Rcpp::Named("l1_penalty_factor") =
-            Intsurv::arma2rvec(object.l1_penalty_factor_)
+            Rcpp::Named("penalty_factor") =
+            Intsurv::arma2rvec(object.penalty_factor_)
             )
         );
 }
@@ -134,19 +120,19 @@ Rcpp::List rcpp_reg_coxph1(
 
 // for a sequence of lambda's and a given alpha
 // [[Rcpp::export]]
-Rcpp::List rcpp_reg_coxph2(
+Rcpp::List rcpp_coxnet2(
     const arma::vec& time,
     const arma::vec& event,
     const arma::mat& x,
-    const arma::vec& lambda = 0,
-    const double alpha = 1,
-    const unsigned int nlambda = 1,
-    const double lambda_min_ratio = 1e-4,
-    const arma::vec& l1_penalty_factor = 0,
-    const arma::vec& offset = 0,
+    const arma::vec& lambda,
+    const double alpha,
+    const unsigned int nlambda,
+    const double lambda_min_ratio,
+    const arma::vec& penalty_factor,
+    const arma::vec& offset,
+    const bool varying_active = true,
     const unsigned int max_iter = 200,
-    const double rel_tol = 1e-5,
-    const bool early_stop = false,
+    const double epsilon = 1e-4,
     const bool verbose = false
     )
 {
@@ -155,24 +141,22 @@ Rcpp::List rcpp_reg_coxph2(
     if (! Intsurv::isAlmostEqual(arma::sum(arma::abs(offset)), 0.0)) {
         object.set_offset(offset, false);
     }
-    object.regularized_fit(lambda, alpha, nlambda, lambda_min_ratio,
-                           l1_penalty_factor, max_iter, rel_tol,
-                           early_stop, verbose);
+    object.net_path(lambda, alpha, nlambda, lambda_min_ratio,
+                    penalty_factor, varying_active,
+                    max_iter, epsilon, verbose);
     return Rcpp::List::create(
         Rcpp::Named("coef") = object.coef_mat_,
         // Rcpp::Named("en_coef") = object.en_coef_mat_,
         Rcpp::Named("model") = Rcpp::List::create(
-            Rcpp::Named("nObs") = object.n_obs_,
-            Rcpp::Named("negLogL") = Intsurv::arma2rvec(object.neg_ll_vec_),
-            Rcpp::Named("coef_df") = Intsurv::arma2rvec(object.coef_df_vec_),
-            Rcpp::Named("bic") = object.bic_vec_
+            Rcpp::Named("nObs") = object.sample_size()
             ),
         Rcpp::Named("penalty") = Rcpp::List::create(
-            Rcpp::Named("lambda_max") = object.l1_lambda_max_,
+            Rcpp::Named("l1_lambda_max") = object.l1_lambda_max_,
+            Rcpp::Named("lambda_max") = object.lambda_max_,
             Rcpp::Named("alpha") = object.alpha_,
             Rcpp::Named("lambda") = Intsurv::arma2rvec(object.lambda_vec_),
-            Rcpp::Named("l1_penalty_factor") =
-            Intsurv::arma2rvec(object.l1_penalty_factor_)
+            Rcpp::Named("penalty_factor") =
+            Intsurv::arma2rvec(object.penalty_factor_)
             )
         );
 }

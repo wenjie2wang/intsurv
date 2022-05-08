@@ -23,14 +23,9 @@
 
 namespace Intsurv {
 
-    class CoxphReg {
-    public:
-        // model data ========================================================
-        // all the following data are sorted accordingly
-        arma::mat x_;           // (sorted and standardized) design matrix
-        arma::vec time_;        // (sorted) observed times
-        arma::vec event_;       // (sorted) event indicators
-
+    class CoxphReg
+    {
+    protected:
         // internals that depend on the data =================================
         unsigned int n_obs_;    // number of observations
         double dn_obs_;         // double version of n_obs
@@ -49,7 +44,6 @@ namespace Intsurv {
         // size of risk-set at each time point
         arma::vec riskset_size_time_;
         // at each unique event time point
-        arma::vec unique_time_;
         arma::vec d_time0_;      // event times
         arma::vec d_time_;       // distinct event times
         arma::mat d_x_;          // design matrix aggregated at d_time
@@ -58,40 +52,62 @@ namespace Intsurv {
         arma::vec delta_n_;      // event counts at d_time
         arma::vec riskset_size_; // size of risk-set at d_time
 
+        // model data ========================================================
+        // all the following data are sorted accordingly
+        arma::mat x_;           // (sorted and standardized) design matrix
+        arma::vec time_;        // (sorted) observed times
+        arma::vec event_;       // (sorted) event indicators
+
+        arma::vec coef0_;       // coef for the standardized x
+
         // inverse matrix of formula (5.9) in Bohning and Lindsay (1988) SIAM
         arma::mat inv_bl_cov_lowerbound_;
         // for regularized regression
         arma::vec cmd_lowerbound_;
 
+        // function that computes objective function only
+        inline double objective0(const arma::vec& beta) const;
+
+        // function that computes gradients only
+        inline arma::vec gradient0(const arma::vec& beta) const;
+        inline double gradient0(const arma::vec& beta,
+                                const unsigned int k) const;
+
+        // function that computes objective and overwrite gradients
+        inline double objective0(const arma::vec& beta,
+                                 arma::vec& grad) const;
+
+        // function computing B&L covariance lower bound matrix
+        inline void compute_inv_bl_cov_lowerbound(const bool force_update);
+
+        // function computing B&L lower bound for step size
+        inline double bl_step_lowerbound(const arma::mat& x,
+                                         const arma::vec& h) const;
+
+        // get the lower bound of second derivative in CMD algorithm
+        inline void set_cmd_lowerbound(const bool force_update);
+
+    public:
         // control parameters that do not depend on data =====================
-        bool standardize_;      // is x standardized
-        arma::vec l1_penalty_factor_; // adaptive weights for lasso penalty
-        arma::vec offset_;      // offset term
-        arma::vec offset_haz_;  // offset term for baseline hazard only
-        double l1_lambda_;      // tuning parameter for lasso penalty
-        double l2_lambda_;      // tuning parameter for ridge penalty
-        double alpha_;          // tuning parameter
-        arma::vec lambda_vec_;   // lambda sequence
+        bool standardize_;         // is x standardized
+        arma::vec offset_;         // offset term
+        arma::vec offset_haz_;     // offset term for baseline hazard only
+
+        double l1_lambda_;         // tuning parameter for lasso penalty
+        double l2_lambda_;         // tuning parameter for ridge penalty
+        arma::vec penalty_factor_; // adaptive weights for lasso penalty
+
+        double alpha_;             // tuning parameter
+        arma::vec lambda_vec_;     // lambda sequence
+        double l1_lambda_max_;     // the "big enough" lambda => zero coef
+        double lambda_max_;
+        double lambda_min_ratio_;
 
         // outputs ===========================================================
-        arma::vec coef0_;       // coef for the standardized x
-        double l1_lambda_max_;  // the "big enough" lambda => zero coef
-
         // for a single l1_lambda_ and l2_lambda_
         arma::vec coef_;        // covariate coefficient estimates
-        // arma::vec en_coef_;     // (rescaled) elastic net estimates
-        double neg_ll_;         // partial negative log-likelihood
-        unsigned int coef_df_;  // number of non-zero coef estimates
-        arma::vec xbeta_;       // sorted x * coef_
-        double bic_;            // log(num_event) * coef_df + 2 * neg_ll
-
         // for a lambda sequence
         arma::mat coef_mat_;     // coef_ matrix (rescaled for origin x_)
-        // arma::mat en_coef_mat_;  // elastic net estimates
-        arma::vec neg_ll_vec_;   // negative log-likelihood vector
-        arma::uvec coef_df_vec_; // coef df vector
-        arma::vec bic_vec_;      // log(num_event) * coef_df_ + 2 * neg_ll_
-
         // hazard and survival estimates at every time point (unique or not)
         arma::vec h0_time_;
         arma::vec S0_time_;
@@ -103,6 +119,7 @@ namespace Intsurv {
         arma::vec Hc_time_;
         arma::vec Sc_time_;
         // baseline estimates at unique times only
+        arma::vec unique_time_;
         arma::vec h0_est_;
         arma::vec H0_est_;
         arma::vec S0_est_;
@@ -300,34 +317,8 @@ namespace Intsurv {
         // prepare hazard and survival estimates on unique time points
         inline void est_haz_surv();
 
-        // function that computes objective function only
-        inline double objective() const;
-        inline double objective(const arma::vec& beta) const;
-
-        // function that computes gradients only
-        inline arma::vec gradient(const arma::vec& beta) const;
-        inline double gradient(const arma::vec& beta,
-                               const unsigned int k) const;
-
-        // function that computes objective and overwrite gradients
-        inline double objective(const arma::vec& beta,
-                                arma::vec& grad) const;
-
-        // function computing B&L covariance lower bound matrix
-        inline void compute_inv_bl_cov_lowerbound(const bool force_update);
-
-        // function computing B&L lower bound for step size
-        inline double bl_step_lowerbound(const arma::mat& x,
-                                         const arma::vec& h) const;
-
-        // get the lower bound of second derivative in CMD algorithm
-        inline void compute_cmd_lowerbound(const bool force_update);
-
         // some simple functions
         inline unsigned int sample_size() const { return n_obs_; }
-        inline void compute_bic() {
-            bic_ = std::log(arma::sum(event_)) * coef_df_ + 2 * neg_ll_;
-        }
 
         // additional methods for coxph_cure
         // revserse the rescale process to get coef0_ from a new coef_
@@ -340,75 +331,133 @@ namespace Intsurv {
                 }
             }
         }
+        inline arma::vec rev_rescale_coef(const arma::vec& beta) const
+        {
+            if (standardize_) {
+                arma::vec out { beta };
+                for (size_t j {0}; j < out.n_elem; ++j) {
+                    out[j] = out[j] * x_scale_[j];
+                }
+                return out;
+            }
+            return beta;
+        }
 
-        // update coef0_, en_coef_, and coef_df_ from a new coef_
-        // inline void set_en_coef(const double l2_lambda = 0) {
-        //     // update coef0_
-        //     rev_rescale_coef();
-        //     arma::vec beta { coef0_ };
-        //     // update en_coef_
-        //     if (l2_lambda > 0) {
-        //         coef0_ *= (1 + l2_lambda);
-        //         rescale_coef();
-        //         en_coef_ = coef_;
-        //         // overwrite the naive elastic net estimate
-        //         coef0_ = beta;
-        //         rescale_coef();
-        //     } else {
-        //         en_coef_ = coef_;
-        //     }
-        //     coef_df_ = compute_coef_df(beta);
-        // }
+        inline double objective() const
+        {
+            return objective0(coef0_);
+        }
+        inline double objective(const arma::vec& beta) const
+        {
+            arma::vec beta0 { rev_rescale_coef(beta) };
+            return objective0(beta0);
+        }
+        inline double net_penalty(const arma::vec& beta,
+                                  const double l1_lambda,
+                                  const double l2_lambda,
+                                  const arma::vec& penalty_factor) const
+        {
+            return l1_lambda * l1_norm(beta % penalty_factor) +
+                l2_lambda * sum_of_square(beta);
+        }
+
+        inline double get_l1_lambda_max(const arma::vec& penalty_factor) const
+        {
+            arma::uvec active_penalty { arma::find(penalty_factor > 0.0) };
+            arma::uvec penalty_free { arma::find(penalty_factor == 0.0) };
+            arma::vec beta { arma::zeros(p_) };
+            arma::vec grad_beta { arma::abs(gradient0(beta)) / dn_obs_ };
+            double l1_lambda_max { 0.0 };
+            for (arma::uvec::iterator it { active_penalty.begin() };
+                 it != active_penalty.end(); ++it) {
+                double tmp { grad_beta(*it) };
+                tmp /= penalty_factor_(*it);
+                if (l1_lambda_max < tmp) {
+                    l1_lambda_max = tmp;
+                }
+            }
+            return l1_lambda_max;
+        }
+        // generate and set penalty factor
+        inline arma::vec gen_penalty_factor(
+            const arma::vec& penalty_factor = arma::vec()
+            ) const
+        {
+            if (penalty_factor.is_empty()) {
+                return arma::ones(p_);
+            }
+            if (penalty_factor.n_elem == p_) {
+                if (arma::any(penalty_factor < 0.0)) {
+                    throw std::range_error(
+                        "The 'penalty_factor' cannot be negative.");
+                }
+                return penalty_factor;
+            }
+            // else
+            throw std::range_error("Incorrect length of the 'penalty_factor'.");
+        }
+        inline void set_penalty_factor(
+            const arma::vec& penalty_factor = arma::vec()
+            )
+        {
+            penalty_factor_ = gen_penalty_factor(penalty_factor);
+        }
+
+        // starting values
+        inline arma::vec gen_start(const arma::vec& start = arma::vec()) const
+        {
+            if (start.n_elem == p_) {
+                return rev_rescale_coef(start);
+            }
+            return arma::zeros(p_);
+        }
 
         // fit regular Cox model
         inline void fit(const arma::vec& start,
                         const unsigned int max_iter,
-                        const double rel_tol,
-                        const bool early_stop,
-                        const bool verbose);
+                        const double epsilon,
+                        const unsigned int verbose);
 
         // one-full cycle of coordinate-majorization-descent
-        inline void regularized_fit_update(arma::vec& beta,
-                                           arma::uvec& is_active,
-                                           const double l1_lambda,
-                                           const double l2_lambda,
-                                           const arma::vec& l1_penalty_factor,
-                                           const bool update_active,
-                                           const bool early_stop,
-                                           const bool verbose);
-
-        inline void reg_active_fit(arma::vec& beta,
-                                   const arma::uvec& is_active,
+        inline void net_one_update(arma::vec& beta,
+                                   arma::uvec& is_active,
                                    const double l1_lambda,
                                    const double l2_lambda,
-                                   const arma::vec& l1_penalty_factor,
-                                   const bool varying_active_set,
-                                   const unsigned int max_iter,
-                                   const double rel_tol,
-                                   const bool early_stop,
-                                   const bool verbose);
+                                   const arma::vec& penalty_factor,
+                                   const bool update_active,
+                                   const unsigned int verbose);
+
+        inline void net_active_update(arma::vec& beta,
+                                      arma::uvec& is_active,
+                                      const double l1_lambda,
+                                      const double l2_lambda,
+                                      const arma::vec& penalty_factor,
+                                      const bool varying_active,
+                                      const unsigned int max_iter,
+                                      const double epsilon,
+                                      const unsigned int verbose);
 
         // fit regularized Cox model with adaptive lasso penalty
         // for a perticular lambda
-        inline void regularized_fit(const double l1_lambda,
-                                    const double l2_lambda,
-                                    const arma::vec& l1_penalty_factor,
-                                    const arma::vec& start,
-                                    const unsigned int max_iter,
-                                    const double rel_tol,
-                                    const bool early_stop,
-                                    const bool verbose);
+        inline void net_fit(const double l1_lambda,
+                            const double l2_lambda,
+                            const arma::vec& penalty_factor,
+                            const arma::vec& start,
+                            const bool varying_active,
+                            const unsigned int max_iter,
+                            const double epsilon,
+                            const unsigned int verbose);
 
-        // overload for a sequence of lambda's
-        inline void regularized_fit(arma::vec lambda,
-                                    const double alpha,
-                                    const unsigned int nlambda,
-                                    double lambda_min_ratio,
-                                    const arma::vec& l1_penalty_factor,
-                                    const unsigned int max_iter,
-                                    const double rel_tol,
-                                    const bool early_stop,
-                                    const bool verbose);
+        // for a sequence of lambda's
+        inline void net_path(const arma::vec& lambda,
+                             const double alpha,
+                             const unsigned int nlambda,
+                             const double lambda_min_ratio,
+                             const arma::vec& penalty_factor,
+                             const bool varying_active,
+                             const unsigned int max_iter,
+                             const double epsilon,
+                             const unsigned int verbose);
 
     };
     // end of class definition
@@ -417,14 +466,15 @@ namespace Intsurv {
     // here beta is the estimate for non-standardized data
     inline void CoxphReg::compute_haz_surv_time(const arma::vec& beta)
     {
+        arma::vec xbeta;
         if (standardize_) {
             // re-scale the input beta
             arma::vec beta0 { beta % x_scale_.t() };
-            xbeta_ = x_ * beta0 + arma::as_scalar(x_center_ * beta);
+            xbeta = x_ * beta0 + arma::as_scalar(x_center_ * beta);
         } else {
-            xbeta_ = x_ * beta;
+            xbeta = x_ * beta;
         }
-        arma::vec exp_risk_score { arma::exp(xbeta_ + offset_) };
+        arma::vec exp_risk_score { arma::exp(xbeta + offset_) };
         // 1. hazard rate function
         arma::vec h0_numer { aggregate_sum(event_, time_, false) };
         arma::vec h0_denom { exp_risk_score % arma::exp(offset_haz_) };
@@ -489,7 +539,7 @@ namespace Intsurv {
     }
 
     // the negative log-likelihood function based on the broslow's formula
-    inline double CoxphReg::objective(const arma::vec& beta) const
+    inline double CoxphReg::objective0(const arma::vec& beta) const
     {
         const arma::vec dx_beta {
             d_x_ * beta + d_offset_ + d_offset_haz_
@@ -505,13 +555,8 @@ namespace Intsurv {
         };
         return - arma::sum(dx_beta - delta_n_ % log_h0_denom_event);
     }
-    inline double CoxphReg::objective() const
-    {
-        return objective(coef0_);
-    }
-
     // the gradient of negative loglikelihood function
-    inline arma::vec CoxphReg::gradient(const arma::vec& beta) const
+    inline arma::vec CoxphReg::gradient0(const arma::vec& beta) const
     {
         const arma::vec exp_x_beta {
             arma::exp(x_ * beta + offset_ + offset_haz_)
@@ -530,8 +575,8 @@ namespace Intsurv {
         return - (arma::sum(d_x_, 0) - arma::sum(numer_mat, 0)).t();
     }
     // the gradient of negative loglikelihood function at k-th direction
-    inline double CoxphReg::gradient(const arma::vec& beta,
-                                     const unsigned int k) const
+    inline double CoxphReg::gradient0(const arma::vec& beta,
+                                      const unsigned int k) const
     {
         const arma::vec exp_x_beta {
             arma::exp(x_ * beta + offset_ + offset_haz_)
@@ -544,8 +589,8 @@ namespace Intsurv {
     }
 
     // the negative log-likelihood function based on the broslow's formula
-    inline double CoxphReg::objective(const arma::vec& beta,
-                                      arma::vec& grad) const
+    inline double CoxphReg::objective0(const arma::vec& beta,
+                                       arma::vec& grad) const
     {
         const arma::vec dx_beta {
             d_x_ * beta + d_offset_ + d_offset_haz_
@@ -617,7 +662,7 @@ namespace Intsurv {
 
     // compute lower bound of second derivative
     // in coordinate-majorization-descent algorithm (cmd)
-    inline void CoxphReg::compute_cmd_lowerbound(
+    inline void CoxphReg::set_cmd_lowerbound(
         const bool force_update = false
         )
     {
@@ -640,195 +685,225 @@ namespace Intsurv {
     // fit regular Cox model by monotonic quadratic approximation algorithm
     // that allows non-integer "event_" and tied events
     // reference: Bohning and Lindsay (1988) SIAM
-    inline void CoxphReg::fit(const arma::vec& start = 0,
-                              const unsigned int max_iter = 100,
-                              const double rel_tol = 1e-6,
-                              const bool early_stop = true,
-                              const bool verbose = false)
+    inline void CoxphReg::fit(const arma::vec& start = arma::vec(),
+                              const unsigned int max_iter = 200,
+                              const double epsilon = 1e-4,
+                              const unsigned int verbose = 0)
     {
         compute_inv_bl_cov_lowerbound();
-        arma::vec beta0 { arma::zeros(x_.n_cols) };
-        if (start.n_elem == x_.n_cols) {
-            beta0 = start;
-        }
+        arma::vec beta0 { gen_start(start) };
         arma::vec beta { beta0 }, h_vec { beta0 }, grad_vec { beta0 };
-        size_t i {0};
-        double b_new {0}, alpha_ {0}, ell {0}, ell_old {arma::datum::inf};
-        while (i <= max_iter) {
+        double b_new {0.0}, alpha_ {0.0};
+        double ell { arma::datum::inf };
+        if (verbose > 1) {
+            Rcpp::Rcout << "\n" << std::string(40, '=')
+                        << "\nStarting from\n"
+                        << arma2rvec(beta0)
+                        << "\n";
+        }
+        if (verbose > 0) {
+            ell = objective0(beta0);
+        }
+        for (size_t i {0}; i < max_iter; ++i) {
             // allow users to stop the main loop
             Rcpp::checkUserInterrupt();
-
             // compute negative log-likelihood function and update gradient
-            ell = objective(beta, grad_vec);
-            if (verbose) {
-                Rcpp::Rcout << "\n" << std::string(40, '=')
-                            << "\niteration: " << i
-                            << "\n  estimated coef: "
-                            << arma2rvec(beta)
-                            << "\n  negative log-likelihood: "
-                            << ell
-                            << "\n";
-            }
+            grad_vec = gradient0(beta0);
             h_vec = - inv_bl_cov_lowerbound_ * grad_vec;
             b_new = bl_step_lowerbound(x_, h_vec);
             alpha_ = - arma::as_scalar(crossprod(h_vec, grad_vec)) / b_new;
             beta = beta0 + alpha_ * h_vec;
-
+            if (verbose > 1) {
+                Rcpp::Rcout << "\n"
+                            << std::string(40, '=')
+                            << "\nitartion: "
+                            << i + 1
+                            << "\n  coef estimates: "
+                            << arma2rvec(beta)
+                            << "\n";
+            }
+            if (verbose > 0) {
+                double ell_old { ell };
+                ell = objective0(beta);
+                Rcpp::Rcout << "\n  The negative log-likelihood changed\n";
+                Rprintf("  from %15.15f\n", ell_old);
+                Rprintf("    to %15.15f\n", ell);
+                if (ell_old < ell) {
+                    Rcpp::Rcout << "Warning: The negative log-likelihood"
+                                << " somehow increased\n";
+                }
+            }
             // if tolerance is reached
-            if (rel_l1_norm(beta, beta0) < rel_tol) {
+            if (rel_l1_norm(beta, beta0) < epsilon) {
+                if (verbose > 0) {
+                    Rcpp::Rcout << "\nReached convergence criterion\n";
+                }
                 break;
             }
-            // if the objective function somehow increased,
-            // which is theorically impossible
-            // but possible in practice due to numerical issue
-            if (ell_old < ell) {
-                if (verbose) {
-                    Rcpp::Rcout << "Warning: "
-                                << "The negative log-likelihood increased\n";
-                    Rprintf("  from %15.15f\n", ell_old);
-                    Rprintf("    to %15.15f\n", ell);
-                }
-                if (early_stop) {
-                    if (verbose) {
-                        Rcpp::Rcout << "\nEarly stopped the algorithm"
-                                    << " with estimates from"
-                                    << " iteration " << i - 1 << "\n";
-                    }
-                    beta = beta0;
-                    ell = ell_old;
-                    break;
-                }
-            }
-            // update-steps
             beta0 = beta;
-            ell_old = ell;
-            i++;
         }
         coef0_ = beta;
         rescale_coef();
-        neg_ll_ = ell;
-        coef_df_ = beta.n_elem;
-        compute_bic();
     }
 
     // run one cycle of coordinate descent over a given active set
-    inline void CoxphReg::regularized_fit_update(
+    inline void CoxphReg::net_one_update(
         arma::vec& beta,
         arma::uvec& is_active,
         const double l1_lambda,
         const double l2_lambda,
-        const arma::vec& l1_penalty_factor,
-        const bool update_active = false,
-        const bool early_stop = false,
-        const bool verbose = false
+        const arma::vec& penalty_factor,
+        const bool update_active,
+        const unsigned int verbose
         )
     {
-        double dlj { 0 };
-        arma::vec beta_old = beta;
+        double ell_verbose { 0.0 }, obj_verbose { 0.0 }, reg_verbose { 0.0 };
+        if (verbose > 2) {
+            Rcpp::Rcout << "\nStarting values of beta:\n"
+                        << arma2rvec(beta)
+                        << "\nThe active set of beta:\n"
+                        << arma2rvec(is_active)
+                        << "\n";
+        }
+        if (verbose > 1) {
+            obj_verbose = objective0(beta);
+            reg_verbose = net_penalty(beta, l1_lambda, l2_lambda,
+                                      penalty_factor);
+            ell_verbose = obj_verbose + reg_verbose;
+        }
+        arma::vec beta_old { beta };
         for (size_t j {0}; j < beta.n_elem; ++j) {
-            if (is_active[j]) {
-                dlj = gradient(beta, j) / dn_obs_;
-                // update beta
-                beta[j] = soft_threshold(
-                    cmd_lowerbound_[j] * beta[j] - dlj,
-                    l1_penalty_factor[j] * l1_lambda
-                    ) /
-                    (cmd_lowerbound_[j] + 2 * l2_lambda);
-                if (update_active) {
-                    // check if it has been shrinkaged to zero
-                    if (isAlmostEqual(beta[j], 0)) {
-                        is_active[j] = 0;
-                    } else {
-                        is_active[j] = 1;
-                    }
+            if (is_active[j] == 0) {
+                continue;
+            }
+            double dlj { gradient0(beta, j) / dn_obs_ };
+            // if cmd_lowerbound_ = 0 and l1_lambda > 0, numer will be 0
+            double numer {
+                soft_threshold(cmd_lowerbound_[j] * beta[j] - dlj,
+                               penalty_factor[j] * l1_lambda)
+            };
+            if (isAlmostEqual(numer, 0)) {
+                beta[j] = 0;
+            } else {
+                double denom {
+                    cmd_lowerbound_[j] + 2 * l2_lambda
+                };
+                beta[j] = numer / denom;
+            }
+            if (update_active) {
+                // check if it has been shrinkaged to zero
+                if (isAlmostEqual(beta[j], 0)) {
+                    is_active[j] = 0;
+                } else {
+                    is_active[j] = 1;
                 }
             }
         }
-        // if early stop
-        if (early_stop) {
-            double ell_old { objective(beta_old) };
-            ell_old = ell_old / dn_obs_ +
-                l1_lambda * l1_norm(beta_old % l1_penalty_factor) +
-                l2_lambda * sum_of_square(beta_old);
-            double ell_new { objective(beta) };
-            ell_new = ell_new / dn_obs_ +
-                l1_lambda * l1_norm(beta % l1_penalty_factor) +
-                l2_lambda * sum_of_square(beta);
-            if (verbose) {
-                Rcpp::Rcout << "The objective function changed\n";
-                Rprintf("  from %15.15f\n", ell_old);
-                Rprintf("    to %15.15f\n", ell_new);
-            }
-            if (ell_new > ell_old) {
-                if (verbose) {
-                    Rcpp::Rcout << "Warning: "
-                                << "the objective function somehow increased.\n"
-                                << "Early stopped the CMD iterations "
-                                << "with estimates from the last step.\n";
-                }
-                beta = beta_old;
+        if (verbose > 1) {
+            double ell_old { ell_verbose };
+            Rcpp::Rcout << "The objective function changed\n";
+            Rprintf("  from %7.7f (obj. %7.7f + reg. %7.7f)\n",
+                    ell_verbose, obj_verbose, reg_verbose);
+            obj_verbose = objective0(beta);
+            reg_verbose = net_penalty(beta, l1_lambda, l2_lambda,
+                                      penalty_factor);
+            ell_verbose = obj_verbose + reg_verbose;
+            Rprintf("    to %7.7f (obj. %7.7f + reg. %7.7f)\n",
+                    ell_verbose, obj_verbose, reg_verbose);
+            if (ell_verbose > ell_old) {
+                Rcpp::Rcout << "Warning: "
+                            << "the objective function somehow increased\n";
             }
         }
     }
 
     // run a complete cycle of CMD for a given active set and lambda
-    inline void CoxphReg::reg_active_fit(
+    inline void CoxphReg::net_active_update(
         arma::vec& beta,
-        const arma::uvec& is_active,
+        arma::uvec& is_active,
         const double l1_lambda,
         const double l2_lambda,
-        const arma::vec& l1_penalty_factor,
-        const bool varying_active_set = false,
-        const unsigned int max_iter = 300,
-        const double rel_tol = 1e-5,
-        const bool early_stop = false,
-        const bool verbose = false
+        const arma::vec& penalty_factor,
+        const bool varying_active,
+        const unsigned int max_iter,
+        const double epsilon,
+        const unsigned int verbose
         )
     {
-        size_t i {0};
+        unsigned int num_iter {0};
         arma::vec beta0 { beta };
-        arma::uvec is_active_stored { is_active };
-
-        // use active-set if p > n ("helps when p >> n")
-        if (varying_active_set) {
-            arma::uvec is_active_new { is_active };
-            size_t ii {0};
-            while (i < max_iter) {
-                // cycles over the active set
+        if (varying_active) {
+            arma::uvec is_active_strong { is_active },
+                is_active_varying { is_active };
+            if (verbose > 1) {
+                Rcpp::Rcout << "The size of active set from strong rule: "
+                            << l1_norm(is_active_strong)
+                            << "\n";
+            }
+            for (size_t i {0}; i < max_iter; ++i) {
+                size_t ii {0};
                 while (ii < max_iter) {
-                    regularized_fit_update(beta, is_active_stored, l1_lambda,
-                                           l2_lambda, l1_penalty_factor, true,
-                                           early_stop, verbose);
-                    if (rel_l1_norm(beta, beta0) < rel_tol) {
+                    net_one_update(beta, is_active_varying,
+                                   l1_lambda, l2_lambda, penalty_factor,
+                                   true, verbose);
+                    if (rel_l1_norm(beta, beta0) < epsilon) {
+                        num_iter = ii + 1;
                         break;
                     }
                     beta0 = beta;
                     ii++;
                 }
                 // run a full cycle over the converged beta
-                regularized_fit_update(beta, is_active_new, l1_lambda,
-                                       l2_lambda, l1_penalty_factor, true,
-                                       early_stop, verbose);
-                // check two active sets coincide
-                if (arma::sum(arma::abs(is_active_new - is_active_stored))) {
+                net_one_update(beta, is_active,
+                               l1_lambda, l2_lambda, penalty_factor,
+                               true, verbose);
+                // check if two active sets coincide
+                if (l1_norm(is_active_varying - is_active) > 0) {
                     // if different, repeat this process
-                    ii = 0;
-                    i++;
+                    if (verbose > 1) {
+                        Rcpp::Rcout << "Changed the active set from "
+                                    << l1_norm(is_active_varying)
+                                    << " to "
+                                    << l1_norm(is_active)
+                                    << " after "
+                                    << num_iter + 1
+                                    << " iteration(s)\n";
+                    }
+                    is_active_varying = is_active;
+                    // recover the active set
+                    is_active = is_active_strong;
                 } else {
+                    if (verbose > 1) {
+                        Rcpp::Rcout << "Converged over the active set after "
+                                    << num_iter + 1
+                                    << " iteration(s)\n";
+                        Rcpp::Rcout << "The size of active set is "
+                                    << l1_norm(is_active) << "\n";
+                    }
+                    num_iter = i + 1;
                     break;
                 }
             }
         } else {
             // regular coordinate descent
-            while (i < max_iter) {
-                regularized_fit_update(beta, is_active_stored, l1_lambda,
-                                       l2_lambda, l1_penalty_factor, false,
-                                       early_stop, verbose);
-                if (rel_l1_norm(beta, beta0) < rel_tol) {
+            for (size_t i {0}; i < max_iter; ++i) {
+                net_one_update(beta, is_active,
+                               l1_lambda, l2_lambda, penalty_factor,
+                               false, verbose);
+                if (rel_l1_norm(beta, beta0) < epsilon) {
+                    num_iter = i + 1;
                     break;
                 }
                 beta0 = beta;
-                i++;
+            }
+        }
+        if (verbose > 0) {
+            if (num_iter < max_iter) {
+                Rcpp::Rcout << "Converged after "
+                            << num_iter
+                            << " iteration(s)\n";
+            } else {
+                msg("Reached the maximum number of iteratons.");
             }
         }
     }
@@ -837,285 +912,198 @@ namespace Intsurv {
     // algorithm that allows non-integer "event_" and tied events
     // for a perticular l1_lambda_ and l2_lambda_
     // lambda_1 * lasso + lambda_2 * ridge
-    inline void CoxphReg::regularized_fit(
-        const double l1_lambda = 0,
-        const double l2_lambda = 0,
-        const arma::vec& l1_penalty_factor = 0,
-        const arma::vec& start = 0,
-        const unsigned int max_iter = 300,
-        const double rel_tol = 1e-5,
-        const bool early_stop = false,
-        const bool verbose = false
+    inline void CoxphReg::net_fit(
+        const double l1_lambda,
+        const double l2_lambda,
+        const arma::vec& penalty_factor = arma::vec(),
+        const arma::vec& start = arma::vec(),
+        const bool varying_active = true,
+        const unsigned int max_iter = 200,
+        const double epsilon = 1e-4,
+        const unsigned int verbose = 0
         )
     {
-        // compute lowerbound vector used in CMD algorithm
-        compute_cmd_lowerbound();
-        // set penalty terms
-        arma::vec l1_penalty { arma::ones(x_.n_cols) };
-        if (l1_penalty_factor.n_elem == x_.n_cols) {
-            // re-scale so that sum(factor) = number of predictors
-            l1_penalty = l1_penalty_factor * x_.n_cols /
-                arma::sum(l1_penalty_factor);
-        }
-        l1_penalty_factor_ = l1_penalty;
+        set_cmd_lowerbound();
+        set_penalty_factor(penalty_factor);
+        // no range checks
         l1_lambda_ = l1_lambda;
         l2_lambda_ = l2_lambda;
-
-        // the maximum (large enough) lambda that results in all-zero estimates
-        arma::vec beta { arma::zeros(x_.n_cols) };
-        arma::vec grad_beta { beta }, strong_rhs { beta }, grad_zero { beta };
-        // excluding variable with zero penalty factor
-        arma::uvec active_l1_penalty { arma::find(l1_penalty > 0) };
-        grad_zero = arma::abs(gradient(beta));
-        l1_lambda_max_ = arma::max(
-            grad_zero.elem(active_l1_penalty) /
-            l1_penalty.elem(active_l1_penalty)
-            ) / dn_obs_;
-
-        // early exit for large lambda greater than lambda_max
-        coef0_ = beta;
-        coef_ = beta;
-        if (l1_lambda > l1_lambda_max_) {
-            // no need to rescale all-zero coef_
-            // en_coef_ = coef_;
-            coef_df_ = 0;
-            // compute negative log-likelihood
-            neg_ll_ = objective();
-            coef_df_ = compute_coef_df(beta);
-            compute_bic();
-            return;
-        }
-
-        // use the input starting value
-        if (start.n_elem == x_.n_cols) {
-            beta = start;
-        }
-
-        // for active set
-        arma::uvec is_active_strong { arma::zeros<arma::uvec>(x_.n_cols) };
-        // update active set by strong rule
-        grad_beta = arma::abs(gradient(coef0_)) / x_.n_rows;
-        strong_rhs = (2 * l1_lambda_ - l1_lambda_max_) * l1_penalty;
-        for (size_t j {0}; j < x_.n_cols; ++j) {
-            if (grad_beta(j) > strong_rhs(j)) {
-                is_active_strong(j) = 1;
-            } else {
-                beta(j) = 0;
-            }
-        }
-        arma::uvec is_active_strong_new { is_active_strong };
-
-        // optim with varying active set when p > n
-        bool varying_active_set { false };
-        if (x_.n_cols > x_.n_rows) {
-            varying_active_set = true;
-        }
-
-        bool kkt_failed { true };
-        strong_rhs = l1_lambda_ * l1_penalty;
-        // eventually, strong rule will guess correctly
-        while (kkt_failed) {
-            // allow users to stop the main loop
-            Rcpp::checkUserInterrupt();
-
-            // update beta
-            reg_active_fit(beta, is_active_strong, l1_lambda_, l2_lambda_,
-                           l1_penalty, varying_active_set, max_iter, rel_tol,
-                           early_stop, verbose);
-            // check kkt condition
-            for (size_t j {0}; j < x_.n_cols; ++j) {
-                if (is_active_strong(j)) {
-                    continue;
-                }
-                if (std::abs(gradient(beta, j)) / x_.n_rows >
-                    strong_rhs(j)) {
-                    // update active set
-                    is_active_strong_new(j) = 1;
-                }
-            }
-            if (arma::sum(arma::abs(is_active_strong - is_active_strong_new))) {
-                is_active_strong = is_active_strong_new;
-            } else {
-                kkt_failed = false;
-            }
-        }
-        // compute elastic net estimates, then rescale them back
-        // coef0_ = (1 + l2_lambda_) * beta;
-        // rescale_coef();
-        // en_coef_ = coef_;
-        // overwrite the naive elastic net estimate
+        // use the given starting values
+        arma::vec beta { gen_start(start) };
+        arma::uvec is_active { arma::ones<arma::uvec>(p_) };
+        net_active_update(beta,
+                          is_active,
+                          l1_lambda_,
+                          l2_lambda_,
+                          penalty_factor_,
+                          varying_active,
+                          max_iter,
+                          epsilon,
+                          verbose);
         coef0_ = beta;
         rescale_coef();
-        // compute negative log-likelihood
-        neg_ll_ = objective();
-        coef_df_ = compute_coef_df(beta);
-        compute_bic();
     }
 
 
     // for a sequence of lambda's
     // lambda * (penalty_factor * alpha_ * lasso + (1 - alpha_) / 2 * ridge)
-    inline void CoxphReg::regularized_fit(
-        arma::vec lambda = 0,
+    inline void CoxphReg::net_path(
+        const arma::vec& lambda = arma::vec(),
         const double alpha = 1,
-        const unsigned int nlambda = 1,
-        double lambda_min_ratio = 1e-4,
-        const arma::vec& l1_penalty_factor = 0,
-        const unsigned int max_iter = 300,
-        const double rel_tol = 1e-5,
-        const bool early_stop = false,
-        const bool verbose = false
+        const unsigned int nlambda = 50,
+        const double lambda_min_ratio = 1e-4,
+        const arma::vec& penalty_factor = arma::vec(),
+        const bool varying_active = true,
+        const unsigned int max_iter = 200,
+        const double epsilon = 1e-4,
+        const unsigned int verbose = 0
         )
     {
-        // check alpha_
+        set_cmd_lowerbound();
+        set_penalty_factor(penalty_factor);
         // if ((alpha < 0) || (alpha > 1)) {
         //     throw std::range_error("Alpha must be between 0 and 1.");
         // }
         alpha_ = alpha;
-
-        // set penalty terms
-        arma::vec l1_penalty { arma::ones(x_.n_cols) };
-        if (l1_penalty_factor.n_elem == x_.n_cols) {
-            // re-scale so that sum(factor) = number of predictors
-            l1_penalty = l1_penalty_factor * x_.n_cols /
-                arma::sum(l1_penalty_factor);
-        }
-        l1_penalty_factor_ = l1_penalty;
-
-        // the maximum (large enough) lambda that results in all-zero estimates
-        arma::vec beta { arma::zeros(x_.n_cols) };
-        arma::vec grad_beta { beta }, strong_rhs { beta };
-        l1_lambda_max_ =
-            arma::max(arma::abs(gradient(beta)) / l1_penalty_factor_) /
-            x_.n_rows / std::max(alpha_, 1e-3);
-
-        // take unique lambda and sort descendingly
-        lambda = arma::reverse(arma::unique(lambda));
+        const bool is_ridge_only { isAlmostEqual(alpha_, 0.0) };
+        arma::uvec active_penalty { arma::find(penalty_factor_ > 0.0) };
+        arma::uvec penalty_free { arma::find(penalty_factor_ == 0.0) };
         // construct lambda sequence
-        arma::vec lambda_seq {
-            arma::zeros(std::max(nlambda, lambda.n_elem))
-        };
-        if (nlambda > 1) {
-            double log_lambda_max { std::log(l1_lambda_max_) };
-            if (x_.n_cols > x_.n_rows) {
-                lambda_min_ratio = std::sqrt(lambda_min_ratio);
-            }
-            lambda_seq = arma::exp(
-                arma::linspace(log_lambda_max,
-                               log_lambda_max + std::log(lambda_min_ratio),
-                               nlambda)
-                );
+        arma::vec beta { arma::zeros(x_.n_cols) };
+        arma::vec grad_beta, strong_rhs;
+        // if alpha = 0 and lambda is specified
+        if (is_ridge_only && ! lambda.empty()) {
+            lambda_vec_ = arma::reverse(arma::unique(lambda));
+            l1_lambda_max_ = 0.0;    // not well defined
+            lambda_max_ = 0.0;       // not well defined
         } else {
-            lambda_seq = lambda;
+            // need to determine l1_lambda_max
+            grad_beta = arma::abs(gradient0(beta)) / dn_obs_;
+            l1_lambda_max_ = 0.0;
+            for (arma::uvec::iterator it { active_penalty.begin() };
+                 it != active_penalty.end(); ++it) {
+                double tmp { grad_beta(*it) };
+                tmp /= penalty_factor_(*it);
+                if (l1_lambda_max_ < tmp) {
+                    l1_lambda_max_ = tmp;
+                }
+            };
+            lambda_max_ = l1_lambda_max_ / std::max(alpha, 1e-2);
+            // set up lambda sequence
+            if (lambda.empty()) {
+                double log_lambda_max { std::log(lambda_max_) };
+                lambda_vec_ = arma::exp(
+                    arma::linspace(log_lambda_max,
+                                   log_lambda_max + std::log(lambda_min_ratio),
+                                   nlambda)
+                    );
+                lambda_min_ratio_ = lambda_min_ratio;
+            } else {
+                lambda_vec_ = arma::reverse(arma::unique(lambda));
+            }
         }
-        lambda_vec_ = lambda_seq;
-
         // initialize the estimate matrix
-        coef_mat_ = arma::zeros(x_.n_cols, lambda_seq.n_elem);
-        // en_coef_mat_ = coef_mat_;
-        neg_ll_vec_ = arma::zeros(lambda_seq.n_elem);
-        coef_df_vec_ = arma::zeros<arma::uvec>(lambda_seq.n_elem);
-        bic_vec_ = neg_ll_vec_;
-
-        // start values
-        coef0_ = beta;
-        coef_ = beta;
-
-        // for active set
-        arma::uvec is_active_strong { arma::zeros<arma::uvec>(x_.n_cols) };
-
-        // optim with varying active set when p > n
-        bool varying_active_set { false };
-        if (x_.n_cols > x_.n_rows) {
-            varying_active_set = true;
+        coef_mat_ = arma::zeros(p_, lambda_vec_.n_elem);
+        arma::uvec is_active_strong { arma::zeros<arma::uvec>(p_) };
+        // for ridge penalty
+        if (is_ridge_only) {
+            is_active_strong = arma::ones<arma::uvec>(x_.n_cols);
+            for (size_t li { 0 }; li < lambda_vec_.n_elem; ++li) {
+                net_active_update(beta, is_active_strong,
+                                  0.0, 0.5 * lambda_vec_(li),
+                                  penalty_factor_, false,
+                                  max_iter, epsilon, verbose);
+                coef0_ = beta;
+                rescale_coef();
+                coef_mat_.col(li) = coef_;
+            }
+            return;             // early exit
         }
-
+        // get solution of lambda_max for a warm start
+        for (arma::uvec::iterator it { penalty_free.begin() };
+             it != penalty_free.end(); ++it) {
+            is_active_strong(*it) = 1;
+        }
+        double l1_lambda { lambda_max_ * alpha };
+        double l2_lambda { 0.5 * lambda_max_ * (1 - alpha) };
+        net_active_update(beta, is_active_strong,
+                          l1_lambda, l2_lambda, penalty_factor_,
+                          false, max_iter, epsilon, verbose);
+        double old_l1_lambda { l1_lambda_max_ }; // for strong rule
         // outer loop for the lambda sequence
-        for (size_t k {0}; k < lambda_seq.n_elem; ++k) {
+        for (size_t k {0}; k < lambda_vec_.n_elem; ++k) {
+            double lambda_k { lambda_vec_(k) };
+            l1_lambda = lambda_k * alpha_;
+            l2_lambda = 0.5 * lambda_k * (1 - alpha_);
             // early exit for large lambda greater than lambda_max
-            if (alpha_ * lambda_seq(k) >= l1_lambda_max_) {
-                // no re-scale is needed
+            if (l1_lambda >= l1_lambda_max_) {
+                coef0_ = beta;
+                rescale_coef();
                 coef_mat_.col(k) = coef_;
-                // en_coef_mat_.col(k) = coef_;
-                // compute negative log-likelihood
-                neg_ll_vec_(k) = objective();
-                coef_df_vec_(k) = compute_coef_df(beta);
-                neg_ll_ = neg_ll_vec_(k);
-                coef_df_ = coef_df_vec_(k);
-                compute_bic();
-                bic_vec_(k) = bic_;
                 continue;
             }
-            // allow users to stop the loop
-            Rcpp::checkUserInterrupt();
-
             // update acitve set by strong rule (for lambda < lamda_max)
-            grad_beta = arma::abs(gradient(beta)) / x_.n_rows;
-            if (k == 0) {
-                // use lambda_max
-                strong_rhs = alpha_ *
-                    (2 * lambda_seq(k) - l1_lambda_max_) * l1_penalty;
-            } else {
-                // use the last lambda
-                strong_rhs = alpha_ *
-                    (2 * lambda_seq(k) - lambda_seq(k - 1)) * l1_penalty;
-            }
-            for (size_t j {0}; j < x_.n_cols; ++j) {
-                if (grad_beta(j) > strong_rhs(j)) {
-                    is_active_strong(j) = 1;
-                } else {
-                    beta(j) = 0;
+            grad_beta = arma::abs(gradient0(beta)) / dn_obs_;
+            strong_rhs = (2 * l1_lambda - old_l1_lambda) * penalty_factor_;
+            for (arma::uvec::iterator it { active_penalty.begin() };
+                 it != active_penalty.end(); ++it) {
+                if (is_active_strong(*it) > 0) {
+                    continue;
+                }
+                if (grad_beta(*it) >= strong_rhs(*it)) {
+                    is_active_strong(*it) = 1;
                 }
             }
-            arma::uvec is_active_strong_new { is_active_strong };
-            strong_rhs = alpha_ * lambda_seq(k) * l1_penalty;
+            arma::uvec is_active_strong_old { is_active_strong };
+            strong_rhs = l1_lambda * penalty_factor_;
             bool kkt_failed { true };
             // eventually, strong rule will guess correctly
             while (kkt_failed) {
-                // allow users to stop the loop
-                Rcpp::checkUserInterrupt();
-
-                reg_active_fit(beta, is_active_strong, lambda_seq(k) * alpha_,
-                               lambda_seq(k) * (1 - alpha_) / 2, l1_penalty,
-                               varying_active_set, max_iter, rel_tol,
-                               early_stop, verbose);
+                arma::uvec is_strong_rule_failed {
+                    arma::zeros<arma::uvec>(p_)
+                };
+                // update beta
+                net_active_update(beta, is_active_strong,
+                                  l1_lambda, l2_lambda, penalty_factor_,
+                                  varying_active, max_iter, epsilon,
+                                  verbose);
                 // check kkt condition
-                for (size_t j {0}; j < x_.n_cols; ++j) {
-                    if (is_active_strong(j)) {
+                if (verbose > 0) {
+                    msg("Checking the KKT condition for the null set.");
+                }
+                for (arma::uvec::iterator it { active_penalty.begin() };
+                     it != active_penalty.end(); ++it) {
+                    if (is_active_strong_old(*it)) {
                         continue;
                     }
-                    if (std::abs(gradient(beta, j)) / x_.n_rows >
-                        strong_rhs(j)) {
-                        // update active set
-                        is_active_strong_new(j) = 1;
+                    if (std::abs(gradient0(beta, *it)) / dn_obs_ >
+                        strong_rhs(*it)) {
+                        is_strong_rule_failed(*it) = 1;
                     }
                 }
-                if (arma::sum(arma::abs(is_active_strong -
-                                        is_active_strong_new))) {
-                    is_active_strong = is_active_strong_new;
+                if (arma::accu(is_strong_rule_failed) > 0) {
+                    is_active_strong = is_active_strong_old ||
+                        is_strong_rule_failed;
+                    if (verbose > 0) {
+                        Rcpp::Rcout << "The strong rule failed for "
+                                    << arma::accu(is_strong_rule_failed)
+                                    << " group(s)\nThe size of old active set: "
+                                    << l1_norm(is_active_strong_old)
+                                    << "\nThe size of new active set: "
+                                    << l1_norm(is_active_strong)
+                                    << "\n";
+                    }
                 } else {
+                    if (verbose > 0) {
+                        msg("The strong rule worked.\n");
+                    }
                     kkt_failed = false;
                 }
             }
-            // compute elastic net estimates
-            // coef0_ = (1 + (1 - alpha_) * lambda_seq(k) / 2) * beta;
-            // rescale_coef();
-            // en_coef_mat_.col(k) = coef_;
-
-            // compute naive elastic net estimates
             coef0_ = beta;
             rescale_coef();
             coef_mat_.col(k) = coef_;
-
-            // compute negative log-likelihood
-            neg_ll_vec_(k) = objective();
-            coef_df_vec_(k) = compute_coef_df(beta);
-            neg_ll_ = neg_ll_vec_(k);
-            coef_df_ = coef_df_vec_(k);
-            compute_bic();
-            bic_vec_(k) = bic_;
         }
-        // end of regularized fit
     }
 
 }
