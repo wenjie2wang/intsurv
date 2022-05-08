@@ -239,14 +239,17 @@ namespace Intsurv {
         // transform coef for original data to the one for standardized data
         inline arma::vec rev_rescale_coef(const arma::vec& beta) const
         {
-            arma::vec beta0 { beta };
-            double tmp {0};
-            for (size_t j {1}; j < beta.n_elem; ++j) {
-                beta0(j) *= x_scale_(j - 1);
-                tmp += beta(j) * x_center_(j - 1);
+            if (standardize_) {
+                arma::vec beta0 { beta };
+                double tmp {0};
+                for (size_t j {1}; j < beta.n_elem; ++j) {
+                    beta0(j) *= x_scale_(j - 1);
+                    tmp += beta(j) * x_center_(j - 1);
+                }
+                beta0(0) += tmp;
+                return beta0;
             }
-            beta0(0) += tmp;
-            return beta0;
+            return beta;
         }
 
         inline arma::vec predict() const
@@ -349,7 +352,7 @@ namespace Intsurv {
         inline arma::vec gen_start(const arma::vec& start = arma::vec()) const
         {
             if (start.n_elem == p1_) {
-                return start;
+                return rev_rescale_coef(start);
             }
             return arma::zeros(p1_);
         }
@@ -372,7 +375,7 @@ namespace Intsurv {
                             const double epsilon,
                             const unsigned int verbose);
 
-        // overload for a sequence of lambda's
+        // for a sequence of lambda's
         inline void net_path(const arma::vec& lambda,
                              const double alpha,
                              const unsigned int nlambda,
@@ -424,15 +427,14 @@ namespace Intsurv {
         set_bl_iter_mat();
         arma::vec beta0 { gen_start(start) };
         double ell { arma::datum::inf };
-        if (verbose > 0) {
+        if (verbose > 1) {
             Rcpp::Rcout << "\n" << std::string(40, '=')
                         << "\nStarting from\n"
                         << arma2rvec(beta0)
                         << "\n";
+        }
+        if (verbose > 0) {
             ell = objective(beta0);
-            Rcpp::Rcout << "\nThe negative log-likelihood is "
-                        << ell
-                        << "\n";
         }
         arma::vec beta { beta0 };
         arma::vec y_hat;
@@ -441,7 +443,7 @@ namespace Intsurv {
         for (size_t i {0}; i < max_iter; ++i) {
             y_hat = predict0(beta0);
             beta = beta0 + iter_mat * (y_ - y_hat);
-            if (verbose > 0) {
+            if (verbose > 1) {
                 Rcpp::Rcout << "\n"
                             << std::string(40, '=')
                             << "\nitartion: "
@@ -450,14 +452,20 @@ namespace Intsurv {
                             << arma2rvec(beta)
                             << "\n";
             }
+            if (verbose > 0) {
+                double ell_old { ell };
+                ell = objective0(beta);
+                Rcpp::Rcout << "\n  The negative log-likelihood changed\n";
+                Rprintf("  from %15.15f\n", ell_old);
+                Rprintf("    to %15.15f\n", ell);
+                if (ell_old < ell) {
+                    Rcpp::Rcout << "Warning: The negative log-likelihood"
+                                << " somehow increased\n";
+                }
+            }
             // if relative tolerance is statisfied
             if (rel_l1_norm(beta, beta0) < epsilon) {
                 if (verbose > 0) {
-                    double ell_old { ell };
-                    ell = objective(beta);
-                    Rcpp::Rcout << "\n  The negative log-likelihood changed\n";
-                    Rprintf("  from %15.15f\n", ell_old);
-                    Rprintf("    to %15.15f\n", ell);
                     Rcpp::Rcout << "\nReached convergence criterion\n";
                 }
                 break;
@@ -494,13 +502,12 @@ namespace Intsurv {
                                       penalty_factor);
             ell_verbose = obj_verbose + reg_verbose;
         }
-        double dlj { 0.0 };
-        arma::vec beta_old = beta;
+        arma::vec beta_old { beta };
         for (size_t j {0}; j < p1_; ++j) {
             if (is_active[j] == 0) {
                 continue;
             }
-            dlj = gradient0(beta, j);
+            double dlj { gradient0(beta, j) };
             // if cmd_lowerbound_ = 0 and l1_lambda > 0, numer will be 0
             double numer {
                 soft_threshold(cmd_lowerbound_[j] * beta[j] - dlj,
@@ -557,7 +564,6 @@ namespace Intsurv {
     {
         unsigned int num_iter {0};
         arma::vec beta0 { beta };
-        // use active-set if p > n ("helps when p >> n")
         if (varying_active) {
             arma::uvec is_active_strong { is_active },
                 is_active_varying { is_active };
@@ -582,7 +588,7 @@ namespace Intsurv {
                 // run a full cycle over the converged beta
                 net_one_update(beta, is_active, l1_lambda,
                                l2_lambda, penalty_factor, true, verbose);
-                // check two active sets coincide
+                // check if two active sets coincide
                 if (l1_norm(is_active_varying - is_active) > 0) {
                     // if different, repeat this process
                     if (verbose > 1) {
@@ -732,7 +738,7 @@ namespace Intsurv {
         }
         // initialize the estimate matrix
         coef_mat_ = arma::zeros(p1_, lambda_vec_.n_elem);
-        arma::uvec is_active_strong { arma::zeros<arma::uvec>(x_.n_cols) };
+        arma::uvec is_active_strong { arma::zeros<arma::uvec>(p_) };
         // for ridge penalty
         if (is_ridge_only) {
             is_active_strong = arma::ones<arma::uvec>(x_.n_cols);
