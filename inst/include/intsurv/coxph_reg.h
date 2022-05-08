@@ -366,7 +366,7 @@ namespace Intsurv {
             arma::uvec active_penalty { arma::find(penalty_factor > 0.0) };
             arma::uvec penalty_free { arma::find(penalty_factor == 0.0) };
             arma::vec beta { arma::zeros(p_) };
-            arma::vec grad_beta { arma::abs(gradient0(beta)) / dn_obs_ };
+            arma::vec grad_beta { arma::abs(gradient0(beta)) };
             double l1_lambda_max { 0.0 };
             for (arma::uvec::iterator it { active_penalty.begin() };
                  it != active_penalty.end(); ++it) {
@@ -553,7 +553,7 @@ namespace Intsurv {
         arma::vec log_h0_denom_event {
             arma::log(h0_denom.elem(uni_event_ind_))
         };
-        return - arma::sum(dx_beta - delta_n_ % log_h0_denom_event);
+        return - arma::sum(dx_beta - delta_n_ % log_h0_denom_event) / dn_obs_;
     }
     // the gradient of negative loglikelihood function
     inline arma::vec CoxphReg::gradient0(const arma::vec& beta) const
@@ -572,7 +572,7 @@ namespace Intsurv {
         for (size_t j {0}; j < x_.n_cols; ++j) {
             numer_mat.col(j) = numer_mat.col(j) % delta_n_ / h0_denom_event;
         }
-        return - (arma::sum(d_x_, 0) - arma::sum(numer_mat, 0)).t();
+        return - (arma::sum(d_x_, 0) - arma::sum(numer_mat, 0)).t() / dn_obs_;
     }
     // the gradient of negative loglikelihood function at k-th direction
     inline double CoxphReg::gradient0(const arma::vec& beta,
@@ -585,7 +585,7 @@ namespace Intsurv {
         arma::vec numer { cum_sum(mat2vec(x_.col(k) % exp_x_beta), true) };
         h0_denom = h0_denom.elem(uni_event_ind_);
         numer = numer.elem(uni_event_ind_);
-        return - arma::sum(d_x_.col(k) - delta_n_ % numer / h0_denom);
+        return - arma::sum(d_x_.col(k) - delta_n_ % numer / h0_denom) / dn_obs_;
     }
 
     // the negative log-likelihood function based on the broslow's formula
@@ -610,8 +610,9 @@ namespace Intsurv {
             numer_mat.col(j) = numer_mat.col(j) % delta_n_ / h0_denom_event;
         }
         // overwrite grad
-        grad = - (arma::sum(d_x_, 0) - arma::sum(numer_mat, 0)).t();
-        return - arma::sum(dx_beta - delta_n_ % arma::log(h0_denom_event));
+        grad = - (arma::sum(d_x_, 0) - arma::sum(numer_mat, 0)).t() / dn_obs_;
+        return - arma::sum(dx_beta - delta_n_ % arma::log(h0_denom_event)) /
+            dn_obs_;
     }
 
     // one lower bound of covariance matrix
@@ -708,7 +709,7 @@ namespace Intsurv {
             // allow users to stop the main loop
             Rcpp::checkUserInterrupt();
             // compute negative log-likelihood function and update gradient
-            grad_vec = gradient0(beta0);
+            grad_vec = gradient0(beta0) * dn_obs_;
             h_vec = - inv_bl_cov_lowerbound_ * grad_vec;
             b_new = bl_step_lowerbound(x_, h_vec);
             alpha_ = - arma::as_scalar(crossprod(h_vec, grad_vec)) / b_new;
@@ -776,7 +777,7 @@ namespace Intsurv {
             if (is_active[j] == 0) {
                 continue;
             }
-            double dlj { gradient0(beta, j) / dn_obs_ };
+            double dlj { gradient0(beta, j) };
             // if cmd_lowerbound_ = 0 and l1_lambda > 0, numer will be 0
             double numer {
                 soft_threshold(cmd_lowerbound_[j] * beta[j] - dlj,
@@ -978,7 +979,7 @@ namespace Intsurv {
             lambda_max_ = 0.0;       // not well defined
         } else {
             // need to determine l1_lambda_max
-            grad_beta = arma::abs(gradient0(beta)) / dn_obs_;
+            grad_beta = arma::abs(gradient0(beta));
             l1_lambda_max_ = 0.0;
             for (arma::uvec::iterator it { active_penalty.begin() };
                  it != active_penalty.end(); ++it) {
@@ -1043,7 +1044,7 @@ namespace Intsurv {
                 continue;
             }
             // update acitve set by strong rule (for lambda < lamda_max)
-            grad_beta = arma::abs(gradient0(beta)) / dn_obs_;
+            grad_beta = arma::abs(gradient0(beta));
             strong_rhs = (2 * l1_lambda - old_l1_lambda) * penalty_factor_;
             for (arma::uvec::iterator it { active_penalty.begin() };
                  it != active_penalty.end(); ++it) {
@@ -1076,8 +1077,7 @@ namespace Intsurv {
                     if (is_active_strong_old(*it)) {
                         continue;
                     }
-                    if (std::abs(gradient0(beta, *it)) / dn_obs_ >
-                        strong_rhs(*it)) {
+                    if (std::abs(gradient0(beta, *it)) > strong_rhs(*it)) {
                         is_strong_rule_failed(*it) = 1;
                     }
                 }
