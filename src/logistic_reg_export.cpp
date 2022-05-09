@@ -49,7 +49,7 @@ Rcpp::List rcpp_logistic(
         Rcpp::Named("coef") = Intsurv::arma2rvec(object.coef_),
         Rcpp::Named("model") = Rcpp::List::create(
             Rcpp::Named("prob") = Intsurv::arma2rvec(prob),
-            Rcpp::Named("nObs") = object.sample_size(),
+            Rcpp::Named("nObs") = object.n_obs_,
             Rcpp::Named("negLogL") = neg_ll
             )
         );
@@ -86,7 +86,7 @@ Rcpp::List rcpp_lognet1(
     return Rcpp::List::create(
         Rcpp::Named("coef") = Intsurv::arma2rvec(object.coef_),
         Rcpp::Named("model") = Rcpp::List::create(
-            Rcpp::Named("nObs") = object.sample_size(),
+            Rcpp::Named("nObs") = object.n_obs_,
             Rcpp::Named("negLogL") = neg_ll,
             Rcpp::Named("coef_df") = coef_df
             ),
@@ -130,7 +130,7 @@ Rcpp::List rcpp_lognet2(
     return Rcpp::List::create(
         Rcpp::Named("coef") = object.coef_mat_,
         Rcpp::Named("model") = Rcpp::List::create(
-            Rcpp::Named("nObs") = object.sample_size()
+            Rcpp::Named("nObs") = object.n_obs_
             ),
         Rcpp::Named("penalty") = Rcpp::List::create(
             Rcpp::Named("l1_lambda_max") = object.l1_lambda_max_,

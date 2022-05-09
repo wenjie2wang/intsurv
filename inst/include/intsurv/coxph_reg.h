@@ -27,11 +27,7 @@ namespace Intsurv {
     {
     protected:
         // internals that depend on the data =================================
-        unsigned int n_obs_;    // number of observations
         double dn_obs_;         // double version of n_obs
-        unsigned int p_;        // number of given predictors
-        arma::uvec ord_;        // index sorting the rows by time and event
-        arma::uvec rev_ord_;    // index reverting the sorting
         bool has_ties_ {false}; // if there exists ties on event_ times
         arma::rowvec x_center_; // the column center of x
         arma::rowvec x_scale_;  // the scale of x
@@ -53,11 +49,6 @@ namespace Intsurv {
         arma::vec riskset_size_; // size of risk-set at d_time
 
         // model data ========================================================
-        // all the following data are sorted accordingly
-        arma::mat x_;           // (sorted and standardized) design matrix
-        arma::vec time_;        // (sorted) observed times
-        arma::vec event_;       // (sorted) event indicators
-
         arma::vec coef0_;       // coef for the standardized x
 
         // inverse matrix of formula (5.9) in Bohning and Lindsay (1988) SIAM
@@ -88,7 +79,16 @@ namespace Intsurv {
         inline void set_cmd_lowerbound(const bool force_update);
 
     public:
-        // control parameters that do not depend on data =====================
+        // model =============================================================
+        unsigned int n_obs_;    // number of observations
+        unsigned int p_;        // number of given predictors
+        arma::uvec ord_;        // index sorting the rows by time and event
+        arma::uvec rev_ord_;    // index reverting the sorting
+        // all the following data are sorted accordingly
+        arma::mat x_;           // (sorted and standardized) design matrix
+        arma::vec time_;        // (sorted) observed times
+        arma::vec event_;       // (sorted) event indicators
+
         bool standardize_;         // is x standardized
         arma::vec offset_;         // offset term
         arma::vec offset_haz_;     // offset term for baseline hazard only
@@ -360,7 +360,10 @@ namespace Intsurv {
             return l1_lambda * l1_norm(beta % penalty_factor) +
                 l2_lambda * sum_of_square(beta);
         }
-
+        inline double net_penalty() const
+        {
+            return net_penalty(coef0_, l1_lambda_, l2_lambda_, penalty_factor_);
+        }
         inline double get_l1_lambda_max(const arma::vec& penalty_factor) const
         {
             arma::uvec active_penalty { arma::find(penalty_factor > 0.0) };
@@ -377,6 +380,10 @@ namespace Intsurv {
                 }
             }
             return l1_lambda_max;
+        }
+        inline void set_l1_lambda_max()
+        {
+            l1_lambda_max_ = get_l1_lambda_max(penalty_factor_);
         }
         // generate and set penalty factor
         inline arma::vec gen_penalty_factor(
@@ -410,6 +417,11 @@ namespace Intsurv {
                 return rev_rescale_coef(start);
             }
             return arma::zeros(p_);
+        }
+
+        inline arma::vec get_xbeta() const
+        {
+            return mat2vec(x_ * coef0_);
         }
 
         // fit regular Cox model
@@ -979,16 +991,7 @@ namespace Intsurv {
             lambda_max_ = 0.0;       // not well defined
         } else {
             // need to determine l1_lambda_max
-            grad_beta = arma::abs(gradient0(beta));
-            l1_lambda_max_ = 0.0;
-            for (arma::uvec::iterator it { active_penalty.begin() };
-                 it != active_penalty.end(); ++it) {
-                double tmp { grad_beta(*it) };
-                tmp /= penalty_factor_(*it);
-                if (l1_lambda_max_ < tmp) {
-                    l1_lambda_max_ = tmp;
-                }
-            };
+            set_l1_lambda_max();
             lambda_max_ = l1_lambda_max_ / std::max(alpha, 1e-2);
             // set up lambda sequence
             if (lambda.empty()) {

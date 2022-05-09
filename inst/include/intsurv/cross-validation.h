@@ -26,7 +26,7 @@ namespace Intsurv {
     class CrossValidation {
     protected:
         unsigned long n_obs_;
-        unsigned long n_folds_ = 10;
+        unsigned long n_folds_ = 5;
 
     public:
         std::vector<arma::uvec> train_index_;
@@ -56,7 +56,7 @@ namespace Intsurv {
         explicit CrossValidation(const unsigned long n_obs) :
             n_obs_ { n_obs }
         {
-            CrossValidation(n_obs_, 10);
+            CrossValidation(n_obs_, 5);
         }
 
         // a special constructor

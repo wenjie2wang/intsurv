@@ -28,23 +28,17 @@ namespace Intsurv {
     {
     protected:
         // internals
-        unsigned int n_obs_;    // number of observations
         double dn_obs_;         // double version of n_obs
         arma::rowvec x_center_; // the column center of x
         arma::rowvec x_scale_;  // the scale of x
         unsigned int int_intercept_;
         unsigned int p0_;      // number of covariates without intercept
-        unsigned int p1_;      // number of covariates with possible intercept
         // iteration matrix in Bohning and Lindsay (1988)
         arma::mat bl_iter_mat_;
         // for regularized coordinate majorization descent
         arma::rowvec cmd_lowerbound_;
-        double pmin_;
+        double pmin_ { 1e-5 };
         arma::vec coef0_;       // coef before rescaling
-
-        // model data ========================================================
-        arma::mat x_;           // (standardized) x
-        arma::vec y_;
 
         //! @param beta coef estimates for the standardized x
         inline arma::vec predict0(const arma::vec& beta) const
@@ -128,6 +122,10 @@ namespace Intsurv {
 
     public:
         // model =============================================================
+        arma::mat x_;           // (standardized) x
+        arma::vec y_;
+        unsigned int n_obs_;    // number of observations
+        unsigned int p_;        // number of covariates with possible intercept
         bool intercept_;
         arma::vec offset_;      // offset term
         // regularization ====================================================
@@ -167,7 +165,7 @@ namespace Intsurv {
             int_intercept_ = static_cast<unsigned int>(intercept);
             n_obs_ = x_.n_rows;
             p0_ = x_.n_cols;
-            p1_ = p0_ + int_intercept_;
+            p_ = p0_ + int_intercept_;
             dn_obs_ = static_cast<double>(n_obs_);
             if (standardize_) {
                 if (intercept_) {
@@ -226,7 +224,7 @@ namespace Intsurv {
                     coef_[0] = coef0_(0) -
                         arma::as_scalar((x_center_ / x_scale_) *
                                         coef0_.elem(non_int_ind));
-                    for (size_t j {1}; j < p1_; ++j) {
+                    for (size_t j {1}; j < p_; ++j) {
                         coef_[j] = coef0_[j] / x_scale_[j - 1];
                     }
                 } else {
@@ -292,11 +290,15 @@ namespace Intsurv {
             return l1_lambda * l1_norm(beta) +
                 l2_lambda * sum_of_square(beta);
         }
+        inline double net_penalty() const
+        {
+            return net_penalty(coef0_, l1_lambda_, l2_lambda_, penalty_factor_);
+        }
         inline double get_l1_lambda_max(const arma::vec& penalty_factor) const
         {
             arma::uvec active_penalty { arma::find(penalty_factor > 0.0) };
             arma::uvec penalty_free { arma::find(penalty_factor == 0.0) };
-            arma::vec beta { arma::zeros(p1_) };
+            arma::vec beta { arma::zeros(p_) };
             arma::vec grad_beta { arma::abs(gradient0(beta)) };
             double l1_lambda_max { 0.0 };
             for (arma::uvec::iterator it { active_penalty.begin() };
@@ -309,24 +311,28 @@ namespace Intsurv {
             }
             return l1_lambda_max;
         }
+        inline void set_l1_lambda_max()
+        {
+            l1_lambda_max_ = get_l1_lambda_max(penalty_factor_);
+        }
         // generate and set penalty factor
         inline arma::vec gen_penalty_factor(
             const arma::vec& penalty_factor = arma::vec()
             ) const
         {
-            if (penalty_factor.n_elem < p1_) {
-                arma::vec out { arma::ones(p1_) };
+            if (penalty_factor.n_elem < p_) {
+                arma::vec out { arma::ones(p_) };
                 out[0] = 0.0;
                 if (penalty_factor.is_empty()) {
                     return out;
                 }
                 if (penalty_factor.n_elem == p0_) {
-                    for (size_t j {1}; j < p1_; ++j) {
+                    for (size_t j {1}; j < p_; ++j) {
                         out[j] = penalty_factor[j - 1];
                     }
                     return out;
                 }
-            } else if (penalty_factor.n_elem == p1_) {
+            } else if (penalty_factor.n_elem == p_) {
                 if (arma::any(penalty_factor < 0.0)) {
                     throw std::range_error(
                         "The 'penalty_factor' cannot be negative.");
@@ -351,10 +357,10 @@ namespace Intsurv {
         // starting values
         inline arma::vec gen_start(const arma::vec& start = arma::vec()) const
         {
-            if (start.n_elem == p1_) {
+            if (start.n_elem == p_) {
                 return rev_rescale_coef(start);
             }
-            return arma::zeros(p1_);
+            return arma::zeros(p_);
         }
 
         // fit regular logistic regression model
@@ -389,11 +395,6 @@ namespace Intsurv {
         // function that helps update y_
         inline void update_y(const arma::vec& y) { y_ = y; }
 
-        // some simple functions
-        inline unsigned int sample_size() const
-        {
-            return n_obs_;
-        }
         // getters
         inline arma::mat get_x(const bool rescale,
                                const bool with_intercept) const
@@ -409,9 +410,9 @@ namespace Intsurv {
             }
             return out;
         }
-        inline arma::vec get_y() const
+        inline arma::vec get_xbeta() const
         {
-            return y_;
+            return mat2vec(x_ * coef0_);
         }
 
     };
@@ -503,7 +504,7 @@ namespace Intsurv {
             ell_verbose = obj_verbose + reg_verbose;
         }
         arma::vec beta_old { beta };
-        for (size_t j {0}; j < p1_; ++j) {
+        for (size_t j {0}; j < p_; ++j) {
             if (is_active[j] == 0) {
                 continue;
             }
@@ -664,7 +665,7 @@ namespace Intsurv {
         l2_lambda_ = l2_lambda;
         // use the given starting values
         arma::vec beta { gen_start(start) };
-        arma::uvec is_active { arma::ones<arma::uvec>(p1_) };
+        arma::uvec is_active { arma::ones<arma::uvec>(p_) };
         net_active_update(beta,
                           is_active,
                           l1_lambda_,
@@ -712,16 +713,7 @@ namespace Intsurv {
             lambda_max_ = 0.0;       // not well defined
         } else {
             // need to determine l1_lambda_max
-            grad_beta = arma::abs(gradient0(beta));
-            l1_lambda_max_ = 0.0;
-            for (arma::uvec::iterator it { active_penalty.begin() };
-                 it != active_penalty.end(); ++it) {
-                double tmp { grad_beta(*it) };
-                tmp /= penalty_factor_(*it);
-                if (l1_lambda_max_ < tmp) {
-                    l1_lambda_max_ = tmp;
-                }
-            };
+            set_l1_lambda_max();
             lambda_max_ = l1_lambda_max_ / std::max(alpha, 1e-2);
             // set up lambda sequence
             if (lambda.empty()) {
@@ -737,7 +729,7 @@ namespace Intsurv {
             }
         }
         // initialize the estimate matrix
-        coef_mat_ = arma::zeros(p1_, lambda_vec_.n_elem);
+        coef_mat_ = arma::zeros(p_, lambda_vec_.n_elem);
         arma::uvec is_active_strong { arma::zeros<arma::uvec>(p_) };
         // for ridge penalty
         if (is_ridge_only) {
@@ -794,7 +786,7 @@ namespace Intsurv {
             // eventually, strong rule will guess correctly
             while (kkt_failed) {
                 arma::uvec is_strong_rule_failed {
-                    arma::zeros<arma::uvec>(p1_)
+                    arma::zeros<arma::uvec>(p_)
                 };
                 // update beta
                 net_active_update(beta, is_active_strong,

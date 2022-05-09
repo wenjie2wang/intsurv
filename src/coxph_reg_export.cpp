@@ -49,7 +49,7 @@ Rcpp::List rcpp_coxph(
     return Rcpp::List::create(
         Rcpp::Named("coef") = Intsurv::arma2rvec(object.coef_),
         Rcpp::Named("model") = Rcpp::List::create(
-            Rcpp::Named("nObs") = object.sample_size()
+            Rcpp::Named("nObs") = object.n_obs_
             ),
         Rcpp::Named("baseline") = Rcpp::List::create(
             Rcpp::Named("time") = Intsurv::arma2rvec(object.unique_time_),
@@ -97,7 +97,7 @@ Rcpp::List rcpp_coxnet1(
         Rcpp::Named("coef") = Intsurv::arma2rvec(object.coef_),
         // Rcpp::Named("en_coef") = Intsurv::arma2rvec(object.en_coef_),
         Rcpp::Named("model") = Rcpp::List::create(
-            Rcpp::Named("nObs") = object.sample_size()
+            Rcpp::Named("nObs") = object.n_obs_
             ),
         Rcpp::Named("baseline") = Rcpp::List::create(
             Rcpp::Named("time") = Intsurv::arma2rvec(object.unique_time_),
@@ -148,7 +148,7 @@ Rcpp::List rcpp_coxnet2(
         Rcpp::Named("coef") = object.coef_mat_,
         // Rcpp::Named("en_coef") = object.en_coef_mat_,
         Rcpp::Named("model") = Rcpp::List::create(
-            Rcpp::Named("nObs") = object.sample_size()
+            Rcpp::Named("nObs") = object.n_obs_
             ),
         Rcpp::Named("penalty") = Rcpp::List::create(
             Rcpp::Named("l1_lambda_max") = object.l1_lambda_max_,
