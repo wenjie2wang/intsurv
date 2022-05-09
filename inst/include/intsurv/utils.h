@@ -785,6 +785,15 @@ namespace Intsurv {
         Rcpp::Rcout << m << "\n";
     }
 
+    unsigned int less_verbose(const unsigned int verbose,
+                              const unsigned int less = 1)
+    {
+        if (verbose <= less) {
+            return 0;
+        }
+        return verbose - less;
+    }
+
 }
 
 #endif
