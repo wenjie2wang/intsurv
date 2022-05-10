@@ -20,6 +20,7 @@
 // [[Rcpp::plugins(cpp11)]]
 #include <intsurv/logistic_reg.h>
 #include <intsurv/utils.h>
+#include <intsurv/control.h>
 
 // fitting regular logistic model by monotonic quadratic approximation algorithm
 // non-integer y vector is allowed
@@ -37,12 +38,11 @@ Rcpp::List rcpp_logistic(
     const unsigned int verbose = 0
     )
 {
-    Intsurv::LogisticReg object {
-        x, y, intercept, standardize
-    };
-    object.set_offset(offset);
-    object.set_pmin(pmin);
-    object.fit(start, max_iter, epsilon, verbose);
+    Intsurv::Control control { max_iter, epsilon, standardize, verbose };
+    control.logistic(intercept, pmin);
+    Intsurv::LogisticReg object { x, y, control };
+    object.set_start(start)->set_offset(offset);
+    object.fit();
     double neg_ll { object.objective() };
     arma::vec prob { object.predict() };
     return Rcpp::List::create(
@@ -50,7 +50,17 @@ Rcpp::List rcpp_logistic(
         Rcpp::Named("model") = Rcpp::List::create(
             Rcpp::Named("prob") = Intsurv::arma2rvec(prob),
             Rcpp::Named("nObs") = object.n_obs_,
+            Rcpp::Named("intercept") = object.control_.intercept_,
+            Rcpp::Named("offset") = Intsurv::arma2rvec(object.control_.offset_),
             Rcpp::Named("negLogL") = neg_ll
+            ),
+        Rcpp::Named("control") = Rcpp::List::create(
+            Rcpp::Named("max_iter") = object.control_.max_iter_,
+            Rcpp::Named("epsilon") = object.control_.epsilon_,
+            Rcpp::Named("standardize") = object.control_.standardize_,
+            Rcpp::Named("start") = Intsurv::arma2rvec(object.control_.start_),
+            Rcpp::Named("verbose") = object.control_.verbose_,
+            Rcpp::Named("pmin") = object.control_.pmin_
             )
         );
 }
@@ -76,11 +86,13 @@ Rcpp::List rcpp_lognet1(
     const unsigned int verbose = 0
     )
 {
-    Intsurv::LogisticReg object { x, y, intercept, standardize };
-    object.set_offset(offset);
-    object.set_pmin(pmin);
-    object.net_fit(l1_lambda, l2_lambda, penalty_factor, start,
-                   varying_active, max_iter, epsilon, verbose);
+    Intsurv::Control control { max_iter, epsilon, standardize, verbose };
+    control.logistic(intercept, pmin)->
+        net(penalty_factor, varying_active)->
+        net_fit(l1_lambda, l2_lambda);
+    Intsurv::LogisticReg object { x, y, control };
+    object.set_start(start)->set_offset(offset);
+    object.net_fit();
     double neg_ll { object.objective() };
     unsigned int coef_df { Intsurv::compute_coef_df(object.coef_) };
     return Rcpp::List::create(
@@ -92,10 +104,10 @@ Rcpp::List rcpp_lognet1(
             ),
         Rcpp::Named("penalty") = Rcpp::List::create(
             Rcpp::Named("l1_lambda_max") = object.l1_lambda_max_,
-            Rcpp::Named("l1_lambda") = object.l1_lambda_,
-            Rcpp::Named("l2_lambda") = object.l2_lambda_,
+            Rcpp::Named("l1_lambda") = object.control_.l1_lambda_,
+            Rcpp::Named("l2_lambda") = object.control_.l2_lambda_,
             Rcpp::Named("penalty_factor") =
-            Intsurv::arma2rvec(object.penalty_factor_)
+            Intsurv::arma2rvec(object.control_.penalty_factor_)
             )
         );
 }
@@ -107,13 +119,13 @@ Rcpp::List rcpp_lognet2(
     const arma::mat& x,
     const arma::vec& y,
     const arma::vec& lambda,
-    const double alpha,
     const unsigned int nlambda,
     const double lambda_min_ratio,
+    const double alpha,
     const arma::vec& penalty_factor,
     const bool intercept = true,
-    const bool standardize = true,
     const arma::vec& offset = 0,
+    const bool standardize = true,
     const bool varying_active = true,
     const unsigned int max_iter = 200,
     const double epsilon = 1e-4,
@@ -121,12 +133,13 @@ Rcpp::List rcpp_lognet2(
     const unsigned int verbose = 0
     )
 {
-    Intsurv::LogisticReg object { x, y, intercept, standardize };
+    Intsurv::Control control { max_iter, epsilon, standardize, verbose };
+    control.logistic(intercept, pmin)->
+        net(penalty_factor, varying_active)->
+        net_path(nlambda, lambda_min_ratio, alpha, lambda);
+    Intsurv::LogisticReg object { x, y, control };
     object.set_offset(offset);
-    object.set_pmin(pmin);
-    object.net_path(lambda, alpha, nlambda, lambda_min_ratio,
-                    penalty_factor, varying_active, max_iter, epsilon,
-                    verbose);
+    object.net_path();
     return Rcpp::List::create(
         Rcpp::Named("coef") = object.coef_mat_,
         Rcpp::Named("model") = Rcpp::List::create(
@@ -135,10 +148,10 @@ Rcpp::List rcpp_lognet2(
         Rcpp::Named("penalty") = Rcpp::List::create(
             Rcpp::Named("l1_lambda_max") = object.l1_lambda_max_,
             Rcpp::Named("lambda_max") = object.lambda_max_,
-            Rcpp::Named("lambda") = Intsurv::arma2rvec(object.lambda_vec_),
-            Rcpp::Named("alpha") = object.alpha_,
+            Rcpp::Named("lambda") = Intsurv::arma2rvec(object.control_.lambda_),
+            Rcpp::Named("alpha") = object.control_.alpha_,
             Rcpp::Named("penalty_factor") =
-            Intsurv::arma2rvec(object.penalty_factor_)
+            Intsurv::arma2rvec(object.control_.penalty_factor_)
             )
         );
 }

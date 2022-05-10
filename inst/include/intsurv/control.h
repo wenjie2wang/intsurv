@@ -31,25 +31,46 @@ namespace Intsurv {
         arma::vec penalty_factor_ { arma::vec() };
         bool varying_active_ { true };
         // single lambda's
-        double l1_lambda_;
-        double l2_lambda_;
+        double l1_lambda_ { 1000.0 };
+        double l2_lambda_ { 1000.0 };
         // solution paths
-        unsigned int nlambda_;
-        double lambda_min_ratio_;
-        double alpha_;
+        unsigned int nlambda_ { 2 };
+        double lambda_min_ratio_ { 1e-2 };
+        double alpha_ { 1.0 };
         arma::vec lambda_ { arma::vec() };
 
         // default constructor
         Control() {}
 
         Control(const unsigned int max_iter,
-                const double epsilon)
+                const double epsilon,
+                const bool standardize = true,
+                const unsigned int verbose = 0)
         {
             if (is_lt(epsilon, 0.0)) {
                 throw std::range_error("The 'epsilon' cannot be negative.");
             }
             max_iter_ = max_iter;
             epsilon_ = epsilon;
+            standardize_ = standardize;
+            verbose_ = verbose;
+        }
+
+        // some setters
+        Control* set_start(const arma::vec& start = arma::vec())
+        {
+            start_ = start;
+            return this;
+        }
+        Control* set_offset(const arma::vec& offset = arma::vec())
+        {
+            offset_ = offset;
+            return this;
+        }
+        Control* set_standardize(const bool standardize = true)
+        {
+            standardize_ = standardize;
+            return this;
         }
 
         // methods to set values for different models
