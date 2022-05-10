@@ -38,7 +38,6 @@ namespace Intsurv {
         // for regularized coordinate majorization descent
         arma::rowvec cmd_lowerbound_;
         double pmin_ { 1e-5 };
-        arma::vec coef0_;       // coef before rescaling
 
         //! @param beta coef estimates for the standardized x
         inline arma::vec predict0(const arma::vec& beta) const
@@ -140,6 +139,7 @@ namespace Intsurv {
         arma::vec lambda_vec_;  // lambda sequence
         double lambda_min_ratio_;
         // outputs ===========================================================
+        arma::vec coef0_;       // coef before rescaling
         // for a single set of l1_lambda and l2_lambda
         arma::vec coef_;        // coef (rescaled for origin x)
         // for a lambda sequence
@@ -333,10 +333,6 @@ namespace Intsurv {
                     return out;
                 }
             } else if (penalty_factor.n_elem == p_) {
-                if (arma::any(penalty_factor < 0.0)) {
-                    throw std::range_error(
-                        "The 'penalty_factor' cannot be negative.");
-                }
                 return penalty_factor;
             }
             // else

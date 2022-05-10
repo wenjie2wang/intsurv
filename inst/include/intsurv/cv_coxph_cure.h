@@ -30,24 +30,22 @@ namespace Intsurv {
         const arma::mat& cox_x,
         const arma::mat& cure_x,
         const bool cure_intercept = true,
-        const unsigned long n_folds = 10,
-        const bool firth = false,
-        const arma::vec& cox_start = 0,
-        const arma::vec& cure_start = 0,
-        const arma::vec& cox_offset = 0,
-        const arma::vec& cure_offset = 0,
+        const unsigned long nfolds = 5,
+        const arma::vec& cox_start = arma::vec(),
+        const arma::vec& cure_start = arma::vec(),
+        const arma::vec& cox_offset = arma::vec(),
+        const arma::vec& cure_offset = arma::vec(),
         const bool cox_standardize = true,
         const bool cure_standardize = true,
-        const unsigned int em_max_iter = 1000,
-        const double em_rel_tol = 1e-4,
-        const unsigned int cox_mstep_max_iter = 200,
-        const double cox_mstep_rel_tol = 1e-4,
-        const unsigned int cure_mstep_max_iter = 200,
-        const double cure_mstep_rel_tol = 1e-4,
+        const unsigned int max_iter = 200,
+        const double epsilon = 1e-4,
+        const unsigned int cox_max_iter = 100,
+        const double cox_epsilon = 1e-4,
+        const unsigned int cure_max_iter = 100,
+        const double cure_epsilon = 1e-4,
         const unsigned int tail_completion = 1,
-        double tail_tau = -1,
+        const double tail_tau = -1,
         const double pmin = 1e-5,
-        const unsigned int early_stop = 0,
         const unsigned int verbose = 0
         )
     {
@@ -80,11 +78,11 @@ namespace Intsurv {
         // cross-validation
         const unsigned long n_case1 { case1_ind.n_elem };
         const unsigned long n_case2 { case2_ind.n_elem };
-        CrossValidation cv_obj_case1 { n_case1, n_folds, which_time_max };
-        CrossValidation cv_obj_case2 { n_case2, n_folds };
+        CrossValidation cv_obj_case1 { n_case1, nfolds, which_time_max };
+        CrossValidation cv_obj_case2 { n_case2, nfolds };
 
-        arma::vec cv_vec { arma::zeros(n_folds) };
-        for (size_t i {0}; i < n_folds; ++i) {
+        arma::vec cv_vec { arma::zeros(nfolds) };
+        for (size_t i {0}; i < nfolds; ++i) {
             // training set
             arma::vec train_time {
                 arma::join_vert(
@@ -165,13 +163,14 @@ namespace Intsurv {
                 cure_intercept, cox_standardize, cure_standardize,
                 train_cox_offset, train_cure_offset
             };
+            cc_obj.set_pmin(pmin);
             // model-fitting
             cc_obj.fit(cox_start, cure_start,
-                       em_max_iter, em_rel_tol,
-                       cox_mstep_max_iter, cox_mstep_rel_tol,
-                       cure_mstep_max_iter, cure_mstep_rel_tol,
-                       firth, tail_completion, tail_tau,
-                       pmin, early_stop, verbose);
+                       max_iter, epsilon,
+                       cox_max_iter, cox_epsilon,
+                       cure_max_iter, cure_epsilon,
+                       tail_completion, tail_tau,
+                       verbose);
             // compute observed log-likelihood function for the test data
             cv_vec(i) = cc_obj.obs_log_likelihood(
                 test_time, test_event, test_cox_x, test_cure_x,
@@ -188,29 +187,30 @@ namespace Intsurv {
         const arma::mat& cox_x,
         const arma::mat& cure_x,
         const bool cure_intercept = true,
-        const unsigned long n_folds = 10,
+        const unsigned long nfolds = 5,
         const double cox_l1_lambda = 0,
         const double cox_l2_lambda = 0,
-        const arma::vec& cox_l1_penalty_factor = 0,
+        const arma::vec& cox_penalty_factor = arma::vec(),
         const double cure_l1_lambda = 0,
         const double cure_l2_lambda = 0,
-        const arma::vec& cure_l1_penalty_factor = 0,
-        const arma::vec& cox_start = 0,
-        const arma::vec& cure_start = 0,
-        const arma::vec& cox_offset = 0,
-        const arma::vec& cure_offset = 0,
+        const arma::vec& cure_penalty_factor = arma::vec(),
+        const arma::vec& cox_start = arma::vec(),
+        const arma::vec& cure_start = arma::vec(),
+        const arma::vec& cox_offset = arma::vec(),
+        const arma::vec& cure_offset = arma::vec(),
         const bool cox_standardize = true,
         const bool cure_standardize = true,
-        const unsigned int em_max_iter = 1000,
-        const double em_rel_tol = 1e-4,
-        const unsigned int cox_mstep_max_iter = 200,
-        const double cox_mstep_rel_tol = 1e-4,
-        const unsigned int cure_mstep_max_iter = 200,
-        const double cure_mstep_rel_tol = 1e-4,
+        const bool cox_varying_active = true,
+        const bool cure_varying_active = true,
+        const unsigned int max_iter = 200,
+        const double epsilon = 1e-4,
+        const unsigned int cox_max_iter = 100,
+        const double cox_epsilon = 1e-4,
+        const unsigned int cure_max_iter = 100,
+        const double cure_epsilon = 1e-4,
         const unsigned int tail_completion = 1,
-        double tail_tau = -1,
+        const double tail_tau = -1,
         const double pmin = 1e-5,
-        const unsigned int early_stop = 0,
         const unsigned int verbose = 0
         )
     {
@@ -243,11 +243,11 @@ namespace Intsurv {
         // cross-validation
         const unsigned long n_case1 { case1_ind.n_elem };
         const unsigned long n_case2 { case2_ind.n_elem };
-        CrossValidation cv_obj_case1 { n_case1, n_folds, which_time_max };
-        CrossValidation cv_obj_case2 { n_case2, n_folds };
+        CrossValidation cv_obj_case1 { n_case1, nfolds, which_time_max };
+        CrossValidation cv_obj_case2 { n_case2, nfolds };
 
-        arma::vec cv_vec { arma::zeros(n_folds) };
-        for (size_t i {0}; i < n_folds; ++i) {
+        arma::vec cv_vec { arma::zeros(nfolds) };
+        for (size_t i {0}; i < nfolds; ++i) {
             // training set
             arma::vec train_time {
                 arma::join_vert(
@@ -328,17 +328,19 @@ namespace Intsurv {
                 cure_intercept, cox_standardize, cure_standardize,
                 train_cox_offset, train_cure_offset
             };
+            cc_obj.set_pmin(pmin);
             // model-fitting
-            cc_obj.regularized_fit(
+            cc_obj.net_fit(
                 cox_l1_lambda, cox_l2_lambda,
                 cure_l1_lambda, cure_l2_lambda,
-                cox_l1_penalty_factor, cure_l1_penalty_factor,
+                cox_penalty_factor, cure_penalty_factor,
                 cox_start, cure_start,
-                em_max_iter, em_rel_tol,
-                cox_mstep_max_iter, cox_mstep_rel_tol,
-                cure_mstep_max_iter, cure_mstep_rel_tol,
+                cox_varying_active, cure_varying_active,
+                max_iter, epsilon,
+                cox_max_iter, cox_epsilon,
+                cure_max_iter, cure_epsilon,
                 tail_completion, tail_tau,
-                pmin, early_stop, verbose
+                verbose
                 );
             // compute observed log-likelihood function for the test data
             cv_vec(i) = cc_obj.obs_log_likelihood(

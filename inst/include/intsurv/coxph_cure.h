@@ -33,9 +33,6 @@ namespace Intsurv {
     protected:
         // caches
         unsigned int cure_p0_;  // coef df of cure part wo intercept
-        arma::uvec case1_ind_;
-        arma::uvec case2_ind_;
-        unsigned int max_event_time_ind_; // index of the maximum event time
         double dn_obs_;         // double version of n_obs_
 
     public:
@@ -43,6 +40,9 @@ namespace Intsurv {
         LogisticReg cure_obj_;
         bool cox_standardize_;
         bool cure_standardize_;
+        arma::uvec case1_ind_;
+        arma::uvec case2_ind_;
+        unsigned int max_event_time_ind_; // index of the maximum event time
 
         // outputs
         unsigned int cox_p_;    // coef df of cox part
@@ -257,8 +257,8 @@ namespace Intsurv {
                           cure_epsilon, 0);
             cure_beta = cure_obj_.coef_;
         }
-        cox_obj_.coef_ = cox_beta;
-        cure_obj_.coef_ = cure_beta;
+        cox_obj_.coef0_ = cox_obj_.coef_ = cox_beta;
+        cure_obj_.coef0_ = cure_obj_.coef_ = cure_beta;
         // initialization
         arma::vec p_vec { arma::zeros(n_obs_) };
         arma::vec estep_v { arma::ones(n_obs_) };
@@ -915,6 +915,8 @@ namespace Intsurv {
         }
         return obs_ell;
     }
+
+
 
 }
 

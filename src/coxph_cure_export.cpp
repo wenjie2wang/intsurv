@@ -19,6 +19,7 @@
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::plugins(cpp11)]]
 #include <intsurv/coxph_cure.h>
+#include <intsurv/cv_coxph_cure.h>
 #include <intsurv/utils.h>
 
 // fit regular Cox cure rate model by EM algorithm
@@ -36,12 +37,12 @@ Rcpp::List rcpp_coxph_cure(
     const arma::vec& cure_offset = 0,
     const bool cox_standardize = true,
     const bool cure_standardize = true,
-    const unsigned int em_max_iter = 200,
-    const double em_rel_tol = 1e-4,
-    const unsigned int cox_mstep_max_iter = 100,
-    const double cox_mstep_rel_tol = 1e-4,
-    const unsigned int cure_mstep_max_iter = 100,
-    const double cure_mstep_rel_tol = 1e-4,
+    const unsigned int max_iter = 200,
+    const double epsilon = 1e-4,
+    const unsigned int cox_max_iter = 100,
+    const double cox_epsilon = 1e-4,
+    const unsigned int cure_max_iter = 100,
+    const double cure_epsilon = 1e-4,
     const unsigned int tail_completion = 1,
     const double tail_tau = -1,
     const double pmin = 1e-5,
@@ -57,17 +58,21 @@ Rcpp::List rcpp_coxph_cure(
     obj.set_pmin(pmin);
     // model-fitting
     obj.fit(cox_start, cure_start,
-            em_max_iter, em_rel_tol,
-            cox_mstep_max_iter, cox_mstep_rel_tol,
-            cure_mstep_max_iter, cure_mstep_rel_tol,
+            max_iter, epsilon,
+            cox_max_iter, cox_epsilon,
+            cure_max_iter, cure_epsilon,
             tail_completion, tail_tau, verbose);
     // initialize bootstrap estimates
     arma::mat boot_cox_coef_mat, boot_cure_coef_mat;
     if (bootstrap > 0) {
         boot_cox_coef_mat = arma::zeros(obj.cox_coef_.n_elem, bootstrap);
         boot_cure_coef_mat = arma::zeros(obj.cure_coef_.n_elem, bootstrap);
-        arma::uvec case1_ind { arma::find(event > 0) };
-        arma::uvec case2_ind { arma::find(event < 1) };
+        const arma::uvec& case1_ind { obj.case1_ind_ };
+        const arma::uvec& case2_ind { obj.case2_ind_ };
+        const arma::vec cox_offset2 {
+            obj.cox_obj_.offset_.elem(obj.cox_obj_.rev_ord_)
+        };
+        const arma::vec& cure_offset2 { obj.cure_obj_.offset_ };
         for (size_t i {0}; i < bootstrap; ++i) {
             // generate a bootstrap sample
             arma::uvec boot_ind {
@@ -84,15 +89,15 @@ Rcpp::List rcpp_coxph_cure(
                 cure_intercept,
                 cox_standardize,
                 cure_standardize,
-                cox_offset.elem(boot_ind),
-                cure_offset.elem(boot_ind),
+                cox_offset2.elem(boot_ind),
+                cure_offset2.elem(boot_ind)
             };
             boot_obj.set_pmin(pmin);
             // fit the bootstarp sample
             boot_obj.fit(obj.cox_coef_, obj.cure_coef_,
-                         em_max_iter, em_rel_tol,
-                         cox_mstep_max_iter, cox_mstep_rel_tol,
-                         cure_mstep_max_iter, cure_mstep_rel_tol,
+                         max_iter, epsilon,
+                         cox_max_iter, cox_epsilon,
+                         cure_max_iter, cure_epsilon,
                          tail_completion, tail_tau, 0);
             boot_cox_coef_mat.col(i) = boot_obj.cox_coef_;
             boot_cure_coef_mat.col(i) = boot_obj.cure_coef_;
@@ -163,12 +168,12 @@ Rcpp::List rcpp_coxph_cure_reg(
     const bool cure_standardize = true,
     const bool cox_varying_active = true,
     const bool cure_varying_active = true,
-    const unsigned int em_max_iter = 200,
-    const double em_rel_tol = 1e-4,
-    const unsigned int cox_mstep_max_iter = 100,
-    const double cox_mstep_rel_tol = 1e-4,
-    const unsigned int cure_mstep_max_iter = 100,
-    const double cure_mstep_rel_tol = 1e-4,
+    const unsigned int max_iter = 200,
+    const double epsilon = 1e-4,
+    const unsigned int cox_max_iter = 100,
+    const double cox_epsilon = 1e-4,
+    const unsigned int cure_max_iter = 100,
+    const double cure_epsilon = 1e-4,
     const unsigned int tail_completion = 1,
     const double tail_tau = -1,
     const double pmin = 1e-5,
@@ -187,36 +192,35 @@ Rcpp::List rcpp_coxph_cure_reg(
         cox_penalty_factor, cure_penalty_factor,
         cox_start, cure_start,
         cox_varying_active, cure_varying_active,
-        em_max_iter, em_rel_tol,
-        cox_mstep_max_iter, cox_mstep_rel_tol,
-        cure_mstep_max_iter, cure_mstep_rel_tol,
+        max_iter, epsilon,
+        cox_max_iter, cox_epsilon,
+        cure_max_iter, cure_epsilon,
         tail_completion, tail_tau, verbose
         );
     // cross-validation
     arma::vec cv_vec;
-    // if (cv_nfolds > 1) {
-    //     cv_vec = Intsurv::cv_coxph_cure_reg(
-    //         time, event, cox_x, cure_x, cure_intercept,
-    //         cv_nfolds,
-    //         cox_l1_lambda, cox_l2_lambda,
-    //         cox_penalty_factor,
-    //         cure_l1_lambda, cure_l2_lambda,
-    //         cure_penalty_factor,
-    //         cox_start, cure_start,
-    //         cox_offset, cure_offset,
-    //         cox_standardize, cure_standardize,
-    //         em_max_iter, em_rel_tol,
-    //         cox_mstep_max_iter, cox_mstep_rel_tol,
-    //         cure_mstep_max_iter, cure_mstep_rel_tol,
-    //         tail_completion, tail_tau,
-    //         pmin, verbose
-    //         );
-    // }
+    if (cv_nfolds > 1) {
+        cv_vec = Intsurv::cv_coxph_cure_reg(
+            time, event,
+            cox_x, cure_x,
+            cure_intercept,
+            cv_nfolds,
+            cox_l1_lambda, cox_l2_lambda, cox_penalty_factor,
+            cure_l1_lambda, cure_l2_lambda, cure_penalty_factor,
+            obj.cox_coef_, obj.cure_coef_,
+            cox_offset, cure_offset,
+            cox_standardize, cure_standardize,
+            cox_varying_active, cure_varying_active,
+            max_iter, epsilon,
+            cox_max_iter, cox_epsilon,
+            cure_max_iter, cure_epsilon,
+            tail_completion, tail_tau,
+            pmin, verbose
+            );
+    }
     return Rcpp::List::create(
         Rcpp::Named("cox_coef") = Intsurv::arma2rvec(obj.cox_coef_),
         Rcpp::Named("cure_coef") = Intsurv::arma2rvec(obj.cure_coef_),
-        // Rcpp::Named("cox_en_coef") = Intsurv::arma2rvec(obj.cox_en_coef_),
-        // Rcpp::Named("cure_en_coef") = Intsurv::arma2rvec(obj.cure_en_coef_),
         Rcpp::Named("baseline") = Rcpp::List::create(
             Rcpp::Named("time") = Intsurv::arma2rvec(obj.unique_time_),
             Rcpp::Named("h0_est") = Intsurv::arma2rvec(obj.h0_est_),
@@ -291,12 +295,14 @@ Rcpp::List rcpp_coxph_cure_vs(
     const arma::vec& cure_offset,
     const bool cox_standardize = true,
     const bool cure_standardize = true,
-    const unsigned int em_max_iter = 200,
-    const double em_rel_tol = 1e-4,
-    const unsigned int cox_mstep_max_iter = 100,
-    const double cox_mstep_rel_tol = 1e-4,
-    const unsigned int cure_mstep_max_iter = 100,
-    const double cure_mstep_rel_tol = 1e-4,
+    const bool cox_varying_active = true,
+    const bool cure_varying_active = true,
+    const unsigned int max_iter = 200,
+    const double epsilon = 1e-4,
+    const unsigned int cox_max_iter = 100,
+    const double cox_epsilon = 1e-4,
+    const unsigned int cure_max_iter = 100,
+    const double cure_epsilon = 1e-4,
     const unsigned int tail_completion = 1,
     const double tail_tau = -1,
     const double pmin = 1e-5,
@@ -354,8 +360,6 @@ Rcpp::List rcpp_coxph_cure_vs(
     const unsigned int cure_p { obj.cure_p_ };
     arma::mat cox_coef_mat { arma::zeros(cox_p, n_lambda) };
     arma::mat cure_coef_mat { arma::zeros(cure_p, n_lambda) };
-    // arma::mat cox_en_coef_mat { arma::zeros(cox_p, n_lambda) };
-    // arma::mat cure_en_coef_mat { arma::zeros(cure_p, n_lambda) };
     arma::vec bic1 { arma::zeros(n_lambda) }, bic2 { bic1 }, aic { bic1 };
     arma::vec coef_df { bic1 }, negLogL { bic1 };
     arma::mat lambda_mat { arma::zeros(n_lambda, 4) };
@@ -384,32 +388,33 @@ Rcpp::List rcpp_coxph_cure_vs(
                 cure_l1_lambda, cure_l2_lambda,
                 cox_penalty_factor, cure_penalty_factor,
                 cox_warm_start, cure_warm_start,
-                em_max_iter, em_rel_tol,
-                cox_mstep_max_iter, cox_mstep_rel_tol,
-                cure_mstep_max_iter, cure_mstep_rel_tol,
+                max_iter, epsilon,
+                cox_max_iter, cox_epsilon,
+                cure_max_iter, cure_epsilon,
                 tail_completion, tail_tau,
                 pmin, verbose
                 );
             // cross-validation
             arma::vec cv_vec;
-            // if (cv_nfolds > 1) {
-            //     cv_vec = Intsurv::cv_coxph_cure_reg(
-            //         time, event, cox_x, cure_x,
-            //         cure_intercept, cv_nfolds,
-            //         cox_l1_lambda, cox_l2_lambda,
-            //         cox_penalty_factor,
-            //         cure_l1_lambda, cure_l2_lambda,
-            //         cure_penalty_factor,
-            //         cox_warm_start, cure_warm_start,
-            //         cox_offset, cure_offset,
-            //         cox_standardize, cure_standardize,
-            //         em_max_iter, em_rel_tol,
-            //         cox_mstep_max_iter, cox_mstep_rel_tol,
-            //         cure_mstep_max_iter, cure_mstep_rel_tol,
-            //         tail_completion, tail_tau,
-            //         pmin, 0
-            //         );
-            // }
+            if (cv_nfolds > 1) {
+                cv_vec = Intsurv::cv_coxph_cure_reg(
+                    time, event, cox_x, cure_x,
+                    cure_intercept, cv_nfolds,
+                    cox_l1_lambda, cox_l2_lambda,
+                    cox_penalty_factor,
+                    cure_l1_lambda, cure_l2_lambda,
+                    cure_penalty_factor,
+                    obj.cox_coef_, obj.cure_coef_,
+                    cox_offset, cure_offset,
+                    cox_standardize, cure_standardize,
+                    cox_varying_active, cure_varying_active,
+                    max_iter, epsilon,
+                    cox_max_iter, cox_epsilon,
+                    cure_max_iter, cure_epsilon,
+                    tail_completion, tail_tau,
+                    pmin, 0
+                    );
+            }
             // update starting value
             cox_warm_start = obj.cox_coef_;
             cure_warm_start = obj.cure_coef_;
@@ -432,7 +437,7 @@ Rcpp::List rcpp_coxph_cure_vs(
             lambda_mat(iter, 1) = cox_l2_lambda;
             lambda_mat(iter, 2) = cure_l1_lambda;
             lambda_mat(iter, 3) = cure_l2_lambda;
-            cv_loglik(iter) = arma::sum(cv_vec);
+            cv_loglik(iter) = arma::mean(cv_vec);
             // update iterators
             iter++;
         }
@@ -441,8 +446,6 @@ Rcpp::List rcpp_coxph_cure_vs(
     return Rcpp::List::create(
         Rcpp::Named("surv_coef") = cox_coef_mat.t(),
         Rcpp::Named("cure_coef") = cure_coef_mat.t(),
-        // Rcpp::Named("surv_en_coef") = cox_en_coef_mat.t(),
-        // Rcpp::Named("cure_en_coef") = cure_en_coef_mat.t(),
         Rcpp::Named("model") = Rcpp::List::create(
             Rcpp::Named("nObs") = obj.n_obs_,
             Rcpp::Named("nEvent") = obj.n_event_,
@@ -459,7 +462,7 @@ Rcpp::List rcpp_coxph_cure_vs(
             Rcpp::Named("cure_alpha") = cure_alpha,
             Rcpp::Named("surv_l1_lambda_max") = obj.cox_obj_.l1_lambda_max_,
             Rcpp::Named("cure_l1_lambda_max") = obj.cure_obj_.l1_lambda_max_,
-            Rcpp::Named("surv_l1_penalty_factor") =
+            Rcpp::Named("surv_penalty_factor") =
             Intsurv::arma2rvec(obj.cox_obj_.penalty_factor_),
             Rcpp::Named("cure_penalty_factor") =
             Intsurv::arma2rvec(obj.cure_obj_.penalty_factor_)

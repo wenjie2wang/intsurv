@@ -48,9 +48,6 @@ namespace Intsurv {
         arma::vec delta_n_;      // event counts at d_time
         arma::vec riskset_size_; // size of risk-set at d_time
 
-        // model data ========================================================
-        arma::vec coef0_;       // coef for the standardized x
-
         // inverse matrix of formula (5.9) in Bohning and Lindsay (1988) SIAM
         arma::mat inv_bl_cov_lowerbound_;
         // for regularized regression
@@ -104,6 +101,7 @@ namespace Intsurv {
         double lambda_min_ratio_;
 
         // outputs ===========================================================
+        arma::vec coef0_;       // coef for the standardized x
         // for a single l1_lambda_ and l2_lambda_
         arma::vec coef_;        // covariate coefficient estimates
         // for a lambda sequence
