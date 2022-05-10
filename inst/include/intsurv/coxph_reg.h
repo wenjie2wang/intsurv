@@ -419,9 +419,20 @@ namespace Intsurv {
             return arma::zeros(p_);
         }
 
+        inline arma::vec get_xbeta(const arma::vec& beta) const
+        {
+            if (standardize_) {
+                arma::vec xbeta;
+                // re-scale the input beta
+                arma::vec beta0 { beta % x_scale_.t() };
+                xbeta = x_ * beta0 + arma::as_scalar(x_center_ * beta);
+                return xbeta;
+            }
+            return mat2vec(x_ * beta);
+        }
         inline arma::vec get_xbeta() const
         {
-            return mat2vec(x_ * coef0_);
+            return get_xbeta(coef_);
         }
 
         // fit regular Cox model
@@ -478,14 +489,7 @@ namespace Intsurv {
     // here beta is the estimate for non-standardized data
     inline void CoxphReg::compute_haz_surv_time(const arma::vec& beta)
     {
-        arma::vec xbeta;
-        if (standardize_) {
-            // re-scale the input beta
-            arma::vec beta0 { beta % x_scale_.t() };
-            xbeta = x_ * beta0 + arma::as_scalar(x_center_ * beta);
-        } else {
-            xbeta = x_ * beta;
-        }
+        arma::vec xbeta { get_xbeta(beta) };
         arma::vec exp_risk_score { arma::exp(xbeta + offset_) };
         // 1. hazard rate function
         arma::vec h0_numer { aggregate_sum(event_, time_, false) };

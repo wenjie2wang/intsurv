@@ -224,7 +224,7 @@ Rcpp::List rcpp_coxph_cure_reg(
             Rcpp::Named("S0_est") = Intsurv::arma2rvec(obj.S0_est_)
             ),
         Rcpp::Named("fitted") = Rcpp::List::create(
-            Rcpp::Named("cox_xBeta") = Intsurv::arma2rvec(obj.cox_xbeta_),
+            Rcpp::Named("surv_xBeta") = Intsurv::arma2rvec(obj.cox_xbeta_),
             Rcpp::Named("cure_xBeta") = Intsurv::arma2rvec(obj.cure_xbeta_),
             Rcpp::Named("susceptible_prob") =
             Intsurv::arma2rvec(obj.susceptible_prob_),

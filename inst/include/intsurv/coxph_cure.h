@@ -814,8 +814,8 @@ namespace Intsurv {
         arma::vec new_event,
         arma::mat new_cox_x,
         arma::mat new_cure_x,
-        arma::vec new_cox_offset = 0,
-        arma::vec new_cure_offset = 0
+        arma::vec new_cox_offset = arma::vec(),
+        arma::vec new_cure_offset = arma::vec()
         ) const
     {
         // check if the number of covariates matchs the fitted model
