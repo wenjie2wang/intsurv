@@ -47,6 +47,7 @@ namespace Intsurv {
             }
             return arma::zeros(p_);
         }
+
         // process offset
         inline arma::vec gen_offset(const arma::vec& offset = arma::vec()) const
         {
@@ -60,6 +61,7 @@ namespace Intsurv {
                 "The length of the specified offset must match sample size."
                 );
         }
+
         // process penalty factor
         inline arma::vec gen_penalty_factor(
             const arma::vec& penalty_factor = arma::vec()
@@ -78,6 +80,10 @@ namespace Intsurv {
                     return out;
                 }
             } else if (penalty_factor.n_elem == p_) {
+                if (arma::any(penalty_factor < 0.0)) {
+                    throw std::range_error(
+                        "The 'penalty_factor' cannot be negative.");
+                }
                 return penalty_factor;
             }
             // else
@@ -92,6 +98,7 @@ namespace Intsurv {
             }
             return this;
         }
+
         inline LogisticReg* check_offset()
         {
             if (control_.offset_.n_elem != n_obs_) {
@@ -99,6 +106,7 @@ namespace Intsurv {
             }
             return this;
         }
+
         inline LogisticReg* check_penalty_factor()
         {
             if (control_.penalty_factor_.n_elem != p_) {
@@ -119,6 +127,7 @@ namespace Intsurv {
             set_pmin_bound(p_vec, control_.pmin_);
             return p_vec;
         }
+
         inline double objective0(const arma::vec& beta) const
         {
             double res { 0.0 };
@@ -130,16 +139,19 @@ namespace Intsurv {
             }
             return res / dn_obs_;
         }
+
         inline arma::vec gradient0(const arma::vec& beta) const
         {
             return x_.t() * (predict0(beta) - y_) / dn_obs_;
         }
+
         // define gradient0 function at k-th dimension
         inline double gradient0(const arma::vec& beta,
                                 const unsigned int k) const
         {
             return arma::accu((predict0(beta) - y_) % x_.col(k)) / dn_obs_;
         }
+
         // define objective function and overwrites graidient
         inline double objective0(const arma::vec& beta,
                                  arma::vec& grad) const
@@ -155,6 +167,7 @@ namespace Intsurv {
             };
             return res;
         }
+
         // compute iteration matrix in Bohning and Lindsay (1988)
         inline void set_bl_iter_mat(const bool force_update = false)
         {
@@ -162,6 +175,7 @@ namespace Intsurv {
                 bl_iter_mat_ = 4 * arma::inv_sympd(x_.t() * x_);
             }
         }
+
         // compute cov lowerbound used in regularied model
         inline void set_cmd_lowerbound(const bool force_update = false)
         {
@@ -170,6 +184,7 @@ namespace Intsurv {
                     (4.0 * dn_obs_);
             }
         }
+
         // update step for regularized logistic regression model
         inline void net_one_update(arma::vec& beta,
                                    arma::uvec& is_active,
@@ -178,6 +193,7 @@ namespace Intsurv {
                                    const arma::vec& penalty_factor,
                                    const bool update_active,
                                    const unsigned int verbose);
+
         inline void net_active_update(arma::vec& beta,
                                       arma::uvec& is_active,
                                       const double l1_lambda,
@@ -262,7 +278,8 @@ namespace Intsurv {
             control_.offset_ = arma::zeros(n_obs_);
             return this;
         }
-        inline LogisticReg* set_penalty_factor(const arma::vec& penalty_factor)
+        inline LogisticReg* set_penalty_factor(
+            const arma::vec& penalty_factor = arma::vec())
         {
             control_.penalty_factor_ = gen_penalty_factor(penalty_factor);
             return this;
