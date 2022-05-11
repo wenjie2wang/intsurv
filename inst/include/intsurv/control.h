@@ -72,6 +72,11 @@ namespace Intsurv {
             standardize_ = standardize;
             return this;
         }
+        Control* set_verbose(const unsigned int verbose = 0)
+        {
+            verbose_ = verbose;
+            return this;
+        }
 
         // methods to set values for different models
         Control* logistic(const bool intercept = true,
