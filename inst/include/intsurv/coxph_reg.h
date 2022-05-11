@@ -321,6 +321,10 @@ namespace Intsurv {
             control_.start_ = gen_start(start);
             return this;
         }
+        inline CoxphReg* set_start()
+        {
+            return set_start(control_.start_);
+        }
 
         inline CoxphReg* set_offset(const arma::vec& offset,
                                     const bool is_sorted = true)
@@ -338,6 +342,10 @@ namespace Intsurv {
             }
             return this;
         }
+        inline CoxphReg* set_offset()
+        {
+            return set_offset(control_.offset_, false);
+        }
 
         inline CoxphReg* reset_offset()
         {
@@ -350,12 +358,14 @@ namespace Intsurv {
             return this;
         }
 
-        inline CoxphReg* set_penalty_factor(
-            const arma::vec& penalty_factor = arma::vec()
-            )
+        inline CoxphReg* set_penalty_factor(const arma::vec& penalty_factor)
         {
             control_.penalty_factor_ = gen_penalty_factor(penalty_factor);
             return this;
+        }
+        inline CoxphReg* set_penalty_factor()
+        {
+            return set_penalty_factor(control_.penalty_factor_);
         }
 
         // set offset for denominator in baseline hazard function

@@ -266,11 +266,19 @@ namespace Intsurv {
             control_.start_ = gen_start(start);
             return this;
         }
+        inline LogisticReg* set_start()
+        {
+            return set_start(control_.start_);
+        }
         // set offset
         inline LogisticReg* set_offset(const arma::vec& offset)
         {
             control_.offset_ = gen_offset(offset);
             return this;
+        }
+        inline LogisticReg* set_offset()
+        {
+            return set_offset(control_.offset_);
         }
         // reset offset to zeros
         inline LogisticReg* reset_offset()
@@ -278,11 +286,14 @@ namespace Intsurv {
             control_.offset_ = arma::zeros(n_obs_);
             return this;
         }
-        inline LogisticReg* set_penalty_factor(
-            const arma::vec& penalty_factor = arma::vec())
+        inline LogisticReg* set_penalty_factor(const arma::vec& penalty_factor)
         {
             control_.penalty_factor_ = gen_penalty_factor(penalty_factor);
             return this;
+        }
+        inline LogisticReg* set_penalty_factor()
+        {
+            return set_penalty_factor(control_.penalty_factor_);
         }
 
         // transform coef for standardized data to the one for original data
