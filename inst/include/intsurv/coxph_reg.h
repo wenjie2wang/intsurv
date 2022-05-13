@@ -90,21 +90,20 @@ namespace Intsurv {
             if (offset.n_elem == n_obs_) {
                 return offset;
             }
-            if (offset.n_elem == 1 || offset.empty()) {
-                return arma::zeros(n_obs_);
-            }
-            throw std::length_error(
-                "The length of the specified offset must match sample size."
-                );
+            // else
+            return arma::zeros(n_obs_);
+            // if (offset.n_elem == 1 || offset.empty()) {
+            //     return arma::zeros(n_obs_);
+            // }
+            // throw std::length_error(
+            //     "The length of the specified offset must match sample size."
+            //     );
         }
         // generate and set penalty factor
         inline arma::vec gen_penalty_factor(
             const arma::vec& penalty_factor = arma::vec()
             ) const
         {
-            if (penalty_factor.is_empty()) {
-                return arma::ones(p_);
-            }
             if (penalty_factor.n_elem == p_) {
                 if (arma::any(penalty_factor < 0.0)) {
                     throw std::range_error(
@@ -113,7 +112,8 @@ namespace Intsurv {
                 return penalty_factor;
             }
             // else
-            throw std::range_error("Incorrect length of the 'penalty_factor'.");
+            return arma::ones(p_);
+            // throw std::range_error("Incorrect length of the 'penalty_factor'.");
         }
 
         // make sure the following are well set
@@ -265,7 +265,7 @@ namespace Intsurv {
                 d_x_ = aggregate_sum(d_x_, d_time0_);
             }
             // initialize offset
-            reset_offset();
+            set_offset();
             reset_offset_haz();
             riskset_size_ = arma::ones(time_.n_elem);
             riskset_size_ = cum_sum(riskset_size_, true).elem(uni_event_ind_);
@@ -486,6 +486,21 @@ namespace Intsurv {
         inline void set_l1_lambda_max()
         {
             l1_lambda_max_ = get_l1_lambda_max(control_.penalty_factor_);
+        }
+
+        inline arma::mat get_x(const bool rescale,
+                               const bool resort) const
+        {
+            arma::mat out {x_};
+            if (resort) {
+                out = out.rows(rev_ord_);
+            }
+            if (rescale && control_.standardize_) {
+                for (size_t j {0}; j < p_; ++j) {
+                    out.col(j) = x_scale_(j) * out.col(j) + x_center_(j);
+                }
+            }
+            return out;
         }
 
         inline arma::vec get_xbeta(const arma::vec& beta) const

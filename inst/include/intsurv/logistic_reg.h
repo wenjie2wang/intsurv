@@ -54,12 +54,13 @@ namespace Intsurv {
             if (offset.n_elem == n_obs_) {
                 return offset;
             }
-            if (offset.n_elem == 1 || offset.empty()) {
-                return arma::zeros(n_obs_);
-            }
-            throw std::length_error(
-                "The length of the specified offset must match sample size."
-                );
+            return arma::zeros(n_obs_);
+            // if (offset.n_elem == 1 || offset.empty()) {
+            //     return arma::zeros(n_obs_);
+            // }
+            // throw std::length_error(
+            //     "The length of the specified offset must match sample size."
+            //     );
         }
 
         // process penalty factor
@@ -67,27 +68,23 @@ namespace Intsurv {
             const arma::vec& penalty_factor = arma::vec()
             ) const
         {
-            if (penalty_factor.n_elem < p_) {
-                arma::vec out { arma::ones(p_) };
-                out[0] = 0.0;
-                if (penalty_factor.is_empty()) {
-                    return out;
-                }
-                if (penalty_factor.n_elem == p0_) {
-                    for (size_t j {1}; j < p_; ++j) {
-                        out[j] = penalty_factor[j - 1];
-                    }
-                    return out;
-                }
-            } else if (penalty_factor.n_elem == p_) {
+            if (penalty_factor.n_elem == p_) {
                 if (arma::any(penalty_factor < 0.0)) {
                     throw std::range_error(
                         "The 'penalty_factor' cannot be negative.");
                 }
                 return penalty_factor;
             }
+            arma::vec out { arma::ones(p_) };
+            out[0] = 0.0;
+            if (penalty_factor.n_elem == p0_) {
+                for (size_t j {1}; j < p_; ++j) {
+                    out[j] = penalty_factor[j - 1];
+                }
+                return out;
+            }
             // else
-            throw std::range_error("Incorrect length of the 'penalty_factor'.");
+            return out;
         }
 
         // make sure the following are well set
@@ -259,6 +256,7 @@ namespace Intsurv {
             if (control_.intercept_) {
                 x_ = arma::join_horiz(arma::ones(n_obs_), x_);
             }
+            set_offset();
         }
 
         inline LogisticReg* set_start(const arma::vec& start)
@@ -422,13 +420,15 @@ namespace Intsurv {
                                const bool with_intercept) const
         {
             arma::mat out {x_};
+            if (rescale && control_.standardize_) {
+                for (size_t j { 0 }; j < p0_; ++j) {
+                    out.col(j + int_intercept_) =
+                        x_scale_(j) * out.col(j + int_intercept_) +
+                        x_center_(j);
+                }
+            }
             if (! with_intercept && control_.intercept_) {
                 out.shed_col(0);
-            }
-            if (rescale && control_.standardize_) {
-                for (size_t j {0}; j < out.n_cols; ++j) {
-                    out.col(j) = x_scale_(j) * out.col(j) + x_center_(j);
-                }
             }
             return out;
         }
