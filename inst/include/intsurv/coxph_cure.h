@@ -46,7 +46,7 @@ namespace Intsurv {
         unsigned int max_event_time_ind_; // index of the maximum event time
 
         // outputs
-        unsigned int surv_p_;    // coef df of cox part
+        unsigned int surv_p_;   // coef df of cox part
         unsigned int cure_p_;   // coef df of cure part wi intercept
         arma::vec surv_coef_;
         arma::vec cure_coef_;
@@ -154,7 +154,7 @@ namespace Intsurv {
             bic1_ = std::log(dn_obs_) * coef_df_ + 2 * neg_ll_;
         }
         inline void compute_bic2() {
-            bic2_ = std::log(case1_ind_.n_elem) *
+            bic2_ = std::log(static_cast<double>(case1_ind_.n_elem)) *
                 coef_df_ + 2 * neg_ll_;
         }
         inline void compute_aic() {
@@ -228,6 +228,9 @@ namespace Intsurv {
             cure_beta = cure_obj_.coef_;
             s0_wi_tail = surv_obj_.S0_time_;
             s_wi_tail = surv_obj_.S_time_;
+            // set them as starting values
+            surv_obj_.control_.set_start(surv_beta);
+            cure_obj_.control_.set_start(cure_beta);
             // tail completion for the conditional survival function
             switch(control_.tail_completion_) {
                 case 0:
@@ -279,7 +282,9 @@ namespace Intsurv {
             if (control_.verbose_ > 1) {
                 Rcpp::Rcout << "\n"
                             << std::string(40, '-')
-                            << "\nRunning M-step for the survival layer:";
+                            << "\n"
+                            << "Running M-step for the survival layer:"
+                            << "\n";
             }
             surv_obj_.set_offset_haz(arma::log(estep_v));
             surv_obj_.fit();
@@ -287,21 +292,26 @@ namespace Intsurv {
                 Rcpp::Rcout << "\n"
                             << std::string(40, '-')
                             << "\n"
-                            << "The M-step for the survival layer was done.\n";
+                            << "The M-step for the survival layer was done."
+                            << "\n";
             }
             Rcpp::checkUserInterrupt();
             // M-step for the Cure layer
             if (control_.verbose_ > 1) {
                 Rcpp::Rcout << "\n"
                             << std::string(40, '-')
-                            << "\nRunning M-step for the cure layer:";
+                            << "\n"
+                            << "Running M-step for the cure layer:"
+                            << "\n";
             }
             cure_obj_.update_y(estep_v);
             cure_obj_.fit();
             if (control_.verbose_ > 1) {
                 Rcpp::Rcout << "\n"
                             << std::string(40, '-')
-                            << "\nThe M-step for the cure layer was done.\n";
+                            << "\n"
+                            << "The M-step for the cure layer was done."
+                            << "\n";
             }
             // check if has any `nan`
             if (surv_obj_.coef_.has_nan() || cure_obj_.coef_.has_nan()) {
@@ -382,12 +392,12 @@ namespace Intsurv {
         }
         // standardize
         if (surv_standardize0_) {
-            surv_obj_.control_.standardize_ = surv_standardize0_;
+            surv_obj_.control_.set_standardize(surv_standardize0_);
             surv_obj_.rescale_estimates();
             surv_obj_.est_haz_surv();
         }
         if (cure_standardize0_) {
-            cure_obj_.control_.standardize_ = cure_standardize0_;
+            cure_obj_.control_.set_standardize(cure_standardize0_);
             cure_obj_.rescale_coef();
         }
         // reset surv_obj_ and cure_obj_ in case of further usage
@@ -482,6 +492,9 @@ namespace Intsurv {
             cure_beta = cure_obj_.coef_;
             s0_wi_tail = surv_obj_.S0_time_;
             s_wi_tail = surv_obj_.S_time_;
+            // set them as starting values
+            surv_obj_.control_.set_start(surv_beta);
+            cure_obj_.control_.set_start(cure_beta);
             // tail completion for the conditional survival function
             switch(control_.tail_completion_) {
                 case 0:
