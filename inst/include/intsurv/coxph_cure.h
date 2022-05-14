@@ -60,7 +60,7 @@ namespace Intsurv {
         arma::vec estep_susceptible_;
         unsigned int n_obs_;    // number of observations
         unsigned int n_event_;  // number of events
-        unsigned int cox_coef_df_;
+        unsigned int surv_coef_df_;
         unsigned int cure_coef_df_;
         unsigned int coef_df_;
         double bic1_;
@@ -257,14 +257,14 @@ namespace Intsurv {
                     etail_lambda = - std::log(s0_tau / max_event_time);
                     for (size_t j: case2_ind_) {
                         // exponential tail by Peng (2003)
-                        arma::vec cox_xbeta { surv_obj_.get_xbeta() };
+                        arma::vec surv_xbeta { surv_obj_.get_xbeta() };
                         if (time(j) > max_event_time) {
                             surv_obj_.S0_time_(j) = std::exp(
                                 - etail_lambda * time(j)
                                 );
                             surv_obj_.S_time_(j) = std::pow(
                                 surv_obj_.S0_time_(j),
-                                std::exp(cox_xbeta(j))
+                                std::exp(surv_xbeta(j))
                                 );
                         }
                     }
@@ -351,7 +351,7 @@ namespace Intsurv {
                             << "\niteration: "
                             << n_iter_;
                 if (control_.verbose_ > 2) {
-                    Rcpp::Rcout << "\n  Cox coef: "
+                    Rcpp::Rcout << "\n  surv coef: "
                                 << arma2rvec(surv_obj_.coef_)
                                 << "\n    relative diff: "
                                 << tol1
@@ -412,9 +412,9 @@ namespace Intsurv {
         H0_est_ = surv_obj_.H0_est_;
         S0_est_ = surv_obj_.S0_est_;
         neg_ll_ = - obs_log_likelihood();
-        cox_coef_df_ = compute_coef_df(surv_obj_.coef_);
+        surv_coef_df_ = compute_coef_df(surv_obj_.coef_);
         cure_coef_df_ = compute_coef_df(cure_obj_.coef_);
-        coef_df_ = cox_coef_df_ + cure_coef_df_;
+        coef_df_ = surv_coef_df_ + cure_coef_df_;
         compute_bic1();
         compute_bic2();
         compute_aic();
@@ -435,7 +435,7 @@ namespace Intsurv {
         estep_susceptible_ = estep_v.elem(rev_ord);
         estep_cured_ = 1 - estep_susceptible_;
         // compute weighted c-index
-        c_index_ = Intsurv::Concordance(
+        c_index_ = Concordance(
             time, event, surv_xbeta_, p_vec_event
             ).index_;
     }
@@ -521,14 +521,14 @@ namespace Intsurv {
                     etail_lambda = - std::log(s0_tau / max_event_time);
                     for (size_t j: case2_ind_) {
                         // exponential tail by Peng (2003)
-                        arma::vec cox_xbeta { surv_obj_.get_xbeta() };
+                        arma::vec surv_xbeta { surv_obj_.get_xbeta() };
                         if (time(j) > max_event_time) {
                             surv_obj_.S0_time_(j) = std::exp(
                                 - etail_lambda * time(j)
                                 );
                             surv_obj_.S_time_(j) = std::pow(
                                 surv_obj_.S0_time_(j),
-                                std::exp(cox_xbeta(j))
+                                std::exp(surv_xbeta(j))
                                 );
                         }
                     }
@@ -590,15 +590,28 @@ namespace Intsurv {
             // control_.verbose_ tracing for objective function
             if (control_.verbose_ > 0) {
                 // compuete the regularized objective function
-                double reg_cox { surv_obj_.net_penalty() };
+                double reg_surv { surv_obj_.net_penalty() };
                 double reg_cure { cure_obj_.net_penalty() };
-                reg_obj = - obs_ell / dn_obs_ + reg_cox + reg_cure;
+                obs_ell = 0.0;
+                // for case 1
+                for (size_t j: case1_ind_) {
+                    obs_ell += std::log(p_vec(j)) +
+                        std::log(surv_obj_.h_time_(j)) -
+                        surv_obj_.H_time_(j);
+                }
+                // for case 2
+                for (size_t j: case2_ind_) {
+                    obs_ell += std::log(
+                        p_vec(j) * surv_obj_.S_time_(j) + (1 - p_vec(j))
+                        );
+                }
+                reg_obj = - obs_ell / dn_obs_ + reg_surv + reg_cure;
                 Rcpp::Rcout << "\n"
                             << std::string(50, '=')
                             << "\niteration: "
                             << n_iter_;
                 if (control_.verbose_ > 2) {
-                    Rcpp::Rcout << "\n  Cox coef: "
+                    Rcpp::Rcout << "\n  surv coef: "
                                 << arma2rvec(surv_obj_.coef_)
                                 << "\n    relative diff: " << tol1
                                 << "\n  cure coef: "
@@ -609,9 +622,9 @@ namespace Intsurv {
                             << - obs_ell
                             << "\n  regularized objective function: "
                             << reg_obj
-                            << "\n    penalty on Cox model: "
-                            << reg_cox
-                            << "\n    penalty on cure layer: "
+                            << "\n    penalty on surv part: "
+                            << reg_surv
+                            << "\n    penalty on cure part: "
                             << reg_cure
                             << "\n";
                 if (reg_obj > reg_obj_old) {
@@ -654,27 +667,21 @@ namespace Intsurv {
         // prepare outputs
         surv_coef_ = surv_obj_.coef_;
         cure_coef_ = cure_obj_.coef_;
-        // cox_en_coef_ = surv_obj_.en_coef_;
-        // cure_en_coef_ = cure_obj_.en_coef_;
 
         unique_time_ = surv_obj_.unique_time_;
         h0_est_ = surv_obj_.h0_est_;
         H0_est_ = surv_obj_.H0_est_;
         S0_est_ = surv_obj_.S0_est_;
 
-        neg_ll_ = - obs_log_likelihood();;
-        cox_coef_df_ = compute_coef_df(surv_obj_.coef_);
+        neg_ll_ = - obs_log_likelihood();
+        surv_coef_df_ = compute_coef_df(surv_obj_.coef_);
         cure_coef_df_ = compute_coef_df(cure_obj_.coef_);
-        coef_df_ = cox_coef_df_ + cure_coef_df_;
+        coef_df_ = surv_coef_df_ + cure_coef_df_;
 
         // compute BIC
         compute_bic1();
         compute_bic2();
         compute_aic();
-
-        // record tail completion
-        // tail_completion = tail_completion;
-        // tail_tau = tail_tau;
 
         // prepare scores and prob in their original order
         const arma::uvec& rev_ord { surv_obj_.rev_ord_ };
@@ -694,7 +701,7 @@ namespace Intsurv {
         estep_susceptible_ = estep_v.elem(rev_ord);
         estep_cured_ = 1 - estep_susceptible_;
         // compute weight C-index
-        c_index_ = Intsurv::Concordance(
+        c_index_ = Concordance(
             time, event, surv_xbeta_, p_vec_event
             ).index_;
     }
@@ -805,12 +812,12 @@ namespace Intsurv {
         };
         // apply x * beta
         // compute parts for the new data
-        arma::vec new_cox_xbeta {
+        arma::vec new_surv_xbeta {
             mat2vec(new_surv_x * surv_coef_) + new_surv_offset
         };
-        arma::vec exp_cox_xbeta { arma::exp(new_cox_xbeta) };
-        h_vec %= exp_cox_xbeta;
-        H_vec %= exp_cox_xbeta;
+        arma::vec exp_surv_xbeta { arma::exp(new_surv_xbeta) };
+        h_vec %= exp_surv_xbeta;
+        H_vec %= exp_surv_xbeta;
         S_vec = arma::exp(- H_vec);
         arma::vec new_cure_xgamma {
             mat2vec(new_cure_x * cure_coef_) + new_cure_offset
