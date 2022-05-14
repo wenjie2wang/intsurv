@@ -22,29 +22,9 @@
 #include "cross-validation.h"
 #include "coxph_cure.h"
 #include "control.h"
+#incldue "subset.h"
 
 namespace Intsurv {
-
-    // subset method
-    inline CoxphCure subset(const CoxphCure& object,
-                            const arma::uvec& index)
-    {
-        CoxphCure out {
-            object.surv_obj_.time_.elem(index),
-            object.surv_obj_.event_.elem(index),
-            object.surv_obj_.get_x(true, false).rows(index),
-            object.cure_obj_.get_x(true, false).rows(index),
-            object.control_,
-            object.surv_obj_.control_,
-            object.cure_obj_.control_
-        };
-        out.surv_obj_.set_offset(
-            object.surv_obj_.control_.offset_.elem(index), false);
-        out.cure_obj_.set_offset(
-            object.cure_obj_.control_.offset_.elem(index)
-            );
-        return out;
-    }
 
     // estimation from cross-validation
     inline arma::vec cv_coxph_cure(

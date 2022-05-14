@@ -21,6 +21,7 @@
 #include <intsurv/coxph_cure.h>
 #include <intsurv/cv_coxph_cure.h>
 #include <intsurv/control.h>
+#include <intsurv/subset.h>
 #include <intsurv/utils.h>
 
 // fit regular Cox cure rate model by EM algorithm

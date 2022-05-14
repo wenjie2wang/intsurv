@@ -1,0 +1,60 @@
+#ifndef INTSURV_SUBSET_H
+#define INTSURV_SUBSET_H
+
+#include <RcppArmadillo.h>
+#include "coxph_cure.h"
+#include "coxph_cure_mar.h"
+
+namespace Intsurv {
+
+    inline CoxphCure subset(const CoxphCure& object,
+                            const arma::uvec& index)
+    {
+        CoxphCure out {
+            object.surv_obj_.time_.elem(index),
+            object.surv_obj_.event_.elem(index),
+            object.surv_obj_.get_x(true, false).rows(index),
+            object.cure_obj_.get_x(true, false).rows(index),
+            object.control_,
+            object.surv_obj_.control_,
+            object.cure_obj_.control_
+        };
+        out.surv_obj_.set_offset(
+            object.surv_obj_.control_.offset_.elem(index), false);
+        const arma::uvec& out_ord { index(out.surv_obj_.ord_) };
+        out.cure_obj_.set_offset(
+            object.cure_obj_.control_.offset_.elem(out_ord)
+            );
+        return out;
+    }
+
+    inline CoxphCureMar subset(const CoxphCureMar& object,
+                               const arma::uvec& index)
+    {
+        CoxphCureMar out {
+            object.surv_obj_.time_.elem(index),
+            object.surv_obj_.event_.elem(index),
+            object.surv_obj_.get_x(true, false).rows(index),
+            object.cure_obj_.get_x(true, false).rows(index),
+            object.mar_obj_.get_x(true, false).rows(index),
+            object.control_,
+            object.surv_obj_.control_,
+            object.cure_obj_.control_,
+            object.mar_obj_.control_,
+        };
+        out.surv_obj_.set_offset(
+            object.surv_obj_.control_.offset_.elem(index), false);
+        const arma::uvec& out_ord { index(out.surv_obj_.ord_) };
+        out.cure_obj_.set_offset(
+            object.cure_obj_.control_.offset_.elem(out_ord)
+            );
+        out.mar_obj_.set_offset(
+            object.mar_obj_.control_.offset_.elem(out_ord)
+            );
+        return out;
+    }
+
+
+}  // Intsurv
+
+#endif /* INTSURV_SUBSET_H */
