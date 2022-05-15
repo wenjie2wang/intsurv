@@ -33,7 +33,7 @@ namespace Intsurv {
     {
         CoxphCureMar out {
             object.surv_obj_.time_.elem(index),
-            object.surv_obj_.event_.elem(index),
+            object.get_event().elem(index),
             object.surv_obj_.get_x(true, false).rows(index),
             object.cure_obj_.get_x(true, false).rows(index),
             object.mar_obj_.get_x(true, false).rows(index),

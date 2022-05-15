@@ -36,6 +36,7 @@ namespace Intsurv {
         double dn_obs_;          // double version of n_obs_
         bool surv_standardize0_; // original standardization option
         bool cure_standardize0_; // original standardization option
+        arma::vec event0_;       // sorted original input event for recovery
 
     public:
         CoxphReg surv_obj_;
@@ -69,6 +70,7 @@ namespace Intsurv {
 
         unsigned int surv_coef_df_;
         unsigned int cure_coef_df_;
+        unsigned int mar_coef_df_;
         unsigned int coef_df_;
 
         double neg_ll_;         // negative log-likelihood
@@ -113,6 +115,7 @@ namespace Intsurv {
             // replace NA or NaN event indicator with 0.5
             // (or any number between 0 and 1)
             arma::vec event0na { event };
+            event0_ = event;
             const double const4na { 0.5 };
             event0na.replace(arma::datum::nan, const4na);
             // create the CoxphReg object
@@ -125,7 +128,8 @@ namespace Intsurv {
             n_obs_ = surv_x.n_rows;
             dn_obs_ = static_cast<double>(n_obs_);
             const arma::uvec& surv_sort_ind { surv_obj_.ord_ };
-            const arma::vec& s_event { surv_obj_.time_ };
+            event0_ = event0_.elem(surv_sort_ind);
+            const arma::vec& s_event { surv_obj_.event_ };
             case1_ind_ = arma::find(s_event > const4na);
             case2_ind_ = arma::find(s_event < const4na);
             n_event_ = case1_ind_.n_elem;
@@ -150,20 +154,34 @@ namespace Intsurv {
         }
 
         // function members
+        inline arma::vec get_event(const bool resort = false) const
+        {
+            if (resort) {
+                return event0_.elem(surv_obj_.rev_ord_);
+            }
+            return event0_;
+        }
+
         // fit mar part
         inline void mar_fit()
         {
             mar_obj_.fit();
+            mar_coef_ = mar_obj_.coef_;
+            mar_xbeta_ = mar_obj_.get_xbeta();
             mar_prob_ = mar_obj_.predict();
         }
         inline void mar_net_fit()
         {
             mar_obj_.net_fit();
+            mar_coef_ = mar_obj_.coef_;
+            mar_xbeta_ = mar_obj_.get_xbeta();
             mar_prob_ = mar_obj_.predict();
         }
         inline void mar_net_path()
         {
             mar_obj_.net_path();
+            mar_coef_ = mar_obj_.coef_;
+            mar_xbeta_ = mar_obj_.get_xbeta();
             mar_prob_ = mar_obj_.predict();
         }
 
@@ -525,7 +543,8 @@ namespace Intsurv {
         neg_ll_ = - obs_log_likelihood();
         surv_coef_df_ = compute_coef_df(surv_obj_.coef_);
         cure_coef_df_ = compute_coef_df(cure_obj_.coef_);
-        coef_df_ = surv_coef_df_ + cure_coef_df_;
+        mar_coef_df_ = compute_coef_df(mar_obj_.coef_);
+        coef_df_ = surv_coef_df_ + cure_coef_df_ + mar_coef_df_;
         compute_bic1();
         compute_bic2();
         compute_aic();
@@ -885,7 +904,8 @@ namespace Intsurv {
         neg_ll_ = - obs_log_likelihood();
         surv_coef_df_ = compute_coef_df(surv_obj_.coef_);
         cure_coef_df_ = compute_coef_df(cure_obj_.coef_);
-        coef_df_ = surv_coef_df_ + cure_coef_df_;
+        mar_coef_df_ = compute_coef_df(mar_obj_.coef_);
+        coef_df_ = surv_coef_df_ + cure_coef_df_ + mar_coef_df_;
         compute_bic1();
         compute_bic2();
         compute_aic();

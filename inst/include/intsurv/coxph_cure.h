@@ -402,7 +402,6 @@ namespace Intsurv {
         }
         // reset surv_obj_ and cure_obj_ in case of further usage
         surv_obj_.reset_offset_haz();
-        // surv_obj_.set_offset(offset0);
         cure_obj_.update_y(surv_obj_.event_);
         // prepare outputs
         surv_coef_ = surv_obj_.coef_;

@@ -19,6 +19,7 @@
 #define INTSURV_H
 
 #include "intsurv/assessment.h"
+#include "intsurv/control.h"
 #include "intsurv/coxph_cure.h"
 #include "intsurv/coxph_cure_mar.h"
 #include "intsurv/coxph_reg.h"

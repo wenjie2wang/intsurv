@@ -19,6 +19,7 @@
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::plugins(cpp11)]]
 #include <intsurv/coxph_cure_mar.h>
+#include <intsurv/cv_coxph_cure_mar.h>
 #include <intsurv/control.h>
 #include <intsurv/utils.h>
 #include <intsurv/subset.h>
@@ -115,7 +116,9 @@ Rcpp::List rcpp_coxph_cure_mar(
             boot_obj.control_.set_verbose(0);
             boot_obj.surv_obj_.control_.set_verbose(0);
             boot_obj.cure_obj_.control_.set_verbose(0);
+            boot_obj.mar_obj_.control_.set_verbose(0);
             // fit the bootstarp sample
+            boot_obj.mar_fit();
             boot_obj.fit();
             boot_surv_coef_mat.col(i) = boot_obj.surv_coef_;
             boot_cure_coef_mat.col(i) = boot_obj.cure_coef_;
@@ -160,7 +163,7 @@ Rcpp::List rcpp_coxph_cure_mar(
             Rcpp::Named("B") = bootstrap,
             Rcpp::Named("surv_coef_mat") = boot_surv_coef_mat.t(),
             Rcpp::Named("cure_coef_mat") = boot_cure_coef_mat.t(),
-            Rcpp::Named("mar_coef_mat") = boot_cure_coef_mat.t()
+            Rcpp::Named("mar_coef_mat") = boot_mar_coef_mat.t()
             ),
         Rcpp::Named("convergence") = Rcpp::List::create(
             Rcpp::Named("num_iter") = obj.n_iter_
@@ -323,7 +326,7 @@ Rcpp::List rcpp_coxph_cure_mar_reg(
 // for a sequence of lambda's
 // lambda * (penalty_factor * alpha * lasso + (1 - alpha) / 2 * ridge)
 // [[Rcpp::export]]
-Rcpp::List rcpp_coxph_cure_mcar_vs(
+Rcpp::List rcpp_coxph_cure_mar_vs(
     const arma::vec& time,
     const arma::vec& event,
     const arma::mat& surv_x,
