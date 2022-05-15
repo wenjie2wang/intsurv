@@ -28,7 +28,7 @@ Rcpp::NumericVector aggregateSum(const arma::vec& x,
                                  const bool reversely = false)
 {
     arma::vec res {
-        Intsurv::aggregate_sum(x, indices, simplify, cumulative, reversely)
+        intsurv::aggregate_sum(x, indices, simplify, cumulative, reversely)
     };
     return Rcpp::NumericVector(res.begin(), res.end());
 }
@@ -36,6 +36,6 @@ Rcpp::NumericVector aggregateSum(const arma::vec& x,
 // [[Rcpp::export]]
 Rcpp::NumericVector revcumsum(const arma::vec& x)
 {
-    arma::vec res { Intsurv::cum_sum(x, true) };
+    arma::vec res { intsurv::cum_sum(x, true) };
     return Rcpp::NumericVector(res.begin(), res.end());
 }

@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include "utils.h"
 
-namespace Intsurv {
+namespace intsurv {
 
     class Control
     {

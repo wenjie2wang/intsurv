@@ -27,7 +27,7 @@
 #include "utils.h"
 
 
-namespace Intsurv {
+namespace intsurv {
 
     class CoxphCure
     {

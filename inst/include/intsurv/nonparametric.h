@@ -23,7 +23,7 @@
 #include "utils.h"
 
 
-namespace Intsurv {
+namespace intsurv {
 
     // define class for inputs and outputs
     class NelsonAalen {

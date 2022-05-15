@@ -22,7 +22,7 @@
 #include <RcppArmadillo.h>
 #include "utils.h"
 
-namespace Intsurv {
+namespace intsurv {
     class CrossValidation {
     protected:
         unsigned int n_obs_;

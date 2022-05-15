@@ -31,7 +31,7 @@
 // #include <armadillo>
 #include <RcppArmadillo.h>
 
-namespace Intsurv {
+namespace intsurv {
 
     // compare double-precision numbers for almost equality
     inline bool isAlmostEqual(double A, double B)

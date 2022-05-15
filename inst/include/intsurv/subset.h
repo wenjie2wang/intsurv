@@ -5,7 +5,7 @@
 #include "coxph_cure.h"
 #include "coxph_cure_mar.h"
 
-namespace Intsurv {
+namespace intsurv {
 
     inline CoxphCure subset(const CoxphCure& object,
                             const arma::uvec& index)
@@ -55,6 +55,6 @@ namespace Intsurv {
     }
 
 
-}  // Intsurv
+}  // intsurv
 
 #endif /* INTSURV_SUBSET_H */

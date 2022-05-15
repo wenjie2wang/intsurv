@@ -24,7 +24,7 @@
 #include "control.h"
 #include "subset.h"
 
-namespace Intsurv {
+namespace intsurv {
     // estimation from cross-validation
     inline arma::vec cv_coxph_cure_mar(
         const CoxphCureMar& object,
@@ -117,7 +117,7 @@ namespace Intsurv {
     }
 
 
-}  // Intsurv
+}  // intsurv
 
 
 #endif /* CV_COXPH_CURE_MAR_H */

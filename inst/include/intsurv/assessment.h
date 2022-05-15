@@ -21,7 +21,7 @@
 #include <RcppArmadillo.h>
 #include "utils.h"
 
-namespace Intsurv {
+namespace intsurv {
 // A straightforward implementation of Harrel's C-index_ that allows weights
     class Concordance {
     public:

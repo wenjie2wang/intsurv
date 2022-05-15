@@ -36,8 +36,8 @@ Rcpp::List rcpp_coxph(
     const unsigned int verbose = 0
     )
 {
-    Intsurv::Control control { max_iter, epsilon, standardize, verbose };
-    Intsurv::CoxphReg object { time, event, x, control };
+    intsurv::Control control { max_iter, epsilon, standardize, verbose };
+    intsurv::CoxphReg object { time, event, x, control };
     object.set_start(start)->set_offset(offset, false);
     object.fit();
     // compute baseline hazard and survival function
@@ -45,25 +45,25 @@ Rcpp::List rcpp_coxph(
     object.compute_censor_haz_surv_time();
     object.est_haz_surv();
     return Rcpp::List::create(
-        Rcpp::Named("coef") = Intsurv::arma2rvec(object.coef_),
+        Rcpp::Named("coef") = intsurv::arma2rvec(object.coef_),
         Rcpp::Named("model") = Rcpp::List::create(
             Rcpp::Named("nObs") = object.n_obs_,
             Rcpp::Named("offset") = object.control_.offset_
             ),
         Rcpp::Named("baseline") = Rcpp::List::create(
-            Rcpp::Named("time") = Intsurv::arma2rvec(object.unique_time_),
-            Rcpp::Named("h0") = Intsurv::arma2rvec(object.h0_est_),
-            Rcpp::Named("H0") = Intsurv::arma2rvec(object.H0_est_),
-            Rcpp::Named("S0") = Intsurv::arma2rvec(object.S0_est_),
-            Rcpp::Named("hc") = Intsurv::arma2rvec(object.hc_est_),
-            Rcpp::Named("Hc") = Intsurv::arma2rvec(object.Hc_est_),
-            Rcpp::Named("Sc") = Intsurv::arma2rvec(object.Sc_est_)
+            Rcpp::Named("time") = intsurv::arma2rvec(object.unique_time_),
+            Rcpp::Named("h0") = intsurv::arma2rvec(object.h0_est_),
+            Rcpp::Named("H0") = intsurv::arma2rvec(object.H0_est_),
+            Rcpp::Named("S0") = intsurv::arma2rvec(object.S0_est_),
+            Rcpp::Named("hc") = intsurv::arma2rvec(object.hc_est_),
+            Rcpp::Named("Hc") = intsurv::arma2rvec(object.Hc_est_),
+            Rcpp::Named("Sc") = intsurv::arma2rvec(object.Sc_est_)
             ),
         Rcpp::Named("control") = Rcpp::List::create(
             Rcpp::Named("max_iter") = object.control_.max_iter_,
             Rcpp::Named("epsilon") = object.control_.epsilon_,
             Rcpp::Named("standardize") = object.control_.standardize_,
-            Rcpp::Named("start") = Intsurv::arma2rvec(object.control_.start_),
+            Rcpp::Named("start") = intsurv::arma2rvec(object.control_.start_),
             Rcpp::Named("verbose") = object.control_.verbose_
             )
         );
@@ -90,36 +90,36 @@ Rcpp::List rcpp_coxnet1(
     const unsigned int verbose = 0
     )
 {
-    Intsurv::Control control { max_iter, epsilon, standardize, verbose };
+    intsurv::Control control { max_iter, epsilon, standardize, verbose };
     control.net(penalty_factor, varying_active)->
         net_fit(l1_lambda, l2_lambda);
-    Intsurv::CoxphReg object { time, event, x, control };
+    intsurv::CoxphReg object { time, event, x, control };
     object.set_start(start)->set_offset(offset, false);
     object.net_fit();
     object.compute_haz_surv_time();
     object.compute_censor_haz_surv_time();
     object.est_haz_surv();
     return Rcpp::List::create(
-        Rcpp::Named("coef") = Intsurv::arma2rvec(object.coef_),
-        // Rcpp::Named("en_coef") = Intsurv::arma2rvec(object.en_coef_),
+        Rcpp::Named("coef") = intsurv::arma2rvec(object.coef_),
+        // Rcpp::Named("en_coef") = intsurv::arma2rvec(object.en_coef_),
         Rcpp::Named("model") = Rcpp::List::create(
             Rcpp::Named("nObs") = object.n_obs_,
             Rcpp::Named("offset") = object.control_.offset_
             ),
         Rcpp::Named("baseline") = Rcpp::List::create(
-            Rcpp::Named("time") = Intsurv::arma2rvec(object.unique_time_),
-            Rcpp::Named("h0") = Intsurv::arma2rvec(object.h0_est_),
-            Rcpp::Named("H0") = Intsurv::arma2rvec(object.H0_est_),
-            Rcpp::Named("S0") = Intsurv::arma2rvec(object.S0_est_),
-            Rcpp::Named("hc") = Intsurv::arma2rvec(object.hc_est_),
-            Rcpp::Named("Hc") = Intsurv::arma2rvec(object.Hc_est_),
-            Rcpp::Named("Sc") = Intsurv::arma2rvec(object.Sc_est_)
+            Rcpp::Named("time") = intsurv::arma2rvec(object.unique_time_),
+            Rcpp::Named("h0") = intsurv::arma2rvec(object.h0_est_),
+            Rcpp::Named("H0") = intsurv::arma2rvec(object.H0_est_),
+            Rcpp::Named("S0") = intsurv::arma2rvec(object.S0_est_),
+            Rcpp::Named("hc") = intsurv::arma2rvec(object.hc_est_),
+            Rcpp::Named("Hc") = intsurv::arma2rvec(object.Hc_est_),
+            Rcpp::Named("Sc") = intsurv::arma2rvec(object.Sc_est_)
             ),
         Rcpp::Named("penalty") = Rcpp::List::create(
             Rcpp::Named("l1_lambda") = object.control_.l1_lambda_,
             Rcpp::Named("l2_lambda") = object.control_.l2_lambda_,
             Rcpp::Named("penalty_factor") =
-            Intsurv::arma2rvec(object.control_.penalty_factor_)
+            intsurv::arma2rvec(object.control_.penalty_factor_)
             )
         );
 }
@@ -144,10 +144,10 @@ Rcpp::List rcpp_coxnet2(
     const bool verbose = false
     )
 {
-    Intsurv::Control control { max_iter, epsilon, standardize, verbose };
+    intsurv::Control control { max_iter, epsilon, standardize, verbose };
     control.net(penalty_factor, varying_active)->
         net_path(nlambda, lambda_min_ratio, alpha, lambda);
-    Intsurv::CoxphReg object { time, event, x, control };
+    intsurv::CoxphReg object { time, event, x, control };
     object.set_offset(offset);
     object.net_path();
     return Rcpp::List::create(
@@ -160,9 +160,9 @@ Rcpp::List rcpp_coxnet2(
             Rcpp::Named("l1_lambda_max") = object.l1_lambda_max_,
             Rcpp::Named("lambda_max") = object.lambda_max_,
             Rcpp::Named("alpha") = object.control_.alpha_,
-            Rcpp::Named("lambda") = Intsurv::arma2rvec(object.control_.lambda_),
+            Rcpp::Named("lambda") = intsurv::arma2rvec(object.control_.lambda_),
             Rcpp::Named("penalty_factor") =
-            Intsurv::arma2rvec(object.control_.penalty_factor_)
+            intsurv::arma2rvec(object.control_.penalty_factor_)
             )
         );
 }

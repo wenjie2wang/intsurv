@@ -24,7 +24,7 @@
 #include "control.h"
 #include "subset.h"
 
-namespace Intsurv {
+namespace intsurv {
 
     // estimation from cross-validation
     inline arma::vec cv_coxph_cure(
@@ -108,7 +108,7 @@ namespace Intsurv {
         return cv_vec;
     }
 
-}  // Intsurv
+}  // intsurv
 
 
 #endif

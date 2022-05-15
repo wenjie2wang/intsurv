@@ -25,10 +25,10 @@
 Rcpp::List rcpp_mcf_right(const arma::vec& time,
                           const arma::vec& event)
 {
-    Intsurv::NelsonAalen na_obj { time, event };
+    intsurv::NelsonAalen na_obj { time, event };
     return Rcpp::List::create(
-        Rcpp::Named("time") = Intsurv::arma2rvec(na_obj.uni_event_time_),
-        Rcpp::Named("inst_rate") = Intsurv::arma2rvec(na_obj.inst_rate_),
-        Rcpp::Named("cum_rate") = Intsurv::arma2rvec(na_obj.cum_rate_)
+        Rcpp::Named("time") = intsurv::arma2rvec(na_obj.uni_event_time_),
+        Rcpp::Named("inst_rate") = intsurv::arma2rvec(na_obj.inst_rate_),
+        Rcpp::Named("cum_rate") = intsurv::arma2rvec(na_obj.cum_rate_)
         );
 }

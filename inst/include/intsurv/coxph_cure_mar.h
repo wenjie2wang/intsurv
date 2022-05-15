@@ -26,7 +26,7 @@
 #include "control.h"
 #include "utils.h"
 
-namespace Intsurv {
+namespace intsurv {
 
     class CoxphCureMar
     {
