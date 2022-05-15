@@ -217,6 +217,16 @@ namespace Intsurv {
         // for a lambda sequence
         arma::mat coef_mat_;    // coef matrix (rescaled for origin x)
 
+        // to select a particular solution from the solution path
+        arma::uvec coef_df_path_;
+        arma::vec bic_path_;
+        arma::vec neg_ll_path_;
+
+        // for the single solution or the selected solution
+        unsigned int coef_df_;
+        double bic_;
+        double neg_ll_;
+
         // controls
         Control control_;
 
@@ -435,6 +445,11 @@ namespace Intsurv {
         inline arma::vec get_xbeta() const
         {
             return mat2vec(x_ * coef0_);
+        }
+
+        // compute BIC
+        inline void compute_bic() {
+            bic_ = std::log(dn_obs_) * coef_df_ + 2 * neg_ll_;
         }
 
     };
@@ -727,6 +742,9 @@ namespace Intsurv {
         }
         // initialize the estimate matrix
         coef_mat_ = arma::zeros(p_, control_.lambda_.n_elem);
+        coef_df_path_ = arma::zeros<arma::uvec>(control_.lambda_.n_elem);
+        neg_ll_path_ = arma::zeros(control_.lambda_.n_elem);
+        bic_path_ = arma::zeros(control_.lambda_.n_elem);
         arma::uvec is_active_strong { arma::zeros<arma::uvec>(p_) };
         // for ridge penalty
         if (is_ridge_only) {
@@ -744,7 +762,17 @@ namespace Intsurv {
                 coef0_ = beta;
                 rescale_coef();
                 coef_mat_.col(li) = coef_;
+                coef_df_path_(li) = coef_df_ = p_;
+                neg_ll_path_(li) = neg_ll_ = objective() * dn_obs_;
+                compute_bic();
+                bic_path_(li) = bic_;
             }
+            // select a solution
+            unsigned int bic_idx { index_min(bic_path_) };
+            coef_ = coef_mat_.col(bic_idx);
+            coef0_ = rev_rescale_coef(coef_);
+            neg_ll_ = neg_ll_path_(bic_idx);
+            bic_ = bic_path_(bic_idx);
             return;             // early exit
         }
         // get solution of lambda_max for a warm start
@@ -774,6 +802,10 @@ namespace Intsurv {
                 coef0_ = beta;
                 rescale_coef();
                 coef_mat_.col(k) = coef_;
+                coef_df_path_(k) = coef_df_ = compute_coef_df(coef_);
+                neg_ll_path_(k) = neg_ll_ = objective() * dn_obs_;
+                compute_bic();
+                bic_path_(k) = bic_;
                 continue;
             }
             // update acitve set by strong rule (for lambda < lamda_max)
@@ -842,7 +874,17 @@ namespace Intsurv {
             coef0_ = beta;
             rescale_coef();
             coef_mat_.col(k) = coef_;
+            coef_df_path_(k) = coef_df_ = compute_coef_df(coef_);
+            neg_ll_path_(k) = neg_ll_ = objective() * dn_obs_;
+            compute_bic();
+            bic_path_(k) = bic_;
         }
+        // select a solution
+        unsigned int bic_idx { index_min(bic_path_) };
+        coef_ = coef_mat_.col(bic_idx);
+        coef0_ = rev_rescale_coef(coef_);
+        neg_ll_ = neg_ll_path_(bic_idx);
+        bic_ = bic_path_(bic_idx);
     }
 
 }

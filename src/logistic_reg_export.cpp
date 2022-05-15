@@ -141,9 +141,12 @@ Rcpp::List rcpp_lognet2(
     object.set_offset(offset);
     object.net_path();
     return Rcpp::List::create(
-        Rcpp::Named("coef") = object.coef_mat_,
+        Rcpp::Named("coef") = Intsurv::arma2rvec(object.coef_),
         Rcpp::Named("model") = Rcpp::List::create(
-            Rcpp::Named("nObs") = object.n_obs_
+            Rcpp::Named("nObs") = object.n_obs_,
+            Rcpp::Named("neg_ll") = object.neg_ll_,
+            Rcpp::Named("df") = object.coef_df_,
+            Rcpp::Named("bic") = object.bic_
             ),
         Rcpp::Named("penalty") = Rcpp::List::create(
             Rcpp::Named("l1_lambda_max") = object.l1_lambda_max_,
@@ -152,6 +155,12 @@ Rcpp::List rcpp_lognet2(
             Rcpp::Named("alpha") = object.control_.alpha_,
             Rcpp::Named("penalty_factor") =
             Intsurv::arma2rvec(object.control_.penalty_factor_)
+            ),
+        Rcpp::Named("path") = Rcpp::List::create(
+            Rcpp::Named("coef_mat") = object.coef_mat_,
+            Rcpp::Named("neg_ll") = Intsurv::arma2rvec(object.neg_ll_path_),
+            Rcpp::Named("df") = Intsurv::arma2rvec(object.coef_df_path_),
+            Rcpp::Named("bic") = Intsurv::arma2rvec(object.bic_path_)
             )
         );
 }
