@@ -54,8 +54,10 @@ namespace Intsurv {
         // outputs
         arma::vec surv_coef_;
         arma::vec cure_coef_;
+        arma::vec mar_coef_;
         arma::vec surv_xbeta_;  // score from the survival layer
         arma::vec cure_xbeta_;  // score from the cure layer
+        arma::vec mar_xbeta_;  // score from the cure layer
 
         // for each subject and in the original order of X
         arma::vec susceptible_prob_; // probability of being susceptible

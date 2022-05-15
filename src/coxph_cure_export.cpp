@@ -372,17 +372,15 @@ Rcpp::List rcpp_coxph_cure_vs(
     const unsigned int cure_p { obj.cure_p_ };
     arma::mat surv_coef_mat { arma::zeros(surv_p, n_lambda) };
     arma::mat cure_coef_mat { arma::zeros(cure_p, n_lambda) };
-    arma::vec bic1 { arma::zeros(n_lambda) }, bic2 { bic1 }, aic { bic1 };
-    arma::vec coef_df { bic1 }, negLogL { bic1 };
+    arma::vec bic1 { arma::zeros(n_lambda) }, bic2 { bic1 }, aic { bic1 },
+        coef_df { bic1 }, negLogL { bic1 };
     arma::mat lambda_mat { arma::zeros(n_lambda, 4) };
     arma::vec cv_loglik { arma::zeros(n_lambda) };
-
     // warm starts
     arma::vec surv_warm_start0 { surv_start };
     arma::vec cure_warm_start0 { cure_start };
     arma::vec surv_warm_start;
     arma::vec cure_warm_start;
-
     // for each lambda
     unsigned int iter {0};
     for (size_t i {0}; i < n_surv_lambda; ++i) {

@@ -22,7 +22,7 @@
 #include "cross-validation.h"
 #include "coxph_cure.h"
 #include "control.h"
-#incldue "subset.h"
+#include "subset.h"
 
 namespace Intsurv {
 
