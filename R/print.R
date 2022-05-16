@@ -20,36 +20,40 @@
 ##' @export
 print.cox_cure <- function(x, ...)
 {
-    ## function call
-    cat("Call:\n", paste(deparse(x$call), sep = "\n", collapse = "\n"),
-        "\n", sep = "")
+    if (! is.null(x$call)) {
+        ## function call
+        cat("Call:\n", paste(deparse(x$call), sep = "\n", collapse = "\n"),
+            "\n", sep = "")
+    }
     ## get the coef matrix
     obj <- summary.cox_cure(x)
     ## survival part
-    cat("\nCoefficient estimates from the survival part:\n\n")
+    cat("\nCoefficient estimates for the survival part:\n\n")
     printCoefmat(obj$surv_coef_mat)
     ## cure rate part
-    cat("\nCoefficient estimates from the cure rate part:\n\n")
+    cat("\nCoefficient estimates for the cure rate part:\n\n")
     printCoefmat(obj$cure_coef_mat)
     ## return
     invisible(x)
 }
 
 
-##' @method print cox_cure_mcar
+##' @method print cox_cure_mar
 ##' @export
-print.cox_cure_mcar <- function(x, ...)
+print.cox_cure_mar <- function(x, ...)
 {
-    ## function call
-    cat("Call:\n", paste(deparse(x$call), sep = "\n", collapse = "\n"),
-        "\n", sep = "")
+    if (! is.null(x$call)) {
+        ## function call
+        cat("Call:\n", paste(deparse(x$call), sep = "\n", collapse = "\n"),
+            "\n", sep = "")
+    }
     ## get the coef matrix
-    obj <- summary.cox_cure_mcar(x)
+    obj <- summary.cox_cure_mar(x)
     ## survival part
-    cat("\nCoefficient estimates from the survival part:\n\n")
+    cat("\nCoefficient estimates for the survival part:\n\n")
     printCoefmat(obj$surv_coef_mat)
     ## cure rate part
-    cat("\nCoefficient estimates from the cure rate part:\n\n")
+    cat("\nCoefficient estimates for the cure rate part:\n\n")
     printCoefmat(obj$cure_coef_mat)
     ## return
     invisible(x)
@@ -60,14 +64,16 @@ print.cox_cure_mcar <- function(x, ...)
 ##' @export
 print.summary_cox_cure <- function(x, ...)
 {
-    ## function call
-    cat("Call:\n", paste(deparse(x$call), sep = "\n", collapse = "\n"),
-        "\n", sep = "")
+    if (! is.null(x$call)) {
+        ## function call
+        cat("Call:\n", paste(deparse(x$call), sep = "\n", collapse = "\n"),
+            "\n", sep = "")
+    }
     ## survival coef
-    cat("\nCoefficient estimates from the survival part:\n\n")
+    cat("\nCoefficient estimates for the survival part:\n\n")
     printCoefmat(x$surv_coef_mat)
     ## cure coef
-    cat("\nCoefficient estimates from the cure rate part:\n\n")
+    cat("\nCoefficient estimates for the cure rate part:\n\n")
     printCoefmat(x$cure_coef_mat)
     ## misc
     cat(sprintf("\nNumber of observations: %d\n", x$model$nObs))
@@ -81,19 +87,21 @@ print.summary_cox_cure <- function(x, ...)
 }
 
 
-## TODO: customize more for cox_cure_mcar
-##' @method print summary_cox_cure_mcar
+## TODO: customize more for cox_cure_mar
+##' @method print summary_cox_cure_mar
 ##' @export
-print.summary_cox_cure_mcar <- print.summary_cox_cure
+print.summary_cox_cure_mar <- print.summary_cox_cure
 
 
 ##' @method print cox_cure_net
 ##' @export
 print.cox_cure_net <- function(x, ...)
 {
-    ## function call
-    cat("Call:\n", paste(deparse(x$call), sep = "\n", collapse = "\n"),
-        "\n\n", sep = "")
+    if (! is.null(x$call)) {
+        ## function call
+        cat("Call:\n", paste(deparse(x$call), sep = "\n", collapse = "\n"),
+            "\n\n", sep = "")
+    }
     bic_dat <- BIC.cox_cure_net(x)
     digits <- max(3, getOption("digits") - 3)
     lambda_dat <- as.data.frame(signif(x$penalty$lambda_mat, digits))
@@ -105,6 +113,6 @@ print.cox_cure_net <- function(x, ...)
 }
 
 
-##' @method print cox_cure_net_mcar
+##' @method print cox_cure_net_mar
 ##' @export
-print.cox_cure_net_mcar <- print.cox_cure_net
+print.cox_cure_net_mar <- print.cox_cure_net

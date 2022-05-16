@@ -111,9 +111,9 @@ summary.cox_cure <- function(object, ...)
 
 
 ##' @rdname summary.cox_cure
-##' @method summary cox_cure_mcar
+##' @method summary cox_cure_mar
 ##' @export
-summary.cox_cure_mcar <- function(object, ...)
+summary.cox_cure_mar <- function(object, ...)
 {
     warn_dots()
     ## function summarizing coef matrix
@@ -144,6 +144,6 @@ summary.cox_cure_mcar <- function(object, ...)
             model = object$model,
             call = object$call
         ),
-        class = "summary_cox_cure_mcar"
+        class = "summary_cox_cure_mar"
     )
 }
