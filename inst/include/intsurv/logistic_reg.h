@@ -794,9 +794,9 @@ namespace intsurv {
         double old_l1_lambda { l1_lambda_max_ }; // for strong rule
         // outer loop for the lambda sequence
         for (size_t k {0}; k < control_.lambda_.n_elem; ++k) {
-            double lambda_k { control_.lambda_(k) };
-            l1_lambda = lambda_k * control_.alpha_;
-            l2_lambda = 0.5 * lambda_k * (1 - control_.alpha_);
+            double lambda_bic { control_.lambda_(k) };
+            l1_lambda = lambda_bic * control_.alpha_;
+            l2_lambda = 0.5 * lambda_bic * (1 - control_.alpha_);
             // early exit for large lambda greater than lambda_max
             if (l1_lambda >= l1_lambda_max_) {
                 coef0_ = beta;
@@ -885,6 +885,10 @@ namespace intsurv {
         coef0_ = rev_rescale_coef(coef_);
         neg_ll_ = neg_ll_path_(bic_idx);
         bic_ = bic_path_(bic_idx);
+        // set l1 lambda and l2 lambda in control
+        double lambda_bic { control_.lambda_(bic_idx) };
+        control_.l1_lambda_ = lambda_bic * control_.alpha_;
+        control_.l2_lambda_ = 0.5 * lambda_bic * (1 - control_.alpha_);
     }
 
 }
