@@ -19,10 +19,17 @@
 ### prepare design matrix and response from formula inputs for survival models
 ##' @importFrom stats model.matrix.default model.frame.default .getXlevels
 ##'     model.offset
-prep_cure_model <- function(surv_formula, cure_formula,
-                            obs_time, obs_event,
-                            surv_offset, cure_offset,
-                            data, subset, contrasts = NULL,
+prep_cure_model <- function(surv_formula,
+                            cure_formula,
+                            mar_formula,
+                            obs_time,
+                            obs_event,
+                            surv_offset,
+                            cure_offset,
+                            mar_offset,
+                            data,
+                            subset,
+                            contrasts = NULL,
                             eval_env = parent.frame())
 {
     this_call <- call0 <- match.call(expand.dots = FALSE)
@@ -42,13 +49,12 @@ prep_cure_model <- function(surv_formula, cure_formula,
         stop("The event indicators cannot be missing.",
              call. = FALSE)
     }
-
     ## 1. process formula for survival model
     names(this_call)[names(this_call) == "surv_formula"] <- "formula"
+    names(this_call)[names(this_call) == "surv_offset"] <- "offset"
     if (missing(data)) {
         this_call$data <- eval_env
     }
-    names(this_call)[names(this_call) == "surv_offset"] <- "offset"
     matched_call <- match(c("formula", "data", "subset", "offset",
                             "obs_time", "obs_event"),
                           names(this_call), nomatch = 0L)
@@ -64,23 +70,25 @@ prep_cure_model <- function(surv_formula, cure_formula,
         mm <- stats::model.matrix.default(surv_formula, data = mf,
                                           contrasts.arg = contrasts)
     })
-    mm <- na.fail(mm)
+    mm <- tryCatch(na.fail(mm), error = function(e) e)
+    if (inherits(mm, "error")) {
+        stop("Dataset contains missing values.", call. = FALSE)
+    }
     ## output: contrasts
     contrasts <- attr(mm, "contrasts")
     ## surv list
     surv_list <- list(
-        obs_time = mf[["(obs_time)"]],
-        obs_event = mf[["(obs_event)"]],
-        xMat = mm,
+        time = mf[["(obs_time)"]],
+        event = mf[["(obs_event)"]],
+        x = mm,
         offset = model.offset(mf),
         contrasts = contrasts,
         xlevels = stats::.getXlevels(attr(mf, "terms"), mf)
     )
-
     ## 2. process cure formula
     this_call <- call0
     names(this_call)[names(this_call) == "cure_formula"] <- "formula"
-    names(this_call)[names(this_call) == "surv_offset"] <- "offset"
+    names(this_call)[names(this_call) == "cure_offset"] <- "offset"
     if (missing(data)) {
         this_call$data <- eval_env
     }
@@ -102,13 +110,49 @@ prep_cure_model <- function(surv_formula, cure_formula,
     contrasts <- attr(mm, "contrasts")
     ## cure list
     cure_list <- list(
-        xMat = mm,
+        x = mm,
         offset = model.offset(mf),
         contrasts = contrasts,
         xlevels = stats::.getXlevels(attr(mf, "terms"), mf)
     )
-
+    ## 3. MAR formula
+    if (missing(mar_formula)) {
+        mar_formula <- ~ 1
+    }
+    if (missing(mar_offset)) {
+        mar_offset <- NULL
+    }
+    this_call <- call0
+    names(this_call)[names(this_call) == "mar_formula"] <- "formula"
+    names(this_call)[names(this_call) == "mar_offset"] <- "offset"
+    if (missing(data)) {
+        this_call$data <- eval_env
+    }
+    matched_call <- match(c("formula", "data", "subset", "offset"),
+                          names(this_call), nomatch = 0L)
+    this_call <- this_call[c(1L, matched_call)]
+    ## drop unused levels in factors
+    this_call$drop.unused.levels <- TRUE
+    this_call$na.action <- na.fail
+    this_call[[1L]] <- quote(stats::model.frame.default)
+    mf <- eval(this_call, eval_env)
+    mar_formula <- attr(mf, "terms")
+    ## suppress warnings on not used contrasts
+    suppressWarnings({
+        mm <- stats::model.matrix.default(mar_formula, data = mf,
+                                          contrasts.arg = contrasts)
+    })
+    ## output: contrasts
+    contrasts <- attr(mm, "contrasts")
+    ## mar list
+    mar_list <- list(
+        x = mm,
+        offset = model.offset(mf),
+        contrasts = contrasts,
+        xlevels = stats::.getXlevels(attr(mf, "terms"), mf)
+    )
     ## return
     list(surv = surv_list,
-         cure = cure_list)
+         cure = cure_list,
+         mar = mar_list)
 }

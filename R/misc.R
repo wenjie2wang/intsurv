@@ -44,9 +44,9 @@ is_cox_cure <- function(x)
 {
     inherits(x, "cox_cure")
 }
-is_cox_cure_mcar <- function(x)
+is_cox_cure_mar <- function(x)
 {
-    inherits(x, "cox_cure_mcar")
+    inherits(x, "cox_cure_mar")
 }
 is_cox_cure_net <- function(x)
 {
@@ -54,7 +54,7 @@ is_cox_cure_net <- function(x)
 }
 is_cox_cure_net_mcar <- function(x)
 {
-    inherits(x, "cox_cure_net_mcar")
+    inherits(x, "cox_cure_net_mar")
 }
 
 ## remove NA's from vector `x`
@@ -104,4 +104,20 @@ warn_dots <- function(...) {
         }
     }
     invisible(NULL)
+}
+
+## convert null to numeric(0)
+null2num0 <- function(x) {
+    if (is.null(x)) {
+        return(numeric(0))
+    }
+    x
+}
+
+## convert null to numeric(0)
+null2mat0 <- function(x) {
+    if (is.null(x)) {
+        return(matrix(numeric(0)))
+    }
+    x
 }

@@ -30,55 +30,12 @@
 ##' net penalty is developed based on cyclic coordinate descent and
 ##' majorization-minimization (MM) algorithm.
 ##'
-##'
 ##' @inheritParams cox_cure
-##'
-##' @param surv_lambda,cure_lambda A numeric vector consists of nonnegative
-##'     values representing the tuning parameter sequence for the survival model
-##'     part or the incidence model part.
-##' @param surv_alpha,cure_alpha A number between 0 and 1 for tuning the elastic
-##'     net penalty for the survival model part or the incidence model part.  If
-##'     it is one, the elastic penalty will reduce to the well-known lasso
-##'     penalty.  If it is zero, the ridge penalty will be used.
-##' @param surv_nlambda,cure_nlambda A positive number specifying the number of
-##'     \code{surv_lambda} or \code{cure_lambda} if \code{surv_lambda} or
-##'     \code{cure_lambda} is not specified, respectively.  The default value is
-##'     10.
-##' @param surv_lambda_min_ratio,cure_lambda_min_ratio The ratio of the minimum
-##'     \code{surv_lambda} (or \code{cure_lambda}) to the large enough
-##'     \code{surv_lambda} (or code{cure_lambda}) that produces all-zero
-##'     estimates on log scale.  The default value is \code{1e-1}.
-##' @param surv_l1_penalty_factor,cure_l1_penalty_factor A numeric vector that
-##'     consists of nonnegative penalty factors (or weights) on L1-norm for the
-##'     coefficient estimate vector in the survival model part or the incidence
-##'     model part.  The penalty is applied to the coefficient estimate divided
-##'     by the specified weights.  The specified weights are re-scaled
-##'     internally so that their summation equals the length of coefficients.
-##'     If \code{NULL} is specified, the weights are all set to be one.
-##' @param cv_nfolds An non-negative integer specifying number of folds in
-##'     cross-validation (CV).  The default value is \code{0} and the CV
-##'     procedure is not enabled.
-##' @param surv_standardize,cure_standardize A logical value specifying whether
-##'     to standardize the covariates for the survival model part or the
-##'     incidence model part.  If \code{FALSE}, the covariates will be
-##'     standardized internally to have mean zero and standard deviation one.
-##' @param em_max_iter A positive integer specifying the maximum iteration
-##'     number of the EM algorithm.  The default value is \code{200}.
-##' @param em_rel_tol A positive number specifying the tolerance that determines
-##'     the convergence of the EM algorithm in terms of the convergence of the
-##'     covariate coefficient estimates.  The tolerance is compared with the
-##'     relative change between estimates from two consecutive iterations, which
-##'     is measured by ratio of the L1-norm of their difference to the sum of
-##'     their L1-norm.  The default value is \code{1e-5}.
-##' @param surv_max_iter,cure_max_iter A positive integer specifying the maximum
-##'     iteration number of the M-step routine related to the survival model
-##'     component or the incidence model component.  The default value is
-##'     \code{10} to encourage faster convergence.
 ##'
 ##' @return
 ##'
 ##' \code{cox_cure_net} object for regular Cox cure rate model or
-##' \code{cox_cure_net_mcar} object for Cox cure rate model with uncertain
+##' \code{cox_cure_net_mar} object for Cox cure rate model with uncertain
 ##' events.
 ##'
 ##' @references
