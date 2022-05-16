@@ -7,8 +7,8 @@
 \title{Common Control Parameters}
 \usage{
 intsurv.control(
-  max_iter = 1000,
-  epsilon = 1e-05,
+  max_iter = 300,
+  epsilon = 1e-04,
   standardize = TRUE,
   start = NULL,
   offset = NULL,

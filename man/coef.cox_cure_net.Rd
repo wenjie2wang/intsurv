@@ -2,19 +2,15 @@
 % Please edit documentation in R/coef.R
 \name{coef.cox_cure_net}
 \alias{coef.cox_cure_net}
-\alias{coef.cox_cure_net_mcar}
+\alias{coef.cox_cure_net_mar}
 \title{Estimated Covariate Coefficients}
 \usage{
-\method{coef}{cox_cure_net}(object, naive_en = FALSE, selection = c("bic1", "bic2", "all"), ...)
+\method{coef}{cox_cure_net}(object, selection = c("bic1", "bic2", "all"), ...)
 
-\method{coef}{cox_cure_net_mcar}(object, naive_en = FALSE, selection = c("bic1", "bic2", "all"), ...)
+\method{coef}{cox_cure_net_mar}(object, selection = c("bic1", "bic2", "all"), ...)
 }
 \arguments{
 \item{object}{Object representing a fitted solution path.}
-
-\item{naive_en}{A logical value specifying whether to return naive elastic
-net estimates.  If \code{FALSE} by default, the elastic net estimates
-will be returned instead of the naive elastic net estimates.}
 
 \item{selection}{A character string for specifying the criterion for
 selection of coefficient estimates.  The available options are
