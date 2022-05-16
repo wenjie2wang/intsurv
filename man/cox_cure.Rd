@@ -92,16 +92,6 @@ intercept term.}
 \item{cure_intercept}{A logical value specifying whether to add an intercept
 term to the cure rate model component.  If \code{TRUE} by default, an
 intercept term is included.}
-
-\item{surv_standardize}{A logical value specifying whether to standardize
-the covariates for the survival model part.  If \code{FALSE}, the
-covariates will be standardized internally to have mean zero and
-standard deviation one.}
-
-\item{cure_standardize}{A logical value specifying whether to standardize
-the covariates for the cure rate model part.  If \code{TRUE} (by
-default), the covariates will be standardized internally to have mean
-zero and standard deviation one.}
 }
 \value{
 A \code{cox_cure} object that contains the fitted regular Cox cure rate

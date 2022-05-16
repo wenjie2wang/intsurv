@@ -112,16 +112,6 @@ names are the names of columns of data containing factors.  See
 \code{contrasts.arg} of \code{\link[stats]{model.matrix.default}} for
 details.}
 
-\item{surv_standardize}{A logical value specifying whether to standardize
-the covariates for the survival model part.  If \code{FALSE}, the
-covariates will be standardized internally to have mean zero and
-standard deviation one.}
-
-\item{cure_standardize}{A logical value specifying whether to standardize
-the covariates for the cure rate model part.  If \code{TRUE} (by
-default), the covariates will be standardized internally to have mean
-zero and standard deviation one.}
-
 \item{...}{Other arguments passed to the control functions for backward
 compatibility.}
 
