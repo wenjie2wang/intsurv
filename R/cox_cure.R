@@ -128,8 +128,12 @@ cox_cure <- function(surv_formula,
     call_list$event <- model_list$surv$event
     call_list$surv_x <- model_list$surv$x
     call_list$cure_x <- model_list$cure$x
-    call_listsurv_offset <- model_list$surv$offset
-    call_list$cure_offset <- model_list$cure$offset
+    if (! is.null(model_list$surv$offset)) {
+        call_list$surv_offset <- model_list$surv$offset
+    }
+    if (! is.null(model_list$cure$offset)) {
+        call_list$cure_offset <- model_list$cure$offset
+    }
     call_list$bootstrap <- as.integer(bootstrap)
     ## cox model does not have an intercept
     surv_is_intercept <- colnames(call_list$surv_x) == "(Intercept)"

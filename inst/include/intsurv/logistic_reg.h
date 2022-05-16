@@ -447,9 +447,9 @@ namespace intsurv {
             return mat2vec(x_ * coef0_);
         }
 
-        // compute BIC
+        // compute the (scaled) BIC
         inline void compute_bic() {
-            bic_ = std::log(dn_obs_) * coef_df_ + 2 * neg_ll_;
+            bic_ = std::log(dn_obs_) * coef_df_ / dn_obs_ + 2 * neg_ll_;
         }
 
     };
@@ -763,7 +763,7 @@ namespace intsurv {
                 rescale_coef();
                 coef_mat_.col(li) = coef_;
                 coef_df_path_(li) = coef_df_ = p_;
-                neg_ll_path_(li) = neg_ll_ = objective() * dn_obs_;
+                neg_ll_path_(li) = neg_ll_ = objective();
                 compute_bic();
                 bic_path_(li) = bic_;
             }
@@ -803,7 +803,7 @@ namespace intsurv {
                 rescale_coef();
                 coef_mat_.col(k) = coef_;
                 coef_df_path_(k) = coef_df_ = compute_coef_df(coef_);
-                neg_ll_path_(k) = neg_ll_ = objective() * dn_obs_;
+                neg_ll_path_(k) = neg_ll_ = objective();
                 compute_bic();
                 bic_path_(k) = bic_;
                 continue;
@@ -875,7 +875,7 @@ namespace intsurv {
             rescale_coef();
             coef_mat_.col(k) = coef_;
             coef_df_path_(k) = coef_df_ = compute_coef_df(coef_);
-            neg_ll_path_(k) = neg_ll_ = objective() * dn_obs_;
+            neg_ll_path_(k) = neg_ll_ = objective();
             compute_bic();
             bic_path_(k) = bic_;
         }

@@ -89,11 +89,11 @@ cox_cure_net <- function(surv_formula,
     if (! inherits(control, "cox_cure.control")) {
         control <- do.call(cox_cure.control, control)
     }
-    if (! inherits(surv_control, "intsurv.control")) {
-        surv_control <- do.call(intsurv.control, surv_control)
+    if (! inherits(surv_control, "cox_cure_net.control")) {
+        surv_control <- do.call(cox_cure_net.control, surv_control)
     }
-    if (! inherits(cure_control, "intsurv.control")) {
-        cure_control <- do.call(intsurv.control, cure_control)
+    if (! inherits(cure_control, "cox_cure_net.control")) {
+        cure_control <- do.call(cox_cure_net.control, cure_control)
     }
     if (control$save_call) {
         ## record function call
@@ -119,8 +119,12 @@ cox_cure_net <- function(surv_formula,
     call_list$event <- model_list$surv$event
     call_list$surv_x <- model_list$surv$x
     call_list$cure_x <- model_list$cure$x
-    call_listsurv_offset <- model_list$surv$offset
-    call_list$cure_offset <- model_list$cure$offset
+    if (! is.null(model_list$surv$offset)) {
+        call_list$surv_offset <- model_list$surv$offset
+    }
+    if (! is.null(model_list$cure$offset)) {
+        call_list$cure_offset <- model_list$cure$offset
+    }
     call_list$cv_nfolds <- as.integer(cv_nfolds)
     ## cox model does not have an intercept
     surv_is_intercept <- colnames(call_list$surv_x) == "(Intercept)"
@@ -239,11 +243,11 @@ cox_cure_net.fit <- function(surv_x,
     if (! inherits(control, "cox_cure.control")) {
         control <- do.call(cox_cure.control, control)
     }
-    if (! inherits(surv_control, "intsurv.control")) {
-        surv_control <- do.call(intsurv.control, surv_control)
+    if (! inherits(surv_control, "cox_cure_net.control")) {
+        surv_control <- do.call(cox_cure_net.control, surv_control)
     }
-    if (! inherits(cure_control, "intsurv.control")) {
-        cure_control <- do.call(intsurv.control, cure_control)
+    if (! inherits(cure_control, "cox_cure_net.control")) {
+        cure_control <- do.call(cox_cure_net.control, cure_control)
     }
     if (control$save_call) {
         ## record function call
@@ -265,7 +269,8 @@ cox_cure_net.fit <- function(surv_x,
     call_list$event <- event
     call_list$surv_x <- surv_x
     call_list$cure_x <- cure_x
-    call_list$bootstrap <- bootstrap
+    call_list$cv_nfolds <- cv_nfolds
+    call_list$cure_intercept <- cure_intercept
     ## start values
     call_list$surv_start <- null2num0(call_list$surv_start)
     call_list$cure_start <- null2num0(call_list$cure_start)
@@ -279,16 +284,6 @@ cox_cure_net.fit <- function(surv_x,
         if (is_tau_small) {
             stop("The specified 'tail_tau' cannot be less than",
                  "the largest event time.")
-        }
-    }
-    ## more checks if tail completion after a specified tau
-    if (tail_completion == 3L) {
-        if (tail_tau < max(time[! is.na(event) & event > 0])) {
-            stop("The specified 'tail_tau' cannot be less than",
-                 "the largest event time.")
-        } else if (tail_tau > max(time)) {
-            warning("The specified 'tail_tau' is greater than",
-                    "the largest survival time.")
         }
     }
     ## call the routine

@@ -233,6 +233,10 @@ Rcpp::List rcpp_coxph_cure_reg(
             intsurv::arma2rvec(obj.estep_susceptible_)
             ),
         Rcpp::Named("model") = Rcpp::List::create(
+            Rcpp::Named("surv_offset") =
+            intsurv::arma2rvec(obj.surv_obj_.control_.offset_),
+            Rcpp::Named("cure_offset") =
+            intsurv::arma2rvec(obj.cure_obj_.control_.offset_),
             Rcpp::Named("nObs") = obj.n_obs_,
             Rcpp::Named("nEvent") = obj.n_event_,
             Rcpp::Named("coef_df") = obj.coef_df_,
@@ -435,6 +439,10 @@ Rcpp::List rcpp_coxph_cure_vs(
         Rcpp::Named("surv_coef") = surv_coef_mat.t(),
         Rcpp::Named("cure_coef") = cure_coef_mat.t(),
         Rcpp::Named("model") = Rcpp::List::create(
+            Rcpp::Named("surv_offset") =
+            intsurv::arma2rvec(obj.surv_obj_.control_.offset_),
+            Rcpp::Named("cure_offset") =
+            intsurv::arma2rvec(obj.cure_obj_.control_.offset_),
             Rcpp::Named("nObs") = obj.n_obs_,
             Rcpp::Named("nEvent") = obj.n_event_,
             Rcpp::Named("coef_df") = intsurv::arma2rvec(coef_df),

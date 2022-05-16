@@ -149,16 +149,16 @@ namespace intsurv {
             ) const;
         inline double obs_log_likelihood(const CoxphCure& new_object) const;
 
-        // compute BIC
+        // compute the (scaled) BIC
         inline void compute_bic1() {
-            bic1_ = std::log(dn_obs_) * coef_df_ + 2 * neg_ll_;
+            bic1_ = std::log(dn_obs_) * coef_df_ / dn_obs_ + 2 * neg_ll_;
         }
         inline void compute_bic2() {
             bic2_ = std::log(static_cast<double>(case1_ind_.n_elem)) *
-                coef_df_ + 2 * neg_ll_;
+                coef_df_ / dn_obs_ + 2 * neg_ll_;
         }
         inline void compute_aic() {
-            aic_ = 2 * (coef_df_ + neg_ll_);
+            aic_ = 2 * (coef_df_ / dn_obs_ + neg_ll_);
         }
 
     };                          // end of class definition
@@ -723,7 +723,7 @@ namespace intsurv {
                 sus_prob(j) * surv_obj_.S_time_(j) + (1 - sus_prob(j))
                 );
         }
-        return obs_ell;
+        return obs_ell / dn_obs_;
     }
 
     // for given fitted model and a new set of data
@@ -834,7 +834,7 @@ namespace intsurv {
                 p_vec(j) * S_vec(j) + (1 - p_vec(j))
                 );
         }
-        return obs_ell;
+        return obs_ell / static_cast<double>(new_n_obs);
     }
 
     inline double CoxphCure::obs_log_likelihood(

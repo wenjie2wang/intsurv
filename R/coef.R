@@ -129,18 +129,16 @@ coef.cox_cure_mar <- coef.cox_cure
 ##' @method coef cox_cure_net
 ##' @export
 coef.cox_cure_net <- function(object,
-                              selection = c("bic1", "bic2", "all"), ...)
+                              selection = c("bic2", "bic1", "all"), ...)
 {
     bic <- match.arg(selection)
-    surv_coef_name <- paste0("surv_", ifelse(naive_en, "", "en_"), "coef")
-    cure_coef_name <- paste0("cure_", ifelse(naive_en, "", "en_"), "coef")
     if (bic != "all") {
         idx <- which.min(object$model[[bic]])
-        out <- list(surv = object[[surv_coef_name]][idx, ],
-                    cure = object[[cure_coef_name]][idx, ])
+        out <- list(surv = object$surv_coef[idx, ],
+                    cure = object$cure_coef[idx, ])
     } else {
-        out <- list(surv = object[[surv_coef_name]],
-                    cure = object[[cure_coef_name]])
+        out <- list(surv = object$surv_coef,
+                    cure = object$cure_coef)
     }
     ## return
     out
