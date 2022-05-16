@@ -349,7 +349,7 @@ Rcpp::List rcpp_coxph_cure_mar_vs(
     const unsigned int mar_nlambda,
     const double mar_lambda_min_ratio,
     const arma::vec& mar_penalty_factor,
-    const unsigned long cv_nfolds,
+    const unsigned int cv_nfolds,
     const arma::vec& surv_start,
     const arma::vec& cure_start,
     const arma::vec& mar_start,
@@ -480,7 +480,7 @@ Rcpp::List rcpp_coxph_cure_mar_vs(
         for (size_t j {0}; j < n_cure_lambda; ++j) {
             double cure_l1_lambda { cure_lambda_seq(j) * cure_alpha };
             double cure_l2_lambda { cure_lambda_seq(j) * (1 - cure_alpha) / 2 };
-            obj.cure_obj_.control_.net_fit(surv_l1_lambda, surv_l2_lambda);
+            obj.cure_obj_.control_.net_fit(cure_l1_lambda, cure_l2_lambda);
             obj.surv_obj_.control_.set_start(surv_warm_start);
             obj.cure_obj_.control_.set_start(cure_warm_start);
             // model-fitting
@@ -521,6 +521,7 @@ Rcpp::List rcpp_coxph_cure_mar_vs(
     return Rcpp::List::create(
         Rcpp::Named("surv_coef") = surv_coef_mat.t(),
         Rcpp::Named("cure_coef") = cure_coef_mat.t(),
+        Rcpp::Named("mar_coef") = intsurv::arma2rvec(obj.mar_obj_.coef_),
         Rcpp::Named("model") = Rcpp::List::create(
             Rcpp::Named("nObs") = obj.n_obs_,
             Rcpp::Named("nEvent") = obj.n_event_,
@@ -533,14 +534,22 @@ Rcpp::List rcpp_coxph_cure_mar_vs(
             ),
         Rcpp::Named("penalty") = Rcpp::List::create(
             Rcpp::Named("lambda_mat") = lambda_mat,
-            Rcpp::Named("surv_alpha") = surv_alpha,
-            Rcpp::Named("cure_alpha") = cure_alpha,
             Rcpp::Named("surv_l1_lambda_max") = obj.surv_obj_.l1_lambda_max_,
-            Rcpp::Named("cure_l1_lambda_max") = obj.cure_obj_.l1_lambda_max_,
+            Rcpp::Named("surv_alpha") = surv_alpha,
+            Rcpp::Named("surv_lambda") = intsurv::arma2rvec(surv_lambda_seq),
             Rcpp::Named("surv_penalty_factor") =
             intsurv::arma2rvec(obj.surv_obj_.control_.penalty_factor_),
+            Rcpp::Named("cure_l1_lambda_max") = obj.cure_obj_.l1_lambda_max_,
+            Rcpp::Named("cure_alpha") = cure_alpha,
+            Rcpp::Named("cure_lambda") = intsurv::arma2rvec(cure_lambda_seq),
             Rcpp::Named("cure_penalty_factor") =
-            intsurv::arma2rvec(obj.cure_obj_.control_.penalty_factor_)
+            intsurv::arma2rvec(obj.cure_obj_.control_.penalty_factor_),
+            Rcpp::Named("mar_l1_lambda_max") = obj.mar_obj_.l1_lambda_max_,
+            Rcpp::Named("mar_alpha") = mar_alpha,
+            Rcpp::Named("mar_lambda") =
+            intsurv::arma2rvec(obj.mar_obj_.control_.lambda_),
+            Rcpp::Named("mar_penalty_factor") =
+            intsurv::arma2rvec(obj.mar_obj_.control_.penalty_factor_)
             )
         );
 }
