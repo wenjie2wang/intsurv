@@ -18,24 +18,18 @@
 #include <RcppArmadillo.h>
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::plugins(cpp11)]]
-#include <intsurv.h>
+#include <intsurv/nonparametric.h>
+#include <intsurv/utils.h>
 
+// Nelson-Aalen estimator for right censor data
 // [[Rcpp::export]]
-Rcpp::NumericVector aggregateSum(const arma::vec& x,
-                                 const arma::vec& indices,
-                                 const bool simplify = true,
-                                 const bool cumulative = false,
-                                 const bool reversely = false)
+Rcpp::List rcpp_mcf_right(const arma::vec& time,
+                          const arma::vec& event)
 {
-    arma::vec res {
-        intsurv::aggregate_sum(x, indices, simplify, cumulative, reversely)
-    };
-    return Rcpp::NumericVector(res.begin(), res.end());
-}
-
-// [[Rcpp::export]]
-Rcpp::NumericVector revcumsum(const arma::vec& x)
-{
-    arma::vec res { intsurv::cum_sum(x, true) };
-    return Rcpp::NumericVector(res.begin(), res.end());
+    intsurv::NelsonAalen na_obj { time, event };
+    return Rcpp::List::create(
+        Rcpp::Named("time") = intsurv::arma2rvec(na_obj.uni_event_time_),
+        Rcpp::Named("inst_rate") = intsurv::arma2rvec(na_obj.inst_rate_),
+        Rcpp::Named("cum_rate") = intsurv::arma2rvec(na_obj.cum_rate_)
+        );
 }

@@ -20,10 +20,10 @@
 
 #include <RcppArmadillo.h>
 #include "assessment.h"
-#include "coxph_reg.h"
-#include "logistic_reg.h"
+#include "CoxphReg.h"
+#include "LogisticReg.h"
 #include "nonparametric.h"
-#include "control.h"
+#include "Control.h"
 #include "utils.h"
 
 namespace intsurv {

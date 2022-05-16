@@ -18,15 +18,15 @@
 #ifndef INTSURV_H
 #define INTSURV_H
 
+#include "intsurv/Control.h"
+#include "intsurv/CoxphCure.h"
+#include "intsurv/CoxphCureMar.h"
+#include "intsurv/CoxphReg.h"
+#include "intsurv/CrossValidation.h"
+#include "intsurv/LogisticReg.h"
 #include "intsurv/assessment.h"
-#include "intsurv/control.h"
-#include "intsurv/coxph_cure.h"
-#include "intsurv/coxph_cure_mar.h"
-#include "intsurv/coxph_reg.h"
-#include "intsurv/cross-validation.h"
 #include "intsurv/cv_coxph_cure.h"
 #include "intsurv/cv_coxph_cure_mar.h"
-#include "intsurv/logistic_reg.h"
 #include "intsurv/nonparametric.h"
 #include "intsurv/subset.h"
 #include "intsurv/utils.h"

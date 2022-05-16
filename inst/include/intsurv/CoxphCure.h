@@ -21,9 +21,9 @@
 #include <RcppArmadillo.h>
 #include <string>
 #include "assessment.h"
-#include "coxph_reg.h"
-#include "logistic_reg.h"
-#include "control.h"
+#include "CoxphReg.h"
+#include "LogisticReg.h"
+#include "Control.h"
 #include "utils.h"
 
 

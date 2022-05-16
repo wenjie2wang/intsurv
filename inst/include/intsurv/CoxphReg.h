@@ -19,7 +19,7 @@
 #define INTSURV_COXPH_REG_H
 
 #include <RcppArmadillo.h>
-#include "control.h"
+#include "Control.h"
 #include "utils.h"
 
 namespace intsurv {

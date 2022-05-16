@@ -19,9 +19,9 @@
 #define INTSURV_CV_COXPH_CURE_MAR_H
 
 #include <RcppArmadillo.h>
-#include "cross-validation.h"
-#include "coxph_cure_mar.h"
-#include "control.h"
+#include "CrossValidation.h"
+#include "CoxphCureMar.h"
+#include "Control.h"
 #include "subset.h"
 
 namespace intsurv {

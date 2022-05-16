@@ -18,40 +18,33 @@
 #include <RcppArmadillo.h>
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::plugins(cpp11)]]
-#include <intsurv/coxph_cure_mar.h>
-#include <intsurv/cv_coxph_cure_mar.h>
-#include <intsurv/control.h>
-#include <intsurv/utils.h>
+#include <intsurv/Control.h>
+#include <intsurv/CoxphCure.h>
+#include <intsurv/cv_coxph_cure.h>
 #include <intsurv/subset.h>
+#include <intsurv/utils.h>
 
-// Cox cure model with uncertain events without regularization
+// fit regular Cox cure rate model by EM algorithm
 // [[Rcpp::export]]
-Rcpp::List rcpp_coxph_cure_mar(
+Rcpp::List rcpp_coxph_cure(
     const arma::vec& time,
     const arma::vec& event,
     const arma::mat& surv_x,
     const arma::mat& cure_x,
-    const arma::mat& mar_x,
     const bool cure_intercept = true,
-    const bool mar_intercept = true,
     const unsigned int bootstrap = 0,
     const arma::vec& surv_start = 0,
     const arma::vec& cure_start = 0,
-    const arma::vec& mar_start = 0,
     const arma::vec& surv_offset = 0,
     const arma::vec& cure_offset = 0,
-    const arma::vec& mar_offset = 0,
     const bool surv_standardize = true,
     const bool cure_standardize = true,
-    const bool mar_standardize = true,
-    const unsigned int max_iter = 300,
-    const double epsilon = 1e-5,
+    const unsigned int max_iter = 200,
+    const double epsilon = 1e-4,
     const unsigned int surv_max_iter = 100,
     const double surv_epsilon = 1e-4,
     const unsigned int cure_max_iter = 100,
     const double cure_epsilon = 1e-4,
-    const unsigned int mar_max_iter = 100,
-    const double mar_epsilon = 1e-4,
     const unsigned int tail_completion = 1,
     const double tail_tau = -1,
     const double pmin = 1e-5,
@@ -74,30 +67,20 @@ Rcpp::List rcpp_coxph_cure_mar(
     cure_control.logistic(cure_intercept, pmin)->
         set_start(cure_start)->
         set_offset(cure_offset);
-    intsurv::Control mar_control {
-        mar_max_iter, mar_epsilon, mar_standardize,
-        intsurv::less_verbose(verbose, 3)
-    };
-    mar_control.logistic(mar_intercept, pmin)->
-        set_start(mar_start)->
-        set_offset(mar_offset);
-    // define the main object
-    intsurv::CoxphCureMar obj {
-        time, event, surv_x, cure_x, mar_x,
-        control0, surv_control, cure_control, mar_control
+    // define object
+    intsurv::CoxphCure obj {
+        time, event, surv_x, cure_x,
+        control0, surv_control, cure_control
     };
     // model-fitting
-    obj.mar_fit();
     obj.fit();
     // initialize bootstrap estimates
-    arma::mat boot_surv_coef_mat, boot_cure_coef_mat, boot_mar_coef_mat;
+    arma::mat boot_surv_coef_mat, boot_cure_coef_mat;
     if (bootstrap > 0) {
         boot_surv_coef_mat = arma::zeros(obj.surv_coef_.n_elem, bootstrap);
         boot_cure_coef_mat = arma::zeros(obj.cure_coef_.n_elem, bootstrap);
-        boot_mar_coef_mat = arma::zeros(obj.mar_obj_.coef_.n_elem, bootstrap);
         const arma::uvec& case1_ind { obj.case1_ind_ };
         const arma::uvec& case2_ind { obj.case2_ind_ };
-        const arma::uvec& case3_ind { obj.case3_ind_ };
         for (size_t i {0}; i < bootstrap; ++i) {
             // generate a bootstrap sample
             arma::uvec boot_ind {
@@ -106,50 +89,42 @@ Rcpp::List rcpp_coxph_cure_mar(
                     intsurv::bootstrap_sample(case2_ind)
                     )
             };
-            boot_ind = intsurv::vec_union(
-                boot_ind,
-                intsurv::bootstrap_sample(case3_ind)
-                );
-            intsurv::CoxphCureMar boot_obj {
+            intsurv::CoxphCure boot_obj {
                 intsurv::subset(obj, boot_ind)
             };
             boot_obj.control_.set_verbose(0);
             boot_obj.surv_obj_.control_.set_verbose(0);
             boot_obj.cure_obj_.control_.set_verbose(0);
-            boot_obj.mar_obj_.control_.set_verbose(0);
             // fit the bootstarp sample
-            boot_obj.mar_fit();
             boot_obj.fit();
             boot_surv_coef_mat.col(i) = boot_obj.surv_coef_;
             boot_cure_coef_mat.col(i) = boot_obj.cure_coef_;
-            boot_mar_coef_mat.col(i) = boot_obj.mar_obj_.coef_;
         }
     }
     return Rcpp::List::create(
         Rcpp::Named("surv_coef") = intsurv::arma2rvec(obj.surv_coef_),
         Rcpp::Named("cure_coef") = intsurv::arma2rvec(obj.cure_coef_),
-        Rcpp::Named("mar_coef") = intsurv::arma2rvec(obj.mar_coef_),
         Rcpp::Named("baseline") = Rcpp::List::create(
             Rcpp::Named("time") = intsurv::arma2rvec(obj.unique_time_),
             Rcpp::Named("h0") = intsurv::arma2rvec(obj.h0_est_),
             Rcpp::Named("H0") = intsurv::arma2rvec(obj.H0_est_),
-            Rcpp::Named("S0") = intsurv::arma2rvec(obj.S0_est_),
-            Rcpp::Named("hc") = intsurv::arma2rvec(obj.hc_est_),
-            Rcpp::Named("Hc") = intsurv::arma2rvec(obj.Hc_est_),
-            Rcpp::Named("Sc") = intsurv::arma2rvec(obj.Sc_est_)
+            Rcpp::Named("S0") = intsurv::arma2rvec(obj.S0_est_)
             ),
         Rcpp::Named("fitted") = Rcpp::List::create(
             Rcpp::Named("surv_xBeta") = intsurv::arma2rvec(obj.surv_xbeta_),
             Rcpp::Named("cure_xBeta") = intsurv::arma2rvec(obj.cure_xbeta_),
-            Rcpp::Named("mar_xBeta") = intsurv::arma2rvec(obj.mar_xbeta_),
             Rcpp::Named("susceptible_prob") =
             intsurv::arma2rvec(obj.susceptible_prob_),
-            Rcpp::Named("mar_prob") = intsurv::arma2rvec(obj.mar_prob_),
-            Rcpp::Named("estep_cured") = intsurv::arma2rvec(obj.estep_cured_),
-            Rcpp::Named("estep_event") = intsurv::arma2rvec(obj.estep_event_),
-            Rcpp::Named("estep_censor") = intsurv::arma2rvec(obj.estep_censor_)
+            Rcpp::Named("estep_cured") =
+            intsurv::arma2rvec(obj.estep_cured_),
+            Rcpp::Named("estep_susceptible") =
+            intsurv::arma2rvec(obj.estep_susceptible_)
             ),
         Rcpp::Named("model") = Rcpp::List::create(
+            Rcpp::Named("surv_offset") =
+            intsurv::arma2rvec(obj.surv_obj_.control_.offset_),
+            Rcpp::Named("cure_offset") =
+            intsurv::arma2rvec(obj.cure_obj_.control_.offset_),
             Rcpp::Named("nObs") = obj.n_obs_,
             Rcpp::Named("nEvent") = obj.n_event_,
             Rcpp::Named("coef_df") = obj.coef_df_,
@@ -162,8 +137,7 @@ Rcpp::List rcpp_coxph_cure_mar(
         Rcpp::Named("bootstrap") = Rcpp::List::create(
             Rcpp::Named("B") = bootstrap,
             Rcpp::Named("surv_coef_mat") = boot_surv_coef_mat.t(),
-            Rcpp::Named("cure_coef_mat") = boot_cure_coef_mat.t(),
-            Rcpp::Named("mar_coef_mat") = boot_mar_coef_mat.t()
+            Rcpp::Named("cure_coef_mat") = boot_cure_coef_mat.t()
             ),
         Rcpp::Named("convergence") = Rcpp::List::create(
             Rcpp::Named("num_iter") = obj.n_iter_
@@ -172,47 +146,36 @@ Rcpp::List rcpp_coxph_cure_mar(
 }
 
 
-// fit regularized Cox cure rate model with uncertain events
-// by EM algorithm, where the M-step utilized CMD algoritm
+// fit regularized Cox cure rate model by EM algorithm,
+// where the M-step utilized CMD algoritm
 // [[Rcpp::export]]
-Rcpp::List rcpp_coxph_cure_mar_reg(
+Rcpp::List rcpp_coxph_cure_reg(
     const arma::vec& time,
     const arma::vec& event,
     const arma::mat& surv_x,
     const arma::mat& cure_x,
-    const arma::mat& mar_x,
     const bool cure_intercept,
-    const bool mar_intercept,
     const double surv_l1_lambda,
     const double surv_l2_lambda,
     const arma::vec& surv_penalty_factor,
     const double cure_l1_lambda,
     const double cure_l2_lambda,
     const arma::vec& cure_penalty_factor,
-    const double mar_l1_lambda,
-    const double mar_l2_lambda,
-    const arma::vec& mar_penalty_factor,
-    const unsigned int cv_nfolds,
+    const unsigned long cv_nfolds,
     const arma::vec& surv_start,
     const arma::vec& cure_start,
-    const arma::vec& mar_start,
     const arma::vec& surv_offset,
     const arma::vec& cure_offset,
-    const arma::vec& mar_offset,
     const bool surv_standardize = true,
     const bool cure_standardize = true,
-    const bool mar_standardize = true,
     const bool surv_varying_active = true,
     const bool cure_varying_active = true,
-    const bool mar_varying_active = true,
     const unsigned int max_iter = 200,
     const double epsilon = 1e-4,
     const unsigned int surv_max_iter = 100,
     const double surv_epsilon = 1e-4,
     const unsigned int cure_max_iter = 100,
     const double cure_epsilon = 1e-4,
-    const unsigned int mar_max_iter = 100,
-    const double mar_epsilon = 1e-4,
     const unsigned int tail_completion = 1,
     const double tail_tau = -1,
     const double pmin = 1e-5,
@@ -239,54 +202,41 @@ Rcpp::List rcpp_coxph_cure_mar_reg(
         net_fit(cure_l1_lambda, cure_l2_lambda)->
         set_start(cure_start)->
         set_offset(cure_offset);
-    intsurv::Control mar_control {
-        mar_max_iter, mar_epsilon, mar_standardize,
-        intsurv::less_verbose(verbose, 3)
+    // define object
+    intsurv::CoxphCure obj {
+        time, event, surv_x, cure_x,
+        control0, surv_control, cure_control
     };
-    mar_control.logistic(mar_intercept, pmin)->
-        net(mar_penalty_factor, mar_varying_active)->
-        net_fit(mar_l1_lambda, mar_l2_lambda)->
-        set_start(mar_start)->
-        set_offset(mar_offset);
-    // define the main object
-    intsurv::CoxphCureMar obj {
-        time, event, surv_x, cure_x, mar_x,
-        control0, surv_control, cure_control, mar_control
-    };
-    // model-fitting
-    obj.mar_net_fit();
     obj.net_fit();
     // cross-validation
-    arma::vec cv_vec { arma::datum::nan };
+    arma::vec cv_vec;
     if (cv_nfolds > 1) {
-        cv_vec = intsurv::cv_coxph_cure_mar_reg(obj, cv_nfolds);
+        cv_vec = intsurv::cv_coxph_cure_reg(obj, cv_nfolds);
     }
-    // return results in a list
     return Rcpp::List::create(
         Rcpp::Named("surv_coef") = intsurv::arma2rvec(obj.surv_coef_),
         Rcpp::Named("cure_coef") = intsurv::arma2rvec(obj.cure_coef_),
-        Rcpp::Named("mar_coef") = intsurv::arma2rvec(obj.mar_coef_),
         Rcpp::Named("baseline") = Rcpp::List::create(
             Rcpp::Named("time") = intsurv::arma2rvec(obj.unique_time_),
-            Rcpp::Named("h0") = intsurv::arma2rvec(obj.h0_est_),
-            Rcpp::Named("H0") = intsurv::arma2rvec(obj.H0_est_),
-            Rcpp::Named("S0") = intsurv::arma2rvec(obj.S0_est_),
-            Rcpp::Named("hc") = intsurv::arma2rvec(obj.hc_est_),
-            Rcpp::Named("Hc") = intsurv::arma2rvec(obj.Hc_est_),
-            Rcpp::Named("Sc") = intsurv::arma2rvec(obj.Sc_est_)
+            Rcpp::Named("h0_est") = intsurv::arma2rvec(obj.h0_est_),
+            Rcpp::Named("H0_est") = intsurv::arma2rvec(obj.H0_est_),
+            Rcpp::Named("S0_est") = intsurv::arma2rvec(obj.S0_est_)
             ),
         Rcpp::Named("fitted") = Rcpp::List::create(
             Rcpp::Named("surv_xBeta") = intsurv::arma2rvec(obj.surv_xbeta_),
             Rcpp::Named("cure_xBeta") = intsurv::arma2rvec(obj.cure_xbeta_),
-            Rcpp::Named("mar_xBeta") = intsurv::arma2rvec(obj.mar_xbeta_),
             Rcpp::Named("susceptible_prob") =
             intsurv::arma2rvec(obj.susceptible_prob_),
-            Rcpp::Named("mar_prob") = intsurv::arma2rvec(obj.mar_prob_),
-            Rcpp::Named("estep_cured") = intsurv::arma2rvec(obj.estep_cured_),
-            Rcpp::Named("estep_event") = intsurv::arma2rvec(obj.estep_event_),
-            Rcpp::Named("estep_censor") = intsurv::arma2rvec(obj.estep_censor_)
+            Rcpp::Named("estep_cured") =
+            intsurv::arma2rvec(obj.estep_cured_),
+            Rcpp::Named("estep_susceptible") =
+            intsurv::arma2rvec(obj.estep_susceptible_)
             ),
         Rcpp::Named("model") = Rcpp::List::create(
+            Rcpp::Named("surv_offset") =
+            intsurv::arma2rvec(obj.surv_obj_.control_.offset_),
+            Rcpp::Named("cure_offset") =
+            intsurv::arma2rvec(obj.cure_obj_.control_.offset_),
             Rcpp::Named("nObs") = obj.n_obs_,
             Rcpp::Named("nEvent") = obj.n_event_,
             Rcpp::Named("coef_df") = obj.coef_df_,
@@ -307,12 +257,7 @@ Rcpp::List rcpp_coxph_cure_mar_reg(
             Rcpp::Named("cure_l1_lambda") = obj.cure_obj_.control_.l1_lambda_,
             Rcpp::Named("cure_l2_lambda") = obj.cure_obj_.control_.l2_lambda_,
             Rcpp::Named("cure_penalty_factor") =
-            intsurv::arma2rvec(obj.cure_obj_.control_.penalty_factor_),
-            Rcpp::Named("mar_l1_lambda_max") = obj.mar_obj_.l1_lambda_max_,
-            Rcpp::Named("mar_l1_lambda") = obj.mar_obj_.control_.l1_lambda_,
-            Rcpp::Named("mar_l2_lambda") = obj.mar_obj_.control_.l2_lambda_,
-            Rcpp::Named("mar_penalty_factor") =
-            intsurv::arma2rvec(obj.mar_obj_.control_.penalty_factor_)
+            intsurv::arma2rvec(obj.cure_obj_.control_.penalty_factor_)
             ),
         Rcpp::Named("convergence") = Rcpp::List::create(
             Rcpp::Named("num_iter") = obj.n_iter_
@@ -321,19 +266,17 @@ Rcpp::List rcpp_coxph_cure_mar_reg(
 }
 
 
-// variable selection for the regularized Cox cure rate model with uncertain
-// events by EM algorithm, where the M-step utilized CMD algoritm
+// variable selection for Cox cure rate model by EM algorithm,
+// where the M-step utilized CMD algoritm
 // for a sequence of lambda's
 // lambda * (penalty_factor * alpha * lasso + (1 - alpha) / 2 * ridge)
 // [[Rcpp::export]]
-Rcpp::List rcpp_coxph_cure_mar_vs(
+Rcpp::List rcpp_coxph_cure_vs(
     const arma::vec& time,
     const arma::vec& event,
     const arma::mat& surv_x,
     const arma::mat& cure_x,
-    const arma::mat& mar_x,
     const bool cure_intercept,
-    const bool mar_intercept,
     const arma::vec& surv_lambda,
     const double surv_alpha,
     const unsigned int surv_nlambda,
@@ -344,32 +287,21 @@ Rcpp::List rcpp_coxph_cure_mar_vs(
     const unsigned int cure_nlambda,
     const double cure_lambda_min_ratio,
     const arma::vec& cure_penalty_factor,
-    const arma::vec& mar_lambda,
-    const double mar_alpha,
-    const unsigned int mar_nlambda,
-    const double mar_lambda_min_ratio,
-    const arma::vec& mar_penalty_factor,
-    const unsigned int cv_nfolds,
+    const unsigned long cv_nfolds,
     const arma::vec& surv_start,
     const arma::vec& cure_start,
-    const arma::vec& mar_start,
     const arma::vec& surv_offset,
     const arma::vec& cure_offset,
-    const arma::vec& mar_offset,
     const bool surv_standardize = true,
     const bool cure_standardize = true,
-    const bool mar_standardize = true,
     const bool surv_varying_active = true,
     const bool cure_varying_active = true,
-    const bool mar_varying_active = true,
     const unsigned int max_iter = 200,
     const double epsilon = 1e-4,
-    const unsigned int surv_max_iter = 200,
+    const unsigned int surv_max_iter = 100,
     const double surv_epsilon = 1e-4,
-    const unsigned int cure_max_iter = 200,
+    const unsigned int cure_max_iter = 100,
     const double cure_epsilon = 1e-4,
-    const unsigned int mar_max_iter = 200,
-    const double mar_epsilon = 1e-4,
     const unsigned int tail_completion = 1,
     const double tail_tau = -1,
     const double pmin = 1e-5,
@@ -396,28 +328,15 @@ Rcpp::List rcpp_coxph_cure_mar_vs(
         net_path(cure_nlambda, cure_lambda_min_ratio, cure_alpha, cure_lambda)->
         set_start(cure_start)->
         set_offset(cure_offset);
-    intsurv::Control mar_control {
-        mar_max_iter, mar_epsilon, mar_standardize,
-        intsurv::less_verbose(verbose, 3)
-    };
-    mar_control.logistic(mar_intercept, pmin)->
-        net(mar_penalty_factor, mar_varying_active)->
-        net_path(mar_nlambda, mar_lambda_min_ratio, mar_alpha, mar_lambda)->
-        set_start(mar_start)->
-        set_offset(mar_offset);
     // define object
-    intsurv::CoxphCureMar obj {
-        time, event, surv_x, cure_x, mar_x,
-        control0, surv_control, cure_control, mar_control
+    intsurv::CoxphCure obj {
+        time, event, surv_x, cure_x,
+        control0, surv_control, cure_control
     };
     obj.surv_obj_.set_penalty_factor();
     obj.cure_obj_.set_penalty_factor();
-    obj.mar_obj_.set_penalty_factor();
     obj.surv_obj_.set_l1_lambda_max();
     obj.cure_obj_.set_l1_lambda_max();
-    obj.mar_obj_.set_l1_lambda_max();
-    // fit mar
-    obj.mar_net_path();
     // construct lambda sequence
     arma::vec surv_lambda_seq, cure_lambda_seq;
     if (surv_lambda.is_empty()) {
@@ -457,8 +376,6 @@ Rcpp::List rcpp_coxph_cure_mar_vs(
     const unsigned int cure_p { obj.cure_p_ };
     arma::mat surv_coef_mat { arma::zeros(surv_p, n_lambda) };
     arma::mat cure_coef_mat { arma::zeros(cure_p, n_lambda) };
-    // arma::mat surv_en_coef_mat { arma::zeros(surv_p, n_lambda) };
-    // arma::mat cure_en_coef_mat { arma::zeros(cure_p, n_lambda) };
     arma::vec bic1 { arma::zeros(n_lambda) }, bic2 { bic1 }, aic { bic1 },
         coef_df { bic1 }, negLogL { bic1 };
     arma::mat lambda_mat { arma::zeros(n_lambda, 4) };
@@ -480,7 +397,7 @@ Rcpp::List rcpp_coxph_cure_mar_vs(
         for (size_t j {0}; j < n_cure_lambda; ++j) {
             double cure_l1_lambda { cure_lambda_seq(j) * cure_alpha };
             double cure_l2_lambda { cure_lambda_seq(j) * (1 - cure_alpha) / 2 };
-            obj.cure_obj_.control_.net_fit(cure_l1_lambda, cure_l2_lambda);
+            obj.cure_obj_.control_.net_fit(surv_l1_lambda, surv_l2_lambda);
             obj.surv_obj_.control_.set_start(surv_warm_start);
             obj.cure_obj_.control_.set_start(cure_warm_start);
             // model-fitting
@@ -488,7 +405,7 @@ Rcpp::List rcpp_coxph_cure_mar_vs(
             // cross-validation
             arma::vec cv_vec { arma::datum::nan };
             if (cv_nfolds > 1) {
-                cv_vec = intsurv::cv_coxph_cure_mar_reg(obj, cv_nfolds);
+                cv_vec = intsurv::cv_coxph_cure_reg(obj, cv_nfolds);
             }
             // update starting value
             surv_warm_start = obj.surv_coef_;
@@ -512,7 +429,7 @@ Rcpp::List rcpp_coxph_cure_mar_vs(
             lambda_mat(iter, 1) = surv_l2_lambda;
             lambda_mat(iter, 2) = cure_l1_lambda;
             lambda_mat(iter, 3) = cure_l2_lambda;
-            cv_loglik(iter) = arma::sum(cv_vec);
+            cv_loglik(iter) = arma::mean(cv_vec);
             // update iterators
             iter++;
         }
@@ -521,8 +438,11 @@ Rcpp::List rcpp_coxph_cure_mar_vs(
     return Rcpp::List::create(
         Rcpp::Named("surv_coef") = surv_coef_mat.t(),
         Rcpp::Named("cure_coef") = cure_coef_mat.t(),
-        Rcpp::Named("mar_coef") = intsurv::arma2rvec(obj.mar_obj_.coef_),
         Rcpp::Named("model") = Rcpp::List::create(
+            Rcpp::Named("surv_offset") =
+            intsurv::arma2rvec(obj.surv_obj_.control_.offset_),
+            Rcpp::Named("cure_offset") =
+            intsurv::arma2rvec(obj.cure_obj_.control_.offset_),
             Rcpp::Named("nObs") = obj.n_obs_,
             Rcpp::Named("nEvent") = obj.n_event_,
             Rcpp::Named("coef_df") = intsurv::arma2rvec(coef_df),
@@ -534,22 +454,14 @@ Rcpp::List rcpp_coxph_cure_mar_vs(
             ),
         Rcpp::Named("penalty") = Rcpp::List::create(
             Rcpp::Named("lambda_mat") = lambda_mat,
-            Rcpp::Named("surv_l1_lambda_max") = obj.surv_obj_.l1_lambda_max_,
             Rcpp::Named("surv_alpha") = surv_alpha,
-            Rcpp::Named("surv_lambda") = intsurv::arma2rvec(surv_lambda_seq),
+            Rcpp::Named("cure_alpha") = cure_alpha,
+            Rcpp::Named("surv_l1_lambda_max") = obj.surv_obj_.l1_lambda_max_,
+            Rcpp::Named("cure_l1_lambda_max") = obj.cure_obj_.l1_lambda_max_,
             Rcpp::Named("surv_penalty_factor") =
             intsurv::arma2rvec(obj.surv_obj_.control_.penalty_factor_),
-            Rcpp::Named("cure_l1_lambda_max") = obj.cure_obj_.l1_lambda_max_,
-            Rcpp::Named("cure_alpha") = cure_alpha,
-            Rcpp::Named("cure_lambda") = intsurv::arma2rvec(cure_lambda_seq),
             Rcpp::Named("cure_penalty_factor") =
-            intsurv::arma2rvec(obj.cure_obj_.control_.penalty_factor_),
-            Rcpp::Named("mar_l1_lambda_max") = obj.mar_obj_.l1_lambda_max_,
-            Rcpp::Named("mar_alpha") = mar_alpha,
-            Rcpp::Named("mar_lambda") =
-            intsurv::arma2rvec(obj.mar_obj_.control_.lambda_),
-            Rcpp::Named("mar_penalty_factor") =
-            intsurv::arma2rvec(obj.mar_obj_.control_.penalty_factor_)
+            intsurv::arma2rvec(obj.cure_obj_.control_.penalty_factor_)
             )
         );
 }

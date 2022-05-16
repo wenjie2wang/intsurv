@@ -20,7 +20,7 @@
  // [[Rcpp::depends(RcppArmadillo)]]
  // [[Rcpp::plugins(cpp11)]]
 #include <stdexcept>
-#include <intsurv.h>
+#include <intsurv/assessment.h>
 
 // weighted C-index
 // [[Rcpp::export]]

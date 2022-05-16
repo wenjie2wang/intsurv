@@ -2,8 +2,8 @@
 #define INTSURV_SUBSET_H
 
 #include <RcppArmadillo.h>
-#include "coxph_cure.h"
-#include "coxph_cure_mar.h"
+#include "CoxphCure.h"
+#include "CoxphCureMar.h"
 
 namespace intsurv {
 
