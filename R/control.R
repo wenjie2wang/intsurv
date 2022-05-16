@@ -38,8 +38,8 @@
 ##'     \code{cox_cure.control}, or \code{cox_cure_net.control}.
 ##'
 ##' @export
-intsurv.control <- function(max_iter = 1000,
-                            epsilon = 1e-5,
+intsurv.control <- function(max_iter = 300,
+                            epsilon = 1e-4,
                             standardize = TRUE,
                             start = NULL,
                             offset = NULL,

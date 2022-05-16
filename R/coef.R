@@ -91,9 +91,9 @@ coef.cox_cure <- function(object, part = c("both", "survival", "cure"), ...)
 
 
 ##' @rdname coef.cox_cure
-##' @method coef cox_cure_mcar
+##' @method coef cox_cure_mar
 ##' @export
-coef.cox_cure_mcar <- coef.cox_cure
+coef.cox_cure_mar <- coef.cox_cure
 
 
 ##' Estimated Covariate Coefficients
@@ -102,9 +102,6 @@ coef.cox_cure_mcar <- coef.cox_cure
 ##' regularized Cox cure rate model.
 ##'
 ##' @param object Object representing a fitted solution path.
-##' @param naive_en A logical value specifying whether to return naive elastic
-##'     net estimates.  If \code{FALSE} by default, the elastic net estimates
-##'     will be returned instead of the naive elastic net estimates.
 ##' @param selection A character string for specifying the criterion for
 ##'     selection of coefficient estimates.  The available options are
 ##'     \code{"bic1"} for selecting coefficient estimates by regular BIC
@@ -131,7 +128,7 @@ coef.cox_cure_mcar <- coef.cox_cure
 ##' @importFrom stats coef
 ##' @method coef cox_cure_net
 ##' @export
-coef.cox_cure_net <- function(object, naive_en = FALSE,
+coef.cox_cure_net <- function(object,
                               selection = c("bic1", "bic2", "all"), ...)
 {
     bic <- match.arg(selection)
@@ -152,6 +149,6 @@ coef.cox_cure_net <- function(object, naive_en = FALSE,
 
 ##' @rdname coef.cox_cure_net
 ##' @importFrom stats coef
-##' @method coef cox_cure_net_mcar
+##' @method coef cox_cure_net_mar
 ##' @export
-coef.cox_cure_net_mcar <- coef.cox_cure_net
+coef.cox_cure_net_mar <- coef.cox_cure_net

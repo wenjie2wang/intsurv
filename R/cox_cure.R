@@ -123,7 +123,6 @@ cox_cure <- function(surv_formula,
     names(surv_control) <- paste0("surv_", names(surv_control))
     names(cure_control) <- paste0("cure_", names(cure_control))
     call_list <- c(control, surv_control, cure_control)
-    browser()
     ## get design matrix and responses
     call_list$time <- model_list$surv$time
     call_list$event <- model_list$surv$event
@@ -177,8 +176,20 @@ cox_cure <- function(surv_formula,
     }
     ## call the routine
     if (anyNA(call_list$event)) {
-        ## TODO
-        out <- list()
+        ## prepare additional mar
+        call_list$mar_x <- model_list$mar$x
+        mar_control <- intsurv.control(
+            start = numeric(0),
+            offset = numeric(0),
+            standardize = FALSE
+        )
+        names(mar_control) <- paste0("mar_", names(mar_control))
+        mar_control$mar_intercept <- FALSE
+        call_list <- c(call_list, mar_control)
+        is_arg_valid <- names(call_list) %in%
+            names(formals(rcpp_coxph_cure_mar))
+        call_list <- call_list[is_arg_valid]
+        out <- do.call(rcpp_coxph_cure_mar, call_list)
         ## add class
         class(out) <- "cox_cure_mar"
     } else {
@@ -198,17 +209,19 @@ cox_cure <- function(surv_formula,
                                             2L, se_interQ)
     }
     ## add covariate names back
-    if (! is.null(surv_var_names <- colnames(surv_x))) {
+    if (! is.null(surv_var_names <- colnames(call_list$surv_x))) {
         names(out$surv_coef) <- surv_var_names
     } else {
         names(out$surv_coef) <- paste0("x", seq_along(out$surv_coef))
     }
-    if (! is.null(cure_var_names <- colnames(cure_x))) {
-        names(out$cure_coef) <- c({if (cure_intercept) "(Intercept)" else NULL},
-                                  cure_var_names)
+    if (! is.null(cure_var_names <- colnames(call_list$cure_x))) {
+        names(out$cure_coef) <- c(
+        { if (call_list$cure_intercept) "(Intercept)" else NULL },
+        cure_var_names
+        )
     } else {
         names(out$cure_coef) <-
-            if (cure_intercept) {
+            if (call_list$cure_intercept) {
                 c("(Intercept)",
                   paste0("z", seq_along(out$cure_coef[- 1L])))
             } else {

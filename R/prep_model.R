@@ -24,11 +24,11 @@ prep_cure_model <- function(surv_formula,
                             mar_formula,
                             obs_time,
                             obs_event,
-                            surv_offset,
-                            cure_offset,
-                            mar_offset,
                             data,
                             subset,
+                            surv_offset = NULL,
+                            cure_offset = NULL,
+                            mar_offset = NULL,
                             contrasts = NULL,
                             eval_env = parent.frame())
 {
@@ -116,13 +116,10 @@ prep_cure_model <- function(surv_formula,
         xlevels = stats::.getXlevels(attr(mf, "terms"), mf)
     )
     ## 3. MAR formula
-    if (missing(mar_formula)) {
-        mar_formula <- ~ 1
-    }
-    if (missing(mar_offset)) {
-        mar_offset <- NULL
-    }
     this_call <- call0
+    if (missing(mar_formula)) {
+        this_call$mar_formula <- ~ 1
+    }
     names(this_call)[names(this_call) == "mar_formula"] <- "formula"
     names(this_call)[names(this_call) == "mar_offset"] <- "offset"
     if (missing(data)) {
