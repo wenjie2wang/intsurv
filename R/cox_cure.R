@@ -176,7 +176,7 @@ cox_cure <- function(surv_formula,
     }
     ## call the routine
     if (anyNA(call_list$event)) {
-        ## prepare additional mar
+        ## prepare additional mar/mcar layer
         call_list$mar_x <- model_list$mar$x
         mar_control <- intsurv.control(
             start = numeric(0),
@@ -249,14 +249,6 @@ cox_cure <- function(surv_formula,
 ##' @param cure_intercept A logical value specifying whether to add an intercept
 ##'     term to the cure rate model component.  If \code{TRUE} by default, an
 ##'     intercept term is included.
-##' @param surv_standardize A logical value specifying whether to standardize
-##'     the covariates for the survival model part.  If \code{FALSE}, the
-##'     covariates will be standardized internally to have mean zero and
-##'     standard deviation one.
-##' @param cure_standardize A logical value specifying whether to standardize
-##'     the covariates for the cure rate model part.  If \code{TRUE} (by
-##'     default), the covariates will be standardized internally to have mean
-##'     zero and standard deviation one.
 ##'
 ##' @export
 cox_cure.fit <- function(surv_x,
@@ -270,12 +262,20 @@ cox_cure.fit <- function(surv_x,
                          cure_control = intsurv.control(),
                          ...)
 {
-    ## warning on `...`
-    warn_dots(...)
-
-    ## record function call
-    this_call <- match.call()
-
+    ## controls
+    if (! inherits(control, "cox_cure.control")) {
+        control <- do.call(cox_cure.control, control)
+    }
+    if (! inherits(surv_control, "intsurv.control")) {
+        surv_control <- do.call(intsurv.control, surv_control)
+    }
+    if (! inherits(cure_control, "intsurv.control")) {
+        cure_control <- do.call(intsurv.control, cure_control)
+    }
+    if (control$save_call) {
+        ## record function call
+        call0 <- match.call()
+    }
     ## check time
     if (anyNA(time)) {
         stop("Found NA's in 'time'.")
@@ -284,104 +284,52 @@ cox_cure.fit <- function(surv_x,
     if (all(event[! is.na(event)] < 1)) {
         stop("No event can be found.")
     }
-    ## starting values
-    if (is.null(surv_start)) {
-        surv_start <- 0
-    } else if (length(surv_start) != ncol(surv_x)) {
-        stop("The length of 'surv_start' is inappropriate.")
-    }
-    if (is.null(cure_start)) {
-        cure_start <- 0
-    } else if (length(cure_start) != ncol(cure_x) +
-               as.integer(cure_intercept)) {
-        stop("The length of 'cure_start' is inappropriate.")
-    }
+    ## prepare a list to call the underlying model estimation function
+    names(surv_control) <- paste0("surv_", names(surv_control))
+    names(cure_control) <- paste0("cure_", names(cure_control))
+    call_list <- c(control, surv_control, cure_control)
+    call_list$time <- time
+    call_list$event <- event
+    call_list$surv_x <- surv_x
+    call_list$cure_x <- cure_x
+    call_list$bootstrap <- bootstrap
+    ## start values
+    call_list$surv_start <- null2num0(call_list$surv_start)
+    call_list$cure_start <- null2num0(call_list$cure_start)
     ## offset terms
-    if (is.null(surv_offset)) {
-        surv_offset <- rep(0, nrow(surv_x))
-    } else if (length(surv_offset) != nrow(surv_x)) {
-        stop("The length of 'surv_offset' is inappropriate.")
-    }
-    if (is.null(cure_offset)) {
-        cure_offset <- rep(0, nrow(cure_x))
-    } else if (length(cure_offset) != nrow(cure_x)) {
-        stop("The length of 'cure_start' is inappropriate.")
-    }
-    ## on tail completion
-    all_tails <- c("zero", "exp", "zero-tau")
-    tail_completion <- match(match.arg(tail_completion, all_tails),
-                             all_tails)
-    ## prepare tail_tau
-    if (is.null(tail_tau)) {
-        tail_tau <- - 1
-    }
+    call_list$surv_offset <- null2num0(call_list$surv_offset)
+    call_list$cure_offset <- null2num0(call_list$cure_offset)
     ## more checks if tail completion after a specified tau
-    if (tail_completion == 3L) {
-        if (tail_tau < max(time[! is.na(event) & event > 0])) {
+    if (call_list$tail_completion == 3L) {
+        is_tau_small <- with(call_list,
+                             tail_tau < max(time[! is.na(event) & event > 0]))
+        if (is_tau_small) {
             stop("The specified 'tail_tau' cannot be less than",
                  "the largest event time.")
-        } else if (tail_tau > max(time)) {
-            warning("The specified 'tail_tau' is greater than",
-                    "the largest survival time")
         }
     }
-
     ## call the routine
     if (anyNA(event)) {
-        out <- coxph_cure_mar(
-            time = time,
-            event = event,
-            cox_x = surv_x,
-            cure_x = cure_x,
-            cure_intercept = cure_intercept,
-            bootstrap = bootstrap,
-            cox_start = surv_start,
-            cure_start = cure_start,
-            cox_offset = surv_offset,
-            cure_offset = cure_offset,
-            cox_standardize = surv_standardize,
-            cure_standardize = cure_standardize,
-            em_max_iter = em_max_iter,
-            em_rel_tol = em_rel_tol,
-            cox_mstep_max_iter = surv_max_iter,
-            cox_mstep_rel_tol = surv_rel_tol,
-            cure_mstep_max_iter = cure_max_iter,
-            cure_mstep_rel_tol = cure_rel_tol,
-            tail_completion = tail_completion,
-            tail_tau = tail_tau,
-            pmin = pmin,
-            early_stop = early_stop,
-            verbose = verbose
+        ## prepare additional mar/mcar layer
+        call_list$mar_x <- matrix(1, nrow = length(time), ncol = 1)
+        mar_control <- intsurv.control(
+            start = numeric(0),
+            offset = numeric(0),
+            standardize = FALSE
         )
+        names(mar_control) <- paste0("mar_", names(mar_control))
+        mar_control$mar_intercept <- FALSE
+        call_list <- c(call_list, mar_control)
+        is_arg_valid <- names(call_list) %in%
+            names(formals(rcpp_coxph_cure_mar))
+        call_list <- call_list[is_arg_valid]
+        out <- do.call(rcpp_coxph_cure_mar, call_list)
         ## add class
-        class(out) <- "cox_cure_mcar"
+        class(out) <- "cox_cure_mar"
     } else {
-        out <- rcpp_coxph_cure(
-            time = time,
-            event = event,
-            cox_x = surv_x,
-            cure_x = cure_x,
-            cure_intercept = cure_intercept,
-            bootstrap = bootstrap,
-            firth = firth,
-            cox_start = surv_start,
-            cure_start = cure_start,
-            cox_offset = surv_offset,
-            cure_offset = cure_offset,
-            cox_standardize = surv_standardize,
-            cure_standardize = cure_standardize,
-            em_max_iter = em_max_iter,
-            em_rel_tol = em_rel_tol,
-            cox_mstep_max_iter = surv_max_iter,
-            cox_mstep_rel_tol = surv_rel_tol,
-            cure_mstep_max_iter = cure_max_iter,
-            cure_mstep_rel_tol = cure_rel_tol,
-            tail_completion = tail_completion,
-            tail_tau = tail_tau,
-            pmin = pmin,
-            early_stop = early_stop,
-            verbose = verbose
-        )
+        is_arg_valid <- names(call_list) %in% names(formals(rcpp_coxph_cure))
+        call_list <- call_list[is_arg_valid]
+        out <- do.call(rcpp_coxph_cure, call_list)
         ## add class
         class(out) <- "cox_cure"
     }
@@ -402,7 +350,7 @@ cox_cure.fit <- function(surv_x,
     }
     if (! is.null(cure_var_names <- colnames(cure_x))) {
         names(out$cure_coef) <- c({if (cure_intercept) "(Intercept)" else NULL},
-                                  colnames(cure_x))
+                                  cure_var_names)
     } else {
         names(out$cure_coef) <-
             if (cure_intercept) {
@@ -412,8 +360,10 @@ cox_cure.fit <- function(surv_x,
                 paste0("z", seq_along(out$cure_coef))
             }
     }
-    ## add function call
-    out$call <- this_call
+    if (control$save_call) {
+        ## add function call
+        out$call <- call0
+    }
     ## return
     out
 }
