@@ -461,7 +461,7 @@ namespace intsurv {
     // function computing relateive tolerance based on l1_norm
     inline double rel_l1_norm(const arma::vec& x_old, const arma::vec& x_new)
     {
-        double denom { l1_norm(x_old) + 1.0 };
+        double denom { l1_norm(x_old) + l1_norm(x_new) + 1.0 };
         return l1_norm(x_new - x_old) / denom;
     }
 
@@ -785,8 +785,8 @@ namespace intsurv {
         Rcpp::Rcout << m << "\n";
     }
 
-    unsigned int less_verbose(const unsigned int verbose,
-                              const unsigned int less = 1)
+    inline unsigned int less_verbose(const unsigned int verbose,
+                                     const unsigned int less = 1)
     {
         if (verbose <= less) {
             return 0;
