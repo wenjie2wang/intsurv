@@ -32,32 +32,19 @@ namespace intsurv {
         )
     {
         // stratify
-        const arma::uvec& case1_ind { object.case1_ind_ };
-        const arma::uvec& case2_ind { object.case2_ind_ };
-        const arma::uvec& case3_ind { object.case3_ind_ };
-        // FIXME: if there are ties among the max event time,
-        // a better way is to form a vector;
-        // currently, the first max event time stays in the training set
         const arma::uvec which_time_max { object.max_event_time_ind_ };
-        // cross-validation
-        const unsigned int n_case1 { case1_ind.n_elem };
-        const unsigned int n_case2 { case2_ind.n_elem };
-        const unsigned int n_case3 { case3_ind.n_elem };
-        CrossValidation cv_obj_case1 { n_case1, nfolds, which_time_max };
-        CrossValidation cv_obj_case2 { n_case2, nfolds };
-        CrossValidation cv_obj_case3 { n_case3, nfolds };
+        // stratified cross-validation
+        arma::uvec cv_strata { arma::zeros<arma::uvec>(object.n_obs_) };
+        cv_strata.elem(object.case2_ind_).ones();
+        cv_strata.elem(object.case3_ind_).fill(2);
+        CrossValidation cv_obj { object.n_obs_, nfolds,
+            which_time_max, cv_strata };
         arma::vec cv_vec { arma::zeros(nfolds) };
         for (size_t i {0}; i < nfolds; ++i) {
-            arma::uvec train_idx {
-                arma::join_vert(cv_obj_case1.train_index_.at(i),
-                                cv_obj_case2.train_index_.at(i))
-            };
-            arma::uvec valid_idx {
-                arma::join_vert(cv_obj_case1.test_index_.at(i),
-                                cv_obj_case2.test_index_.at(i))
-            };
-            CoxphCureMar train_obj { subset(object, train_idx) };
-            CoxphCureMar valid_obj { subset(object, valid_idx) };
+            CoxphCureMar train_obj {
+                subset(object, cv_obj.train_index_.at(i)) };
+            CoxphCureMar valid_obj {
+                subset(object, cv_obj.test_index_.at(i)) };
             // set verbose to zero
             train_obj.control_.set_verbose(0);
             train_obj.surv_obj_.control_.set_verbose(0);
@@ -79,29 +66,19 @@ namespace intsurv {
         )
     {
         // stratify
-        const arma::uvec& case1_ind { object.case1_ind_ };
-        const arma::uvec& case2_ind { object.case2_ind_ };
-        const arma::uvec& case3_ind { object.case3_ind_ };
         const arma::uvec which_time_max { object.max_event_time_ind_ };
-        // cross-validation
-        const unsigned int n_case1 { case1_ind.n_elem };
-        const unsigned int n_case2 { case2_ind.n_elem };
-        const unsigned int n_case3 { case3_ind.n_elem };
-        CrossValidation cv_obj_case1 { n_case1, nfolds, which_time_max };
-        CrossValidation cv_obj_case2 { n_case2, nfolds };
-        CrossValidation cv_obj_case3 { n_case3, nfolds };
+        // stratified cross-validation
+        arma::uvec cv_strata { arma::zeros<arma::uvec>(object.n_obs_) };
+        cv_strata.elem(object.case2_ind_).ones();
+        cv_strata.elem(object.case3_ind_).fill(2);
+        CrossValidation cv_obj { object.n_obs_, nfolds,
+            which_time_max, cv_strata };
         arma::vec cv_vec { arma::zeros(nfolds) };
         for (size_t i {0}; i < nfolds; ++i) {
-            arma::uvec train_idx {
-                arma::join_vert(cv_obj_case1.train_index_.at(i),
-                                cv_obj_case2.train_index_.at(i))
-            };
-            arma::uvec valid_idx {
-                arma::join_vert(cv_obj_case1.test_index_.at(i),
-                                cv_obj_case2.test_index_.at(i))
-            };
-            CoxphCureMar train_obj { subset(object, train_idx) };
-            CoxphCureMar valid_obj { subset(object, valid_idx) };
+            CoxphCureMar train_obj {
+                subset(object, cv_obj.train_index_.at(i)) };
+            CoxphCureMar valid_obj {
+                subset(object, cv_obj.test_index_.at(i)) };
             // set verbose to zero
             train_obj.control_.set_verbose(0);
             train_obj.surv_obj_.control_.set_verbose(0);
