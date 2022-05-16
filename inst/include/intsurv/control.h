@@ -128,7 +128,7 @@ namespace intsurv {
                 throw std::range_error(
                     "The 'lambda_min_ratio' must be between 0 and 1.");
             }
-            if (is_gt(alpha, 1.0) || is_le(alpha, 0.0)) {
+            if (is_gt(alpha, 1.0) || is_lt(alpha, 0.0)) {
                 throw std::range_error(
                     "The 'alpha' must be between 0 and 1.");
             }

@@ -124,9 +124,9 @@ cox_cure_net.control <- function(nlambda = 10,
     control0 <- do.call(intsurv.control, list(...))
     structure(c(control0,
                 list(nlambda = nlambda,
-                     lambda_min_ratio,
+                     lambda_min_ratio = lambda_min_ratio,
                      alpha = alpha,
-                     lamabda = numeric(0),
-                     penalty_factor = numeric(0))),
+                     lambda = lambda,
+                     penalty_factor = penalty_factor)),
               class = c("cox_cure_net.control", "intsurv.control"))
 }
