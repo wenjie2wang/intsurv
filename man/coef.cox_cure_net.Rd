@@ -5,9 +5,9 @@
 \alias{coef.cox_cure_net_mar}
 \title{Estimated Covariate Coefficients}
 \usage{
-\method{coef}{cox_cure_net}(object, selection = c("bic1", "bic2", "all"), ...)
+\method{coef}{cox_cure_net}(object, selection = c("bic2", "bic1", "all"), ...)
 
-\method{coef}{cox_cure_net_mar}(object, selection = c("bic1", "bic2", "all"), ...)
+\method{coef}{cox_cure_net_mar}(object, selection = c("bic2", "bic1", "all"), ...)
 }
 \arguments{
 \item{object}{Object representing a fitted solution path.}

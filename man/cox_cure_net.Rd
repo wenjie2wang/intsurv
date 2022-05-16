@@ -13,34 +13,10 @@ cox_cure_net(
   data,
   subset,
   contrasts = NULL,
-  surv_lambda = NULL,
-  surv_alpha = 1,
-  surv_nlambda = 10,
-  surv_lambda_min_ratio = 0.1,
-  surv_l1_penalty_factor = NULL,
-  cure_lambda = NULL,
-  cure_alpha = 1,
-  cure_nlambda = 10,
-  cure_lambda_min_ratio = 0.1,
-  cure_l1_penalty_factor = NULL,
   cv_nfolds = 0,
-  surv_start = NULL,
-  cure_start = NULL,
-  surv_offset = NULL,
-  cure_offset = NULL,
-  surv_standardize = TRUE,
-  cure_standardize = TRUE,
-  em_max_iter = 200,
-  em_rel_tol = 1e-05,
-  surv_max_iter = 10,
-  surv_rel_tol = 1e-05,
-  cure_max_iter = 10,
-  cure_rel_tol = 1e-05,
-  tail_completion = c("zero", "exp", "zero-tau"),
-  tail_tau = NULL,
-  pmin = 1e-05,
-  early_stop = TRUE,
-  verbose = FALSE,
+  control = cox_cure.control(),
+  surv_control = cox_cure_net.control(),
+  cure_control = cox_cure_net.control(),
   ...
 )
 
@@ -50,34 +26,10 @@ cox_cure_net.fit(
   time,
   event,
   cure_intercept = TRUE,
-  surv_lambda = NULL,
-  surv_alpha = 1,
-  surv_nlambda = 10,
-  surv_lambda_min_ratio = 0.1,
-  surv_l1_penalty_factor = NULL,
-  cure_lambda = NULL,
-  cure_alpha = 1,
-  cure_nlambda = 10,
-  cure_lambda_min_ratio = 0.1,
-  cure_l1_penalty_factor = NULL,
   cv_nfolds = 0,
-  surv_start = NULL,
-  cure_start = NULL,
-  surv_offset = NULL,
-  cure_offset = NULL,
-  surv_standardize = TRUE,
-  cure_standardize = TRUE,
-  em_max_iter = 200,
-  em_rel_tol = 1e-05,
-  surv_max_iter = 10,
-  surv_rel_tol = 1e-05,
-  cure_max_iter = 10,
-  cure_rel_tol = 1e-05,
-  tail_completion = c("zero", "exp", "zero-tau"),
-  tail_tau = NULL,
-  pmin = 1e-05,
-  early_stop = TRUE,
-  verbose = FALSE,
+  control = cox_cure.control(),
+  surv_control = cox_cure_net.control(),
+  cure_control = cox_cure_net.control(),
   ...
 )
 }
@@ -111,6 +63,20 @@ replacement values for the contrasts replacement function and whose
 names are the names of columns of data containing factors.  See
 \code{contrasts.arg} of \code{\link[stats]{model.matrix.default}} for
 details.}
+
+\item{cv_nfolds}{A nonnegative integer representing the number of folds in
+cross-validation.}
+
+\item{control}{A \code{cox_cure.control} object that contains the control
+parameters.}
+
+\item{surv_control}{\code{intsurv.control} objects that contain
+the control parameters for the survival model part and logistic model
+part, respectively.}
+
+\item{cure_control}{\code{intsurv.control} objects that contain
+the control parameters for the survival model part and logistic model
+part, respectively.}
 
 \item{...}{Other arguments passed to the control functions for backward
 compatibility.}
