@@ -142,13 +142,19 @@ namespace intsurv {
             cure_obj_ = LogisticReg(cure_x.rows(surv_sort_ind),
                                     s_event,
                                     cure_control);
+            // initialize offset terms and sort
+            cure_obj_.set_offset();
+            cure_obj_.set_offset(cure_obj_.control_.offset_.elem(
+                                     surv_sort_ind));
             // create a mar object
             arma::vec mar_y { arma::zeros(n_obs_) };
             mar_y.elem(case3_ind_).ones();
             mar_obj_ = LogisticReg(mar_x.rows(surv_sort_ind),
                                    mar_y,
                                    mar_control);
-
+            // initialize offset terms and sort
+            mar_obj_.set_offset();
+            mar_obj_.set_offset(mar_obj_.control_.offset_.elem(surv_sort_ind));
         }
 
         // function members
@@ -1050,17 +1056,17 @@ namespace intsurv {
         if (new_surv_offset.n_elem != new_surv_x.n_rows) {
             new_surv_offset = arma::zeros(new_surv_x.n_rows);
         } else {
-            new_surv_offset = new_surv_offset(ord);
+            new_surv_offset = new_surv_offset.elem(ord);
         }
         if (new_cure_offset.n_elem != new_cure_x.n_rows) {
             new_cure_offset = arma::zeros(new_cure_x.n_rows);
         } else {
-            new_cure_offset = new_cure_offset(ord);
+            new_cure_offset = new_cure_offset.elem(ord);
         }
         if (new_mar_offset.n_elem != new_mar_x.n_rows) {
             new_mar_offset = arma::zeros(new_mar_x.n_rows);
         } else {
-            new_mar_offset = new_mar_offset(ord);
+            new_mar_offset = new_mar_offset.elem(ord);
         }
         // add intercept if needed
         if (cure_obj_.control_.intercept_) {
