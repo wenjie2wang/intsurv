@@ -100,7 +100,7 @@ NULL
 ##' Analysis with Uncertain Event Times in Application to A Suicide Risk
 ##' Study. \emph{Annals of Applied Statistics}, 14(1), 51--73.
 ##'
-##' @example inst/examples/iCoxph.R
+##' @example inst/examples/ex-iCoxph.R
 ##'
 ##' @seealso
 ##' \code{\link{iCoxph.start}} and \code{\link{iCoxph.control}}, respectively,

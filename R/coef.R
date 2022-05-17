@@ -93,7 +93,25 @@ coef.cox_cure <- function(object, part = c("both", "survival", "cure"), ...)
 ##' @rdname coef.cox_cure
 ##' @method coef cox_cure_mar
 ##' @export
-coef.cox_cure_mar <- coef.cox_cure
+coef.cox_cure_mar <- function(object,
+                              part = c("both", "survival", "cure", "mar"),
+                              ...)
+{
+    part <- match.arg(part)
+    if (part != "both") {
+        coef_name <- sprintf(
+            "%s_coef", switch(part,
+                              "survival" = "surv",
+                              "cure" = "cure",
+                              "mar" = "mar")
+        )
+        return(object[[coef_name]])
+    }
+    ## else return both
+    list(surv = object$surv_coef,
+         cure = object$cure_coef,
+         mar = object$mar_coef)
+}
 
 
 ##' Estimated Covariate Coefficients
