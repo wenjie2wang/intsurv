@@ -421,7 +421,8 @@ namespace intsurv {
 
         // prepare scores and prob in their original order
         const arma::uvec& rev_ord { surv_obj_.rev_ord_ };
-        surv_xbeta_ = surv_obj_.get_xbeta().elem(rev_ord);
+        const arma::vec surv_xbeta0 { surv_obj_.get_xbeta() };
+        surv_xbeta_ = surv_xbeta0.elem(rev_ord);
         cure_xbeta_ = cure_obj_.get_xbeta().elem(rev_ord);
         // set prob to be 1 for events for computing C-index
         arma::vec p_vec_event { cure_obj_.predict() };
@@ -436,7 +437,7 @@ namespace intsurv {
         estep_cured_ = 1 - estep_susceptible_;
         // compute weighted c-index
         c_index_ = Concordance(
-            time, event, surv_xbeta_, p_vec_event
+            time, event, surv_xbeta0, p_vec_event
             ).index_;
     }
 
@@ -690,7 +691,8 @@ namespace intsurv {
 
         // prepare scores and prob in their original order
         const arma::uvec& rev_ord { surv_obj_.rev_ord_ };
-        surv_xbeta_ = surv_obj_.get_xbeta().elem(rev_ord);
+        const arma::vec surv_xbeta0 { surv_obj_.get_xbeta() };
+        surv_xbeta_ = surv_xbeta0.elem(rev_ord);
         cure_xbeta_ = cure_obj_.get_xbeta().elem(rev_ord);
 
         // set prob to be 1 for events for computing C-index
@@ -707,7 +709,7 @@ namespace intsurv {
         estep_cured_ = 1 - estep_susceptible_;
         // compute weight C-index
         c_index_ = Concordance(
-            time, event, surv_xbeta_, p_vec_event
+            time, event, surv_xbeta0, p_vec_event
             ).index_;
     }
 

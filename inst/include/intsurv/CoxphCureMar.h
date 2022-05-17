@@ -559,7 +559,8 @@ namespace intsurv {
         compute_aic();
         // prepare scores and prob in their original order
         const arma::uvec& rev_ord { surv_obj_.rev_ord_ };
-        surv_xbeta_ = surv_obj_.get_xbeta().elem(rev_ord);
+        const arma::vec surv_xbeta0 { surv_obj_.get_xbeta() };
+        surv_xbeta_ = surv_xbeta0.elem(rev_ord);
         cure_xbeta_ = cure_obj_.get_xbeta().elem(rev_ord);
         // set prob to be 1 for events for computing C-index
         arma::vec p_vec_event { cure_obj_.predict() };
@@ -594,7 +595,7 @@ namespace intsurv {
         c_index_ = Concordance(
             surv_obj_.time_.elem(cer_ind_),
             surv_obj_.event_.elem(cer_ind_),
-            surv_xbeta_.elem(cer_ind_),
+            surv_xbeta0.elem(cer_ind_),
             p_vec_event.elem(cer_ind_)
             ).index_;
     }
@@ -923,7 +924,8 @@ namespace intsurv {
         compute_aic();
         // prepare scores and prob in their original order
         const arma::uvec& rev_ord { surv_obj_.ord_ };
-        surv_xbeta_ = surv_obj_.get_xbeta().elem(rev_ord);
+        const arma::vec surv_xbeta0 { surv_obj_.get_xbeta() };
+        surv_xbeta_ = surv_xbeta0.elem(rev_ord);
         cure_xbeta_ = cure_obj_.get_xbeta().elem(rev_ord);
         // set prob to be 1 for events for computing C-index
         arma::vec p_vec_event { cure_obj_.predict() };
@@ -958,7 +960,7 @@ namespace intsurv {
         c_index_ = Concordance(
             surv_obj_.time_.elem(cer_ind_),
             surv_obj_.event_.elem(cer_ind_),
-            surv_xbeta_.elem(cer_ind_),
+            surv_xbeta0.elem(cer_ind_),
             p_vec_event.elem(cer_ind_)
             ).index_;
     }
