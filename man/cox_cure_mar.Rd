@@ -149,6 +149,9 @@ intercept term is included.}
 \item{mar_intercept}{A logical value specifying whether to add an intercept
 term to the MAR model part.  If \code{TRUE} by default, an intercept
 term is included.}
+
+\item{cv_nfolds}{A nonnegative integer representing the number of folds in
+cross-validation.}
 }
 \value{
 A \code{cox_cure_mar} object for the fitted Cox cure rate model with

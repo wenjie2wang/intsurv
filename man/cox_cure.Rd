@@ -3,6 +3,7 @@
 \name{cox_cure}
 \alias{cox_cure}
 \alias{cox_cure.fit}
+\alias{cox_cure_net}
 \alias{cox_cure_net.fit}
 \title{Cox Cure Rate Model}
 \usage{
@@ -31,6 +32,21 @@ cox_cure.fit(
   control = cox_cure.control(),
   surv_control = intsurv.control(),
   cure_control = intsurv.control(),
+  ...
+)
+
+cox_cure_net(
+  surv_formula,
+  cure_formula,
+  time,
+  event,
+  data,
+  subset,
+  contrasts = NULL,
+  cv_nfolds = 0,
+  control = cox_cure.control(),
+  surv_control = cox_cure_net.control(),
+  cure_control = cox_cure_net.control(),
   ...
 )
 
@@ -109,6 +125,9 @@ intercept term.}
 \item{cure_intercept}{A logical value specifying whether to add an intercept
 term to the cure rate model component.  If \code{TRUE} by default, an
 intercept term is included.}
+
+\item{cv_nfolds}{A nonnegative integer representing the number of folds in
+cross-validation.}
 }
 \value{
 A \code{cox_cure} object that contains the fitted regular Cox cure

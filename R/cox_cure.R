@@ -395,33 +395,10 @@ cox_cure.fit <- function(surv_x,
     out
 }
 
-##' Regularized Cox Cure Rate Model
-##'
-##' For right-censored data, fit a regularized Cox cure rate model through
-##' elastic-net penalty following Masud et al. (2018), and Zou and Hastie
-##' (2005).  For right-censored data with uncertain event status,
-##' fit the regularized Cox cure model proposed by Wang et al. (2020).  Without
-##' regularization, the model reduces to the regular Cox cure rate model (Kuk
-##' and Chen, 1992; Sy and Taylor, 2000)
-##'
-##' The model estimation procedure follows expectation maximization (EM)
-##' algorithm.  Variable selection procedure through regularization by elastic
-##' net penalty is developed based on cyclic coordinate descent and
-##' majorization-minimization (MM) algorithm.
-##'
-##' @inheritParams cox_cure
+##' @rdname cox_cure
 ##'
 ##' @param cv_nfolds A nonnegative integer representing the number of folds in
 ##'     cross-validation.
-##'
-##' @return
-##'
-##' \code{cox_cure_net} object for regular Cox cure rate model or
-##' \code{cox_cure_net_mar} object for Cox cure rate model with uncertain
-##' events.
-##'
-##' @references
-##'
 ##'
 ##' @export
 cox_cure_net <- function(surv_formula,

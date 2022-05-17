@@ -20,26 +20,61 @@ fit11 <- cox_cure_net.fit(
     x_mat,
     dat$obs_time,
     dat$obs_event,
+    control = list(save_call = FALSE),
     surv_control = list(nlambda = 5, alpha = 0.8),
     cure_control = list(nlambda = 5, alpha = 0.8)
 )
 
 ## MAR
-
+fit12 <- cox_cure_net_mar.fit(
+    x_mat,
+    x_mat,
+    x_mat,
+    dat$obs_time,
+    dat$obs_event,
+    control = list(save_call = FALSE),
+    surv_control = list(nlambda = 5, alpha = 0.8),
+    cure_control = list(nlambda = 5, alpha = 0.8)
+)
 
 ## model-fitting from given model formula
 fm <- paste(paste0("x", seq_len(p)), collapse = " + ")
 surv_fm <- as.formula(sprintf("~ %s", fm))
 cure_fm <- surv_fm
-fit21 <- cox_cure_net(surv_fm, cure_fm, data = dat,
-                     time = obs_time, event = obs_event,
-                     surv_nlambda = 5, cure_nlambda = 5,
-                     surv_alpha = 0.5, cure_alpha = 0.5)
+
+## MCAR
+fit21 <- cox_cure_net(
+    surv_fm,
+    cure_fm,
+    data = dat,
+    time = obs_time,
+    event = obs_event,
+    control = list(save_call = FALSE),
+    surv_control = list(nlambda = 5, alpha = 0.8),
+    cure_control = list(nlambda = 5, alpha = 0.8)
+)
+
+## MAR
+fit22 <- cox_cure_net_mar(
+    surv_fm,
+    cure_fm,
+    cure_fm,
+    data = dat,
+    time = obs_time,
+    event = obs_event,
+    control = list(save_call = FALSE),
+    surv_control = list(nlambda = 5, alpha = 0.8),
+    cure_control = list(nlambda = 5, alpha = 0.8)
+)
 
 ## summary of BIC's
 BIC(fit11)
 BIC(fit21)
 
 ## list of coefficient estimates based on BIC
-coef(fit1)
-coef(fit2)
+coef(fit11)
+coef(fit21)
+
+## checks
+expect_equivalent(fit11, fit21)
+expect_equivalent(fit12, fit22)
