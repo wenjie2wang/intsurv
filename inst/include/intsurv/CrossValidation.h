@@ -153,14 +153,12 @@ namespace intsurv {
             if (! static_train_index.is_empty()) {
                 // remove static train index from test index
                 for (size_t i {0}; i < n_folds_; ++i) {
-                    test_index_.at(i) = vec_diff(
-                        test_index_.at(i), static_train_index
-                        );
+                    test_index_.at(i) = vec_diff(test_index_.at(i),
+                                                 static_train_index);
                 }
                 for (size_t i {0}; i < n_folds_; ++i) {
-                    train_index_.push_back(
-                        vec_union(train_index_.at(i), static_train_index)
-                        );
+                    train_index_.at(i) = vec_union(train_index_.at(i),
+                                                   static_train_index);
                 }
             }
         }
