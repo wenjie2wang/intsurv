@@ -13,7 +13,7 @@ if (requireNamespace("tinytest", quietly = TRUE) &&
                            at_home = is_at_home())
 
     ## run anyway
-    ## tinytest::test_package("intsurv",
-    ##                        ncup = getOption("Ncpus", 1),
-    ##                        side_effects = TRUE)
+    tinytest::test_package("intsurv",
+                           ncup = getOption("Ncpus", 1),
+                           side_effects = TRUE)
 }

@@ -27,9 +27,12 @@ with(env_b, {
     sim_dat$group <- cut(abs(x_mat[, 1L]), breaks = c(0, 0.5, 1, 3, Inf),
                          labels = c("A", "B", "C", "D"))
     ## test the formula interface with data
-    fit <- cox_cure(~ X2 + X3 + X4 + group, ~ X2 + X3 + group,
-                    time = time, event = status,
-                    data = sim_dat, subset = group != "D",
+    fit <- cox_cure(~ X2 + X3 + X4 + group,
+                    ~ X2 + X3 + group,
+                    time = time,
+                    event = status,
+                    data = sim_dat,
+                    subset = group != "D",
                     bootstrap = 10)
     fit
     summary(fit)
@@ -39,8 +42,10 @@ with(env_b, {
     ## test the formula interface without data
     fit <- with(
         sim_dat,
-        cox_cure(~ X2 + X3 + X4 + group, ~ X2 + X3 + group,
-                 time = time, event = status,
+        cox_cure(~ X2 + X3 + X4 + group,
+                 ~ X2 + X3 + group,
+                 time = time,
+                 event = status,
                  subset = group != "D",
                  bootstrap = 10)
     )
@@ -71,17 +76,5 @@ with(env_b, {
     expect_error(
         cox_cure(~ X2 + X3, ~ X2 + X3, data = sim_dat, time = time),
         pattern = "event"
-    )
-})
-
-## expect warnings from warn_dots
-with(env_b, {
-    expect_warning(
-        cox_cure(~ X2, ~ X3,
-                 time = time, event = status, data = sim_dat,
-                 bootstrap = 0, em_max_iter = 2,
-                 ## some invalid arguments
-                 em_max_iter2 = - 1, foo = 2),
-        pattern = "\\.{3}"
     )
 })
