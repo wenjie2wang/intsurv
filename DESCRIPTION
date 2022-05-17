@@ -44,7 +44,6 @@ Collate:
     'control.R'
     'cox_cure.R'
     'cox_cure_mar.R'
-    'cox_cure_net.R'
     'iCoxph.R'
     'intsurv.R'
     'misc.R'

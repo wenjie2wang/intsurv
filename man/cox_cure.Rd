@@ -3,6 +3,7 @@
 \name{cox_cure}
 \alias{cox_cure}
 \alias{cox_cure.fit}
+\alias{cox_cure_net.fit}
 \title{Cox Cure Rate Model}
 \usage{
 cox_cure(
@@ -30,6 +31,19 @@ cox_cure.fit(
   control = cox_cure.control(),
   surv_control = intsurv.control(),
   cure_control = intsurv.control(),
+  ...
+)
+
+cox_cure_net.fit(
+  surv_x,
+  cure_x,
+  time,
+  event,
+  cure_intercept = TRUE,
+  cv_nfolds = 0,
+  control = cox_cure.control(),
+  surv_control = cox_cure_net.control(),
+  cure_control = cox_cure_net.control(),
   ...
 )
 }
@@ -73,9 +87,12 @@ used for estimating the standard errors.}
 \item{control}{A \code{cox_cure.control} object that contains the control
 parameters.}
 
-\item{surv_control, cure_control}{\code{intsurv.control} objects that contain
-the control parameters for the survival model part and logistic model
-part, respectively.}
+\item{surv_control}{A list of control parameters for the survival model
+part.  One may use the help functions \code{intsurv.control()} or
+\code{cox_cure_net.control} to specify the available options.}
+
+\item{cure_control}{A list of control parameters for the logistic model
+part similar to \code{surv_control}.}
 
 \item{...}{Other arguments passed to the control functions for backward
 compatibility.}
@@ -94,17 +111,27 @@ term to the cure rate model component.  If \code{TRUE} by default, an
 intercept term is included.}
 }
 \value{
-A \code{cox_cure} object that contains the fitted regular Cox cure rate
-model.
+A \code{cox_cure} object that contains the fitted regular Cox cure
+    rate model or a \code{cox_cure_mar} object for uncertain event
+    indicators.
 }
 \description{
-For right-censored data, fit a regular Cox cure rate model (Kuk and Chen,
-1992; Sy and Taylor, 2000) via an EM algorithm.
+For right-censored data, \code{cox_cure} trains a Cox cure rate model (Kuk
+and Chen, 1992; Sy and Taylor, 2000) via an EM algorithm;
+\code{cox_cure_net} trains a regularized Cox cure rate model with
+elastic-net penalty following Masud et al. (2018), and Zou and Hastie
+(2005).
+}
+\details{
+The model estimation procedure follows expectation maximization (EM)
+algorithm.  Variable selection procedure through regularization by elastic
+net penalty is developed based on cyclic coordinate descent and
+majorization-minimization (MM) algorithm.
 }
 \examples{
 library(intsurv)
 
-### regular Cox cure rate model ======================================
+### ordinary Cox cure rate model =====================================
 ## 1. simulate right-censored data with a cure fraction
 set.seed(123)
 n_obs <- 2e2
@@ -163,6 +190,43 @@ summary(fit2)
 BIC(fit1)
 BIC(fit2)
 BIC(fit1, fit2)
+
+
+### regularized Cox cure rate model ==================================
+## simulate a toy right-censored data with a cure fraction
+set.seed(123)
+n_obs <- 100
+p <- 10
+x_mat <- matrix(rnorm(n_obs * p), nrow = n_obs, ncol = p)
+colnames(x_mat) <- paste0("x", seq_len(p))
+surv_beta <- c(rep(0, p - 5), rep(1, 5))
+cure_beta <- c(rep(1, 2), rep(0, p - 2))
+dat <- simData4cure(nSubject = n_obs, lambda_censor = 0.01,
+                    max_censor = 10, survMat = x_mat,
+                    survCoef = surv_beta, cureCoef = cure_beta,
+                    b0 = 0.5, p1 = 1, p2 = 1, p3 = 1)
+
+## model-fitting from given design matrices
+fit1 <- cox_cure_net.fit(x_mat, x_mat, dat$obs_time, dat$obs_event,
+                         surv_control = list(nlambda = 10, alpha = 0.8),
+                         cure_control = list(nlambda = 10, alpha = 0.8))
+
+## model-fitting from given model formula
+fm <- paste(paste0("x", seq_len(p)), collapse = " + ")
+surv_fm <- as.formula(sprintf("~ \%s", fm))
+cure_fm <- surv_fm
+fit2 <- cox_cure_net(surv_fm, cure_fm, data = dat,
+                     time = obs_time, event = obs_event)
+
+## summary of BIC's
+BIC(fit1)
+BIC(fit2)
+BIC(fit1)[which.min(BIC(fit1)[, "BIC"]), ]
+BIC(fit2)[which.min(BIC(fit2)[, "BIC"]), ]
+
+## list of coefficient estimates based on BIC
+coef(fit1)
+coef(fit2)
 }
 \references{
 Kuk, A. Y. C., & Chen, C. (1992). A mixture model combining logistic
@@ -175,6 +239,18 @@ cure models. \emph{Computational Statistics & Data Analysis}, 42(1-2),
 
 Sy, J. P., & Taylor, J. M. (2000). Estimation in a Cox proportional hazards
 cure model. \emph{Biometrics}, 56(1), 227--236.
+
+Masud, A., Tu, W., & Yu, Z. (2018). Variable selection for mixture and
+promotion time cure rate models. \emph{Statistical methods in medical
+research}, 27(7), 2185--2199.
+
+Zou, H., & Hastie, T. (2005). Regularization and variable selection via the
+elastic net. \emph{Journal of the Royal Statistical Society}: Series B
+(Statistical Methodology), 67(2), 301--320.
+
+Wang, W., Luo, C., Aseltine, R. H., Wang, F., Yan, J., & Chen, K. (2020).
+Suicide Risk Modeling with Uncertain Diagnostic Records. \emph{arXiv
+preprint arXiv:2009.02597}.
 }
 \seealso{
 \code{\link{cox_cure_net}} for fitting the regularized Cox cure rate model

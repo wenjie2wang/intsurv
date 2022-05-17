@@ -28,8 +28,8 @@ cox_cure_net.control(
   nlambda = 10,
   lambda_min_ratio = 0.001,
   alpha = 1,
-  lambda = numeric(0),
-  penalty_factor = numeric(0),
+  lambda = NULL,
+  penalty_factor = NULL,
   varying_active = TRUE,
   ...
 )
