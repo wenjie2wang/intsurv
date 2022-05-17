@@ -148,36 +148,21 @@ toy_dat$group <- cut(abs(x_mat[, 1L]), breaks = c(0, 0.5, 1, 3, Inf),
 toy_dat <- cbind(toy_dat, as.data.frame(x_mat[, - 1L, drop = FALSE]))
 
 ## model-fitting from given model formula
-fit2 <- cox_cure(~ x3 + x4 + group, ~ group + x3 + offset(x2),
-                 time = time, event = status, surv_offset = x2,
-                 data = toy_dat, subset = group != "D", bootstrap = 30)
+fit2 <- cox_cure(
+    ~ x3 + x4 + group,
+    ~ group + x3 + offset(x2),
+    time = time,
+    event = status,
+    data = toy_dat,
+    subset = group != "D",
+    bootstrap = 30
+)
 summary(fit2)
 
 ## get BIC's
 BIC(fit1)
 BIC(fit2)
 BIC(fit1, fit2)
-
-
-### Cox cure rate model with uncertain event status ==================
-## simulate sample data
-sim_dat <- simData4cure(nSubject = 200, max_censor = 10, lambda_censor = 0.1,
-                        survMat = x_mat, cureMat = x_mat, b0 = 1)
-table(sim_dat$case)
-table(sim_dat$obs_event, useNA = "ifany")
-
-## use formula
-fit3 <- cox_cure(~ x1 + x2 + x3, ~ z1 + z2 + z3,
-                 time = obs_time, event = obs_event, data = sim_dat)
-summary(fit3)
-
-## use design matrix
-fit4 <- cox_cure.fit(x_mat, x_mat, time = sim_dat$obs_time,
-                     event = sim_dat$obs_event)
-summary(fit4)
-
-## get BIC's
-BIC(fit3, fit4)
 }
 \references{
 Kuk, A. Y. C., & Chen, C. (1992). A mixture model combining logistic

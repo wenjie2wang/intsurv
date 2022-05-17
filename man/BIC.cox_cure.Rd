@@ -2,12 +2,12 @@
 % Please edit documentation in R/assessment.R
 \name{BIC.cox_cure}
 \alias{BIC.cox_cure}
-\alias{BIC.cox_cure_mcar}
+\alias{BIC.cox_cure_mar}
 \title{Bayesian Information Criterion (BIC)}
 \usage{
 \method{BIC}{cox_cure}(object, ..., method = c("obs", "effective"))
 
-\method{BIC}{cox_cure_mcar}(object, ..., method = c("obs", "certain-event"))
+\method{BIC}{cox_cure_mar}(object, ..., method = c("obs", "effective"))
 }
 \arguments{
 \item{object}{An object for a fitted model.}
