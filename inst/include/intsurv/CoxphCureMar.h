@@ -967,7 +967,7 @@ namespace intsurv {
     // for given fitted model and estimates
     inline double CoxphCureMar::obs_log_likelihood() const
     {
-        double obs_ell { 0 };
+        double obs_ell { 0.0 };
         arma::vec sus_prob { cure_obj_.predict() };
         // for case 1
         for (size_t j: case1_ind_) {
@@ -985,7 +985,7 @@ namespace intsurv {
         // for case 3
         for (size_t j: case3_ind_) {
             double m12_common {
-                sus_prob(j) * surv_obj_.S0_time_(j) * surv_obj_.Sc_time_(j)
+                sus_prob(j) * surv_obj_.S_time_(j) * surv_obj_.Sc_time_(j)
             };
             double m1 { surv_obj_.h_time_(j) * m12_common };
             double m2 { surv_obj_.hc_time_(j) * m12_common };
@@ -1167,13 +1167,13 @@ namespace intsurv {
             mat2vec(new_mar_x * mar_coef_) + new_mar_offset
         };
         arma::vec q_vec { 1 / (1 + arma::exp(- new_mar_xgamma)) };
-        set_pmin_bound(p_vec, mar_obj_.control_.pmin_);
+        set_pmin_bound(q_vec, mar_obj_.control_.pmin_);
         // for case 1
         for (size_t j: new_case1_ind) {
             obs_ell += std::log(q_vec(j)) +
                 std::log(p_vec(j)) +
                 std::log(h_vec(j)) -
-                surv_obj_.H_time_(j) - surv_obj_.Hc_time_(j);
+                H_vec(j) - Hc_vec(j);
         }
         // for case 2
         for (size_t j: new_case2_ind) {
@@ -1183,18 +1183,13 @@ namespace intsurv {
         }
         // for case 3
         for (size_t j: new_case3_ind) {
-            double m1 {
-                p_vec(j) * h_vec(j) *
-                S_vec(j) * Sc_vec(j)
-            };
-            double m2 {
-                p_vec(j) * hc_vec(j) *
-                Sc_vec(j) * S_vec(j)
-            };
+            double m12_common { p_vec(j) * S_vec(j) * Sc_vec(j) };
+            double m1 { m12_common * h_vec(j) };
+            double m2 { m12_common * hc_vec(j) };
             double m3 {
                 (1 - p_vec(j)) * hc_vec(j) * Sc_vec(j)
             };
-            obs_ell += std::log(q_vec(j)) +
+            obs_ell += std::log(1 - q_vec(j)) +
                 std::log(m1 + m2 + m3);
         }
         return obs_ell / static_cast<double>(new_n_obs);

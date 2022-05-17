@@ -130,7 +130,7 @@ Rcpp::List rt_ll_CoxphCureMar(const arma::mat& train_surv_x,
         Rcpp::Named("test_negLogL") = - new_ll,
         Rcpp::Named("new_surv_x") = new_obj.surv_obj_.get_x(true, false),
         Rcpp::Named("new_cure_x") = new_obj.cure_obj_.get_x(true, false),
-        Rcpp::Named("new_mar_x") = new_obj.cure_obj_.get_x(true, false),
+        Rcpp::Named("new_mar_x") = new_obj.mar_obj_.get_x(true, false),
         Rcpp::Named("new_time") = new_obj.surv_obj_.time_,
         Rcpp::Named("new_event") = new_obj.surv_obj_.event_,
         Rcpp::Named("new_surv_offset") = intsurv::arma2rvec(
