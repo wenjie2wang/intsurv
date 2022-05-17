@@ -369,7 +369,7 @@ cox_cure_net_mar <- function(surv_formula,
         cure_control <- do.call(cox_cure_net.control, cure_control)
     }
     if (! inherits(mar_control, "cox_cure_net.control")) {
-        mar_control <- do.call(cox_mar_net.control, mar_control)
+        mar_control <- do.call(cox_cure_net.control, mar_control)
     }
     if (control$save_call) {
         ## record function call
@@ -491,12 +491,12 @@ cox_cure_net_mar <- function(surv_formula,
             }
     }
     if (! is.null(mar_var_names <- colnames(call_list$mar_x))) {
-        colnames(out$mar_coef) <- c(
+        names(out$mar_coef) <- c(
         { if (call_list$mar_intercept) "(Intercept)" else NULL },
         mar_var_names
         )
     } else {
-        colnames(out$mar_coef) <-
+        names(out$mar_coef) <-
             if (call_list$mar_intercept) {
                 c("(Intercept)",
                   paste0("v", seq_along(out$mar_coef[- 1L])))
@@ -540,7 +540,7 @@ cox_cure_net_mar.fit <- function(surv_x,
         cure_control <- do.call(cox_cure_net.control, cure_control)
     }
     if (! inherits(mar_control, "cox_cure_net.control")) {
-        mar_control <- do.call(cox_mar_net.control, mar_control)
+        mar_control <- do.call(cox_cure_net.control, mar_control)
     }
     if (control$save_call) {
         ## record function call
@@ -563,6 +563,7 @@ cox_cure_net_mar.fit <- function(surv_x,
     call_list$event <- event
     call_list$surv_x <- surv_x
     call_list$cure_x <- cure_x
+    call_list$mar_x <- mar_x
     call_list$cv_nfolds <- cv_nfolds
     call_list$cure_intercept <- cure_intercept
     call_list$mar_intercept <- mar_intercept
@@ -611,12 +612,12 @@ cox_cure_net_mar.fit <- function(surv_x,
             }
     }
     if (! is.null(mar_var_names <- colnames(mar_x))) {
-        colnames(out$mar_coef) <- c(
+        names(out$mar_coef) <- c(
         {if (mar_intercept) "(Intercept)" else NULL},
-        colnames(mar_x)
+        mar_var_names
         )
     } else {
-        colnames(out$mar_coef) <-
+        names(out$mar_coef) <-
             if (mar_intercept) {
                 c("(Intercept)",
                   paste0("v", seq_len(ncol(out$mar_coef) - 1L)))
