@@ -129,7 +129,7 @@ cox_cure_net <- function(surv_formula,
     ## cox model does not have an intercept
     surv_is_intercept <- colnames(call_list$surv_x) == "(Intercept)"
     surv_has_intercept <- any(surv_is_intercept)
-    if ((ncol(surv_x) - as.integer(surv_has_intercept)) == 0L) {
+    if ((ncol(call_list$surv_x) - as.integer(surv_has_intercept)) == 0L) {
         stop("No covariate is specified in 'formula'.")
     }
     ## remove the possible intercept term

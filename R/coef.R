@@ -129,7 +129,7 @@ coef.cox_cure_mar <- coef.cox_cure
 ##' @method coef cox_cure_net
 ##' @export
 coef.cox_cure_net <- function(object,
-                              selection = c("bic2", "bic1", "all"), ...)
+                              selection = c("bic1", "bic2", "all"), ...)
 {
     bic <- match.arg(selection)
     if (bic != "all") {

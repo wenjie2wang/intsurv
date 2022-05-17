@@ -148,16 +148,16 @@ BIC.cox_cure <- function(object, ..., method = c("obs", "effective"))
 
 ##' @rdname BIC.cox_cure
 ##' @export
-BIC.cox_cure_mcar <- function(object, ..., method = c("obs", "certain-event"))
+BIC.cox_cure_mar <- function(object, ..., method = c("obs", "effective"))
 {
     method <- match.arg(method)
-    bic_name <- switch(method, "obs" = "bic1", "certain-event" = "bic2")
+    bic_name <- switch(method, "obs" = "bic1", "effective" = "bic2")
     if (! missing(...)) {
         inpList <- list(object, ...)
         ## check on object class
-        checkRes <- sapply(inpList, is_cox_cure_mcar)
+        checkRes <- sapply(inpList, is_cox_cure_mar)
         if (any(! checkRes))
-            stop("All objects must be of the 'cox_cure_mcar' class.")
+            stop("All objects must be of the 'cox_cure_mar' class.")
         bics <- sapply(inpList, function(a) a$model[[bic_name]])
         dfs <- sapply(inpList, function(a) a$model$coef_df)
         val <- data.frame(df = dfs, BIC = bics)
@@ -216,21 +216,6 @@ BIC.cox_cure_net <- function(object, ..., method = c("obs", "effective"))
                BIC = bics)
 }
 
-
 ##' @rdname BIC.cox_cure_net
 ##' @export
-BIC.cox_cure_net_mcar <- function(object, ...,
-                                   method = c("obs", "certain-event"))
-{
-    warn_dots()
-    method <- match.arg(method)
-    bic_name <- switch(method, "obs" = "bic1", "certain-event" = "bic2")
-    bics <- object$model[[bic_name]]
-    dfs <- object$model$coef_df
-    surv_dfs <- apply(object$surv_coef, 1L, function(a) sum(a != 0))
-    cure_dfs <- apply(object$cure_coef, 1L, function(a) sum(a != 0))
-    data.frame(df = dfs,
-               surv_df = surv_dfs,
-               cure_df = cure_dfs,
-               BIC = bics)
-}
+BIC.cox_cure_net_mar <- BIC.cox_cure_net
