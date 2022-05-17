@@ -118,7 +118,7 @@ namespace intsurv {
             case2_ind_ = arma::find(s_event < 1);
             n_event_ = case1_ind_.n_elem;
             max_event_time_ind_ = arma::max(case1_ind_);
-            max_event_time_ = time(max_event_time_ind_);
+            max_event_time_ = surv_obj_.time_(max_event_time_ind_);
         }
 
         // function members

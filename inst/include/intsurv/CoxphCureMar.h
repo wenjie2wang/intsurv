@@ -137,7 +137,7 @@ namespace intsurv {
             cer_ind_ = vec_union(case1_ind_, case2_ind_);
             case3_ind_ = arma::find(s_event == const4na);
             max_event_time_ind_ = arma::max(case1_ind_);
-            max_event_time_ = time(max_event_time_ind_);
+            max_event_time_ = surv_obj_.time_(max_event_time_ind_);
             // create a cure object
             cure_obj_ = LogisticReg(cure_x.rows(surv_sort_ind),
                                     s_event,
