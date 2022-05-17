@@ -216,7 +216,9 @@ namespace intsurv {
             // sort based on time and event
             // time: ascending order
             // event: events first, then censoring at the same time point
-            arma::uvec des_event_ind { arma::sort_index(event, "descend") };
+            arma::uvec des_event_ind {
+                arma::stable_sort_index(event, "descend")
+            };
             arma::uvec asc_time_ind {
                 arma::stable_sort_index(time.elem(des_event_ind), "ascend")
             };

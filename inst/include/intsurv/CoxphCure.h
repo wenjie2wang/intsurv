@@ -43,6 +43,7 @@ namespace intsurv {
         LogisticReg cure_obj_;
         arma::uvec case1_ind_;
         arma::uvec case2_ind_;
+        double max_event_time_; // maximum event time for tail completion
         unsigned int max_event_time_ind_; // index of the maximum event time
 
         // outputs
@@ -117,11 +118,6 @@ namespace intsurv {
             case2_ind_ = arma::find(s_event < 1);
             n_event_ = case1_ind_.n_elem;
             max_event_time_ind_ = arma::max(case1_ind_);
-            // avoid standardization after each iteration
-            surv_standardize0_ = surv_obj_.control_.standardize_;
-            surv_obj_.control_.set_standardize(false);
-            cure_standardize0_ = cure_obj_.control_.standardize_;
-            cure_obj_.control_.set_standardize(false);
         }
 
         // function members
@@ -167,6 +163,11 @@ namespace intsurv {
     // fit the Cox cure mode by EM algorithm
     inline void CoxphCure::fit()
     {
+        // avoid standardization after each iteration
+        surv_standardize0_ = surv_obj_.control_.standardize_;
+        surv_obj_.control_.set_standardize(false);
+        cure_standardize0_ = cure_obj_.control_.standardize_;
+        cure_obj_.control_.set_standardize(false);
         // initialize surv_beta
         const arma::vec& time { surv_obj_.time_ };
         const arma::vec& event { surv_obj_.event_ };
@@ -210,7 +211,7 @@ namespace intsurv {
         double tol1 { arma::datum::inf }, tol2 { tol1 };
         arma::vec s0_wi_tail, s_wi_tail;
         // prepare for tail completion
-        double max_event_time { time(max_event_time_ind_) };
+        double max_event_time_ { time(max_event_time_ind_) };
         if (control_.tail_tau_ < 0)
             control_.tail_tau_ = arma::datum::inf;
         // for exp tail completion only
@@ -246,7 +247,7 @@ namespace intsurv {
                 case 1:
                     for (size_t j: case2_ind_) {
                         // zero-tail constraint
-                        if (time(j) > max_event_time) {
+                        if (time(j) > max_event_time_) {
                             surv_obj_.S_time_(j) = 0.0;
                             surv_obj_.S0_time_(j) = 0.0;
                         }
@@ -254,11 +255,11 @@ namespace intsurv {
                     break;
                 case 2:
                     s0_tau = surv_obj_.S0_time_(max_event_time_ind_);
-                    etail_lambda = - std::log(s0_tau / max_event_time);
+                    etail_lambda = - std::log(s0_tau / max_event_time_);
                     for (size_t j: case2_ind_) {
                         // exponential tail by Peng (2003)
                         arma::vec surv_xbeta { surv_obj_.get_xbeta() };
-                        if (time(j) > max_event_time) {
+                        if (time(j) > max_event_time_) {
                             surv_obj_.S0_time_(j) = std::exp(
                                 - etail_lambda * time(j)
                                 );
@@ -444,6 +445,11 @@ namespace intsurv {
     // lambda_1 * lasso * factors + lambda_2 * ridge
     inline void CoxphCure::net_fit()
     {
+        // avoid standardization after each iteration
+        surv_standardize0_ = surv_obj_.control_.standardize_;
+        surv_obj_.control_.set_standardize(false);
+        cure_standardize0_ = cure_obj_.control_.standardize_;
+        cure_obj_.control_.set_standardize(false);
         // start
         surv_obj_.set_start();
         cure_obj_.set_start();
@@ -472,7 +478,7 @@ namespace intsurv {
         double tol1 { arma::datum::inf }, tol2 { tol1 };
         arma::vec s0_wi_tail, s_wi_tail;
         // prepare for tail completion
-        double max_event_time { time(max_event_time_ind_) };
+        max_event_time_ = time(max_event_time_ind_);
         if (control_.tail_tau_ < 0)
             control_.tail_tau_ = arma::datum::inf;
         // prepare for exponential tail completion method
@@ -509,7 +515,7 @@ namespace intsurv {
                 case 1:
                     for (size_t j: case2_ind_) {
                         // zero-tail constraint
-                        if (time(j) > max_event_time) {
+                        if (time(j) > max_event_time_) {
                             surv_obj_.S_time_(j) = 0.0;
                             surv_obj_.S0_time_(j) = 0.0;
                         }
@@ -517,11 +523,11 @@ namespace intsurv {
                     break;
                 case 2:
                     s0_tau = surv_obj_.S0_time_(max_event_time_ind_);
-                    etail_lambda = - std::log(s0_tau / max_event_time);
+                    etail_lambda = - std::log(s0_tau / max_event_time_);
                     for (size_t j: case2_ind_) {
                         // exponential tail by Peng (2003)
                         arma::vec surv_xbeta { surv_obj_.get_xbeta() };
-                        if (time(j) > max_event_time) {
+                        if (time(j) > max_event_time_) {
                             surv_obj_.S0_time_(j) = std::exp(
                                 - etail_lambda * time(j)
                                 );
@@ -709,7 +715,7 @@ namespace intsurv {
     // for given fitted model and estimates
     inline double CoxphCure::obs_log_likelihood() const
     {
-        double obs_ell { 0 };
+        double obs_ell { 0.0 };
         arma::vec sus_prob { cure_obj_.predict() };
         // for case 1
         for (size_t j: case1_ind_) {
@@ -758,11 +764,12 @@ namespace intsurv {
                 );
         }
 
-        double obs_ell { 0 };
         // sort based on time and event
         // time: ascending order
         // event: events first, then censoring at the same time point
-        arma::uvec des_event_ind { arma::sort_index(new_event, "descend") };
+        arma::uvec des_event_ind {
+            arma::stable_sort_index(new_event, "descend")
+        };
         arma::uvec asc_time_ind {
             arma::stable_sort_index(new_time.elem(des_event_ind), "ascend")
         };
@@ -790,8 +797,8 @@ namespace intsurv {
                 arma::ones(new_cure_x.n_rows), new_cure_x
                 );
         }
-        arma::uvec new_case1_ind { arma::find(new_event > 0) };
-        arma::uvec new_case2_ind { arma::find(new_event < 1) };
+        arma::uvec new_case1_ind { arma::find(new_event > 0.5) };
+        arma::uvec new_case2_ind { arma::find(new_event < 0.5) };
         // construct the baseline survival curve
         // tail completion has already been applied to S0_est_
         arma::vec S0_vec {
@@ -818,11 +825,46 @@ namespace intsurv {
         h_vec %= exp_surv_xbeta;
         H_vec %= exp_surv_xbeta;
         S_vec = arma::exp(- H_vec);
+        // tail completion for the conditional survival function
+        double s0_tau, etail_lambda;
+        switch(control_.tail_completion_) {
+            case 0:
+                for (size_t j: new_case2_ind) {
+                    // tail completion after the given tail_tau
+                    // by default, it means no tail completion
+                    if (new_time(j) > control_.tail_tau_) {
+                        S_vec(j) = 0.0;
+                    }
+                }
+                break;
+            case 1:
+                for (size_t j: new_case2_ind) {
+                    // zero-tail constraint
+                    if (new_time(j) > max_event_time_) {
+                        S_vec(j) = 0.0;
+                    }
+                }
+                break;
+            case 2:
+                s0_tau = surv_obj_.S0_time_(max_event_time_ind_);
+                etail_lambda = - std::log(s0_tau / max_event_time_);
+                for (size_t j: new_case2_ind) {
+                    // exponential tail by Peng (2003)
+                    if (new_time(j) > max_event_time_) {
+                        S_vec(j) = std::exp(- etail_lambda * new_time(j));
+                        S_vec(j) = std::pow(S_vec(j), exp_surv_xbeta(j));
+                    }
+                }
+                break;
+            default:    // do nothing, otherwise
+                break;
+        }
         arma::vec new_cure_xgamma {
             mat2vec(new_cure_x * cure_coef_) + new_cure_offset
         };
         arma::vec p_vec { 1 / (1 + arma::exp(- new_cure_xgamma)) };
         set_pmin_bound(p_vec, cure_obj_.control_.pmin_);
+        double obs_ell { 0.0 };
         // for case 1
         for (size_t j: new_case1_ind) {
             obs_ell += std::log(p_vec(j)) +
@@ -842,7 +884,7 @@ namespace intsurv {
     {
         return obs_log_likelihood(new_object.surv_obj_.time_,
                                   new_object.surv_obj_.event_,
-                                  new_object.surv_obj_.get_x(true, true),
+                                  new_object.surv_obj_.get_x(true, false),
                                   new_object.cure_obj_.get_x(true, false),
                                   new_object.surv_obj_.control_.offset_,
                                   new_object.cure_obj_.control_.offset_);
