@@ -118,6 +118,7 @@ namespace intsurv {
             case2_ind_ = arma::find(s_event < 1);
             n_event_ = case1_ind_.n_elem;
             max_event_time_ind_ = arma::max(case1_ind_);
+            max_event_time_ = time(max_event_time_ind_);
         }
 
         // function members
@@ -211,7 +212,6 @@ namespace intsurv {
         double tol1 { arma::datum::inf }, tol2 { tol1 };
         arma::vec s0_wi_tail, s_wi_tail;
         // prepare for tail completion
-        double max_event_time_ { time(max_event_time_ind_) };
         if (control_.tail_tau_ < 0)
             control_.tail_tau_ = arma::datum::inf;
         // for exp tail completion only
@@ -792,7 +792,7 @@ namespace intsurv {
         }
 
         // add intercept if needed
-        if (cure_p_ > cure_p0_) {
+        if (cure_obj_.control_.intercept_) {
             new_cure_x = arma::join_horiz(
                 arma::ones(new_cure_x.n_rows), new_cure_x
                 );
