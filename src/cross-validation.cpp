@@ -14,12 +14,11 @@ Rcpp::List rcpp_gen_cv_index(const unsigned int nobs,
         nobs, nfolds, static_train_index, strata
     };
     Rcpp::List train_list, valid_list;
-    arma::uvec tmp;
     for (size_t i {0}; i < nfolds; ++i) {
-        tmp = cv_obj.train_index_.at(i) + 1;
-        train_list.push_back(intsurv::arma2rvec(tmp));
-        tmp = cv_obj.test_index_.at(i) + 1;
-        valid_list.push_back(intsurv::arma2rvec(tmp));
+        arma::uvec tmp1 { cv_obj.train_index_.at(i) + 1 };
+        train_list.push_back(intsurv::arma2rvec(tmp1));
+        arma::uvec tmp2 { cv_obj.test_index_.at(i) + 1 };
+        valid_list.push_back(intsurv::arma2rvec(tmp2));
     }
     return Rcpp::List::create(
         Rcpp::Named("train_index") = train_list,

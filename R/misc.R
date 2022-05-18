@@ -130,7 +130,7 @@ generate_cv_index <- function(nobs,
                               static_training = NULL)
 {
     strata <- if (is.null(strata)) {
-                  ingeter(0)
+                  integer(0)
               } else {
                   as.integer(factor(strata)) - 1L
               }

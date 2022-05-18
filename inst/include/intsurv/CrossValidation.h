@@ -111,7 +111,7 @@ namespace intsurv {
                         );
                     test_index.at(ii) = arma::join_cols(
                         test_index.at(ii),
-                        k_idx.elem(tmp_cv.at(0).at(ii))
+                        k_idx.elem(tmp_cv.at(1).at(ii))
                         );
                 }
             }
