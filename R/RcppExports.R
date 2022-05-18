@@ -41,6 +41,10 @@ rcpp_coxnet2 <- function(time, event, x, lambda, alpha, nlambda, lambda_min_rati
     .Call('_intsurv_rcpp_coxnet2', PACKAGE = 'intsurv', time, event, x, lambda, alpha, nlambda, lambda_min_ratio, penalty_factor, offset, varying_active, standardize, max_iter, epsilon, verbose)
 }
 
+rcpp_gen_cv_index <- function(nobs, nfolds, strata, static_train_index) {
+    .Call('_intsurv_rcpp_gen_cv_index', PACKAGE = 'intsurv', nobs, nfolds, strata, static_train_index)
+}
+
 rcpp_logistic <- function(x, y, intercept = TRUE, offset = 0L, start = 0L, standardize = TRUE, max_iter = 200L, epsilon = 1e-4, pmin = 1e-5, verbose = 0L) {
     .Call('_intsurv_rcpp_logistic', PACKAGE = 'intsurv', x, y, intercept, offset, start, standardize, max_iter, epsilon, pmin, verbose)
 }

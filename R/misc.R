@@ -121,3 +121,23 @@ null2mat0 <- function(x) {
     }
     x
 }
+
+## generate cross-validation indices
+## with optional strata and static training indices
+generate_cv_index <- function(nobs,
+                              nfolds = 5,
+                              strata = NULL,
+                              static_training = NULL)
+{
+    strata <- if (is.null(strata)) {
+                  ingeter(0)
+              } else {
+                  as.integer(factor(strata)) - 1L
+              }
+    static_training <- if (is.null(static_training)) {
+                           integer(0)
+                       } else {
+                           as.integer(static_training) - 1L
+                       }
+    rcpp_gen_cv_index(nobs, nfolds, strata, static_training)
+}

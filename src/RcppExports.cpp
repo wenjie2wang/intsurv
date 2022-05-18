@@ -355,6 +355,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rcpp_gen_cv_index
+Rcpp::List rcpp_gen_cv_index(const unsigned int nobs, const unsigned int nfolds, const arma::uvec& strata, const arma::uvec& static_train_index);
+RcppExport SEXP _intsurv_rcpp_gen_cv_index(SEXP nobsSEXP, SEXP nfoldsSEXP, SEXP strataSEXP, SEXP static_train_indexSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const unsigned int >::type nobs(nobsSEXP);
+    Rcpp::traits::input_parameter< const unsigned int >::type nfolds(nfoldsSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type strata(strataSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type static_train_index(static_train_indexSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_gen_cv_index(nobs, nfolds, strata, static_train_index));
+    return rcpp_result_gen;
+END_RCPP
+}
 // rcpp_logistic
 Rcpp::List rcpp_logistic(const arma::mat& x, const arma::vec& y, const bool intercept, const arma::vec& offset, const arma::vec& start, const bool standardize, const unsigned int max_iter, const double epsilon, const double pmin, const unsigned int verbose);
 RcppExport SEXP _intsurv_rcpp_logistic(SEXP xSEXP, SEXP ySEXP, SEXP interceptSEXP, SEXP offsetSEXP, SEXP startSEXP, SEXP standardizeSEXP, SEXP max_iterSEXP, SEXP epsilonSEXP, SEXP pminSEXP, SEXP verboseSEXP) {
@@ -474,6 +488,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_intsurv_rcpp_coxph", (DL_FUNC) &_intsurv_rcpp_coxph, 9},
     {"_intsurv_rcpp_coxnet1", (DL_FUNC) &_intsurv_rcpp_coxnet1, 13},
     {"_intsurv_rcpp_coxnet2", (DL_FUNC) &_intsurv_rcpp_coxnet2, 14},
+    {"_intsurv_rcpp_gen_cv_index", (DL_FUNC) &_intsurv_rcpp_gen_cv_index, 4},
     {"_intsurv_rcpp_logistic", (DL_FUNC) &_intsurv_rcpp_logistic, 10},
     {"_intsurv_rcpp_lognet1", (DL_FUNC) &_intsurv_rcpp_lognet1, 14},
     {"_intsurv_rcpp_lognet2", (DL_FUNC) &_intsurv_rcpp_lognet2, 15},

@@ -24,4 +24,3 @@ Rcpp::List rt_cv(const unsigned int nobs,
         Rcpp::Named("valid_index") = valid_list
         );
 }
-
