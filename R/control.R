@@ -20,7 +20,7 @@
 ##' Provides an interface to specify some common control parameters for
 ##' functions in intsurv.
 ##'
-##' @param max_iter A positive integer specifying the maximum iteration number.
+##' @param maxit A positive integer specifying the maximum iteration number.
 ##'     The default value is \code{1000}.
 ##' @param epsilon A positive number specifying the tolerance that determines
 ##'     the convergence of the coefficient estimates.  The tolerance is compared
@@ -55,7 +55,7 @@
 ##'     \code{cox_cure.control}, or \code{cox_cure_net.control}.
 ##'
 ##' @export
-intsurv.control <- function(max_iter = 300,
+intsurv.control <- function(maxit = 300,
                             epsilon = 1e-4,
                             standardize = TRUE,
                             start = NULL,
@@ -65,7 +65,7 @@ intsurv.control <- function(max_iter = 300,
                             ...)
 {
     ## TODO add checks
-    structure(list(max_iter = max_iter,
+    structure(list(maxit = maxit,
                    epsilon = epsilon,
                    standardize = standardize,
                    start = null2num0(start),

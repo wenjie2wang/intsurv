@@ -39,11 +39,11 @@ Rcpp::List rcpp_coxph_cure(
     const arma::vec& cure_offset = 0,
     const bool surv_standardize = true,
     const bool cure_standardize = true,
-    const unsigned int max_iter = 200,
+    const unsigned int maxit = 200,
     const double epsilon = 1e-4,
-    const unsigned int surv_max_iter = 100,
+    const unsigned int surv_maxit = 100,
     const double surv_epsilon = 1e-4,
-    const unsigned int cure_max_iter = 100,
+    const unsigned int cure_maxit = 100,
     const double cure_epsilon = 1e-4,
     const unsigned int tail_completion = 1,
     const double tail_tau = -1,
@@ -51,17 +51,17 @@ Rcpp::List rcpp_coxph_cure(
     const unsigned int verbose = 0
     )
 {
-    intsurv::Control control0 { max_iter, epsilon };
+    intsurv::Control control0 { maxit, epsilon };
     control0.cure(tail_completion, tail_tau)->
         set_verbose(verbose);
     intsurv::Control surv_control {
-        surv_max_iter, surv_epsilon, surv_standardize,
+        surv_maxit, surv_epsilon, surv_standardize,
         intsurv::less_verbose(verbose, 3)
     };
     surv_control.set_start(surv_start)->
         set_offset(surv_offset);
     intsurv::Control cure_control {
-        cure_max_iter, cure_epsilon, cure_standardize,
+        cure_maxit, cure_epsilon, cure_standardize,
         intsurv::less_verbose(verbose, 3)
     };
     cure_control.logistic(cure_intercept, pmin)->
@@ -170,11 +170,11 @@ Rcpp::List rcpp_coxph_cure_reg(
     const bool cure_standardize = true,
     const bool surv_varying_active = true,
     const bool cure_varying_active = true,
-    const unsigned int max_iter = 200,
+    const unsigned int maxit = 200,
     const double epsilon = 1e-4,
-    const unsigned int surv_max_iter = 100,
+    const unsigned int surv_maxit = 100,
     const double surv_epsilon = 1e-4,
-    const unsigned int cure_max_iter = 100,
+    const unsigned int cure_maxit = 100,
     const double cure_epsilon = 1e-4,
     const unsigned int tail_completion = 1,
     const double tail_tau = -1,
@@ -182,11 +182,11 @@ Rcpp::List rcpp_coxph_cure_reg(
     const unsigned int verbose = 0
     )
 {
-    intsurv::Control control0 { max_iter, epsilon };
+    intsurv::Control control0 { maxit, epsilon };
     control0.cure(tail_completion, tail_tau)->
         set_verbose(verbose);
     intsurv::Control surv_control {
-        surv_max_iter, surv_epsilon, surv_standardize,
+        surv_maxit, surv_epsilon, surv_standardize,
         intsurv::less_verbose(verbose, 3)
     };
     surv_control.set_start(surv_start)->
@@ -194,7 +194,7 @@ Rcpp::List rcpp_coxph_cure_reg(
         net(surv_penalty_factor, surv_varying_active)->
         net_fit(surv_l1_lambda, surv_l2_lambda);
     intsurv::Control cure_control {
-        cure_max_iter, cure_epsilon, cure_standardize,
+        cure_maxit, cure_epsilon, cure_standardize,
         intsurv::less_verbose(verbose, 3)
     };
     cure_control.logistic(cure_intercept, pmin)->
@@ -296,11 +296,11 @@ Rcpp::List rcpp_coxph_cure_vs(
     const bool cure_standardize = true,
     const bool surv_varying_active = true,
     const bool cure_varying_active = true,
-    const unsigned int max_iter = 200,
+    const unsigned int maxit = 200,
     const double epsilon = 1e-4,
-    const unsigned int surv_max_iter = 100,
+    const unsigned int surv_maxit = 100,
     const double surv_epsilon = 1e-4,
-    const unsigned int cure_max_iter = 100,
+    const unsigned int cure_maxit = 100,
     const double cure_epsilon = 1e-4,
     const unsigned int tail_completion = 1,
     const double tail_tau = -1,
@@ -308,11 +308,11 @@ Rcpp::List rcpp_coxph_cure_vs(
     const unsigned int verbose = 0
     )
 {
-    intsurv::Control control0 { max_iter, epsilon };
+    intsurv::Control control0 { maxit, epsilon };
     control0.cure(tail_completion, tail_tau)->
         set_verbose(verbose);
     intsurv::Control surv_control {
-        surv_max_iter, surv_epsilon, surv_standardize,
+        surv_maxit, surv_epsilon, surv_standardize,
         intsurv::less_verbose(verbose, 3)
     };
     surv_control.set_start(surv_start)->
@@ -320,7 +320,7 @@ Rcpp::List rcpp_coxph_cure_vs(
         net(surv_penalty_factor, surv_varying_active)->
         net_path(surv_nlambda, surv_lambda_min_ratio, surv_alpha, surv_lambda);
     intsurv::Control cure_control {
-        cure_max_iter, cure_epsilon, cure_standardize,
+        cure_maxit, cure_epsilon, cure_standardize,
         intsurv::less_verbose(verbose, 3)
     };
     cure_control.logistic(cure_intercept, pmin)->

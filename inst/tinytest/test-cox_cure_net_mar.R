@@ -14,20 +14,7 @@ dat <- simData4cure(nSubject = n_obs, lambda_censor = 0.01,
                     b0 = 0.5, p1 = 0.95, p2 = 0.95, p3 = 0.95)
 
 ## model-fitting from given design matrices
-## MCAR
 fit11 <- cox_cure_net.fit(
-    x_mat,
-    x_mat,
-    dat$obs_time,
-    dat$obs_event,
-    control = list(save_call = FALSE),
-    surv_control = list(nlambda = 5, alpha = 0.8),
-    cure_control = list(nlambda = 5, alpha = 0.8)
-)
-
-## MAR
-fit12 <- cox_cure_net_mar.fit(
-    x_mat,
     x_mat,
     x_mat,
     dat$obs_time,
@@ -41,23 +28,8 @@ fit12 <- cox_cure_net_mar.fit(
 fm <- paste(paste0("x", seq_len(p)), collapse = " + ")
 surv_fm <- as.formula(sprintf("~ %s", fm))
 cure_fm <- surv_fm
-
-## MCAR
 fit21 <- cox_cure_net(
     surv_fm,
-    cure_fm,
-    data = dat,
-    time = obs_time,
-    event = obs_event,
-    control = list(save_call = FALSE),
-    surv_control = list(nlambda = 5, alpha = 0.8),
-    cure_control = list(nlambda = 5, alpha = 0.8)
-)
-
-## MAR
-fit22 <- cox_cure_net_mar(
-    surv_fm,
-    cure_fm,
     cure_fm,
     data = dat,
     time = obs_time,
@@ -77,4 +49,3 @@ coef(fit21)
 
 ## checks
 expect_equivalent(fit11, fit21)
-expect_equivalent(fit12, fit22)

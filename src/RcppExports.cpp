@@ -27,8 +27,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_coxph_cure
-Rcpp::List rcpp_coxph_cure(const arma::vec& time, const arma::vec& event, const arma::mat& surv_x, const arma::mat& cure_x, const bool cure_intercept, const unsigned int bootstrap, const arma::vec& surv_start, const arma::vec& cure_start, const arma::vec& surv_offset, const arma::vec& cure_offset, const bool surv_standardize, const bool cure_standardize, const unsigned int max_iter, const double epsilon, const unsigned int surv_max_iter, const double surv_epsilon, const unsigned int cure_max_iter, const double cure_epsilon, const unsigned int tail_completion, const double tail_tau, const double pmin, const unsigned int verbose);
-RcppExport SEXP _intsurv_rcpp_coxph_cure(SEXP timeSEXP, SEXP eventSEXP, SEXP surv_xSEXP, SEXP cure_xSEXP, SEXP cure_interceptSEXP, SEXP bootstrapSEXP, SEXP surv_startSEXP, SEXP cure_startSEXP, SEXP surv_offsetSEXP, SEXP cure_offsetSEXP, SEXP surv_standardizeSEXP, SEXP cure_standardizeSEXP, SEXP max_iterSEXP, SEXP epsilonSEXP, SEXP surv_max_iterSEXP, SEXP surv_epsilonSEXP, SEXP cure_max_iterSEXP, SEXP cure_epsilonSEXP, SEXP tail_completionSEXP, SEXP tail_tauSEXP, SEXP pminSEXP, SEXP verboseSEXP) {
+Rcpp::List rcpp_coxph_cure(const arma::vec& time, const arma::vec& event, const arma::mat& surv_x, const arma::mat& cure_x, const bool cure_intercept, const unsigned int bootstrap, const arma::vec& surv_start, const arma::vec& cure_start, const arma::vec& surv_offset, const arma::vec& cure_offset, const bool surv_standardize, const bool cure_standardize, const unsigned int maxit, const double epsilon, const unsigned int surv_maxit, const double surv_epsilon, const unsigned int cure_maxit, const double cure_epsilon, const unsigned int tail_completion, const double tail_tau, const double pmin, const unsigned int verbose);
+RcppExport SEXP _intsurv_rcpp_coxph_cure(SEXP timeSEXP, SEXP eventSEXP, SEXP surv_xSEXP, SEXP cure_xSEXP, SEXP cure_interceptSEXP, SEXP bootstrapSEXP, SEXP surv_startSEXP, SEXP cure_startSEXP, SEXP surv_offsetSEXP, SEXP cure_offsetSEXP, SEXP surv_standardizeSEXP, SEXP cure_standardizeSEXP, SEXP maxitSEXP, SEXP epsilonSEXP, SEXP surv_maxitSEXP, SEXP surv_epsilonSEXP, SEXP cure_maxitSEXP, SEXP cure_epsilonSEXP, SEXP tail_completionSEXP, SEXP tail_tauSEXP, SEXP pminSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -44,23 +44,23 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::vec& >::type cure_offset(cure_offsetSEXP);
     Rcpp::traits::input_parameter< const bool >::type surv_standardize(surv_standardizeSEXP);
     Rcpp::traits::input_parameter< const bool >::type cure_standardize(cure_standardizeSEXP);
-    Rcpp::traits::input_parameter< const unsigned int >::type max_iter(max_iterSEXP);
+    Rcpp::traits::input_parameter< const unsigned int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< const double >::type epsilon(epsilonSEXP);
-    Rcpp::traits::input_parameter< const unsigned int >::type surv_max_iter(surv_max_iterSEXP);
+    Rcpp::traits::input_parameter< const unsigned int >::type surv_maxit(surv_maxitSEXP);
     Rcpp::traits::input_parameter< const double >::type surv_epsilon(surv_epsilonSEXP);
-    Rcpp::traits::input_parameter< const unsigned int >::type cure_max_iter(cure_max_iterSEXP);
+    Rcpp::traits::input_parameter< const unsigned int >::type cure_maxit(cure_maxitSEXP);
     Rcpp::traits::input_parameter< const double >::type cure_epsilon(cure_epsilonSEXP);
     Rcpp::traits::input_parameter< const unsigned int >::type tail_completion(tail_completionSEXP);
     Rcpp::traits::input_parameter< const double >::type tail_tau(tail_tauSEXP);
     Rcpp::traits::input_parameter< const double >::type pmin(pminSEXP);
     Rcpp::traits::input_parameter< const unsigned int >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_coxph_cure(time, event, surv_x, cure_x, cure_intercept, bootstrap, surv_start, cure_start, surv_offset, cure_offset, surv_standardize, cure_standardize, max_iter, epsilon, surv_max_iter, surv_epsilon, cure_max_iter, cure_epsilon, tail_completion, tail_tau, pmin, verbose));
+    rcpp_result_gen = Rcpp::wrap(rcpp_coxph_cure(time, event, surv_x, cure_x, cure_intercept, bootstrap, surv_start, cure_start, surv_offset, cure_offset, surv_standardize, cure_standardize, maxit, epsilon, surv_maxit, surv_epsilon, cure_maxit, cure_epsilon, tail_completion, tail_tau, pmin, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
 // rcpp_coxph_cure_reg
-Rcpp::List rcpp_coxph_cure_reg(const arma::vec& time, const arma::vec& event, const arma::mat& surv_x, const arma::mat& cure_x, const bool cure_intercept, const double surv_l1_lambda, const double surv_l2_lambda, const arma::vec& surv_penalty_factor, const double cure_l1_lambda, const double cure_l2_lambda, const arma::vec& cure_penalty_factor, const unsigned long cv_nfolds, const arma::vec& surv_start, const arma::vec& cure_start, const arma::vec& surv_offset, const arma::vec& cure_offset, const bool surv_standardize, const bool cure_standardize, const bool surv_varying_active, const bool cure_varying_active, const unsigned int max_iter, const double epsilon, const unsigned int surv_max_iter, const double surv_epsilon, const unsigned int cure_max_iter, const double cure_epsilon, const unsigned int tail_completion, const double tail_tau, const double pmin, const unsigned int verbose);
-RcppExport SEXP _intsurv_rcpp_coxph_cure_reg(SEXP timeSEXP, SEXP eventSEXP, SEXP surv_xSEXP, SEXP cure_xSEXP, SEXP cure_interceptSEXP, SEXP surv_l1_lambdaSEXP, SEXP surv_l2_lambdaSEXP, SEXP surv_penalty_factorSEXP, SEXP cure_l1_lambdaSEXP, SEXP cure_l2_lambdaSEXP, SEXP cure_penalty_factorSEXP, SEXP cv_nfoldsSEXP, SEXP surv_startSEXP, SEXP cure_startSEXP, SEXP surv_offsetSEXP, SEXP cure_offsetSEXP, SEXP surv_standardizeSEXP, SEXP cure_standardizeSEXP, SEXP surv_varying_activeSEXP, SEXP cure_varying_activeSEXP, SEXP max_iterSEXP, SEXP epsilonSEXP, SEXP surv_max_iterSEXP, SEXP surv_epsilonSEXP, SEXP cure_max_iterSEXP, SEXP cure_epsilonSEXP, SEXP tail_completionSEXP, SEXP tail_tauSEXP, SEXP pminSEXP, SEXP verboseSEXP) {
+Rcpp::List rcpp_coxph_cure_reg(const arma::vec& time, const arma::vec& event, const arma::mat& surv_x, const arma::mat& cure_x, const bool cure_intercept, const double surv_l1_lambda, const double surv_l2_lambda, const arma::vec& surv_penalty_factor, const double cure_l1_lambda, const double cure_l2_lambda, const arma::vec& cure_penalty_factor, const unsigned long cv_nfolds, const arma::vec& surv_start, const arma::vec& cure_start, const arma::vec& surv_offset, const arma::vec& cure_offset, const bool surv_standardize, const bool cure_standardize, const bool surv_varying_active, const bool cure_varying_active, const unsigned int maxit, const double epsilon, const unsigned int surv_maxit, const double surv_epsilon, const unsigned int cure_maxit, const double cure_epsilon, const unsigned int tail_completion, const double tail_tau, const double pmin, const unsigned int verbose);
+RcppExport SEXP _intsurv_rcpp_coxph_cure_reg(SEXP timeSEXP, SEXP eventSEXP, SEXP surv_xSEXP, SEXP cure_xSEXP, SEXP cure_interceptSEXP, SEXP surv_l1_lambdaSEXP, SEXP surv_l2_lambdaSEXP, SEXP surv_penalty_factorSEXP, SEXP cure_l1_lambdaSEXP, SEXP cure_l2_lambdaSEXP, SEXP cure_penalty_factorSEXP, SEXP cv_nfoldsSEXP, SEXP surv_startSEXP, SEXP cure_startSEXP, SEXP surv_offsetSEXP, SEXP cure_offsetSEXP, SEXP surv_standardizeSEXP, SEXP cure_standardizeSEXP, SEXP surv_varying_activeSEXP, SEXP cure_varying_activeSEXP, SEXP maxitSEXP, SEXP epsilonSEXP, SEXP surv_maxitSEXP, SEXP surv_epsilonSEXP, SEXP cure_maxitSEXP, SEXP cure_epsilonSEXP, SEXP tail_completionSEXP, SEXP tail_tauSEXP, SEXP pminSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -84,23 +84,23 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const bool >::type cure_standardize(cure_standardizeSEXP);
     Rcpp::traits::input_parameter< const bool >::type surv_varying_active(surv_varying_activeSEXP);
     Rcpp::traits::input_parameter< const bool >::type cure_varying_active(cure_varying_activeSEXP);
-    Rcpp::traits::input_parameter< const unsigned int >::type max_iter(max_iterSEXP);
+    Rcpp::traits::input_parameter< const unsigned int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< const double >::type epsilon(epsilonSEXP);
-    Rcpp::traits::input_parameter< const unsigned int >::type surv_max_iter(surv_max_iterSEXP);
+    Rcpp::traits::input_parameter< const unsigned int >::type surv_maxit(surv_maxitSEXP);
     Rcpp::traits::input_parameter< const double >::type surv_epsilon(surv_epsilonSEXP);
-    Rcpp::traits::input_parameter< const unsigned int >::type cure_max_iter(cure_max_iterSEXP);
+    Rcpp::traits::input_parameter< const unsigned int >::type cure_maxit(cure_maxitSEXP);
     Rcpp::traits::input_parameter< const double >::type cure_epsilon(cure_epsilonSEXP);
     Rcpp::traits::input_parameter< const unsigned int >::type tail_completion(tail_completionSEXP);
     Rcpp::traits::input_parameter< const double >::type tail_tau(tail_tauSEXP);
     Rcpp::traits::input_parameter< const double >::type pmin(pminSEXP);
     Rcpp::traits::input_parameter< const unsigned int >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_coxph_cure_reg(time, event, surv_x, cure_x, cure_intercept, surv_l1_lambda, surv_l2_lambda, surv_penalty_factor, cure_l1_lambda, cure_l2_lambda, cure_penalty_factor, cv_nfolds, surv_start, cure_start, surv_offset, cure_offset, surv_standardize, cure_standardize, surv_varying_active, cure_varying_active, max_iter, epsilon, surv_max_iter, surv_epsilon, cure_max_iter, cure_epsilon, tail_completion, tail_tau, pmin, verbose));
+    rcpp_result_gen = Rcpp::wrap(rcpp_coxph_cure_reg(time, event, surv_x, cure_x, cure_intercept, surv_l1_lambda, surv_l2_lambda, surv_penalty_factor, cure_l1_lambda, cure_l2_lambda, cure_penalty_factor, cv_nfolds, surv_start, cure_start, surv_offset, cure_offset, surv_standardize, cure_standardize, surv_varying_active, cure_varying_active, maxit, epsilon, surv_maxit, surv_epsilon, cure_maxit, cure_epsilon, tail_completion, tail_tau, pmin, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
 // rcpp_coxph_cure_vs
-Rcpp::List rcpp_coxph_cure_vs(const arma::vec& time, const arma::vec& event, const arma::mat& surv_x, const arma::mat& cure_x, const bool cure_intercept, const arma::vec& surv_lambda, const double surv_alpha, const unsigned int surv_nlambda, const double surv_lambda_min_ratio, const arma::vec& surv_penalty_factor, const arma::vec& cure_lambda, const double cure_alpha, const unsigned int cure_nlambda, const double cure_lambda_min_ratio, const arma::vec& cure_penalty_factor, const unsigned long cv_nfolds, const arma::vec& surv_start, const arma::vec& cure_start, const arma::vec& surv_offset, const arma::vec& cure_offset, const bool surv_standardize, const bool cure_standardize, const bool surv_varying_active, const bool cure_varying_active, const unsigned int max_iter, const double epsilon, const unsigned int surv_max_iter, const double surv_epsilon, const unsigned int cure_max_iter, const double cure_epsilon, const unsigned int tail_completion, const double tail_tau, const double pmin, const unsigned int verbose);
-RcppExport SEXP _intsurv_rcpp_coxph_cure_vs(SEXP timeSEXP, SEXP eventSEXP, SEXP surv_xSEXP, SEXP cure_xSEXP, SEXP cure_interceptSEXP, SEXP surv_lambdaSEXP, SEXP surv_alphaSEXP, SEXP surv_nlambdaSEXP, SEXP surv_lambda_min_ratioSEXP, SEXP surv_penalty_factorSEXP, SEXP cure_lambdaSEXP, SEXP cure_alphaSEXP, SEXP cure_nlambdaSEXP, SEXP cure_lambda_min_ratioSEXP, SEXP cure_penalty_factorSEXP, SEXP cv_nfoldsSEXP, SEXP surv_startSEXP, SEXP cure_startSEXP, SEXP surv_offsetSEXP, SEXP cure_offsetSEXP, SEXP surv_standardizeSEXP, SEXP cure_standardizeSEXP, SEXP surv_varying_activeSEXP, SEXP cure_varying_activeSEXP, SEXP max_iterSEXP, SEXP epsilonSEXP, SEXP surv_max_iterSEXP, SEXP surv_epsilonSEXP, SEXP cure_max_iterSEXP, SEXP cure_epsilonSEXP, SEXP tail_completionSEXP, SEXP tail_tauSEXP, SEXP pminSEXP, SEXP verboseSEXP) {
+Rcpp::List rcpp_coxph_cure_vs(const arma::vec& time, const arma::vec& event, const arma::mat& surv_x, const arma::mat& cure_x, const bool cure_intercept, const arma::vec& surv_lambda, const double surv_alpha, const unsigned int surv_nlambda, const double surv_lambda_min_ratio, const arma::vec& surv_penalty_factor, const arma::vec& cure_lambda, const double cure_alpha, const unsigned int cure_nlambda, const double cure_lambda_min_ratio, const arma::vec& cure_penalty_factor, const unsigned long cv_nfolds, const arma::vec& surv_start, const arma::vec& cure_start, const arma::vec& surv_offset, const arma::vec& cure_offset, const bool surv_standardize, const bool cure_standardize, const bool surv_varying_active, const bool cure_varying_active, const unsigned int maxit, const double epsilon, const unsigned int surv_maxit, const double surv_epsilon, const unsigned int cure_maxit, const double cure_epsilon, const unsigned int tail_completion, const double tail_tau, const double pmin, const unsigned int verbose);
+RcppExport SEXP _intsurv_rcpp_coxph_cure_vs(SEXP timeSEXP, SEXP eventSEXP, SEXP surv_xSEXP, SEXP cure_xSEXP, SEXP cure_interceptSEXP, SEXP surv_lambdaSEXP, SEXP surv_alphaSEXP, SEXP surv_nlambdaSEXP, SEXP surv_lambda_min_ratioSEXP, SEXP surv_penalty_factorSEXP, SEXP cure_lambdaSEXP, SEXP cure_alphaSEXP, SEXP cure_nlambdaSEXP, SEXP cure_lambda_min_ratioSEXP, SEXP cure_penalty_factorSEXP, SEXP cv_nfoldsSEXP, SEXP surv_startSEXP, SEXP cure_startSEXP, SEXP surv_offsetSEXP, SEXP cure_offsetSEXP, SEXP surv_standardizeSEXP, SEXP cure_standardizeSEXP, SEXP surv_varying_activeSEXP, SEXP cure_varying_activeSEXP, SEXP maxitSEXP, SEXP epsilonSEXP, SEXP surv_maxitSEXP, SEXP surv_epsilonSEXP, SEXP cure_maxitSEXP, SEXP cure_epsilonSEXP, SEXP tail_completionSEXP, SEXP tail_tauSEXP, SEXP pminSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -128,23 +128,23 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const bool >::type cure_standardize(cure_standardizeSEXP);
     Rcpp::traits::input_parameter< const bool >::type surv_varying_active(surv_varying_activeSEXP);
     Rcpp::traits::input_parameter< const bool >::type cure_varying_active(cure_varying_activeSEXP);
-    Rcpp::traits::input_parameter< const unsigned int >::type max_iter(max_iterSEXP);
+    Rcpp::traits::input_parameter< const unsigned int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< const double >::type epsilon(epsilonSEXP);
-    Rcpp::traits::input_parameter< const unsigned int >::type surv_max_iter(surv_max_iterSEXP);
+    Rcpp::traits::input_parameter< const unsigned int >::type surv_maxit(surv_maxitSEXP);
     Rcpp::traits::input_parameter< const double >::type surv_epsilon(surv_epsilonSEXP);
-    Rcpp::traits::input_parameter< const unsigned int >::type cure_max_iter(cure_max_iterSEXP);
+    Rcpp::traits::input_parameter< const unsigned int >::type cure_maxit(cure_maxitSEXP);
     Rcpp::traits::input_parameter< const double >::type cure_epsilon(cure_epsilonSEXP);
     Rcpp::traits::input_parameter< const unsigned int >::type tail_completion(tail_completionSEXP);
     Rcpp::traits::input_parameter< const double >::type tail_tau(tail_tauSEXP);
     Rcpp::traits::input_parameter< const double >::type pmin(pminSEXP);
     Rcpp::traits::input_parameter< const unsigned int >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_coxph_cure_vs(time, event, surv_x, cure_x, cure_intercept, surv_lambda, surv_alpha, surv_nlambda, surv_lambda_min_ratio, surv_penalty_factor, cure_lambda, cure_alpha, cure_nlambda, cure_lambda_min_ratio, cure_penalty_factor, cv_nfolds, surv_start, cure_start, surv_offset, cure_offset, surv_standardize, cure_standardize, surv_varying_active, cure_varying_active, max_iter, epsilon, surv_max_iter, surv_epsilon, cure_max_iter, cure_epsilon, tail_completion, tail_tau, pmin, verbose));
+    rcpp_result_gen = Rcpp::wrap(rcpp_coxph_cure_vs(time, event, surv_x, cure_x, cure_intercept, surv_lambda, surv_alpha, surv_nlambda, surv_lambda_min_ratio, surv_penalty_factor, cure_lambda, cure_alpha, cure_nlambda, cure_lambda_min_ratio, cure_penalty_factor, cv_nfolds, surv_start, cure_start, surv_offset, cure_offset, surv_standardize, cure_standardize, surv_varying_active, cure_varying_active, maxit, epsilon, surv_maxit, surv_epsilon, cure_maxit, cure_epsilon, tail_completion, tail_tau, pmin, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
 // rcpp_coxph_cure_mar
-Rcpp::List rcpp_coxph_cure_mar(const arma::vec& time, const arma::vec& event, const arma::mat& surv_x, const arma::mat& cure_x, const arma::mat& mar_x, const bool cure_intercept, const bool mar_intercept, const unsigned int bootstrap, const arma::vec& surv_start, const arma::vec& cure_start, const arma::vec& mar_start, const arma::vec& surv_offset, const arma::vec& cure_offset, const arma::vec& mar_offset, const bool surv_standardize, const bool cure_standardize, const bool mar_standardize, const unsigned int max_iter, const double epsilon, const unsigned int surv_max_iter, const double surv_epsilon, const unsigned int cure_max_iter, const double cure_epsilon, const unsigned int mar_max_iter, const double mar_epsilon, const unsigned int tail_completion, const double tail_tau, const double pmin, const unsigned int verbose);
-RcppExport SEXP _intsurv_rcpp_coxph_cure_mar(SEXP timeSEXP, SEXP eventSEXP, SEXP surv_xSEXP, SEXP cure_xSEXP, SEXP mar_xSEXP, SEXP cure_interceptSEXP, SEXP mar_interceptSEXP, SEXP bootstrapSEXP, SEXP surv_startSEXP, SEXP cure_startSEXP, SEXP mar_startSEXP, SEXP surv_offsetSEXP, SEXP cure_offsetSEXP, SEXP mar_offsetSEXP, SEXP surv_standardizeSEXP, SEXP cure_standardizeSEXP, SEXP mar_standardizeSEXP, SEXP max_iterSEXP, SEXP epsilonSEXP, SEXP surv_max_iterSEXP, SEXP surv_epsilonSEXP, SEXP cure_max_iterSEXP, SEXP cure_epsilonSEXP, SEXP mar_max_iterSEXP, SEXP mar_epsilonSEXP, SEXP tail_completionSEXP, SEXP tail_tauSEXP, SEXP pminSEXP, SEXP verboseSEXP) {
+Rcpp::List rcpp_coxph_cure_mar(const arma::vec& time, const arma::vec& event, const arma::mat& surv_x, const arma::mat& cure_x, const bool cure_intercept, const unsigned int bootstrap, const arma::vec& surv_start, const arma::vec& cure_start, const arma::vec& surv_offset, const arma::vec& cure_offset, const bool surv_standardize, const bool cure_standardize, const unsigned int maxit, const double epsilon, const unsigned int surv_maxit, const double surv_epsilon, const unsigned int cure_maxit, const double cure_epsilon, const unsigned int tail_completion, const double tail_tau, const double pmin, const unsigned int verbose);
+RcppExport SEXP _intsurv_rcpp_coxph_cure_mar(SEXP timeSEXP, SEXP eventSEXP, SEXP surv_xSEXP, SEXP cure_xSEXP, SEXP cure_interceptSEXP, SEXP bootstrapSEXP, SEXP surv_startSEXP, SEXP cure_startSEXP, SEXP surv_offsetSEXP, SEXP cure_offsetSEXP, SEXP surv_standardizeSEXP, SEXP cure_standardizeSEXP, SEXP maxitSEXP, SEXP epsilonSEXP, SEXP surv_maxitSEXP, SEXP surv_epsilonSEXP, SEXP cure_maxitSEXP, SEXP cure_epsilonSEXP, SEXP tail_completionSEXP, SEXP tail_tauSEXP, SEXP pminSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -152,38 +152,31 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::vec& >::type event(eventSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type surv_x(surv_xSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type cure_x(cure_xSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type mar_x(mar_xSEXP);
     Rcpp::traits::input_parameter< const bool >::type cure_intercept(cure_interceptSEXP);
-    Rcpp::traits::input_parameter< const bool >::type mar_intercept(mar_interceptSEXP);
     Rcpp::traits::input_parameter< const unsigned int >::type bootstrap(bootstrapSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type surv_start(surv_startSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type cure_start(cure_startSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type mar_start(mar_startSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type surv_offset(surv_offsetSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type cure_offset(cure_offsetSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type mar_offset(mar_offsetSEXP);
     Rcpp::traits::input_parameter< const bool >::type surv_standardize(surv_standardizeSEXP);
     Rcpp::traits::input_parameter< const bool >::type cure_standardize(cure_standardizeSEXP);
-    Rcpp::traits::input_parameter< const bool >::type mar_standardize(mar_standardizeSEXP);
-    Rcpp::traits::input_parameter< const unsigned int >::type max_iter(max_iterSEXP);
+    Rcpp::traits::input_parameter< const unsigned int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< const double >::type epsilon(epsilonSEXP);
-    Rcpp::traits::input_parameter< const unsigned int >::type surv_max_iter(surv_max_iterSEXP);
+    Rcpp::traits::input_parameter< const unsigned int >::type surv_maxit(surv_maxitSEXP);
     Rcpp::traits::input_parameter< const double >::type surv_epsilon(surv_epsilonSEXP);
-    Rcpp::traits::input_parameter< const unsigned int >::type cure_max_iter(cure_max_iterSEXP);
+    Rcpp::traits::input_parameter< const unsigned int >::type cure_maxit(cure_maxitSEXP);
     Rcpp::traits::input_parameter< const double >::type cure_epsilon(cure_epsilonSEXP);
-    Rcpp::traits::input_parameter< const unsigned int >::type mar_max_iter(mar_max_iterSEXP);
-    Rcpp::traits::input_parameter< const double >::type mar_epsilon(mar_epsilonSEXP);
     Rcpp::traits::input_parameter< const unsigned int >::type tail_completion(tail_completionSEXP);
     Rcpp::traits::input_parameter< const double >::type tail_tau(tail_tauSEXP);
     Rcpp::traits::input_parameter< const double >::type pmin(pminSEXP);
     Rcpp::traits::input_parameter< const unsigned int >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_coxph_cure_mar(time, event, surv_x, cure_x, mar_x, cure_intercept, mar_intercept, bootstrap, surv_start, cure_start, mar_start, surv_offset, cure_offset, mar_offset, surv_standardize, cure_standardize, mar_standardize, max_iter, epsilon, surv_max_iter, surv_epsilon, cure_max_iter, cure_epsilon, mar_max_iter, mar_epsilon, tail_completion, tail_tau, pmin, verbose));
+    rcpp_result_gen = Rcpp::wrap(rcpp_coxph_cure_mar(time, event, surv_x, cure_x, cure_intercept, bootstrap, surv_start, cure_start, surv_offset, cure_offset, surv_standardize, cure_standardize, maxit, epsilon, surv_maxit, surv_epsilon, cure_maxit, cure_epsilon, tail_completion, tail_tau, pmin, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
 // rcpp_coxph_cure_mar_reg
-Rcpp::List rcpp_coxph_cure_mar_reg(const arma::vec& time, const arma::vec& event, const arma::mat& surv_x, const arma::mat& cure_x, const arma::mat& mar_x, const bool cure_intercept, const bool mar_intercept, const double surv_l1_lambda, const double surv_l2_lambda, const arma::vec& surv_penalty_factor, const double cure_l1_lambda, const double cure_l2_lambda, const arma::vec& cure_penalty_factor, const double mar_l1_lambda, const double mar_l2_lambda, const arma::vec& mar_penalty_factor, const unsigned int cv_nfolds, const arma::vec& surv_start, const arma::vec& cure_start, const arma::vec& mar_start, const arma::vec& surv_offset, const arma::vec& cure_offset, const arma::vec& mar_offset, const bool surv_standardize, const bool cure_standardize, const bool mar_standardize, const bool surv_varying_active, const bool cure_varying_active, const bool mar_varying_active, const unsigned int max_iter, const double epsilon, const unsigned int surv_max_iter, const double surv_epsilon, const unsigned int cure_max_iter, const double cure_epsilon, const unsigned int mar_max_iter, const double mar_epsilon, const unsigned int tail_completion, const double tail_tau, const double pmin, const unsigned int verbose);
-RcppExport SEXP _intsurv_rcpp_coxph_cure_mar_reg(SEXP timeSEXP, SEXP eventSEXP, SEXP surv_xSEXP, SEXP cure_xSEXP, SEXP mar_xSEXP, SEXP cure_interceptSEXP, SEXP mar_interceptSEXP, SEXP surv_l1_lambdaSEXP, SEXP surv_l2_lambdaSEXP, SEXP surv_penalty_factorSEXP, SEXP cure_l1_lambdaSEXP, SEXP cure_l2_lambdaSEXP, SEXP cure_penalty_factorSEXP, SEXP mar_l1_lambdaSEXP, SEXP mar_l2_lambdaSEXP, SEXP mar_penalty_factorSEXP, SEXP cv_nfoldsSEXP, SEXP surv_startSEXP, SEXP cure_startSEXP, SEXP mar_startSEXP, SEXP surv_offsetSEXP, SEXP cure_offsetSEXP, SEXP mar_offsetSEXP, SEXP surv_standardizeSEXP, SEXP cure_standardizeSEXP, SEXP mar_standardizeSEXP, SEXP surv_varying_activeSEXP, SEXP cure_varying_activeSEXP, SEXP mar_varying_activeSEXP, SEXP max_iterSEXP, SEXP epsilonSEXP, SEXP surv_max_iterSEXP, SEXP surv_epsilonSEXP, SEXP cure_max_iterSEXP, SEXP cure_epsilonSEXP, SEXP mar_max_iterSEXP, SEXP mar_epsilonSEXP, SEXP tail_completionSEXP, SEXP tail_tauSEXP, SEXP pminSEXP, SEXP verboseSEXP) {
+Rcpp::List rcpp_coxph_cure_mar_reg(const arma::vec& time, const arma::vec& event, const arma::mat& surv_x, const arma::mat& cure_x, const bool cure_intercept, const double surv_l1_lambda, const double surv_l2_lambda, const arma::vec& surv_penalty_factor, const double cure_l1_lambda, const double cure_l2_lambda, const arma::vec& cure_penalty_factor, const unsigned int cv_nfolds, const arma::vec& surv_start, const arma::vec& cure_start, const arma::vec& surv_offset, const arma::vec& cure_offset, const bool surv_standardize, const bool cure_standardize, const bool surv_varying_active, const bool cure_varying_active, const unsigned int maxit, const double epsilon, const unsigned int surv_maxit, const double surv_epsilon, const unsigned int cure_maxit, const double cure_epsilon, const unsigned int tail_completion, const double tail_tau, const double pmin, const unsigned int verbose);
+RcppExport SEXP _intsurv_rcpp_coxph_cure_mar_reg(SEXP timeSEXP, SEXP eventSEXP, SEXP surv_xSEXP, SEXP cure_xSEXP, SEXP cure_interceptSEXP, SEXP surv_l1_lambdaSEXP, SEXP surv_l2_lambdaSEXP, SEXP surv_penalty_factorSEXP, SEXP cure_l1_lambdaSEXP, SEXP cure_l2_lambdaSEXP, SEXP cure_penalty_factorSEXP, SEXP cv_nfoldsSEXP, SEXP surv_startSEXP, SEXP cure_startSEXP, SEXP surv_offsetSEXP, SEXP cure_offsetSEXP, SEXP surv_standardizeSEXP, SEXP cure_standardizeSEXP, SEXP surv_varying_activeSEXP, SEXP cure_varying_activeSEXP, SEXP maxitSEXP, SEXP epsilonSEXP, SEXP surv_maxitSEXP, SEXP surv_epsilonSEXP, SEXP cure_maxitSEXP, SEXP cure_epsilonSEXP, SEXP tail_completionSEXP, SEXP tail_tauSEXP, SEXP pminSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -191,50 +184,39 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::vec& >::type event(eventSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type surv_x(surv_xSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type cure_x(cure_xSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type mar_x(mar_xSEXP);
     Rcpp::traits::input_parameter< const bool >::type cure_intercept(cure_interceptSEXP);
-    Rcpp::traits::input_parameter< const bool >::type mar_intercept(mar_interceptSEXP);
     Rcpp::traits::input_parameter< const double >::type surv_l1_lambda(surv_l1_lambdaSEXP);
     Rcpp::traits::input_parameter< const double >::type surv_l2_lambda(surv_l2_lambdaSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type surv_penalty_factor(surv_penalty_factorSEXP);
     Rcpp::traits::input_parameter< const double >::type cure_l1_lambda(cure_l1_lambdaSEXP);
     Rcpp::traits::input_parameter< const double >::type cure_l2_lambda(cure_l2_lambdaSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type cure_penalty_factor(cure_penalty_factorSEXP);
-    Rcpp::traits::input_parameter< const double >::type mar_l1_lambda(mar_l1_lambdaSEXP);
-    Rcpp::traits::input_parameter< const double >::type mar_l2_lambda(mar_l2_lambdaSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type mar_penalty_factor(mar_penalty_factorSEXP);
     Rcpp::traits::input_parameter< const unsigned int >::type cv_nfolds(cv_nfoldsSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type surv_start(surv_startSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type cure_start(cure_startSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type mar_start(mar_startSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type surv_offset(surv_offsetSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type cure_offset(cure_offsetSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type mar_offset(mar_offsetSEXP);
     Rcpp::traits::input_parameter< const bool >::type surv_standardize(surv_standardizeSEXP);
     Rcpp::traits::input_parameter< const bool >::type cure_standardize(cure_standardizeSEXP);
-    Rcpp::traits::input_parameter< const bool >::type mar_standardize(mar_standardizeSEXP);
     Rcpp::traits::input_parameter< const bool >::type surv_varying_active(surv_varying_activeSEXP);
     Rcpp::traits::input_parameter< const bool >::type cure_varying_active(cure_varying_activeSEXP);
-    Rcpp::traits::input_parameter< const bool >::type mar_varying_active(mar_varying_activeSEXP);
-    Rcpp::traits::input_parameter< const unsigned int >::type max_iter(max_iterSEXP);
+    Rcpp::traits::input_parameter< const unsigned int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< const double >::type epsilon(epsilonSEXP);
-    Rcpp::traits::input_parameter< const unsigned int >::type surv_max_iter(surv_max_iterSEXP);
+    Rcpp::traits::input_parameter< const unsigned int >::type surv_maxit(surv_maxitSEXP);
     Rcpp::traits::input_parameter< const double >::type surv_epsilon(surv_epsilonSEXP);
-    Rcpp::traits::input_parameter< const unsigned int >::type cure_max_iter(cure_max_iterSEXP);
+    Rcpp::traits::input_parameter< const unsigned int >::type cure_maxit(cure_maxitSEXP);
     Rcpp::traits::input_parameter< const double >::type cure_epsilon(cure_epsilonSEXP);
-    Rcpp::traits::input_parameter< const unsigned int >::type mar_max_iter(mar_max_iterSEXP);
-    Rcpp::traits::input_parameter< const double >::type mar_epsilon(mar_epsilonSEXP);
     Rcpp::traits::input_parameter< const unsigned int >::type tail_completion(tail_completionSEXP);
     Rcpp::traits::input_parameter< const double >::type tail_tau(tail_tauSEXP);
     Rcpp::traits::input_parameter< const double >::type pmin(pminSEXP);
     Rcpp::traits::input_parameter< const unsigned int >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_coxph_cure_mar_reg(time, event, surv_x, cure_x, mar_x, cure_intercept, mar_intercept, surv_l1_lambda, surv_l2_lambda, surv_penalty_factor, cure_l1_lambda, cure_l2_lambda, cure_penalty_factor, mar_l1_lambda, mar_l2_lambda, mar_penalty_factor, cv_nfolds, surv_start, cure_start, mar_start, surv_offset, cure_offset, mar_offset, surv_standardize, cure_standardize, mar_standardize, surv_varying_active, cure_varying_active, mar_varying_active, max_iter, epsilon, surv_max_iter, surv_epsilon, cure_max_iter, cure_epsilon, mar_max_iter, mar_epsilon, tail_completion, tail_tau, pmin, verbose));
+    rcpp_result_gen = Rcpp::wrap(rcpp_coxph_cure_mar_reg(time, event, surv_x, cure_x, cure_intercept, surv_l1_lambda, surv_l2_lambda, surv_penalty_factor, cure_l1_lambda, cure_l2_lambda, cure_penalty_factor, cv_nfolds, surv_start, cure_start, surv_offset, cure_offset, surv_standardize, cure_standardize, surv_varying_active, cure_varying_active, maxit, epsilon, surv_maxit, surv_epsilon, cure_maxit, cure_epsilon, tail_completion, tail_tau, pmin, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
 // rcpp_coxph_cure_mar_vs
-Rcpp::List rcpp_coxph_cure_mar_vs(const arma::vec& time, const arma::vec& event, const arma::mat& surv_x, const arma::mat& cure_x, const arma::mat& mar_x, const bool cure_intercept, const bool mar_intercept, const arma::vec& surv_lambda, const double surv_alpha, const unsigned int surv_nlambda, const double surv_lambda_min_ratio, const arma::vec& surv_penalty_factor, const arma::vec& cure_lambda, const double cure_alpha, const unsigned int cure_nlambda, const double cure_lambda_min_ratio, const arma::vec& cure_penalty_factor, const arma::vec& mar_lambda, const double mar_alpha, const unsigned int mar_nlambda, const double mar_lambda_min_ratio, const arma::vec& mar_penalty_factor, const unsigned int cv_nfolds, const arma::vec& surv_start, const arma::vec& cure_start, const arma::vec& mar_start, const arma::vec& surv_offset, const arma::vec& cure_offset, const arma::vec& mar_offset, const bool surv_standardize, const bool cure_standardize, const bool mar_standardize, const bool surv_varying_active, const bool cure_varying_active, const bool mar_varying_active, const unsigned int max_iter, const double epsilon, const unsigned int surv_max_iter, const double surv_epsilon, const unsigned int cure_max_iter, const double cure_epsilon, const unsigned int mar_max_iter, const double mar_epsilon, const unsigned int tail_completion, const double tail_tau, const double pmin, const unsigned int verbose);
-RcppExport SEXP _intsurv_rcpp_coxph_cure_mar_vs(SEXP timeSEXP, SEXP eventSEXP, SEXP surv_xSEXP, SEXP cure_xSEXP, SEXP mar_xSEXP, SEXP cure_interceptSEXP, SEXP mar_interceptSEXP, SEXP surv_lambdaSEXP, SEXP surv_alphaSEXP, SEXP surv_nlambdaSEXP, SEXP surv_lambda_min_ratioSEXP, SEXP surv_penalty_factorSEXP, SEXP cure_lambdaSEXP, SEXP cure_alphaSEXP, SEXP cure_nlambdaSEXP, SEXP cure_lambda_min_ratioSEXP, SEXP cure_penalty_factorSEXP, SEXP mar_lambdaSEXP, SEXP mar_alphaSEXP, SEXP mar_nlambdaSEXP, SEXP mar_lambda_min_ratioSEXP, SEXP mar_penalty_factorSEXP, SEXP cv_nfoldsSEXP, SEXP surv_startSEXP, SEXP cure_startSEXP, SEXP mar_startSEXP, SEXP surv_offsetSEXP, SEXP cure_offsetSEXP, SEXP mar_offsetSEXP, SEXP surv_standardizeSEXP, SEXP cure_standardizeSEXP, SEXP mar_standardizeSEXP, SEXP surv_varying_activeSEXP, SEXP cure_varying_activeSEXP, SEXP mar_varying_activeSEXP, SEXP max_iterSEXP, SEXP epsilonSEXP, SEXP surv_max_iterSEXP, SEXP surv_epsilonSEXP, SEXP cure_max_iterSEXP, SEXP cure_epsilonSEXP, SEXP mar_max_iterSEXP, SEXP mar_epsilonSEXP, SEXP tail_completionSEXP, SEXP tail_tauSEXP, SEXP pminSEXP, SEXP verboseSEXP) {
+Rcpp::List rcpp_coxph_cure_mar_vs(const arma::vec& time, const arma::vec& event, const arma::mat& surv_x, const arma::mat& cure_x, const bool cure_intercept, const arma::vec& surv_lambda, const double surv_alpha, const unsigned int surv_nlambda, const double surv_lambda_min_ratio, const arma::vec& surv_penalty_factor, const arma::vec& cure_lambda, const double cure_alpha, const unsigned int cure_nlambda, const double cure_lambda_min_ratio, const arma::vec& cure_penalty_factor, const unsigned int cv_nfolds, const arma::vec& surv_start, const arma::vec& cure_start, const arma::vec& surv_offset, const arma::vec& cure_offset, const bool surv_standardize, const bool cure_standardize, const bool surv_varying_active, const bool cure_varying_active, const unsigned int maxit, const double epsilon, const unsigned int surv_maxit, const double surv_epsilon, const unsigned int cure_maxit, const double cure_epsilon, const unsigned int tail_completion, const double tail_tau, const double pmin, const unsigned int verbose);
+RcppExport SEXP _intsurv_rcpp_coxph_cure_mar_vs(SEXP timeSEXP, SEXP eventSEXP, SEXP surv_xSEXP, SEXP cure_xSEXP, SEXP cure_interceptSEXP, SEXP surv_lambdaSEXP, SEXP surv_alphaSEXP, SEXP surv_nlambdaSEXP, SEXP surv_lambda_min_ratioSEXP, SEXP surv_penalty_factorSEXP, SEXP cure_lambdaSEXP, SEXP cure_alphaSEXP, SEXP cure_nlambdaSEXP, SEXP cure_lambda_min_ratioSEXP, SEXP cure_penalty_factorSEXP, SEXP cv_nfoldsSEXP, SEXP surv_startSEXP, SEXP cure_startSEXP, SEXP surv_offsetSEXP, SEXP cure_offsetSEXP, SEXP surv_standardizeSEXP, SEXP cure_standardizeSEXP, SEXP surv_varying_activeSEXP, SEXP cure_varying_activeSEXP, SEXP maxitSEXP, SEXP epsilonSEXP, SEXP surv_maxitSEXP, SEXP surv_epsilonSEXP, SEXP cure_maxitSEXP, SEXP cure_epsilonSEXP, SEXP tail_completionSEXP, SEXP tail_tauSEXP, SEXP pminSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -242,9 +224,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::vec& >::type event(eventSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type surv_x(surv_xSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type cure_x(cure_xSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type mar_x(mar_xSEXP);
     Rcpp::traits::input_parameter< const bool >::type cure_intercept(cure_interceptSEXP);
-    Rcpp::traits::input_parameter< const bool >::type mar_intercept(mar_interceptSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type surv_lambda(surv_lambdaSEXP);
     Rcpp::traits::input_parameter< const double >::type surv_alpha(surv_alphaSEXP);
     Rcpp::traits::input_parameter< const unsigned int >::type surv_nlambda(surv_nlambdaSEXP);
@@ -255,43 +235,32 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const unsigned int >::type cure_nlambda(cure_nlambdaSEXP);
     Rcpp::traits::input_parameter< const double >::type cure_lambda_min_ratio(cure_lambda_min_ratioSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type cure_penalty_factor(cure_penalty_factorSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type mar_lambda(mar_lambdaSEXP);
-    Rcpp::traits::input_parameter< const double >::type mar_alpha(mar_alphaSEXP);
-    Rcpp::traits::input_parameter< const unsigned int >::type mar_nlambda(mar_nlambdaSEXP);
-    Rcpp::traits::input_parameter< const double >::type mar_lambda_min_ratio(mar_lambda_min_ratioSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type mar_penalty_factor(mar_penalty_factorSEXP);
     Rcpp::traits::input_parameter< const unsigned int >::type cv_nfolds(cv_nfoldsSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type surv_start(surv_startSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type cure_start(cure_startSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type mar_start(mar_startSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type surv_offset(surv_offsetSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type cure_offset(cure_offsetSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type mar_offset(mar_offsetSEXP);
     Rcpp::traits::input_parameter< const bool >::type surv_standardize(surv_standardizeSEXP);
     Rcpp::traits::input_parameter< const bool >::type cure_standardize(cure_standardizeSEXP);
-    Rcpp::traits::input_parameter< const bool >::type mar_standardize(mar_standardizeSEXP);
     Rcpp::traits::input_parameter< const bool >::type surv_varying_active(surv_varying_activeSEXP);
     Rcpp::traits::input_parameter< const bool >::type cure_varying_active(cure_varying_activeSEXP);
-    Rcpp::traits::input_parameter< const bool >::type mar_varying_active(mar_varying_activeSEXP);
-    Rcpp::traits::input_parameter< const unsigned int >::type max_iter(max_iterSEXP);
+    Rcpp::traits::input_parameter< const unsigned int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< const double >::type epsilon(epsilonSEXP);
-    Rcpp::traits::input_parameter< const unsigned int >::type surv_max_iter(surv_max_iterSEXP);
+    Rcpp::traits::input_parameter< const unsigned int >::type surv_maxit(surv_maxitSEXP);
     Rcpp::traits::input_parameter< const double >::type surv_epsilon(surv_epsilonSEXP);
-    Rcpp::traits::input_parameter< const unsigned int >::type cure_max_iter(cure_max_iterSEXP);
+    Rcpp::traits::input_parameter< const unsigned int >::type cure_maxit(cure_maxitSEXP);
     Rcpp::traits::input_parameter< const double >::type cure_epsilon(cure_epsilonSEXP);
-    Rcpp::traits::input_parameter< const unsigned int >::type mar_max_iter(mar_max_iterSEXP);
-    Rcpp::traits::input_parameter< const double >::type mar_epsilon(mar_epsilonSEXP);
     Rcpp::traits::input_parameter< const unsigned int >::type tail_completion(tail_completionSEXP);
     Rcpp::traits::input_parameter< const double >::type tail_tau(tail_tauSEXP);
     Rcpp::traits::input_parameter< const double >::type pmin(pminSEXP);
     Rcpp::traits::input_parameter< const unsigned int >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_coxph_cure_mar_vs(time, event, surv_x, cure_x, mar_x, cure_intercept, mar_intercept, surv_lambda, surv_alpha, surv_nlambda, surv_lambda_min_ratio, surv_penalty_factor, cure_lambda, cure_alpha, cure_nlambda, cure_lambda_min_ratio, cure_penalty_factor, mar_lambda, mar_alpha, mar_nlambda, mar_lambda_min_ratio, mar_penalty_factor, cv_nfolds, surv_start, cure_start, mar_start, surv_offset, cure_offset, mar_offset, surv_standardize, cure_standardize, mar_standardize, surv_varying_active, cure_varying_active, mar_varying_active, max_iter, epsilon, surv_max_iter, surv_epsilon, cure_max_iter, cure_epsilon, mar_max_iter, mar_epsilon, tail_completion, tail_tau, pmin, verbose));
+    rcpp_result_gen = Rcpp::wrap(rcpp_coxph_cure_mar_vs(time, event, surv_x, cure_x, cure_intercept, surv_lambda, surv_alpha, surv_nlambda, surv_lambda_min_ratio, surv_penalty_factor, cure_lambda, cure_alpha, cure_nlambda, cure_lambda_min_ratio, cure_penalty_factor, cv_nfolds, surv_start, cure_start, surv_offset, cure_offset, surv_standardize, cure_standardize, surv_varying_active, cure_varying_active, maxit, epsilon, surv_maxit, surv_epsilon, cure_maxit, cure_epsilon, tail_completion, tail_tau, pmin, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
 // rcpp_coxph
-Rcpp::List rcpp_coxph(const arma::vec& time, const arma::vec& event, const arma::mat& x, const arma::vec& offset, const arma::vec& start, const bool standardize, const unsigned int max_iter, const double epsilon, const unsigned int verbose);
-RcppExport SEXP _intsurv_rcpp_coxph(SEXP timeSEXP, SEXP eventSEXP, SEXP xSEXP, SEXP offsetSEXP, SEXP startSEXP, SEXP standardizeSEXP, SEXP max_iterSEXP, SEXP epsilonSEXP, SEXP verboseSEXP) {
+Rcpp::List rcpp_coxph(const arma::vec& time, const arma::vec& event, const arma::mat& x, const arma::vec& offset, const arma::vec& start, const bool standardize, const unsigned int maxit, const double epsilon, const unsigned int verbose);
+RcppExport SEXP _intsurv_rcpp_coxph(SEXP timeSEXP, SEXP eventSEXP, SEXP xSEXP, SEXP offsetSEXP, SEXP startSEXP, SEXP standardizeSEXP, SEXP maxitSEXP, SEXP epsilonSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -301,16 +270,16 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::vec& >::type offset(offsetSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type start(startSEXP);
     Rcpp::traits::input_parameter< const bool >::type standardize(standardizeSEXP);
-    Rcpp::traits::input_parameter< const unsigned int >::type max_iter(max_iterSEXP);
+    Rcpp::traits::input_parameter< const unsigned int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< const double >::type epsilon(epsilonSEXP);
     Rcpp::traits::input_parameter< const unsigned int >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_coxph(time, event, x, offset, start, standardize, max_iter, epsilon, verbose));
+    rcpp_result_gen = Rcpp::wrap(rcpp_coxph(time, event, x, offset, start, standardize, maxit, epsilon, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
 // rcpp_coxnet1
-Rcpp::List rcpp_coxnet1(const arma::vec& time, const arma::vec& event, const arma::mat& x, const double l1_lambda, const double l2_lambda, const arma::vec& penalty_factor, const arma::vec& offset, const arma::vec& start, const bool varying_active, const bool standardize, const unsigned int max_iter, const double epsilon, const unsigned int verbose);
-RcppExport SEXP _intsurv_rcpp_coxnet1(SEXP timeSEXP, SEXP eventSEXP, SEXP xSEXP, SEXP l1_lambdaSEXP, SEXP l2_lambdaSEXP, SEXP penalty_factorSEXP, SEXP offsetSEXP, SEXP startSEXP, SEXP varying_activeSEXP, SEXP standardizeSEXP, SEXP max_iterSEXP, SEXP epsilonSEXP, SEXP verboseSEXP) {
+Rcpp::List rcpp_coxnet1(const arma::vec& time, const arma::vec& event, const arma::mat& x, const double l1_lambda, const double l2_lambda, const arma::vec& penalty_factor, const arma::vec& offset, const arma::vec& start, const bool varying_active, const bool standardize, const unsigned int maxit, const double epsilon, const unsigned int verbose);
+RcppExport SEXP _intsurv_rcpp_coxnet1(SEXP timeSEXP, SEXP eventSEXP, SEXP xSEXP, SEXP l1_lambdaSEXP, SEXP l2_lambdaSEXP, SEXP penalty_factorSEXP, SEXP offsetSEXP, SEXP startSEXP, SEXP varying_activeSEXP, SEXP standardizeSEXP, SEXP maxitSEXP, SEXP epsilonSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -324,16 +293,16 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::vec& >::type start(startSEXP);
     Rcpp::traits::input_parameter< const bool >::type varying_active(varying_activeSEXP);
     Rcpp::traits::input_parameter< const bool >::type standardize(standardizeSEXP);
-    Rcpp::traits::input_parameter< const unsigned int >::type max_iter(max_iterSEXP);
+    Rcpp::traits::input_parameter< const unsigned int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< const double >::type epsilon(epsilonSEXP);
     Rcpp::traits::input_parameter< const unsigned int >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_coxnet1(time, event, x, l1_lambda, l2_lambda, penalty_factor, offset, start, varying_active, standardize, max_iter, epsilon, verbose));
+    rcpp_result_gen = Rcpp::wrap(rcpp_coxnet1(time, event, x, l1_lambda, l2_lambda, penalty_factor, offset, start, varying_active, standardize, maxit, epsilon, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
 // rcpp_coxnet2
-Rcpp::List rcpp_coxnet2(const arma::vec& time, const arma::vec& event, const arma::mat& x, const arma::vec& lambda, const double alpha, const unsigned int nlambda, const double lambda_min_ratio, const arma::vec& penalty_factor, const arma::vec& offset, const bool varying_active, const bool standardize, const unsigned int max_iter, const double epsilon, const bool verbose);
-RcppExport SEXP _intsurv_rcpp_coxnet2(SEXP timeSEXP, SEXP eventSEXP, SEXP xSEXP, SEXP lambdaSEXP, SEXP alphaSEXP, SEXP nlambdaSEXP, SEXP lambda_min_ratioSEXP, SEXP penalty_factorSEXP, SEXP offsetSEXP, SEXP varying_activeSEXP, SEXP standardizeSEXP, SEXP max_iterSEXP, SEXP epsilonSEXP, SEXP verboseSEXP) {
+Rcpp::List rcpp_coxnet2(const arma::vec& time, const arma::vec& event, const arma::mat& x, const arma::vec& lambda, const double alpha, const unsigned int nlambda, const double lambda_min_ratio, const arma::vec& penalty_factor, const arma::vec& offset, const bool varying_active, const bool standardize, const unsigned int maxit, const double epsilon, const bool verbose);
+RcppExport SEXP _intsurv_rcpp_coxnet2(SEXP timeSEXP, SEXP eventSEXP, SEXP xSEXP, SEXP lambdaSEXP, SEXP alphaSEXP, SEXP nlambdaSEXP, SEXP lambda_min_ratioSEXP, SEXP penalty_factorSEXP, SEXP offsetSEXP, SEXP varying_activeSEXP, SEXP standardizeSEXP, SEXP maxitSEXP, SEXP epsilonSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -348,10 +317,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::vec& >::type offset(offsetSEXP);
     Rcpp::traits::input_parameter< const bool >::type varying_active(varying_activeSEXP);
     Rcpp::traits::input_parameter< const bool >::type standardize(standardizeSEXP);
-    Rcpp::traits::input_parameter< const unsigned int >::type max_iter(max_iterSEXP);
+    Rcpp::traits::input_parameter< const unsigned int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< const double >::type epsilon(epsilonSEXP);
     Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_coxnet2(time, event, x, lambda, alpha, nlambda, lambda_min_ratio, penalty_factor, offset, varying_active, standardize, max_iter, epsilon, verbose));
+    rcpp_result_gen = Rcpp::wrap(rcpp_coxnet2(time, event, x, lambda, alpha, nlambda, lambda_min_ratio, penalty_factor, offset, varying_active, standardize, maxit, epsilon, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -370,8 +339,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_logistic
-Rcpp::List rcpp_logistic(const arma::mat& x, const arma::vec& y, const bool intercept, const arma::vec& offset, const arma::vec& start, const bool standardize, const unsigned int max_iter, const double epsilon, const double pmin, const unsigned int verbose);
-RcppExport SEXP _intsurv_rcpp_logistic(SEXP xSEXP, SEXP ySEXP, SEXP interceptSEXP, SEXP offsetSEXP, SEXP startSEXP, SEXP standardizeSEXP, SEXP max_iterSEXP, SEXP epsilonSEXP, SEXP pminSEXP, SEXP verboseSEXP) {
+Rcpp::List rcpp_logistic(const arma::mat& x, const arma::vec& y, const bool intercept, const arma::vec& offset, const arma::vec& start, const bool standardize, const unsigned int maxit, const double epsilon, const double pmin, const unsigned int verbose);
+RcppExport SEXP _intsurv_rcpp_logistic(SEXP xSEXP, SEXP ySEXP, SEXP interceptSEXP, SEXP offsetSEXP, SEXP startSEXP, SEXP standardizeSEXP, SEXP maxitSEXP, SEXP epsilonSEXP, SEXP pminSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -381,17 +350,17 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::vec& >::type offset(offsetSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type start(startSEXP);
     Rcpp::traits::input_parameter< const bool >::type standardize(standardizeSEXP);
-    Rcpp::traits::input_parameter< const unsigned int >::type max_iter(max_iterSEXP);
+    Rcpp::traits::input_parameter< const unsigned int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< const double >::type epsilon(epsilonSEXP);
     Rcpp::traits::input_parameter< const double >::type pmin(pminSEXP);
     Rcpp::traits::input_parameter< const unsigned int >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_logistic(x, y, intercept, offset, start, standardize, max_iter, epsilon, pmin, verbose));
+    rcpp_result_gen = Rcpp::wrap(rcpp_logistic(x, y, intercept, offset, start, standardize, maxit, epsilon, pmin, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
 // rcpp_lognet1
-Rcpp::List rcpp_lognet1(const arma::mat& x, const arma::vec& y, const double l1_lambda, const double l2_lambda, const arma::vec& penalty_factor, const arma::vec& start, const bool intercept, const bool standardize, const arma::vec& offset, const bool varying_active, const unsigned int max_iter, const double epsilon, const double pmin, const unsigned int verbose);
-RcppExport SEXP _intsurv_rcpp_lognet1(SEXP xSEXP, SEXP ySEXP, SEXP l1_lambdaSEXP, SEXP l2_lambdaSEXP, SEXP penalty_factorSEXP, SEXP startSEXP, SEXP interceptSEXP, SEXP standardizeSEXP, SEXP offsetSEXP, SEXP varying_activeSEXP, SEXP max_iterSEXP, SEXP epsilonSEXP, SEXP pminSEXP, SEXP verboseSEXP) {
+Rcpp::List rcpp_lognet1(const arma::mat& x, const arma::vec& y, const double l1_lambda, const double l2_lambda, const arma::vec& penalty_factor, const arma::vec& start, const bool intercept, const bool standardize, const arma::vec& offset, const bool varying_active, const unsigned int maxit, const double epsilon, const double pmin, const unsigned int verbose);
+RcppExport SEXP _intsurv_rcpp_lognet1(SEXP xSEXP, SEXP ySEXP, SEXP l1_lambdaSEXP, SEXP l2_lambdaSEXP, SEXP penalty_factorSEXP, SEXP startSEXP, SEXP interceptSEXP, SEXP standardizeSEXP, SEXP offsetSEXP, SEXP varying_activeSEXP, SEXP maxitSEXP, SEXP epsilonSEXP, SEXP pminSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -405,17 +374,17 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const bool >::type standardize(standardizeSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type offset(offsetSEXP);
     Rcpp::traits::input_parameter< const bool >::type varying_active(varying_activeSEXP);
-    Rcpp::traits::input_parameter< const unsigned int >::type max_iter(max_iterSEXP);
+    Rcpp::traits::input_parameter< const unsigned int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< const double >::type epsilon(epsilonSEXP);
     Rcpp::traits::input_parameter< const double >::type pmin(pminSEXP);
     Rcpp::traits::input_parameter< const unsigned int >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_lognet1(x, y, l1_lambda, l2_lambda, penalty_factor, start, intercept, standardize, offset, varying_active, max_iter, epsilon, pmin, verbose));
+    rcpp_result_gen = Rcpp::wrap(rcpp_lognet1(x, y, l1_lambda, l2_lambda, penalty_factor, start, intercept, standardize, offset, varying_active, maxit, epsilon, pmin, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
 // rcpp_lognet2
-Rcpp::List rcpp_lognet2(const arma::mat& x, const arma::vec& y, const arma::vec& lambda, const unsigned int nlambda, const double lambda_min_ratio, const double alpha, const arma::vec& penalty_factor, const bool intercept, const arma::vec& offset, const bool standardize, const bool varying_active, const unsigned int max_iter, const double epsilon, const double pmin, const unsigned int verbose);
-RcppExport SEXP _intsurv_rcpp_lognet2(SEXP xSEXP, SEXP ySEXP, SEXP lambdaSEXP, SEXP nlambdaSEXP, SEXP lambda_min_ratioSEXP, SEXP alphaSEXP, SEXP penalty_factorSEXP, SEXP interceptSEXP, SEXP offsetSEXP, SEXP standardizeSEXP, SEXP varying_activeSEXP, SEXP max_iterSEXP, SEXP epsilonSEXP, SEXP pminSEXP, SEXP verboseSEXP) {
+Rcpp::List rcpp_lognet2(const arma::mat& x, const arma::vec& y, const arma::vec& lambda, const unsigned int nlambda, const double lambda_min_ratio, const double alpha, const arma::vec& penalty_factor, const bool intercept, const arma::vec& offset, const bool standardize, const bool varying_active, const unsigned int maxit, const double epsilon, const double pmin, const unsigned int verbose);
+RcppExport SEXP _intsurv_rcpp_lognet2(SEXP xSEXP, SEXP ySEXP, SEXP lambdaSEXP, SEXP nlambdaSEXP, SEXP lambda_min_ratioSEXP, SEXP alphaSEXP, SEXP penalty_factorSEXP, SEXP interceptSEXP, SEXP offsetSEXP, SEXP standardizeSEXP, SEXP varying_activeSEXP, SEXP maxitSEXP, SEXP epsilonSEXP, SEXP pminSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -430,11 +399,11 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::vec& >::type offset(offsetSEXP);
     Rcpp::traits::input_parameter< const bool >::type standardize(standardizeSEXP);
     Rcpp::traits::input_parameter< const bool >::type varying_active(varying_activeSEXP);
-    Rcpp::traits::input_parameter< const unsigned int >::type max_iter(max_iterSEXP);
+    Rcpp::traits::input_parameter< const unsigned int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< const double >::type epsilon(epsilonSEXP);
     Rcpp::traits::input_parameter< const double >::type pmin(pminSEXP);
     Rcpp::traits::input_parameter< const unsigned int >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_lognet2(x, y, lambda, nlambda, lambda_min_ratio, alpha, penalty_factor, intercept, offset, standardize, varying_active, max_iter, epsilon, pmin, verbose));
+    rcpp_result_gen = Rcpp::wrap(rcpp_lognet2(x, y, lambda, nlambda, lambda_min_ratio, alpha, penalty_factor, intercept, offset, standardize, varying_active, maxit, epsilon, pmin, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -482,9 +451,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_intsurv_rcpp_coxph_cure", (DL_FUNC) &_intsurv_rcpp_coxph_cure, 22},
     {"_intsurv_rcpp_coxph_cure_reg", (DL_FUNC) &_intsurv_rcpp_coxph_cure_reg, 30},
     {"_intsurv_rcpp_coxph_cure_vs", (DL_FUNC) &_intsurv_rcpp_coxph_cure_vs, 34},
-    {"_intsurv_rcpp_coxph_cure_mar", (DL_FUNC) &_intsurv_rcpp_coxph_cure_mar, 29},
-    {"_intsurv_rcpp_coxph_cure_mar_reg", (DL_FUNC) &_intsurv_rcpp_coxph_cure_mar_reg, 41},
-    {"_intsurv_rcpp_coxph_cure_mar_vs", (DL_FUNC) &_intsurv_rcpp_coxph_cure_mar_vs, 47},
+    {"_intsurv_rcpp_coxph_cure_mar", (DL_FUNC) &_intsurv_rcpp_coxph_cure_mar, 22},
+    {"_intsurv_rcpp_coxph_cure_mar_reg", (DL_FUNC) &_intsurv_rcpp_coxph_cure_mar_reg, 30},
+    {"_intsurv_rcpp_coxph_cure_mar_vs", (DL_FUNC) &_intsurv_rcpp_coxph_cure_mar_vs, 34},
     {"_intsurv_rcpp_coxph", (DL_FUNC) &_intsurv_rcpp_coxph, 9},
     {"_intsurv_rcpp_coxnet1", (DL_FUNC) &_intsurv_rcpp_coxnet1, 13},
     {"_intsurv_rcpp_coxnet2", (DL_FUNC) &_intsurv_rcpp_coxnet2, 14},

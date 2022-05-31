@@ -49,9 +49,7 @@ namespace intsurv {
             train_obj.control_.set_verbose(0);
             train_obj.surv_obj_.control_.set_verbose(0);
             train_obj.cure_obj_.control_.set_verbose(0);
-            train_obj.mar_obj_.control_.set_verbose(0);
             // model-fitting
-            train_obj.mar_fit();
             train_obj.fit();
             // compute observed log-likelihood function for the test data
             cv_vec(i) = train_obj.obs_log_likelihood(valid_obj);
@@ -83,9 +81,7 @@ namespace intsurv {
             train_obj.control_.set_verbose(0);
             train_obj.surv_obj_.control_.set_verbose(0);
             train_obj.cure_obj_.control_.set_verbose(0);
-            train_obj.mar_obj_.control_.set_verbose(0);
             // model-fitting
-            train_obj.mar_net_fit();
             train_obj.net_fit();
             // compute observed log-likelihood function for the test data
             cv_vec(i) = train_obj.obs_log_likelihood(valid_obj);

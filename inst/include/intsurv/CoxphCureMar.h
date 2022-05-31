@@ -41,7 +41,6 @@ namespace intsurv {
     public:
         CoxphReg surv_obj_;
         LogisticReg cure_obj_;
-        LogisticReg mar_obj_;
 
         arma::uvec case1_ind_;
         arma::uvec case2_ind_;
@@ -56,14 +55,11 @@ namespace intsurv {
         // outputs
         arma::vec surv_coef_;
         arma::vec cure_coef_;
-        arma::vec mar_coef_;
         arma::vec surv_xbeta_;  // score from the survival layer
         arma::vec cure_xbeta_;  // score from the cure layer
-        arma::vec mar_xbeta_;  // score from the cure layer
 
         // for each subject and in the original order of X
         arma::vec susceptible_prob_; // probability of being susceptible
-        arma::vec mar_prob_;         // probability of case 3
         // values in the last E-step
         arma::vec estep_cured_;
         arma::vec estep_event_;
@@ -71,7 +67,6 @@ namespace intsurv {
 
         unsigned int surv_coef_df_;
         unsigned int cure_coef_df_;
-        unsigned int mar_coef_df_;
         unsigned int coef_df_;
 
         double neg_ll_;         // negative log-likelihood
@@ -106,11 +101,9 @@ namespace intsurv {
             const arma::vec& event,
             const arma::mat& surv_x,
             const arma::mat& cure_x,
-            const arma::mat& mar_x,
             const Control& control,
             const Control& surv_control,
-            const Control& cure_control,
-            const Control& mar_control) :
+            const Control& cure_control) :
             control_ (control)
         {
             // replace NA or NaN event indicator with 0.5
@@ -146,15 +139,6 @@ namespace intsurv {
             cure_obj_.set_offset();
             cure_obj_.set_offset(cure_obj_.control_.offset_.elem(
                                      surv_sort_ind));
-            // create a mar object
-            arma::vec mar_y { arma::zeros(n_obs_) };
-            mar_y.elem(case3_ind_).ones();
-            mar_obj_ = LogisticReg(mar_x.rows(surv_sort_ind),
-                                   mar_y,
-                                   mar_control);
-            // initialize offset terms and sort
-            mar_obj_.set_offset();
-            mar_obj_.set_offset(mar_obj_.control_.offset_.elem(surv_sort_ind));
         }
 
         // function members
@@ -164,29 +148,6 @@ namespace intsurv {
                 return event0_.elem(surv_obj_.rev_ord_);
             }
             return event0_;
-        }
-
-        // fit mar part
-        inline void mar_fit()
-        {
-            mar_obj_.fit();
-            mar_coef_ = mar_obj_.coef_;
-            mar_xbeta_ = mar_obj_.get_xbeta();
-            mar_prob_ = mar_obj_.predict();
-        }
-        inline void mar_net_fit()
-        {
-            mar_obj_.net_fit();
-            mar_coef_ = mar_obj_.coef_;
-            mar_xbeta_ = mar_obj_.get_xbeta();
-            mar_prob_ = mar_obj_.predict();
-        }
-        inline void mar_net_path()
-        {
-            mar_obj_.net_path();
-            mar_coef_ = mar_obj_.coef_;
-            mar_xbeta_ = mar_obj_.get_xbeta();
-            mar_prob_ = mar_obj_.predict();
         }
 
         // fit the Cox cure model with uncertain events by EM algorithm
@@ -208,10 +169,8 @@ namespace intsurv {
             arma::vec new_event,
             arma::mat new_surv_x,
             arma::mat new_cure_x,
-            arma::mat new_mar_x,
             arma::vec new_surv_offset,
-            arma::vec new_cure_offset,
-            arma::vec new_mar_offset
+            arma::vec new_cure_offset
             ) const;
 
         inline double obs_log_likelihood(const CoxphCureMar& object) const;
@@ -454,16 +413,14 @@ namespace intsurv {
                 obs_ell = 0;
                 // for case 1
                 for (size_t j: case1_ind_) {
-                    obs_ell += std::log(mar_prob_(j)) +
-                        std::log(p_vec(j)) +
+                    obs_ell += std::log(p_vec(j)) +
                         std::log(surv_obj_.h_time_(j)) -
                         surv_obj_.H_time_(j) - surv_obj_.Hc_time_(j);
                 }
                 // for case 2
                 for (size_t j: case2_ind_) {
-                    obs_ell += std::log(mar_prob_(j)) +
-                        std::log(p_vec(j) * surv_obj_.S_time_(j) +
-                                 1 - p_vec(j)) -
+                    obs_ell += std::log(p_vec(j) * surv_obj_.S_time_(j) +
+                                        1 - p_vec(j)) -
                         surv_obj_.Hc_time_(j) +
                         std::log(surv_obj_.hc_time_(j));
                 }
@@ -478,8 +435,7 @@ namespace intsurv {
                         (1 - p_vec(j)) * surv_obj_.hc_time_(j) *
                         surv_obj_.Sc_time_(j)
                     };
-                    obs_ell += std::log(1 - mar_prob_(j)) +
-                        std::log(m1 + m2 + m3);
+                    obs_ell += std::log(m1 + m2 + m3);
                 }
                 Rcpp::Rcout << "\n"
                             << std::string(50, '=')
@@ -552,8 +508,7 @@ namespace intsurv {
         neg_ll_ = - obs_log_likelihood();
         surv_coef_df_ = compute_coef_df(surv_obj_.coef_);
         cure_coef_df_ = compute_coef_df(cure_obj_.coef_);
-        mar_coef_df_ = compute_coef_df(mar_obj_.coef_);
-        coef_df_ = surv_coef_df_ + cure_coef_df_ + mar_coef_df_;
+        coef_df_ = surv_coef_df_ + cure_coef_df_;
         compute_bic1();
         compute_bic2();
         compute_aic();
@@ -814,16 +769,14 @@ namespace intsurv {
                 obs_ell = 0;
                 // for case 1
                 for (size_t j: case1_ind_) {
-                    obs_ell += std::log(mar_prob_(j)) +
-                        std::log(p_vec(j)) +
+                    obs_ell += std::log(p_vec(j)) +
                         std::log(surv_obj_.h_time_(j)) -
                         surv_obj_.H_time_(j) - surv_obj_.Hc_time_(j);
                 }
                 // for case 2
                 for (size_t j: case2_ind_) {
-                    obs_ell += std::log(mar_prob_(j)) +
-                        std::log(p_vec(j) * surv_obj_.S_time_(j) +
-                                 1 - p_vec(j)) -
+                    obs_ell += std::log(p_vec(j) * surv_obj_.S_time_(j) +
+                                        1 - p_vec(j)) -
                         surv_obj_.Hc_time_(j) + std::log(surv_obj_.hc_time_(j));
                 }
                 // for case 3
@@ -837,8 +790,7 @@ namespace intsurv {
                         (1 - p_vec(j)) * surv_obj_.hc_time_(j) *
                         surv_obj_.Sc_time_(j)
                     };
-                    obs_ell += std::log(mar_prob_(j)) +
-                        std::log(m1 + m2 + m3);
+                    obs_ell += std::log(m1 + m2 + m3);
                 }
                 reg_obj = - obs_ell / dn_obs_ + reg_surv + reg_cure;
                 Rcpp::Rcout << "\n"
@@ -917,8 +869,7 @@ namespace intsurv {
         neg_ll_ = - obs_log_likelihood();
         surv_coef_df_ = compute_coef_df(surv_obj_.coef_);
         cure_coef_df_ = compute_coef_df(cure_obj_.coef_);
-        mar_coef_df_ = compute_coef_df(mar_obj_.coef_);
-        coef_df_ = surv_coef_df_ + cure_coef_df_ + mar_coef_df_;
+        coef_df_ = surv_coef_df_ + cure_coef_df_;
         compute_bic1();
         compute_bic2();
         compute_aic();
@@ -973,15 +924,14 @@ namespace intsurv {
         arma::vec sus_prob { cure_obj_.predict() };
         // for case 1
         for (size_t j: case1_ind_) {
-            obs_ell += std::log(mar_prob_(j)) +
-                std::log(sus_prob(j)) +
+            obs_ell += std::log(sus_prob(j)) +
                 std::log(surv_obj_.h_time_(j)) -
                 surv_obj_.H_time_(j) - surv_obj_.Hc_time_(j);
         }
         // for case 2
         for (size_t j: case2_ind_) {
-            obs_ell += std::log(mar_prob_(j)) +
-                std::log(sus_prob(j) * surv_obj_.S_time_(j) + 1 - sus_prob(j)) -
+            obs_ell += std::log(sus_prob(j) * surv_obj_.S_time_(j) +
+                                1 - sus_prob(j)) -
                 surv_obj_.Hc_time_(j) + std::log(surv_obj_.hc_time_(j));
         }
         // for case 3
@@ -995,8 +945,7 @@ namespace intsurv {
                 (1 - sus_prob(j)) * surv_obj_.hc_time_(j) *
                 surv_obj_.Sc_time_(j)
             };
-            obs_ell += std::log(1 - mar_prob_(j)) +
-                std::log(m1 + m2 + m3);
+            obs_ell += std::log(m1 + m2 + m3);
         }
         return obs_ell / dn_obs_;
     }
@@ -1009,10 +958,8 @@ namespace intsurv {
         arma::vec new_event,
         arma::mat new_surv_x,
         arma::mat new_cure_x,
-        arma::mat new_mar_x,
         arma::vec new_surv_offset = 0,
-        arma::vec new_cure_offset = 0,
-        arma::vec new_mar_offset = 0
+        arma::vec new_cure_offset = 0
         ) const
     {
         // check if the number of covariates matchs the fitted model
@@ -1053,7 +1000,6 @@ namespace intsurv {
         new_event = new_event.elem(ord);
         new_surv_x = new_surv_x.rows(ord);
         new_cure_x = new_cure_x.rows(ord);
-        new_mar_x = new_mar_x.rows(ord);
         // process offset terms
         if (new_surv_offset.n_elem != new_surv_x.n_rows) {
             new_surv_offset = arma::zeros(new_surv_x.n_rows);
@@ -1065,20 +1011,10 @@ namespace intsurv {
         } else {
             new_cure_offset = new_cure_offset.elem(ord);
         }
-        if (new_mar_offset.n_elem != new_mar_x.n_rows) {
-            new_mar_offset = arma::zeros(new_mar_x.n_rows);
-        } else {
-            new_mar_offset = new_mar_offset.elem(ord);
-        }
         // add intercept if needed
         if (cure_obj_.control_.intercept_) {
             new_cure_x = arma::join_horiz(
                 arma::ones(new_cure_x.n_rows), new_cure_x
-                );
-        }
-        if (mar_obj_.control_.intercept_) {
-            new_mar_x = arma::join_horiz(
-                arma::ones(new_mar_x.n_rows), new_mar_x
                 );
         }
         arma::uvec new_case1_ind { arma::find(new_event > const4na) };
@@ -1164,23 +1100,15 @@ namespace intsurv {
         };
         arma::vec p_vec { 1 / (1 + arma::exp(- new_cure_xgamma)) };
         set_pmin_bound(p_vec, cure_obj_.control_.pmin_);
-        // mar
-        arma::vec new_mar_xgamma {
-            mat2vec(new_mar_x * mar_coef_) + new_mar_offset
-        };
-        arma::vec q_vec { 1 / (1 + arma::exp(- new_mar_xgamma)) };
-        set_pmin_bound(q_vec, mar_obj_.control_.pmin_);
         // for case 1
         for (size_t j: new_case1_ind) {
-            obs_ell += std::log(q_vec(j)) +
-                std::log(p_vec(j)) +
+            obs_ell += std::log(p_vec(j)) +
                 std::log(h_vec(j)) -
                 H_vec(j) - Hc_vec(j);
         }
         // for case 2
         for (size_t j: new_case2_ind) {
-            obs_ell += std::log(q_vec(j)) +
-                std::log(p_vec(j) * S_vec(j) + 1 - p_vec(j)) -
+            obs_ell += std::log(p_vec(j) * S_vec(j) + 1 - p_vec(j)) -
                 Hc_vec(j) + std::log(hc_vec(j));
         }
         // for case 3
@@ -1191,8 +1119,7 @@ namespace intsurv {
             double m3 {
                 (1 - p_vec(j)) * hc_vec(j) * Sc_vec(j)
             };
-            obs_ell += std::log(1 - q_vec(j)) +
-                std::log(m1 + m2 + m3);
+            obs_ell += std::log(m1 + m2 + m3);
         }
         return obs_ell / static_cast<double>(new_n_obs);
     }
@@ -1204,10 +1131,8 @@ namespace intsurv {
                                   new_object.surv_obj_.event_,
                                   new_object.surv_obj_.get_x(true, false),
                                   new_object.cure_obj_.get_x(true, false),
-                                  new_object.mar_obj_.get_x(true, false),
                                   new_object.surv_obj_.control_.offset_,
-                                  new_object.cure_obj_.control_.offset_,
-                                  new_object.mar_obj_.control_.offset_);
+                                  new_object.cure_obj_.control_.offset_);
     }
 
 }

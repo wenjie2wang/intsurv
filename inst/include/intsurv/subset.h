@@ -53,20 +53,15 @@ namespace intsurv {
             object.get_event().elem(index),
             object.surv_obj_.get_x(true, false).rows(index),
             object.cure_obj_.get_x(true, false).rows(index),
-            object.mar_obj_.get_x(true, false).rows(index),
             object.control_,
             object.surv_obj_.control_,
             object.cure_obj_.control_,
-            object.mar_obj_.control_,
         };
         out.surv_obj_.set_offset(
             object.surv_obj_.control_.offset_.elem(index), false);
         const arma::uvec& out_ord { index(out.surv_obj_.ord_) };
         out.cure_obj_.set_offset(
             object.cure_obj_.control_.offset_.elem(out_ord)
-            );
-        out.mar_obj_.set_offset(
-            object.mar_obj_.control_.offset_.elem(out_ord)
             );
         return out;
     }

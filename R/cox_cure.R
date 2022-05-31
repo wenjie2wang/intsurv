@@ -18,11 +18,12 @@
 
 ##' Cox Cure Rate Model
 ##'
-##' For right-censored data, \code{cox_cure} trains a Cox cure rate model (Kuk
+##' For right-censored data, \code{cox_cure()} trains a Cox cure rate model (Kuk
 ##' and Chen, 1992; Sy and Taylor, 2000) via an EM algorithm;
-##' \code{cox_cure_net} trains a regularized Cox cure rate model with
+##' \code{cox_cure_net()} trains a regularized Cox cure rate model with
 ##' elastic-net penalty following Masud et al. (2018), and Zou and Hastie
-##' (2005).
+##' (2005).  For right-censored data with missing/uncertain event/censoring
+##' indicators, fit the Cox cure rate model proposed by Wang et al. (2020).
 ##'
 ##' The model estimation procedure follows expectation maximization (EM)
 ##' algorithm.  Variable selection procedure through regularization by elastic
@@ -38,7 +39,8 @@
 ##'     is included by default and can be excluded by adding \code{+ 0} or
 ##'     \code{- 1} to the model formula.
 ##' @param time A numeric vector for the observed survival times.
-##' @param event A numeric vector for the event indicators.
+##' @param event A numeric vector for the event indicators, where \code{NA}'s
+##'     are allowed and represent uncertain event indicators.
 ##' @param data An optional data frame, list, or environment that contains the
 ##'     model covariates and response variables (\code{time} and \code{event})
 ##'     If they are not found in data, the variables are taken from the
@@ -62,14 +64,16 @@
 ##' @param surv_control A list of control parameters for the survival model
 ##'     part.  One may use the help functions \code{intsurv.control()} or
 ##'     \code{cox_cure_net.control} to specify the available options.
-##' @param cure_control A list of control parameters for the logistic model
-##'     part similar to \code{surv_control}.
+##' @param cure_control A list of control parameters for the logistic model part
+##'     similar to \code{surv_control}.
 ##' @param ... Other arguments passed to the control functions for backward
 ##'     compatibility.
 ##'
-##' @return A \code{cox_cure} object that contains the fitted regular Cox cure
-##'     rate model or a \code{cox_cure_mar} object for uncertain event
-##'     indicators.
+##' @return A \code{cox_cure} or \code{cox_cure_net} object that contains the
+##'     fitted ordinary or regularized Cox cure rate model if none of the event
+##'     indicators is \code{NA}.  For right-censored data with uncertain/missing
+##'     event indicators, a \code{cox_cure_uncer} or \code{cox_cure_net_uncer}
+##'     is returned.
 ##'
 ##' @references
 ##'
@@ -95,10 +99,6 @@
 ##' Wang, W., Luo, C., Aseltine, R. H., Wang, F., Yan, J., & Chen, K. (2020).
 ##' Suicide Risk Modeling with Uncertain Diagnostic Records. \emph{arXiv
 ##' preprint arXiv:2009.02597}.
-##'
-##' @seealso
-##' \code{\link{cox_cure_net}} for fitting the regularized Cox cure rate model
-##' with elastic-net penalty.
 ##'
 ##' @example inst/examples/ex-cox_cure.R
 ##'
@@ -202,16 +202,6 @@ cox_cure <- function(surv_formula,
     }
     ## call the routine
     if (anyNA(call_list$event)) {
-        ## prepare additional mar/mcar layer
-        call_list$mar_x <- model_list$mar$x
-        mar_control <- intsurv.control(
-            start = numeric(0),
-            offset = numeric(0),
-            standardize = FALSE
-        )
-        names(mar_control) <- paste0("mar_", names(mar_control))
-        mar_control$mar_intercept <- FALSE
-        call_list <- c(call_list, mar_control)
         is_arg_valid <- names(call_list) %in%
             names(formals(rcpp_coxph_cure_mar))
         call_list <- call_list[is_arg_valid]
@@ -337,16 +327,6 @@ cox_cure.fit <- function(surv_x,
     }
     ## call the routine
     if (anyNA(event)) {
-        ## prepare additional mar/mcar layer
-        call_list$mar_x <- matrix(1, nrow = length(time), ncol = 1)
-        mar_control <- intsurv.control(
-            start = numeric(0),
-            offset = numeric(0),
-            standardize = FALSE
-        )
-        names(mar_control) <- paste0("mar_", names(mar_control))
-        mar_control$mar_intercept <- FALSE
-        call_list <- c(call_list, mar_control)
         is_arg_valid <- names(call_list) %in%
             names(formals(rcpp_coxph_cure_mar))
         call_list <- call_list[is_arg_valid]
@@ -500,18 +480,6 @@ cox_cure_net <- function(surv_formula,
     }
     ## call the routine
     if (anyNA(call_list$event)) {
-        ## prepare additional mar/mcar layer
-        call_list$mar_x <- model_list$mar$x
-        mar_control <- cox_cure_net.control(
-            lambda = 0,
-            alpha = 0,
-            start = numeric(0),
-            offset = numeric(0),
-            standardize = FALSE
-        )
-        names(mar_control) <- paste0("mar_", names(mar_control))
-        mar_control$mar_intercept <- FALSE
-        call_list <- c(call_list, mar_control)
         is_arg_valid <- names(call_list) %in%
             names(formals(rcpp_coxph_cure_mar_vs))
         call_list <- call_list[is_arg_valid]
@@ -616,18 +584,6 @@ cox_cure_net.fit <- function(surv_x,
     }
     ## call the routine
     if (anyNA(event)) {
-        ## prepare additional mar/mcar layer
-        call_list$mar_x <- matrix(1, nrow = length(time), ncol = 1)
-        mar_control <- cox_cure_net.control(
-            lambda = 0,
-            alpha = 0,
-            start = numeric(0),
-            offset = numeric(0),
-            standardize = FALSE
-        )
-        names(mar_control) <- paste0("mar_", names(mar_control))
-        mar_control$mar_intercept <- FALSE
-        call_list <- c(call_list, mar_control)
         is_arg_valid <- names(call_list) %in%
             names(formals(rcpp_coxph_cure_mar_vs))
         call_list <- call_list[is_arg_valid]

@@ -12,7 +12,6 @@ table(sim_dat$case)
 table(sim_dat$obs_event, useNA = "ifany")
 
 ## use formula
-## MCAR
 fit31 <- cox_cure(
     ~ x1 + x2 + x3,
     ~ z1 + z2 + z3,
@@ -22,19 +21,7 @@ fit31 <- cox_cure(
 )
 summary(fit31)
 
-## MAR
-fit32 <- cox_cure_mar(
-    ~ x1 + x2 + x3,
-    ~ z1 + z2 + z3,
-    ~ x1 + x2,
-    time = obs_time,
-    event = obs_event,
-    data = sim_dat
-)
-summary(fit32)
-
 ## use design matrix
-## MCAR
 fit41 <- cox_cure.fit(
     x_mat,
     x_mat,
@@ -43,16 +30,5 @@ fit41 <- cox_cure.fit(
 )
 summary(fit41)
 
-## MAR
-fit42 <- cox_cure_mar.fit(
-    x_mat,
-    x_mat,
-    x_mat,
-    time = sim_dat$obs_time,
-    event = sim_dat$obs_event
-)
-summary(fit42)
-
 ## get BIC's
 BIC(fit31, fit41)
-BIC(fit32, fit42)

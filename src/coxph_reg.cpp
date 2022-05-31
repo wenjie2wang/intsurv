@@ -32,12 +32,12 @@ Rcpp::List rcpp_coxph(
     const arma::vec& offset = 0,
     const arma::vec& start = 0,
     const bool standardize = true,
-    const unsigned int max_iter = 200,
+    const unsigned int maxit = 200,
     const double epsilon = 1e-4,
     const unsigned int verbose = 0
     )
 {
-    intsurv::Control control { max_iter, epsilon, standardize, verbose };
+    intsurv::Control control { maxit, epsilon, standardize, verbose };
     intsurv::CoxphReg object { time, event, x, control };
     object.set_start(start)->set_offset(offset, false);
     object.fit();
@@ -61,7 +61,7 @@ Rcpp::List rcpp_coxph(
             Rcpp::Named("Sc") = intsurv::arma2rvec(object.Sc_est_)
             ),
         Rcpp::Named("control") = Rcpp::List::create(
-            Rcpp::Named("max_iter") = object.control_.max_iter_,
+            Rcpp::Named("maxit") = object.control_.max_iter_,
             Rcpp::Named("epsilon") = object.control_.epsilon_,
             Rcpp::Named("standardize") = object.control_.standardize_,
             Rcpp::Named("start") = intsurv::arma2rvec(object.control_.start_),
@@ -86,12 +86,12 @@ Rcpp::List rcpp_coxnet1(
     const arma::vec& start,
     const bool varying_active = true,
     const bool standardize = true,
-    const unsigned int max_iter = 200,
+    const unsigned int maxit = 200,
     const double epsilon = 1e-4,
     const unsigned int verbose = 0
     )
 {
-    intsurv::Control control { max_iter, epsilon, standardize, verbose };
+    intsurv::Control control { maxit, epsilon, standardize, verbose };
     control.net(penalty_factor, varying_active)->
         net_fit(l1_lambda, l2_lambda);
     intsurv::CoxphReg object { time, event, x, control };
@@ -140,12 +140,12 @@ Rcpp::List rcpp_coxnet2(
     const arma::vec& offset,
     const bool varying_active = true,
     const bool standardize = true,
-    const unsigned int max_iter = 200,
+    const unsigned int maxit = 200,
     const double epsilon = 1e-4,
     const bool verbose = false
     )
 {
-    intsurv::Control control { max_iter, epsilon, standardize, verbose };
+    intsurv::Control control { maxit, epsilon, standardize, verbose };
     control.net(penalty_factor, varying_active)->
         net_path(nlambda, lambda_min_ratio, alpha, lambda);
     intsurv::CoxphReg object { time, event, x, control };

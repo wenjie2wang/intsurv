@@ -21,14 +21,12 @@
 ##'     model.offset
 prep_cure_model <- function(surv_formula,
                             cure_formula,
-                            mar_formula,
                             obs_time,
                             obs_event,
                             data,
                             subset,
                             surv_offset = NULL,
                             cure_offset = NULL,
-                            mar_offset = NULL,
                             contrasts = NULL,
                             eval_env = parent.frame())
 {
@@ -115,45 +113,7 @@ prep_cure_model <- function(surv_formula,
         contrasts = contrasts,
         xlevels = stats::.getXlevels(attr(mf, "terms"), mf)
     )
-    ## 3. MAR formula
-    this_call <- call0
-    mar_list <-
-        if (missing(mar_formula)) {
-            list(
-                x = matrix(1, nrow = nrow(cure_list$x), ncol = 1)
-            )
-        } else {
-            names(this_call)[names(this_call) == "mar_formula"] <- "formula"
-            names(this_call)[names(this_call) == "mar_offset"] <- "offset"
-            if (missing(data)) {
-                this_call$data <- eval_env
-            }
-            matched_call <- match(c("formula", "data", "subset", "offset"),
-                                  names(this_call), nomatch = 0L)
-            this_call <- this_call[c(1L, matched_call)]
-            ## drop unused levels in factors
-            this_call$drop.unused.levels <- TRUE
-            this_call$na.action <- na.fail
-            this_call[[1L]] <- quote(stats::model.frame.default)
-            mf <- eval(this_call, eval_env)
-            mar_formula <- attr(mf, "terms")
-            ## suppress warnings on not used contrasts
-            suppressWarnings({
-                mm <- stats::model.matrix.default(mar_formula, data = mf,
-                                                  contrasts.arg = contrasts)
-            })
-            ## output: contrasts
-            contrasts <- attr(mm, "contrasts")
-            ## mar list
-            list(
-                x = mm,
-                offset = model.offset(mf),
-                contrasts = contrasts,
-                xlevels = stats::.getXlevels(attr(mf, "terms"), mf)
-            )
-        }
     ## return
     list(surv = surv_list,
-         cure = cure_list,
-         mar = mar_list)
+         cure = cure_list)
 }
