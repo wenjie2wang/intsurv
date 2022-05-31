@@ -76,7 +76,8 @@ is included by default and can be excluded by adding \code{+ 0} or
 
 \item{time}{A numeric vector for the observed survival times.}
 
-\item{event}{A numeric vector for the event indicators.}
+\item{event}{A numeric vector for the event indicators, where \code{NA}'s
+are allowed and represent uncertain event indicators.}
 
 \item{data}{An optional data frame, list, or environment that contains the
 model covariates and response variables (\code{time} and \code{event})
@@ -107,8 +108,8 @@ parameters.}
 part.  One may use the help functions \code{intsurv.control()} or
 \code{cox_cure_net.control} to specify the available options.}
 
-\item{cure_control}{A list of control parameters for the logistic model
-part similar to \code{surv_control}.}
+\item{cure_control}{A list of control parameters for the logistic model part
+similar to \code{surv_control}.}
 
 \item{...}{Other arguments passed to the control functions for backward
 compatibility.}
@@ -130,16 +131,19 @@ intercept term is included.}
 cross-validation.}
 }
 \value{
-A \code{cox_cure} object that contains the fitted regular Cox cure
-    rate model or a \code{cox_cure_mar} object for uncertain event
-    indicators.
+A \code{cox_cure} or \code{cox_cure_net} object that contains the
+    fitted ordinary or regularized Cox cure rate model if none of the event
+    indicators is \code{NA}.  For right-censored data with uncertain/missing
+    event indicators, a \code{cox_cure_uncer} or \code{cox_cure_net_uncer}
+    is returned.
 }
 \description{
-For right-censored data, \code{cox_cure} trains a Cox cure rate model (Kuk
+For right-censored data, \code{cox_cure()} trains a Cox cure rate model (Kuk
 and Chen, 1992; Sy and Taylor, 2000) via an EM algorithm;
-\code{cox_cure_net} trains a regularized Cox cure rate model with
+\code{cox_cure_net()} trains a regularized Cox cure rate model with
 elastic-net penalty following Masud et al. (2018), and Zou and Hastie
-(2005).
+(2005).  For right-censored data with missing/uncertain event/censoring
+indicators, fit the Cox cure rate model proposed by Wang et al. (2020).
 }
 \details{
 The model estimation procedure follows expectation maximization (EM)
@@ -270,8 +274,4 @@ elastic net. \emph{Journal of the Royal Statistical Society}: Series B
 Wang, W., Luo, C., Aseltine, R. H., Wang, F., Yan, J., & Chen, K. (2020).
 Suicide Risk Modeling with Uncertain Diagnostic Records. \emph{arXiv
 preprint arXiv:2009.02597}.
-}
-\seealso{
-\code{\link{cox_cure_net}} for fitting the regularized Cox cure rate model
-with elastic-net penalty.
 }

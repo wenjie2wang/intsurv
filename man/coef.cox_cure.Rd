@@ -7,7 +7,7 @@
 \usage{
 \method{coef}{cox_cure}(object, part = c("both", "survival", "cure"), ...)
 
-\method{coef}{cox_cure_mar}(object, part = c("both", "survival", "cure", "mar"), ...)
+\method{coef}{cox_cure_mar}(object, part = c("both", "survival", "cure"), ...)
 }
 \arguments{
 \item{object}{Object representing a fitted model.}

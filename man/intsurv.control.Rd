@@ -7,7 +7,7 @@
 \title{Common Control Parameters}
 \usage{
 intsurv.control(
-  max_iter = 300,
+  maxit = 300,
   epsilon = 1e-04,
   standardize = TRUE,
   start = NULL,
@@ -35,7 +35,7 @@ cox_cure_net.control(
 )
 }
 \arguments{
-\item{max_iter}{A positive integer specifying the maximum iteration number.
+\item{maxit}{A positive integer specifying the maximum iteration number.
 The default value is \code{1000}.}
 
 \item{epsilon}{A positive number specifying the tolerance that determines
