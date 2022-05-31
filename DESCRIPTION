@@ -1,6 +1,6 @@
 Package: intsurv
 Title: Integrative Survival Modeling
-Version: 0.3.0.9000
+Version: 0.3.0.9100
 Authors@R: c(
     person(given = "Wenjie", family = "Wang",
            email = "wang@wwenjie.org",
@@ -43,7 +43,6 @@ Collate:
     'coef.R'
     'control.R'
     'cox_cure.R'
-    'cox_cure_mar.R'
     'iCoxph.R'
     'intsurv.R'
     'misc.R'
