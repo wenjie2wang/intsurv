@@ -397,7 +397,7 @@ Rcpp::List rcpp_coxph_cure_vs(
         for (size_t j {0}; j < n_cure_lambda; ++j) {
             double cure_l1_lambda { cure_lambda_seq(j) * cure_alpha };
             double cure_l2_lambda { cure_lambda_seq(j) * (1 - cure_alpha) / 2 };
-            obj.cure_obj_.control_.net_fit(surv_l1_lambda, surv_l2_lambda);
+            obj.cure_obj_.control_.net_fit(cure_l1_lambda, cure_l2_lambda);
             obj.surv_obj_.control_.set_start(surv_warm_start);
             obj.cure_obj_.control_.set_start(cure_warm_start);
             // model-fitting
