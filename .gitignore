@@ -32,7 +32,4 @@ misc/remove_copyright_header.sh
 
 # ignore tags
 TAGS
-GTAGS
-GRTAGS
-GPATH
-.clang_complete
+.clangd

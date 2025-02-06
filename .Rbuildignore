@@ -1,15 +1,12 @@
 \.tar\.gz$
 ^.*\.Rproj$
-^GPATH$
-^GRTAGS$
-^GTAGS$
+^LICENSE$
 ^Makefile$
 ^TAGS$
 ^\#
 ^\.Rproj\.user$
 ^\.\#
-^\.clang_complete$
-^\.dir-locals\.el$
+^\.clangd$
 ^\.git$
 ^\.github$
 ^\.gitignore$
