@@ -9,9 +9,9 @@ bibentry(
         as.person("Kun Chen"),
         as.person("Jun Yan")
         ),
-    year = "2022",
+    year = "2025",
     url = "https://github.com/wenjie2wang/intsurv",
-    note = "{R} package version 0.3.0.9200"
+    note = "{R} package version 0.3.0"
 )
 
 bibentry(

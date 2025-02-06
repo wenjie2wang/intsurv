@@ -1,6 +1,6 @@
 //
 // intsurv: Integrative Survival Models
-// Copyright (C) 2017-2022  Wenjie Wang <wang@wwenjie.org>
+// Copyright (C) 2017-2025  Wenjie Wang <wang@wwenjie.org>
 //
 // This file is part of the R package intsurv.
 //
