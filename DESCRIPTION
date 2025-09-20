@@ -1,6 +1,6 @@
 Package: intsurv
 Title: Integrative Survival Modeling
-Version: 0.3.0.9200
+Version: 0.3.0
 Authors@R: c(
     person(given = "Wenjie", family = "Wang",
            email = "wang@wwenjie.org",
@@ -41,10 +41,10 @@ Collate:
     'assessment.R'
     'bootSe.R'
     'coef.R'
-    'control.R'
     'cox_cure.R'
+    'cox_cure_net.R'
     'iCoxph.R'
-    'intsurv.R'
+    'intsurv-package.R'
     'misc.R'
     'prep_model.R'
     'print.R'
@@ -55,4 +55,4 @@ Collate:
 URL: https://wwenjie.org/intsurv, https://github.com/wenjie2wang/intsurv
 BugReports: https://github.com/wenjie2wang/intsurv/issues
 Encoding: UTF-8
-RoxygenNote: 7.2.0
+RoxygenNote: 7.3.3

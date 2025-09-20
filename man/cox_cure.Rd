@@ -3,8 +3,8 @@
 \name{cox_cure}
 \alias{cox_cure}
 \alias{cox_cure.fit}
-\alias{cox_cure_net}
-\alias{cox_cure_net.fit}
+\alias{cox_cure.control}
+\alias{cox_cure.mstep}
 \title{Cox Cure Rate Model}
 \usage{
 cox_cure(
@@ -15,10 +15,10 @@ cox_cure(
   data,
   subset,
   contrasts = NULL,
-  bootstrap = 0,
+  bootstrap = 0L,
+  surv_mstep = cox_cure.mstep(),
+  cure_mstep = cox_cure.mstep(),
   control = cox_cure.control(),
-  surv_control = intsurv.control(),
-  cure_control = intsurv.control(),
   ...
 )
 
@@ -28,39 +28,30 @@ cox_cure.fit(
   time,
   event,
   cure_intercept = TRUE,
-  bootstrap = 0,
+  bootstrap = 0L,
+  surv_mstep = cox_cure.mstep(),
+  cure_mstep = cox_cure.mstep(),
   control = cox_cure.control(),
-  surv_control = intsurv.control(),
-  cure_control = intsurv.control(),
   ...
 )
 
-cox_cure_net(
-  surv_formula,
-  cure_formula,
-  time,
-  event,
-  data,
-  subset,
-  contrasts = NULL,
-  cv_nfolds = 0,
-  control = cox_cure.control(),
-  surv_control = cox_cure_net.control(),
-  cure_control = cox_cure_net.control(),
+cox_cure.control(
+  tail_completion = c("zero", "exp", "tau-zero"),
+  tail_tau = Inf,
+  maxit = 100,
+  epsilon = 1e-04,
+  pmin = 1e-05,
+  save_call = TRUE,
+  verbose = 0,
   ...
 )
 
-cox_cure_net.fit(
-  surv_x,
-  cure_x,
-  time,
-  event,
-  cure_intercept = TRUE,
-  cv_nfolds = 0,
-  control = cox_cure.control(),
-  surv_control = cox_cure_net.control(),
-  cure_control = cox_cure_net.control(),
-  ...
+cox_cure.mstep(
+  start = NULL,
+  offset = NULL,
+  maxit = 10,
+  epsilon = 1e-04,
+  standardize = TRUE
 )
 }
 \arguments{
@@ -101,15 +92,11 @@ procedure will not run if \code{bootstrap = 0} by default.  If
 \code{bootstrap > 0}, the specified number of bootstrap samples will be
 used for estimating the standard errors.}
 
+\item{surv_mstep, cure_mstep}{A named list passed to \code{cox_cure.mstep()}
+specifying the control parameters for the corresponding M-steps.}
+
 \item{control}{A \code{cox_cure.control} object that contains the control
 parameters.}
-
-\item{surv_control}{A list of control parameters for the survival model
-part.  One may use the help functions \code{intsurv.control()} or
-\code{cox_cure_net.control} to specify the available options.}
-
-\item{cure_control}{A list of control parameters for the logistic model part
-similar to \code{surv_control}.}
 
 \item{...}{Other arguments passed to the control functions for backward
 compatibility.}
@@ -127,29 +114,68 @@ intercept term.}
 term to the cure rate model component.  If \code{TRUE} by default, an
 intercept term is included.}
 
-\item{cv_nfolds}{A nonnegative integer representing the number of folds in
-cross-validation.}
+\item{tail_completion}{A character string specifying the tail completion
+method for conditional survival function.  The available methods are
+\code{"zero"} for zero-tail completion after the largest event times (Sy
+and Taylor, 2000), \code{"exp"} for exponential-tail completion (Peng,
+2003), and \code{"tau-zero"} for zero-tail completion after a specified
+\code{tail_tau}.  The default method is the zero-tail completion
+proposed by Sy and Taylor (2000).}
+
+\item{tail_tau}{A numeric number specifying the time of zero-tail
+completion.  It will be used only if \code{tail_completion =
+"tau-zero"}.  A reasonable choice must be a time point between the
+largest event time and the largest survival time.}
+
+\item{maxit}{A positive integer specifying the maximum iteration number.
+The default value is \code{1000}.}
+
+\item{epsilon}{A positive number specifying the tolerance that determines
+the convergence of the coefficient estimates.  The tolerance is compared
+with the relative change between estimates from two consecutive
+iterations, which is measured by the ratio of the L1-norm of their
+difference to the sum of their L1-norms plus one.}
+
+\item{pmin}{A positive number specifying the minimum value of probabilities
+for numerical stability.  The default value is \code{1e-5}.}
+
+\item{save_call}{A logical value indicating if the function call should be
+saved.  For large datasets, saving the function call would increase the
+size of the returned object dramatically.  We may want to set
+\code{save_call = FALSE} if the original function call is not needed.}
+
+\item{verbose}{A nonnegative integer for verbose outputs, which is mainly
+useful for debugging.}
+
+\item{start}{A numeric vector representing the initial values for the
+underlying model estimation procedure.  If \code{standardize} is
+\code{TRUE}, the specified initial values will be scaled internally to
+match the standardized data.  The default initial values depend on the
+specific models and based on the observed data.  If inappropriate
+initial values (in terms of length) are specified, the default values
+will be used.}
+
+\item{offset}{A numeric vector specifying the offset term.  The length of
+the specified offset term should be equal to the sample size.}
+
+\item{standardize}{A logical value specifying if each covariate should be
+standardized to have mean zero and standard deviation one internally for
+numerically stability and fair regularization.  The default value is
+\code{TRUE}.  The coefficient estimates will always be returned in
+original scales.}
 }
 \value{
-A \code{cox_cure} or \code{cox_cure_net} object that contains the
-    fitted ordinary or regularized Cox cure rate model if none of the event
-    indicators is \code{NA}.  For right-censored data with uncertain/missing
-    event indicators, a \code{cox_cure_uncer} or \code{cox_cure_net_uncer}
-    is returned.
+A \code{cox_cure} object that contains the fitted ordinary Cox cure
+    rate model if none of the event indicators is \code{NA}.  For
+    right-censored data with uncertain/missing event indicators, a
+    \code{cox_cure_uncer} object is returned.
 }
 \description{
-For right-censored data, \code{cox_cure()} trains a Cox cure rate model (Kuk
-and Chen, 1992; Sy and Taylor, 2000) via an EM algorithm;
-\code{cox_cure_net()} trains a regularized Cox cure rate model with
-elastic-net penalty following Masud et al. (2018), and Zou and Hastie
-(2005).  For right-censored data with missing/uncertain event/censoring
-indicators, fit the Cox cure rate model proposed by Wang et al. (2020).
-}
-\details{
-The model estimation procedure follows expectation maximization (EM)
-algorithm.  Variable selection procedure through regularization by elastic
-net penalty is developed based on cyclic coordinate descent and
-majorization-minimization (MM) algorithm.
+For right-censored data, the function \code{cox_cure()} trains a Cox cure
+rate model (Kuk and Chen, 1992; Sy and Taylor, 2000) via an expectation
+maximization (EM) algorithm; For right-censored data with missing/uncertain
+event/censoring indicators, the function fits the Cox cure rate model
+proposed by Wang et al. (2023).
 }
 \examples{
 library(intsurv)
@@ -213,43 +239,6 @@ summary(fit2)
 BIC(fit1)
 BIC(fit2)
 BIC(fit1, fit2)
-
-
-### regularized Cox cure rate model ==================================
-## simulate a toy right-censored data with a cure fraction
-set.seed(123)
-n_obs <- 100
-p <- 10
-x_mat <- matrix(rnorm(n_obs * p), nrow = n_obs, ncol = p)
-colnames(x_mat) <- paste0("x", seq_len(p))
-surv_beta <- c(rep(0, p - 5), rep(1, 5))
-cure_beta <- c(rep(1, 2), rep(0, p - 2))
-dat <- simData4cure(nSubject = n_obs, lambda_censor = 0.01,
-                    max_censor = 10, survMat = x_mat,
-                    survCoef = surv_beta, cureCoef = cure_beta,
-                    b0 = 0.5, p1 = 1, p2 = 1, p3 = 1)
-
-## model-fitting from given design matrices
-fit1 <- cox_cure_net.fit(x_mat, x_mat, dat$obs_time, dat$obs_event,
-                         surv_control = list(nlambda = 10, alpha = 0.8),
-                         cure_control = list(nlambda = 10, alpha = 0.8))
-
-## model-fitting from given model formula
-fm <- paste(paste0("x", seq_len(p)), collapse = " + ")
-surv_fm <- as.formula(sprintf("~ \%s", fm))
-cure_fm <- surv_fm
-fit2 <- cox_cure_net(surv_fm, cure_fm, data = dat,
-                     time = obs_time, event = obs_event)
-
-## summary of BIC's
-BIC(fit1)
-BIC(fit2)
-BIC(fit1)[which.min(BIC(fit1)[, "BIC"]), ]
-BIC(fit2)[which.min(BIC(fit2)[, "BIC"]), ]
-
-## list of coefficient estimates based on BIC
-coef(fit1)
-coef(fit2)
 }
 \references{
 Kuk, A. Y. C., & Chen, C. (1992). A mixture model combining logistic
@@ -263,15 +252,7 @@ cure models. \emph{Computational Statistics & Data Analysis}, 42(1-2),
 Sy, J. P., & Taylor, J. M. (2000). Estimation in a Cox proportional hazards
 cure model. \emph{Biometrics}, 56(1), 227--236.
 
-Masud, A., Tu, W., & Yu, Z. (2018). Variable selection for mixture and
-promotion time cure rate models. \emph{Statistical methods in medical
-research}, 27(7), 2185--2199.
-
-Zou, H., & Hastie, T. (2005). Regularization and variable selection via the
-elastic net. \emph{Journal of the Royal Statistical Society}: Series B
-(Statistical Methodology), 67(2), 301--320.
-
-Wang, W., Luo, C., Aseltine, R. H., Wang, F., Yan, J., & Chen, K. (2020).
-Suicide Risk Modeling with Uncertain Diagnostic Records. \emph{arXiv
-preprint arXiv:2009.02597}.
+Wang, W., Luo, C., Aseltine, R. H., Wang, F., Yan, J., & Chen,
+K. (2023). Survival modeling of suicide risk with rare and uncertain
+diagnoses. Statistics in Biosciences, 1--27.
 }

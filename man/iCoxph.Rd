@@ -118,7 +118,7 @@ Study. \emph{Annals of Applied Statistics}, 14(1), 51--73.
 }
 \seealso{
 \code{\link{iCoxph.start}} and \code{\link{iCoxph.control}}, respectively,
-for starting and controlling iCoxph fitting;
+for initial values and control parameters for model fitting;
 \code{\link{summary,iCoxph-method}} for summary of fitted model;
 \code{\link{coef,iCoxph-method}} for estimated covariate coefficients;
 \code{\link{bootSe}} for SE estimates from bootstrap methods.
