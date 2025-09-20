@@ -14,7 +14,7 @@ table(sim_dat$case)
 table(sim_dat$obs_event, useNA = "ifany")
 
 ## use formula
-fit3 <- cox_cure_mar(
+fit3 <- cox_cure(
     ~ x1 + x2 + x3,
     ~ z1 + z2 + z3,
     ~ x1 + x2 + x3,
@@ -25,9 +25,9 @@ fit3 <- cox_cure_mar(
 summary(fit3)
 
 ## use design matrix
-fit4 <- cox_cure_mar.fit(x_mat, x_mat, x_mat,
-                         time = sim_dat$obs_time,
-                         event = sim_dat$obs_event)
+fit4 <- cox_cure.fit(x_mat, x_mat, x_mat,
+                     time = sim_dat$obs_time,
+                     event = sim_dat$obs_event)
 summary(fit4)
 
 ## get BIC's

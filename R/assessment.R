@@ -148,14 +148,14 @@ BIC.cox_cure <- function(object, ..., method = c("obs", "effective"))
 
 ##' @rdname BIC.cox_cure
 ##' @export
-BIC.cox_cure_mar <- function(object, ..., method = c("obs", "effective"))
+BIC.cox_cure_uncer <- function(object, ..., method = c("obs", "effective"))
 {
     method <- match.arg(method)
     bic_name <- switch(method, "obs" = "bic1", "effective" = "bic2")
     if (! missing(...)) {
         inpList <- list(object, ...)
         ## check on object class
-        checkRes <- sapply(inpList, is_cox_cure_mar)
+        checkRes <- sapply(inpList, is_cox_cure_uncer)
         if (any(! checkRes))
             stop("All objects must be of the 'cox_cure_mar' class.")
         bics <- sapply(inpList, function(a) a$model[[bic_name]])

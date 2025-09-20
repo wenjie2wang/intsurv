@@ -18,17 +18,11 @@
 
 ##' Cox Cure Rate Model
 ##'
-##' For right-censored data, \code{cox_cure()} trains a Cox cure rate model (Kuk
-##' and Chen, 1992; Sy and Taylor, 2000) via an EM algorithm;
-##' \code{cox_cure_net()} trains a regularized Cox cure rate model with
-##' elastic-net penalty following Masud et al. (2018), and Zou and Hastie
-##' (2005).  For right-censored data with missing/uncertain event/censoring
-##' indicators, fit the Cox cure rate model proposed by Wang et al. (2020).
-##'
-##' The model estimation procedure follows expectation maximization (EM)
-##' algorithm.  Variable selection procedure through regularization by elastic
-##' net penalty is developed based on cyclic coordinate descent and
-##' majorization-minimization (MM) algorithm.
+##' For right-censored data, the function \code{cox_cure()} trains a Cox cure
+##' rate model (Kuk and Chen, 1992; Sy and Taylor, 2000) via an expectation
+##' maximization (EM) algorithm; For right-censored data with missing/uncertain
+##' event/censoring indicators, the function fits the Cox cure rate model
+##' proposed by Wang et al. (2023).
 ##'
 ##' @param surv_formula A formula object starting with \code{~} for the model
 ##'     formula in survival model part.  For Cox model, no intercept term is
@@ -59,21 +53,17 @@
 ##'     procedure will not run if \code{bootstrap = 0} by default.  If
 ##'     \code{bootstrap > 0}, the specified number of bootstrap samples will be
 ##'     used for estimating the standard errors.
+##' @param surv_mstep,cure_mstep A named list passed to \code{cox_cure.mstep()}
+##'     specifying the control parameters for the corresponding M-steps.
 ##' @param control A \code{cox_cure.control} object that contains the control
 ##'     parameters.
-##' @param surv_control A list of control parameters for the survival model
-##'     part.  One may use the help functions \code{intsurv.control()} or
-##'     \code{cox_cure_net.control} to specify the available options.
-##' @param cure_control A list of control parameters for the logistic model part
-##'     similar to \code{surv_control}.
 ##' @param ... Other arguments passed to the control functions for backward
 ##'     compatibility.
 ##'
-##' @return A \code{cox_cure} or \code{cox_cure_net} object that contains the
-##'     fitted ordinary or regularized Cox cure rate model if none of the event
-##'     indicators is \code{NA}.  For right-censored data with uncertain/missing
-##'     event indicators, a \code{cox_cure_uncer} or \code{cox_cure_net_uncer}
-##'     is returned.
+##' @return A \code{cox_cure} object that contains the fitted ordinary Cox cure
+##'     rate model if none of the event indicators is \code{NA}.  For
+##'     right-censored data with uncertain/missing event indicators, a
+##'     \code{cox_cure_uncer} object is returned.
 ##'
 ##' @references
 ##'
@@ -88,17 +78,9 @@
 ##' Sy, J. P., & Taylor, J. M. (2000). Estimation in a Cox proportional hazards
 ##' cure model. \emph{Biometrics}, 56(1), 227--236.
 ##'
-##' Masud, A., Tu, W., & Yu, Z. (2018). Variable selection for mixture and
-##' promotion time cure rate models. \emph{Statistical methods in medical
-##' research}, 27(7), 2185--2199.
-##'
-##' Zou, H., & Hastie, T. (2005). Regularization and variable selection via the
-##' elastic net. \emph{Journal of the Royal Statistical Society}: Series B
-##' (Statistical Methodology), 67(2), 301--320.
-##'
-##' Wang, W., Luo, C., Aseltine, R. H., Wang, F., Yan, J., & Chen, K. (2020).
-##' Suicide Risk Modeling with Uncertain Diagnostic Records. \emph{arXiv
-##' preprint arXiv:2009.02597}.
+##' Wang, W., Luo, C., Aseltine, R. H., Wang, F., Yan, J., & Chen,
+##' K. (2023). Survival modeling of suicide risk with rare and uncertain
+##' diagnoses. Statistics in Biosciences, 1--27.
 ##'
 ##' @example inst/examples/ex-cox_cure.R
 ##'
@@ -110,22 +92,32 @@ cox_cure <- function(surv_formula,
                      data,
                      subset,
                      contrasts = NULL,
-                     bootstrap = 0,
+                     bootstrap = 0L,
+                     surv_mstep = cox_cure.mstep(),
+                     cure_mstep = cox_cure.mstep(),
                      control = cox_cure.control(),
-                     surv_control = intsurv.control(),
-                     cure_control = intsurv.control(),
                      ...)
 {
     ## controls
     if (! inherits(control, "cox_cure.control")) {
         control <- do.call(cox_cure.control, control)
     }
-    if (! inherits(surv_control, "intsurv.control")) {
-        surv_control <- do.call(intsurv.control, surv_control)
+    if (! inherits(surv_mstep, "cox_cure.mstep")) {
+        surv_mstep <- do.call(cox_cure.mstep, surv_mstep)
     }
-    if (! inherits(cure_control, "intsurv.control")) {
-        cure_control <- do.call(intsurv.control, cure_control)
+    if (! inherits(cure_mstep, "cox_cure.mstep")) {
+        cure_mstep <- do.call(cox_cure.mstep, cure_mstep)
     }
+    out_control <- list(
+        surv_mstep = surv_mstep,
+        cure_mstep = cure_mstep,
+        control = control
+    )
+    ## prepare a list to call the underlying model estimation function
+    names(surv_mstep) <- paste0("surv_", names(surv_mstep))
+    names(cure_mstep) <- paste0("cure_", names(cure_mstep))
+    call_list <- c(control, surv_mstep, cure_mstep)
+
     if (control$save_call) {
         ## record function call
         call0 <- match.call()
@@ -141,10 +133,6 @@ cox_cure <- function(surv_formula,
     model_call <- this_call[c(1L, matched_call)]
     model_call[[1L]] <- quote(prep_cure_model)
     model_list <- eval(model_call)
-    ## prepare a list to call the underlying model estimation function
-    names(surv_control) <- paste0("surv_", names(surv_control))
-    names(cure_control) <- paste0("cure_", names(cure_control))
-    call_list <- c(control, surv_control, cure_control)
     ## get design matrix and responses
     call_list$time <- model_list$surv$time
     call_list$event <- model_list$surv$event
@@ -185,12 +173,6 @@ cox_cure <- function(surv_formula,
     if (all(call_list$event[! is.na(call_list$event)] < 1)) {
         stop("No event can be found.")
     }
-    ## start values
-    call_list$surv_start <- null2num0(call_list$surv_start)
-    call_list$cure_start <- null2num0(call_list$cure_start)
-    ## offset terms
-    call_list$surv_offset <- null2num0(call_list$surv_offset)
-    call_list$cure_offset <- null2num0(call_list$cure_offset)
     ## more checks if tail completion after a specified tau
     if (call_list$tail_completion == 3L) {
         is_tau_small <- with(call_list,
@@ -201,19 +183,16 @@ cox_cure <- function(surv_formula,
         }
     }
     ## call the routine
-    if (anyNA(call_list$event)) {
+    has_uncer <- anyNA(call_list$event)
+    if (has_uncer) {
         is_arg_valid <- names(call_list) %in%
             names(formals(rcpp_coxph_cure_mar))
         call_list <- call_list[is_arg_valid]
         out <- do.call(rcpp_coxph_cure_mar, call_list)
-        ## add class
-        class(out) <- "cox_cure_mar"
     } else {
         is_arg_valid <- names(call_list) %in% names(formals(rcpp_coxph_cure))
         call_list <- call_list[is_arg_valid]
         out <- do.call(rcpp_coxph_cure, call_list)
-        ## add class
-        class(out) <- "cox_cure"
     }
     ## add bootstrap se if available
     if (bootstrap <= 0) {
@@ -248,8 +227,14 @@ cox_cure <- function(surv_formula,
         ## add function call
         out$call <- call0
     }
+    ## add controls
+    out <- c(out, out_control)
     ## return
-    out
+    if (has_uncer) {
+        structure(out, class = "cox_cure_uncer")
+    } else {
+        structure(out, class = "cox_cure")
+    }
 }
 
 
@@ -272,22 +257,27 @@ cox_cure.fit <- function(surv_x,
                          time,
                          event,
                          cure_intercept = TRUE,
-                         bootstrap = 0,
+                         bootstrap = 0L,
+                         surv_mstep = cox_cure.mstep(),
+                         cure_mstep = cox_cure.mstep(),
                          control = cox_cure.control(),
-                         surv_control = intsurv.control(),
-                         cure_control = intsurv.control(),
                          ...)
 {
     ## controls
     if (! inherits(control, "cox_cure.control")) {
         control <- do.call(cox_cure.control, control)
     }
-    if (! inherits(surv_control, "intsurv.control")) {
-        surv_control <- do.call(intsurv.control, surv_control)
+    if (! inherits(surv_mstep, "cox_cure.mstep")) {
+        surv_mstep <- do.call(cox_cure.mstep, surv_mstep)
     }
-    if (! inherits(cure_control, "intsurv.control")) {
-        cure_control <- do.call(intsurv.control, cure_control)
+    if (! inherits(cure_mstep, "cox_cure.mstep")) {
+        cure_mstep <- do.call(cox_cure.mstep, cure_mstep)
     }
+    out_control <- list(
+        surv_mstep = surv_mstep,
+        cure_mstep = cure_mstep,
+        control = control
+    )
     if (control$save_call) {
         ## record function call
         call0 <- match.call()
@@ -301,21 +291,15 @@ cox_cure.fit <- function(surv_x,
         stop("No event can be found.")
     }
     ## prepare a list to call the underlying model estimation function
-    names(surv_control) <- paste0("surv_", names(surv_control))
-    names(cure_control) <- paste0("cure_", names(cure_control))
-    call_list <- c(control, surv_control, cure_control)
+    names(surv_mstep) <- paste0("surv_", names(surv_mstep))
+    names(cure_mstep) <- paste0("cure_", names(cure_mstep))
+    call_list <- c(control, surv_mstep, cure_mstep)
     call_list$time <- time
     call_list$event <- event
     call_list$surv_x <- surv_x
     call_list$cure_x <- cure_x
     call_list$bootstrap <- bootstrap
     call_list$cure_intercept <- cure_intercept
-    ## start values
-    call_list$surv_start <- null2num0(call_list$surv_start)
-    call_list$cure_start <- null2num0(call_list$cure_start)
-    ## offset terms
-    call_list$surv_offset <- null2num0(call_list$surv_offset)
-    call_list$cure_offset <- null2num0(call_list$cure_offset)
     ## more checks if tail completion after a specified tau
     if (call_list$tail_completion == 3L) {
         is_tau_small <- with(call_list,
@@ -326,19 +310,16 @@ cox_cure.fit <- function(surv_x,
         }
     }
     ## call the routine
-    if (anyNA(event)) {
+    has_uncer <- anyNA(event)
+    if (has_uncer) {
         is_arg_valid <- names(call_list) %in%
             names(formals(rcpp_coxph_cure_mar))
         call_list <- call_list[is_arg_valid]
         out <- do.call(rcpp_coxph_cure_mar, call_list)
-        ## add class
-        class(out) <- "cox_cure_mar"
     } else {
         is_arg_valid <- names(call_list) %in% names(formals(rcpp_coxph_cure))
         call_list <- call_list[is_arg_valid]
         out <- do.call(rcpp_coxph_cure, call_list)
-        ## add class
-        class(out) <- "cox_cure"
     }
     ## add bootstrap se if available
     if (bootstrap <= 0) {
@@ -371,256 +352,104 @@ cox_cure.fit <- function(surv_x,
         ## add function call
         out$call <- call0
     }
+    ## add controls
+    out <- c(out, out_control)
     ## return
-    out
-}
-
-##' @rdname cox_cure
-##'
-##' @param cv_nfolds A nonnegative integer representing the number of folds in
-##'     cross-validation.
-##'
-##' @export
-cox_cure_net <- function(surv_formula,
-                         cure_formula,
-                         time,
-                         event,
-                         data,
-                         subset,
-                         contrasts = NULL,
-                         cv_nfolds = 0,
-                         control = cox_cure.control(),
-                         surv_control = cox_cure_net.control(),
-                         cure_control = cox_cure_net.control(),
-                         ...)
-{
-    ## controls
-    if (! inherits(control, "cox_cure.control")) {
-        control <- do.call(cox_cure.control, control)
-    }
-    if (! inherits(surv_control, "cox_cure_net.control")) {
-        surv_control <- do.call(cox_cure_net.control, surv_control)
-    }
-    if (! inherits(cure_control, "cox_cure_net.control")) {
-        cure_control <- do.call(cox_cure_net.control, cure_control)
-    }
-    if (control$save_call) {
-        ## record function call
-        call0 <- match.call()
-    }
-    ## prepare to call function prep_cure_model
-    this_call <- match.call(expand.dots = FALSE)
-    ## time is also a function name.  rename to avoid potential issues.
-    names(this_call)[which(names(this_call) == "time")] <- "obs_time"
-    names(this_call)[which(names(this_call) == "event")] <- "obs_event"
-    this_call$eval_env <- parent.frame()
-    matched_call <- match(names(formals(prep_cure_model)),
-                          names(this_call), nomatch = 0L)
-    model_call <- this_call[c(1L, matched_call)]
-    model_call[[1L]] <- quote(prep_cure_model)
-    model_list <- eval(model_call)
-    ## prepare a list to call the underlying model estimation function
-    names(surv_control) <- paste0("surv_", names(surv_control))
-    names(cure_control) <- paste0("cure_", names(cure_control))
-    call_list <- c(control, surv_control, cure_control)
-    ## get design matrix and responses
-    call_list$time <- model_list$surv$time
-    call_list$event <- model_list$surv$event
-    call_list$surv_x <- model_list$surv$x
-    call_list$cure_x <- model_list$cure$x
-    if (! is.null(model_list$surv$offset)) {
-        call_list$surv_offset <- model_list$surv$offset
-    }
-    if (! is.null(model_list$cure$offset)) {
-        call_list$cure_offset <- model_list$cure$offset
-    }
-    call_list$cv_nfolds <- as.integer(cv_nfolds)
-    ## cox model does not have an intercept
-    surv_is_intercept <- colnames(call_list$surv_x) == "(Intercept)"
-    surv_has_intercept <- any(surv_is_intercept)
-    if ((ncol(call_list$surv_x) - as.integer(surv_has_intercept)) == 0L) {
-        stop("No covariate is specified in 'formula'.")
-    }
-    ## remove the possible intercept term
-    if (surv_has_intercept) {
-        call_list$surv_x <- call_list$surv_x[, which(! surv_is_intercept),
-                                             drop = FALSE]
-    }
-    ## logistic model can have an intercept
-    cure_is_intercept <- colnames(call_list$cure_x) == "(Intercept)"
-    cure_has_intercept <- any(cure_is_intercept)
-    cure_only_intercept <- all(cure_is_intercept)
-    cure_standardize <- ! cure_only_intercept
-    ## remove the possible intercept term
-    if (cure_has_intercept) {
-        call_list$cure_x <- call_list$cure_x[, which(! cure_is_intercept),
-                                             drop = FALSE]
-        call_list$cure_intercept <- TRUE
+    if (has_uncer) {
+        structure(out, class = "cox_cure_uncer")
     } else {
-        call_list$cure_intercept <- FALSE
+        structure(out, class = "cox_cure")
     }
-    ## check event
-    if (all(call_list$event[! is.na(call_list$event)] < 1)) {
-        stop("No event can be found.")
-    }
-    ## start values
-    call_list$surv_start <- null2num0(call_list$surv_start)
-    call_list$cure_start <- null2num0(call_list$cure_start)
-    ## offset terms
-    call_list$surv_offset <- null2num0(call_list$surv_offset)
-    call_list$cure_offset <- null2num0(call_list$cure_offset)
-    ## more checks if tail completion after a specified tau
-    if (call_list$tail_completion == 3L) {
-        is_tau_small <- with(call_list,
-                             tail_tau < max(time[! is.na(event) & event > 0]))
-        if (is_tau_small) {
-            stop("The specified 'tail_tau' cannot be less than",
-                 " the largest event time.")
-        }
-    }
-    ## call the routine
-    if (anyNA(call_list$event)) {
-        is_arg_valid <- names(call_list) %in%
-            names(formals(rcpp_coxph_cure_mar_vs))
-        call_list <- call_list[is_arg_valid]
-        out <- do.call(rcpp_coxph_cure_mar_vs, call_list)
-        ## add class
-        class(out) <- "cox_cure_net_mar"
-    } else {
-        is_arg_valid <- names(call_list) %in% names(formals(rcpp_coxph_cure_vs))
-        call_list <- call_list[is_arg_valid]
-        out <- do.call(rcpp_coxph_cure_vs, call_list)
-        ## add class
-        class(out) <- "cox_cure_net"
-    }
-    ## add covariate names back
-    if (! is.null(surv_var_names <- colnames(call_list$surv_x))) {
-        colnames(out$surv_coef) <- surv_var_names
-    } else {
-        colnames(out$surv_coef) <- paste0("x", seq_along(out$surv_coef))
-    }
-    if (! is.null(cure_var_names <- colnames(call_list$cure_x))) {
-        colnames(out$cure_coef) <- c(
-        { if (call_list$cure_intercept) "(Intercept)" else NULL },
-        cure_var_names
-        )
-    } else {
-        colnames(out$cure_coef) <-
-            if (call_list$cure_intercept) {
-                c("(Intercept)",
-                  paste0("z", seq_along(out$cure_coef[- 1L])))
-            } else {
-                paste0("z", seq_along(out$cure_coef))
-            }
-    }
-    if (control$save_call) {
-        ## add function call
-        out$call <- call0
-    }
-    ## return
-    out
 }
 
 
 ##' @rdname cox_cure
+##'
+##' @param maxit A positive integer specifying the maximum iteration number.
+##'     The default value is \code{1000}.
+##' @param epsilon A positive number specifying the tolerance that determines
+##'     the convergence of the coefficient estimates.  The tolerance is compared
+##'     with the relative change between estimates from two consecutive
+##'     iterations, which is measured by the ratio of the L1-norm of their
+##'     difference to the sum of their L1-norms plus one.
+##' @param verbose A nonnegative integer for verbose outputs, which is mainly
+##'     useful for debugging.
+##' @param tail_completion A character string specifying the tail completion
+##'     method for conditional survival function.  The available methods are
+##'     \code{"zero"} for zero-tail completion after the largest event times (Sy
+##'     and Taylor, 2000), \code{"exp"} for exponential-tail completion (Peng,
+##'     2003), and \code{"tau-zero"} for zero-tail completion after a specified
+##'     \code{tail_tau}.  The default method is the zero-tail completion
+##'     proposed by Sy and Taylor (2000).
+##' @param tail_tau A numeric number specifying the time of zero-tail
+##'     completion.  It will be used only if \code{tail_completion =
+##'     "tau-zero"}.  A reasonable choice must be a time point between the
+##'     largest event time and the largest survival time.
+##' @param pmin A positive number specifying the minimum value of probabilities
+##'     for numerical stability.  The default value is \code{1e-5}.
+##' @param save_call A logical value indicating if the function call should be
+##'     saved.  For large datasets, saving the function call would increase the
+##'     size of the returned object dramatically.  We may want to set
+##'     \code{save_call = FALSE} if the original function call is not needed.
+##'
 ##' @export
-cox_cure_net.fit <- function(surv_x,
-                             cure_x,
-                             time,
-                             event,
-                             cure_intercept = TRUE,
-                             cv_nfolds = 0,
-                             control = cox_cure.control(),
-                             surv_control = cox_cure_net.control(),
-                             cure_control = cox_cure_net.control(),
+cox_cure.control <- function(tail_completion = c("zero", "exp", "tau-zero"),
+                             tail_tau = Inf,
+                             maxit = 100,
+                             epsilon = 1e-4,
+                             pmin = 1e-5,
+                             save_call = TRUE,
+                             verbose = 0,
                              ...)
 {
-    ## controls
-    if (! inherits(control, "cox_cure.control")) {
-        control <- do.call(cox_cure.control, control)
-    }
-    if (! inherits(surv_control, "cox_cure_net.control")) {
-        surv_control <- do.call(cox_cure_net.control, surv_control)
-    }
-    if (! inherits(cure_control, "cox_cure_net.control")) {
-        cure_control <- do.call(cox_cure_net.control, cure_control)
-    }
-    if (control$save_call) {
-        ## record function call
-        call0 <- match.call()
-    }
-    ## check time
-    if (anyNA(time)) {
-        stop("Found NA's in 'time'.")
-    }
-    ## check event
-    if (all(event[! is.na(event)] < 1)) {
-        stop("No event can be found.")
-    }
-    ## prepare a list to call the underlying model estimation function
-    names(surv_control) <- paste0("surv_", names(surv_control))
-    names(cure_control) <- paste0("cure_", names(cure_control))
-    call_list <- c(control, surv_control, cure_control)
-    call_list$time <- time
-    call_list$event <- event
-    call_list$surv_x <- surv_x
-    call_list$cure_x <- cure_x
-    call_list$cv_nfolds <- cv_nfolds
-    call_list$cure_intercept <- cure_intercept
-    ## start values
-    call_list$surv_start <- null2num0(call_list$surv_start)
-    call_list$cure_start <- null2num0(call_list$cure_start)
-    ## offset terms
-    call_list$surv_offset <- null2num0(call_list$surv_offset)
-    call_list$cure_offset <- null2num0(call_list$cure_offset)
-    ## more checks if tail completion after a specified tau
-    if (call_list$tail_completion == 3L) {
-        is_tau_small <- with(call_list,
-                             tail_tau < max(time[! is.na(event) & event > 0]))
-        if (is_tau_small) {
-            stop("The specified 'tail_tau' cannot be less than",
-                 "the largest event time.")
-        }
-    }
-    ## call the routine
-    if (anyNA(event)) {
-        is_arg_valid <- names(call_list) %in%
-            names(formals(rcpp_coxph_cure_mar_vs))
-        call_list <- call_list[is_arg_valid]
-        out <- do.call(rcpp_coxph_cure_mar_vs, call_list)
-        ## add class
-        class(out) <- "cox_cure_net_mar"
-    } else {
-        is_arg_valid <- names(call_list) %in% names(formals(rcpp_coxph_cure_vs))
-        call_list <- call_list[is_arg_valid]
-        out <- do.call(rcpp_coxph_cure_vs, call_list)
-        ## add class
-        class(out) <- "cox_cure_net"
-    }
-    ## add covariate names back
-    if (! is.null(surv_var_names <- colnames(surv_x))) {
-        colnames(out$surv_coef) <- surv_var_names
-    } else {
-        colnames(out$surv_coef) <- paste0("x", seq_len(ncol(out$surv_coef)))
-    }
-    if (! is.null(cure_var_names <- colnames(cure_x))) {
-        colnames(out$cure_coef) <- c(
-        {if (cure_intercept) "(Intercept)" else NULL},
-        colnames(cure_x)
-        )
-    } else {
-        colnames(out$cure_coef) <-
-            if (cure_intercept) {
-                c("(Intercept)",
-                  paste0("z", seq_len(ncol(out$cure_coef) - 1L)))
-            } else {
-                paste0("z", seq_len(ncol(out$cure_coef)))
-            }
-    }
-    if (control$save_call) {
-        ## add function call
-        out$call <- call0
-    }
-    ## return
-    out
+    tail_completion <- match.arg(tail_completion)
+    tail_comps <- c("zero", "exp", "tau-zero")
+    int_tail_completion <- match(tail_completion, tail_comps, nomatch = 1L)
+    structure(
+        list(
+            tail_completion = int_tail_completion,
+            tail_tau = tail_tau,
+            maxit = maxit,
+            epsilon = epsilon,
+            pmin = pmin,
+            save_call = save_call,
+            verbose = verbose
+        ),
+    class = "cox_cure.control")
+}
+
+
+##' @rdname cox_cure
+##'
+##' @param start A numeric vector representing the initial values for the
+##'     underlying model estimation procedure.  If \code{standardize} is
+##'     \code{TRUE}, the specified initial values will be scaled internally to
+##'     match the standardized data.  The default initial values depend on the
+##'     specific models and based on the observed data.  If inappropriate
+##'     initial values (in terms of length) are specified, the default values
+##'     will be used.
+##' @param offset A numeric vector specifying the offset term.  The length of
+##'     the specified offset term should be equal to the sample size.
+##' @param standardize A logical value specifying if each covariate should be
+##'     standardized to have mean zero and standard deviation one internally for
+##'     numerically stability and fair regularization.  The default value is
+##'     \code{TRUE}.  The coefficient estimates will always be returned in
+##'     original scales.
+##' @export
+cox_cure.mstep <- function(start = NULL,
+                           offset = NULL,
+                           maxit = 10,
+                           epsilon = 1e-4,
+                           standardize = TRUE)
+{
+    structure(
+        list(
+            start = null2num0(start),
+            offset = null2num0(offset),
+            maxit = maxit,
+            epsilon = epsilon,
+            standardize = standardize
+        ),
+        class = "cox_cure.mstep"
+    )
 }

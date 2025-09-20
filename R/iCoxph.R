@@ -104,7 +104,7 @@ NULL
 ##'
 ##' @seealso
 ##' \code{\link{iCoxph.start}} and \code{\link{iCoxph.control}}, respectively,
-##' for starting and controlling iCoxph fitting;
+##' for initial values and control parameters for model fitting;
 ##' \code{\link{summary,iCoxph-method}} for summary of fitted model;
 ##' \code{\link{coef,iCoxph-method}} for estimated covariate coefficients;
 ##' \code{\link{bootSe}} for SE estimates from bootstrap methods.
@@ -118,18 +118,19 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
 {
     ## record the function call to return
     Call <- match.call()
-
     ## warning on `...`
     warn_dots(...)
-
     ## arguments check
-    if (missing(formula))
+    if (missing(formula)) {
         stop("Argument 'formula' is required.")
-    if (missing(data))
+    }
+    if (missing(data)) {
         data <- environment(formula)
+    }
     dat0 <- with(data, eval(formula[[2L]]))
-    if (! is_Survi(dat0))
+    if (! is_Survi(dat0)) {
         stop("The formula response must be a 'Survi' object.")
+    }
     Call$formula <- formula
 
     ## Prepare data: ID, time, event ~ X(s)
@@ -146,8 +147,9 @@ iCoxph <- function(formula, data, subset, na.action, contrasts = NULL,
     mm <- stats::model.matrix(formula, mf, contrasts.arg = contrasts)
 
     ## number of covariates excluding intercept
-    if ((nBeta <- ncol(mm) - 1L) <= 0)
+    if ((nBeta <- ncol(mm) - 1L) <= 0) {
         stop("Covariates must be specified in formula.")
+    }
 
     ## covariates' names
     covar_names <- colnames(mm)[- 1L]

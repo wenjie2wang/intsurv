@@ -24,7 +24,7 @@
 ##'
 ##' \item integrative Cox model with uncertain event times (Wang et al., 2020)
 ##'
-##' \item Cox cure rate model with uncertain event status (Wang et al., 2020)
+##' \item Cox cure rate model with uncertain event status (Wang et al., 2023)
 ##'
 ##' }
 ##'
@@ -38,15 +38,14 @@
 ##' Analysis with Uncertain Event Times in Application to A Suicide Risk
 ##' Study. \emph{Annals of Applied Statistics}, 14(1), 51--73.
 ##'
-##' Wang, W., Luo, C., Aseltine, R. H., Wang, F., Yan, J., & Chen, K. (2020).
-##' Suicide Risk Modeling with Uncertain Diagnostic Records. \emph{arXiv
-##' preprint arXiv:2009.02597}.
+##' Wang, W., Luo, C., Aseltine, R. H., Wang, F., Yan, J., & Chen,
+##' K. (2023). Survival modeling of suicide risk with rare and uncertain
+##' diagnoses. Statistics in Biosciences.
 ##'
 ##' @importFrom Rcpp sourceCpp
 ##' @useDynLib intsurv
-##'
 ##' @importFrom methods setClass setGeneric setMethod new validObject
-##'
-##' @docType package
-##' @name intsurv-package
-NULL
+##' @name intsurv
+##' @aliases intsurv-package
+##' @keywords internal
+"_PACKAGE"

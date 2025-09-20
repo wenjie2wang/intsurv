@@ -45,29 +45,33 @@ NULL
 Survi <- function(ID, time, event, check = TRUE, ...)
 {
     ## some quick checks
-    if (missing(ID))
+    if (missing(ID)) {
         stop("'ID' cannot be missing.")
-    if (any(is.na(ID)))
+    }
+    if (anyNA(ID)) {
         stop("'ID' cannot be missing.")
-    if (missing(time))
+    }
+    if (missing(time)) {
         stop("'time' cannot be missing.")
-    if (! is.numeric(time))
+    }
+    if (! is.numeric(time)) {
         stop("'time' has to be numeric.")
-    if (missing(event))
+    }
+    if (missing(event)) {
         stop("'event' cannot be missing.")
+    }
     event <- as.integer(event)
     if (any(! event %in% c(0, 1)))
         stop("'event' must be coded as 0 (censoring) or 1 (event).")
-
     dat <- data.frame(ID, time, event)
-    if (check)
+    if (check) {
         dat <- check_Survi(dat)
+    }
     ## convert IDs to numeric and save original IDs in attributes (slot)
     id0 <- as.character(dat$ID)
     dat$ID <- as.numeric(factor(dat$ID, levels = unique(id0)))
     mat <- with(dat, as.matrix(cbind(ID, time, event)))
-    methods::new("Survi", mat,
-                 ID = id0)
+    methods::new("Survi", mat, ID = id0)
 }
 
 
@@ -98,5 +102,5 @@ check_Survi <- function(dat)
             paste(unique(sDat$ID[idx1]), collapse = ", ")
         ), call. = FALSE)
     ## return
-    dat
+    invisible(dat)
 }

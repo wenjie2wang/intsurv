@@ -239,7 +239,7 @@ namespace intsurv {
                         x_.col(j) = (x_.col(j) - x_center_(j)) / x_scale_(j);
                     } else {
                         // coef will be zero, set non-zero for rescaling
-                        x_.col(j) = arma::zeros(n_obs_);
+                        x_.col(j).zeros();
                         x_scale_(j) = - 1.0;
                     }
                 }
