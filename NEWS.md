@@ -6,6 +6,11 @@
   through helper functions `cox_cure.control()`, `cox_cure.mstep()`,
   `cox_cure_net.penalty()`.
 
+## Minor changes
+
+- Avoid unnecessary internal data standardization to improve computation
+  efficiency.
+
 
 # intsurv 0.2.2
 
