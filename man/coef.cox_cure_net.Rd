@@ -2,12 +2,12 @@
 % Please edit documentation in R/coef.R
 \name{coef.cox_cure_net}
 \alias{coef.cox_cure_net}
-\alias{coef.cox_cure_net_mar}
+\alias{coef.cox_cure_net_uncer}
 \title{Estimated Covariate Coefficients}
 \usage{
 \method{coef}{cox_cure_net}(object, selection = c("bic1", "bic2", "all"), ...)
 
-\method{coef}{cox_cure_net_mar}(object, selection = c("bic1", "bic2", "all"), ...)
+\method{coef}{cox_cure_net_uncer}(object, selection = c("bic1", "bic2", "all"), ...)
 }
 \arguments{
 \item{object}{Object representing a fitted solution path.}

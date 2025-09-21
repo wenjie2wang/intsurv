@@ -54,16 +54,15 @@ remotes::install_github("wenjie2wang/intsurv")
 
 - Wang, W., Aseltine, R. H., Chen, K., & Yan, J. (2020). Integrative Survival
   Analysis with Uncertain Event Times in Application to A Suicide Risk
-  Study. *Annals of Applied Statistics*, 14(1), 51-73.
+  Study. *Annals of Applied Statistics*, 14(1), 51--73.
 - Wang, W., Luo, C., Aseltine, R. H., Wang, F., Yan, J., & Chen,
-  K. (2020). Suicide Risk Modeling with Uncertain Diagnostic Records. *arXiv
-  preprint arXiv:2009.02597*.
-
+  K. (2023). Survival Modeling of Suicide Risk with Rare and Uncertain
+  Diagnoses. Statistics in Biosciences, 17(1), 35--61.
 
 [cran]: https://cran.r-project.org/package=intsurv
 [cran-version]: https://www.r-pkg.org/badges/version/intsurv
 [tinyverse-dep]: https://tinyverse.netlify.com/badge/intsurv
 [gha-icon]: https://github.com/wenjie2wang/intsurv/workflows/R-CMD-check/badge.svg
 [gha-url]: https://github.com/wenjie2wang/intsurv/actions
-[codecov]: https://codecov.io/gh/wenjie2wang/intsurv
+[codecov]: https://app.codecov.io/gh/wenjie2wang/intsurv
 [codecov-main]: https://codecov.io/gh/wenjie2wang/intsurv/branch/main/graph/badge.svg

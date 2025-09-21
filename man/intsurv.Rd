@@ -27,8 +27,8 @@ Analysis with Uncertain Event Times in Application to A Suicide Risk
 Study. \emph{Annals of Applied Statistics}, 14(1), 51--73.
 
 Wang, W., Luo, C., Aseltine, R. H., Wang, F., Yan, J., & Chen,
-K. (2023). Survival modeling of suicide risk with rare and uncertain
-diagnoses. Statistics in Biosciences.
+K. (2023). Survival Modeling of Suicide Risk with Rare and Uncertain
+Diagnoses. \emph{Statistics in Biosciences}, 17(1), 1--27.
 }
 \seealso{
 Useful links:

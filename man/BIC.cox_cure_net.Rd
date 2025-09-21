@@ -2,12 +2,12 @@
 % Please edit documentation in R/assessment.R
 \name{BIC.cox_cure_net}
 \alias{BIC.cox_cure_net}
-\alias{BIC.cox_cure_net_mar}
+\alias{BIC.cox_cure_net_uncer}
 \title{Bayesian Information Criterion (BIC)}
 \usage{
 \method{BIC}{cox_cure_net}(object, ..., method = c("obs", "effective"))
 
-\method{BIC}{cox_cure_net_mar}(object, ..., method = c("obs", "effective"))
+\method{BIC}{cox_cure_net_uncer}(object, ..., method = c("obs", "effective"))
 }
 \arguments{
 \item{object}{An object for a fitted solution path.}
