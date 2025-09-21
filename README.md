@@ -7,11 +7,11 @@
 The R package **intsurv** contains implementations of
 
 - integrative Cox model with uncertain event times (Wang et al., 2020)
-- Cox cure rate model with uncertain event status (Wang et al., 2020)
+- regularized Cox cure rate model with uncertain event status (Wang et al., 2023)
 
 and other survival analysis routines, including
 
-- regular Cox cure rate model
+- Cox cure rate model
 - regularized Cox cure rate model with elastic net penalty
 - weighted concordance index
 
@@ -60,7 +60,7 @@ remotes::install_github("wenjie2wang/intsurv")
 
 [cran]: https://cran.r-project.org/package=intsurv
 [cran-version]: https://www.r-pkg.org/badges/version/intsurv
-[gha-icon]: https://github.com/wenjie2wang/intsurv/workflows/R-CMD-check/badge.svg
-[gha-url]: https://github.com/wenjie2wang/intsurv/actions
+[gha-icon]: https://github.com/wenjie2wang/intsurv/actions/workflows/R-CMD-check.yaml/badge.svg
+[gha-url]: https://github.com/wenjie2wang/intsurv/actions/workflows/R-CMD-check.yaml
 [codecov]: https://app.codecov.io/gh/wenjie2wang/intsurv
 [codecov-main]: https://codecov.io/gh/wenjie2wang/intsurv/branch/main/graph/badge.svg
