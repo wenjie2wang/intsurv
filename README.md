@@ -1,7 +1,6 @@
 # intsurv
 
 [![CRAN Version][cran-version]][cran]
-[![Dependence][tinyverse-dep]][cran]
 [![Build Status][gha-icon]][gha-url]
 [![Code Coverage][codecov-main]][codecov]
 
@@ -61,7 +60,6 @@ remotes::install_github("wenjie2wang/intsurv")
 
 [cran]: https://cran.r-project.org/package=intsurv
 [cran-version]: https://www.r-pkg.org/badges/version/intsurv
-[tinyverse-dep]: https://tinyverse.netlify.com/badge/intsurv
 [gha-icon]: https://github.com/wenjie2wang/intsurv/workflows/R-CMD-check/badge.svg
 [gha-url]: https://github.com/wenjie2wang/intsurv/actions
 [codecov]: https://app.codecov.io/gh/wenjie2wang/intsurv

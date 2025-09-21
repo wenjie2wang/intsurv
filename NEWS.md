@@ -1,3 +1,12 @@
+# intsurv 0.3.0
+
+## Major changes
+
+- Simplified the interface of functions `cox_cure()` and `cox_cure_net()`
+  through helper functions `cox_cure.control()`, `cox_cure.mstep()`,
+  `cox_cure_net.penalty()`.
+
+
 # intsurv 0.2.2
 
 ## New features
