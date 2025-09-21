@@ -68,12 +68,12 @@
 ##'
 ##' @references
 ##'
-##' Wang, W., Luo, C., Aseltine, R. H., Wang, F., Yan, J., & Chen, K. (2020).
-##' Suicide Risk Modeling with Uncertain Diagnostic Records. \emph{arXiv
-##' preprint arXiv:2009.02597}.
+##' Wang, W., Luo, C., Aseltine, R. H., Wang, F., Yan, J., & Chen,
+##' K. (2023). Survival Modeling of Suicide Risk with Rare and Uncertain
+##' Diagnoses. \emph{Statistics in Biosciences}, 17(1), 1--27.
 ##'
 ##' @examples
-##' ## see examples of function cox_cure
+##' ## see examples of function cox_cure()
 ##' @importFrom stats binomial rbinom rexp runif
 ##' @export
 simData4cure <- function(nSubject = 1e3,

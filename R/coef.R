@@ -91,11 +91,11 @@ coef.cox_cure <- function(object, part = c("both", "survival", "cure"), ...)
 
 
 ##' @rdname coef.cox_cure
-##' @method coef cox_cure_mar
+##' @method coef cox_cure_uncer
 ##' @export
-coef.cox_cure_mar <- function(object,
-                              part = c("both", "survival", "cure"),
-                              ...)
+coef.cox_cure_uncer <- function(object,
+                                part = c("both", "survival", "cure"),
+                                ...)
 {
     part <- match.arg(part)
     if (part != "both") {
@@ -163,6 +163,6 @@ coef.cox_cure_net <- function(object,
 
 ##' @rdname coef.cox_cure_net
 ##' @importFrom stats coef
-##' @method coef cox_cure_net_mar
+##' @method coef cox_cure_net_uncer
 ##' @export
-coef.cox_cure_net_mar <- coef.cox_cure_net
+coef.cox_cure_net_uncer <- coef.cox_cure_net

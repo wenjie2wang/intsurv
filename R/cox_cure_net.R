@@ -65,8 +65,10 @@
 ##' (Statistical Methodology), 67(2), 301--320.
 ##'
 ##' Wang, W., Luo, C., Aseltine, R. H., Wang, F., Yan, J., & Chen,
-##' K. (2023). Survival modeling of suicide risk with rare and uncertain
-##' diagnoses. Statistics in Biosciences, 1--27.
+##' K. (2023). Survival Modeling of Suicide Risk with Rare and Uncertain
+##' Diagnoses. \emph{Statistics in Biosciences}, 17(1), 1--27.
+##'
+##' @example inst/examples/ex-cox_cure_net.R
 ##'
 ##' @export
 cox_cure_net <- function(surv_formula,
@@ -183,7 +185,7 @@ cox_cure_net <- function(surv_formula,
         call_list <- call_list[is_arg_valid]
         out <- do.call(rcpp_coxph_cure_mar_vs, call_list)
         ## add class
-        class(out) <- "cox_cure_net_mar"
+        class(out) <- "cox_cure_net_uncer"
     } else {
         is_arg_valid <- names(call_list) %in% names(formals(rcpp_coxph_cure_vs))
         call_list <- call_list[is_arg_valid]
@@ -298,7 +300,7 @@ cox_cure_net.fit <- function(surv_x,
         call_list <- call_list[is_arg_valid]
         out <- do.call(rcpp_coxph_cure_mar_vs, call_list)
         ## add class
-        class(out) <- "cox_cure_net_mar"
+        class(out) <- "cox_cure_net_uncer"
     } else {
         is_arg_valid <- names(call_list) %in% names(formals(rcpp_coxph_cure_vs))
         call_list <- call_list[is_arg_valid]

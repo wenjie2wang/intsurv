@@ -157,7 +157,7 @@ BIC.cox_cure_uncer <- function(object, ..., method = c("obs", "effective"))
         ## check on object class
         checkRes <- sapply(inpList, is_cox_cure_uncer)
         if (any(! checkRes))
-            stop("All objects must be of the 'cox_cure_mar' class.")
+            stop("All objects must be of the 'cox_cure_uncer' class.")
         bics <- sapply(inpList, function(a) a$model[[bic_name]])
         dfs <- sapply(inpList, function(a) a$model$coef_df)
         val <- data.frame(df = dfs, BIC = bics)
@@ -218,4 +218,4 @@ BIC.cox_cure_net <- function(object, ..., method = c("obs", "effective"))
 
 ##' @rdname BIC.cox_cure_net
 ##' @export
-BIC.cox_cure_net_mar <- BIC.cox_cure_net
+BIC.cox_cure_net_uncer <- BIC.cox_cure_net

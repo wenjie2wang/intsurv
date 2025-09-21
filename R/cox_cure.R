@@ -79,8 +79,8 @@
 ##' cure model. \emph{Biometrics}, 56(1), 227--236.
 ##'
 ##' Wang, W., Luo, C., Aseltine, R. H., Wang, F., Yan, J., & Chen,
-##' K. (2023). Survival modeling of suicide risk with rare and uncertain
-##' diagnoses. Statistics in Biosciences, 1--27.
+##' K. (2023). Survival Modeling of Suicide Risk with Rare and Uncertain
+##' Diagnoses. \emph{Statistics in Biosciences}, 17(1), 1--27.
 ##'
 ##' @example inst/examples/ex-cox_cure.R
 ##'

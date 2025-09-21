@@ -38,9 +38,9 @@ print.cox_cure <- function(x, ...)
 }
 
 
-##' @method print cox_cure_mar
+##' @method print cox_cure_uncer
 ##' @export
-print.cox_cure_mar <- function(x, ...)
+print.cox_cure_uncer <- function(x, ...)
 {
     if (! is.null(x$call)) {
         ## function call
@@ -48,7 +48,7 @@ print.cox_cure_mar <- function(x, ...)
             "\n", sep = "")
     }
     ## get the coef matrix
-    obj <- summary.cox_cure_mar(x)
+    obj <- summary.cox_cure_uncer(x)
     ## survival part
     cat("\nCoefficient estimates for the survival part:\n\n")
     printCoefmat(obj$surv_coef_mat)
@@ -87,10 +87,9 @@ print.summary_cox_cure <- function(x, ...)
 }
 
 
-## TODO: customize more for cox_cure_mar
-##' @method print summary_cox_cure_mar
+##' @method print summary_cox_cure_uncer
 ##' @export
-print.summary_cox_cure_mar <- print.summary_cox_cure
+print.summary_cox_cure_uncer <- print.summary_cox_cure
 
 
 ##' @method print cox_cure_net
@@ -113,6 +112,6 @@ print.cox_cure_net <- function(x, ...)
 }
 
 
-##' @method print cox_cure_net_mar
+##' @method print cox_cure_net_uncer
 ##' @export
-print.cox_cure_net_mar <- print.cox_cure_net
+print.cox_cure_net_uncer <- print.cox_cure_net

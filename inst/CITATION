@@ -33,9 +33,10 @@ bibentry(
 )
 
 bibentry(
-    key = "wang2019suicide",
-    bibtype = "misc",
-    title = "Suicide Risk Modeling with Uncertain Diagnostic Records",
+    key = "wang2023suicide",
+    bibtype = "article",
+    title = paste("Survival Modeling of Suicide Risk",
+                  "with Rare and Uncertain Diagnoses"),
     author = c(
         as.person("Wenjie Wang"),
         as.person("Chongliang Luo"),
@@ -44,6 +45,9 @@ bibentry(
         as.person("Jun Yan"),
         as.person("Kun Chen")
     ),
-    note = "arXiv preprint arXiv:2009.02597",
-    year = "2020"
+    journal = "Statistics in Biosciences",
+    volume = "17",
+    number = "1",
+    pages = "35--61",
+    year = "2023"
 )
