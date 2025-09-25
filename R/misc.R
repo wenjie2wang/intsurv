@@ -141,3 +141,19 @@ generate_cv_index <- function(nobs,
                        }
     rcpp_gen_cv_index(nobs, nfolds, strata, static_training)
 }
+
+## simplified utils::modifyList()
+modify_list <- function (x, val)
+{
+    stopifnot(is.list(x), is.list(val))
+    xnames <- names(x)
+    vnames <- names(val)
+    vnames <- vnames[nzchar(vnames)]
+    for (v in vnames) {
+        x[[v]] <- if (v %in% xnames && is.list(x[[v]]) &&
+                      is.list(val[[v]]))
+                      modify_list(x[[v]], val[[v]])
+                  else val[[v]]
+    }
+    x
+}

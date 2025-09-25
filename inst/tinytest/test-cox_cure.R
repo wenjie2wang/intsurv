@@ -78,3 +78,49 @@ with(env_b, {
         pattern = "event"
     )
 })
+
+## check backward compatibility
+with(env_b, {
+    ## simulate a dataset
+    n_obs <- 2e2
+    p <- 5
+    x_mat <- matrix(rnorm(n_obs * p), nrow = n_obs, ncol = p)
+    colnames(x_mat) <- paste0("X", seq_len(p))
+    cure_beta <- rep(0.5, p)
+    b0 <- - 1
+    expit <- binomial()$linkinv
+    ncure_prob <- expit(as.numeric(b0 + x_mat %*% cure_beta))
+    is_cure <- 1 - rbinom(n_obs, size = 1, prob = ncure_prob)
+    surv_beta <- rep(0.5, p)
+    risk_score <- as.numeric(x_mat %*% surv_beta)
+    event_time <- rexp(n_obs, exp(as.numeric(x_mat %*% surv_beta)))
+    censor_time <- 10
+    event <- ifelse(event_time < censor_time & ! is_cure, 1, 0)
+    obs_time <- ifelse(event > 0, event_time, censor_time)
+    sim_dat <- data.frame(time = obs_time, status = event)
+    sim_dat <- cbind(sim_dat, x_mat)
+    ## test the formula interface with data
+    fm <- paste(paste0("X", seq_len(p)), collapse = " + ")
+    surv_fm <- as.formula(sprintf("~ %s", fm))
+    cure_fm <- surv_fm
+    ## FIXME move cox_cure_net()
+    expect_warning(
+        old_fit <- cox_cure_net(
+            surv_fm, cure_fm, data = sim_dat,
+            time = time, event = event,
+            surv_nlambda = 5, cure_nlambda = 5,
+            surv_alpha = 0.5, cure_alpha = 0.5
+        ),
+        pattern = "cox_cure_net()"
+    )
+    expect_equal(old_fit$penalty$surv_alpha, 0.5)
+    expect_equal(old_fit$penalty$cure_alpha, 0.5)
+    ## cox_cure.fit()
+    expect_warning(
+        old_fit <- cox_cure.fit(x_mat, x_mat, obs_time, event,
+                                em_max_iter = 30, em_rel_tol = 1e-3),
+        pattern = "cox_cure.fit()"
+    )
+    expect_equal(old_fit$control$maxit, 30)
+    expect_equal(old_fit$control$epsilon, 1e-3)
+})

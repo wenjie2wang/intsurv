@@ -98,16 +98,54 @@ cox_cure <- function(surv_formula,
                      control = cox_cure.control(),
                      ...)
 {
-    ## controls
-    if (! inherits(control, "cox_cure.control")) {
-        control <- do.call(cox_cure.control, control)
+    ## for backward compatibility
+    dot_list <- list(...)
+    update_ctrl <- function(ctrl, old_args, prefix = "surv_") {
+        for (old_a in old_args) {
+            old_a2 <- paste0(prefix, old_a)
+            if (!is.null(dot_list[[old_a2]])) {
+                warning(wrapMessages(sprintf("The argument '%s'", old_a2),
+                                     "is deprecated for cox_cure()."),
+                        call. = FALSE)
+                ctrl[[old_a]] <- dot_list[[old_a2]]
+            }
+        }
+        ctrl
     }
-    if (! inherits(surv_mstep, "cox_cure.mstep")) {
-        surv_mstep <- do.call(cox_cure.mstep, surv_mstep)
+    surv_mstep <- update_ctrl(
+        surv_mstep,
+        old_args = c("start", "offset", "max_iter", "rel_tol", "standardize"),
+        prefix = "surv_"
+    )
+    cure_mstep <- update_ctrl(
+        cure_mstep,
+        old_args = c("start", "offset", "max_iter", "rel_tol", "standardize"),
+        prefix = "cure_"
+    )
+    control <- update_ctrl(
+        control,
+        old_args = c("max_iter", "rel_tol"),
+        prefix = "em_"
+    )
+    control <- update_ctrl(
+        control,
+        old_args = c("tail_completion", "tail_tau", "pmin", "verbose"),
+        prefix = ""
+    )
+    ## for others
+    invalid_args <- c("firth", "early_stop")
+    for (a in invalid_args) {
+        if (!is.null(dot_list[[a]])) {
+            warning(wrapMessages(sprintf(
+                "The argument '%s' was experimental", a
+            ), "and is no longer in use."))
+        }
     }
-    if (! inherits(cure_mstep, "cox_cure.mstep")) {
-        cure_mstep <- do.call(cox_cure.mstep, cure_mstep)
-    }
+
+    ## refresh controls
+    control <- do.call(cox_cure.control, control)
+    surv_mstep <- do.call(cox_cure.mstep, surv_mstep)
+    cure_mstep <- do.call(cox_cure.mstep, cure_mstep)
     out_control <- list(
         surv_mstep = surv_mstep,
         cure_mstep = cure_mstep,
@@ -263,16 +301,55 @@ cox_cure.fit <- function(surv_x,
                          control = cox_cure.control(),
                          ...)
 {
-    ## controls
-    if (! inherits(control, "cox_cure.control")) {
-        control <- do.call(cox_cure.control, control)
+    ## for backward compatibility
+    dot_list <- list(...)
+    update_ctrl <- function(ctrl, old_args, prefix = "surv_") {
+        for (old_a in old_args) {
+            old_a2 <- paste0(prefix, old_a)
+            if (!is.null(dot_list[[old_a2]])) {
+                warning(wrapMessages(sprintf("The argument '%s'", old_a2),
+                                     "is deprecated for cox_cure.fit()."),
+                        call. = FALSE)
+                ctrl[[old_a]] <- dot_list[[old_a2]]
+            }
+        }
+        ctrl
     }
-    if (! inherits(surv_mstep, "cox_cure.mstep")) {
-        surv_mstep <- do.call(cox_cure.mstep, surv_mstep)
+    surv_mstep <- update_ctrl(
+        surv_mstep,
+        old_args = c("start", "offset", "max_iter", "rel_tol", "standardize"),
+        prefix = "surv_"
+    )
+    cure_mstep <- update_ctrl(
+        cure_mstep,
+        old_args = c("start", "offset", "max_iter", "rel_tol", "standardize"),
+        prefix = "cure_"
+    )
+    control <- update_ctrl(
+        control,
+        old_args = c("max_iter", "rel_tol"),
+        prefix = "em_"
+    )
+    control <- update_ctrl(
+        control,
+        old_args = c("tail_completion", "tail_tau", "pmin", "verbose"),
+        prefix = ""
+    )
+
+    ## for others
+    invalid_args <- c("firth", "early_stop")
+    for (a in invalid_args) {
+        if (!is.null(dot_list[[a]])) {
+            warning(wrapMessages(sprintf(
+                "The argument '%s' was experimental", a
+            ), "and is no longer in use."))
+        }
     }
-    if (! inherits(cure_mstep, "cox_cure.mstep")) {
-        cure_mstep <- do.call(cox_cure.mstep, cure_mstep)
-    }
+
+    ## refresh controls
+    control <- do.call(cox_cure.control, control)
+    surv_mstep <- do.call(cox_cure.mstep, surv_mstep)
+    cure_mstep <- do.call(cox_cure.mstep, cure_mstep)
     out_control <- list(
         surv_mstep = surv_mstep,
         cure_mstep = cure_mstep,
@@ -402,18 +479,39 @@ cox_cure.control <- function(tail_completion = c("zero", "exp", "tau-zero"),
                              verbose = 0,
                              ...)
 {
-    tail_completion <- match.arg(tail_completion)
-    tail_comps <- c("zero", "exp", "tau-zero")
-    int_tail_completion <- match(tail_completion, tail_comps, nomatch = 1L)
+    dot_list <- list(...)
+    ## for backward compatibility
+    default_maxit <- missing(maxit)
+    if ((isTRUE(dot_list$default_maxit) || default_maxit) &&
+        !is.null(dot_list$max_it)) {
+        maxit <- dot_list$max_it
+    }
+    default_epsilon <- missing(epsilon)
+    if ((isTRUE(dot_list$default_epsilon) || default_epsilon) &&
+        !is.null(dot_list$rel_tol)) {
+        epsilon <- dot_list$rel_tol
+    }
+    if (is.integer(tail_completion)) {
+        int_tail_completion <- tail_completion
+    } else {
+        tail_completion <- match.arg(tail_completion)
+        tail_comps <- c("zero", "exp", "tau-zero")
+        int_tail_completion <- match(tail_completion, tail_comps, nomatch = 1L)
+    }
+    ## return
     structure(
         list(
             tail_completion = int_tail_completion,
-            tail_tau = tail_tau,
+            tail_tau = {
+                if (is.null(tail_tau)) {Inf} else {tail_tau}
+            },
             maxit = maxit,
             epsilon = epsilon,
             pmin = pmin,
             save_call = save_call,
-            verbose = verbose
+            verbose = verbose,
+            default_maxit = default_maxit,
+            default_epsilon = default_epsilon
         ),
     class = "cox_cure.control")
 }
@@ -440,15 +538,31 @@ cox_cure.mstep <- function(start = NULL,
                            offset = NULL,
                            maxit = 10,
                            epsilon = 1e-4,
-                           standardize = TRUE)
+                           standardize = TRUE,
+                           ...)
 {
+    dot_list <- list(...)
+    ## for backward compatibility
+    default_maxit <- missing(maxit)
+    if ((isTRUE(dot_list$default_maxit) || default_maxit) &&
+        !is.null(dot_list$max_it)) {
+        maxit <- dot_list$max_it
+    }
+    default_epsilon <- missing(epsilon)
+    if ((isTRUE(dot_list$default_epsilon) || default_epsilon) &&
+        !is.null(dot_list$rel_tol)) {
+        epsilon <- dot_list$rel_tol
+    }
+
     structure(
         list(
             start = null2num0(start),
             offset = null2num0(offset),
             maxit = maxit,
             epsilon = epsilon,
-            standardize = standardize
+            standardize = standardize,
+            default_maxit = default_maxit,
+            default_epsilon = default_epsilon
         ),
         class = "cox_cure.mstep"
     )

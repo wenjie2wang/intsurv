@@ -51,7 +51,8 @@ cox_cure.mstep(
   offset = NULL,
   maxit = 10,
   epsilon = 1e-04,
-  standardize = TRUE
+  standardize = TRUE,
+  ...
 )
 }
 \arguments{

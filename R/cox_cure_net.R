@@ -86,22 +86,67 @@ cox_cure_net <- function(surv_formula,
                          control = cox_cure.control(),
                          ...)
 {
-    ## controls
-    if (! inherits(control, "cox_cure.control")) {
-        control <- do.call(cox_cure.control, control)
+    ## for backward compatibility
+    dot_list <- list(...)
+    update_ctrl <- function(ctrl, old_args, prefix = "surv_") {
+        for (old_a in old_args) {
+            old_a2 <- paste0(prefix, old_a)
+            if (!is.null(dot_list[[old_a2]])) {
+                warning(wrapMessages(sprintf("The argument '%s'", old_a2),
+                                     "is deprecated for cox_cure_net()."),
+                        call. = FALSE)
+                ctrl[[old_a]] <- dot_list[[old_a2]]
+            }
+        }
+        ctrl
     }
-    if (! inherits(surv_net, "cox_cure_net.penalty")) {
-        surv_net <- do.call(cox_cure_net.penalty, surv_net)
+    surv_net <- update_ctrl(
+        surv_net,
+        old_args = c("lambda", "alpha", "nlambda", "lambda_min_ratio",
+                     "l1_penalty_factor"),
+        prefix = "surv_"
+    )
+    cure_net <- update_ctrl(
+        cure_net,
+        old_args = c("lambda", "alpha", "nlambda", "lambda_min_ratio",
+                     "l1_penalty_factor"),
+        prefix = "cure_"
+    )
+    surv_mstep <- update_ctrl(
+        surv_mstep,
+        old_args = c("start", "offset", "max_iter", "rel_tol", "standardize"),
+        prefix = "surv_"
+    )
+    cure_mstep <- update_ctrl(
+        cure_mstep,
+        old_args = c("start", "offset", "max_iter", "rel_tol", "standardize"),
+        prefix = "cure_"
+    )
+    control <- update_ctrl(
+        control,
+        old_args = c("max_iter", "rel_tol"),
+        prefix = "em_"
+    )
+    control <- update_ctrl(
+        control,
+        old_args = c("tail_completion", "tail_tau", "pmin", "verbose"),
+        prefix = ""
+    )
+    ## for others
+    invalid_args <- c("early_stop")
+    for (a in invalid_args) {
+        if (!is.null(dot_list[[a]])) {
+            warning(wrapMessages(sprintf(
+                "The argument '%s' was experimental", a
+            ), "and is no longer in use."))
+        }
     }
-    if (! inherits(cure_net, "cox_cure_net.penalty")) {
-        cure_net <- do.call(cox_cure_net.penalty, cure_net)
-    }
-    if (! inherits(surv_mstep, "cox_cure.mstep")) {
-        surv_mstep <- do.call(cox_cure.mstep, surv_mstep)
-    }
-    if (! inherits(cure_mstep, "cox_cure.mstep")) {
-        cure_mstep <- do.call(cox_cure.mstep, cure_mstep)
-    }
+    ## refresh controls
+    control <- do.call(cox_cure.control, control)
+    surv_net <- do.call(cox_cure_net.penalty, surv_net)
+    cure_net <- do.call(cox_cure_net.penalty, cure_net)
+    surv_mstep <- do.call(cox_cure.mstep, surv_mstep)
+    cure_mstep <- do.call(cox_cure.mstep, cure_mstep)
     if (control$save_call) {
         ## record function call
         call0 <- match.call()
@@ -238,22 +283,68 @@ cox_cure_net.fit <- function(surv_x,
                              control = cox_cure.control(),
                              ...)
 {
-    ## controls
-    if (! inherits(control, "cox_cure.control")) {
-        control <- do.call(cox_cure.control, control)
+    ## for backward compatibility
+    dot_list <- list(...)
+    update_ctrl <- function(ctrl, old_args, prefix = "surv_") {
+        for (old_a in old_args) {
+            old_a2 <- paste0(prefix, old_a)
+            if (!is.null(dot_list[[old_a2]])) {
+                warning(wrapMessages(sprintf("The argument '%s'", old_a2),
+                                     "is deprecated for cox_cure_net.fit()."),
+                        call. = FALSE)
+                ctrl[[old_a]] <- dot_list[[old_a2]]
+            }
+        }
+        ctrl
     }
-    if (! inherits(surv_net, "cox_cure_net.penalty")) {
-        surv_net <- do.call(cox_cure_net.penalty, surv_net)
+    surv_net <- update_ctrl(
+        surv_net,
+        old_args = c("lambda", "alpha", "nlambda", "lambda_min_ratio",
+                     "l1_penalty_factor"),
+        prefix = "surv_"
+    )
+    cure_net <- update_ctrl(
+        cure_net,
+        old_args = c("lambda", "alpha", "nlambda", "lambda_min_ratio",
+                     "l1_penalty_factor"),
+        prefix = "cure_"
+    )
+    surv_mstep <- update_ctrl(
+        surv_mstep,
+        old_args = c("start", "offset", "max_iter", "rel_tol", "standardize"),
+        prefix = "surv_"
+    )
+    cure_mstep <- update_ctrl(
+        cure_mstep,
+        old_args = c("start", "offset", "max_iter", "rel_tol", "standardize"),
+        prefix = "cure_"
+    )
+    control <- update_ctrl(
+        control,
+        old_args = c("max_iter", "rel_tol"),
+        prefix = "em_"
+    )
+    control <- update_ctrl(
+        control,
+        old_args = c("tail_completion", "tail_tau", "pmin", "verbose"),
+        prefix = ""
+    )
+    ## for others
+    invalid_args <- c("early_stop")
+    for (a in invalid_args) {
+        if (!is.null(dot_list[[a]])) {
+            warning(wrapMessages(sprintf(
+                "The argument '%s' was experimental", a
+            ), "and is no longer in use."))
+        }
     }
-    if (! inherits(cure_net, "cox_cure_net.penalty")) {
-        cure_net <- do.call(cox_cure_net.penalty, cure_net)
-    }
-    if (! inherits(surv_mstep, "cox_cure.mstep")) {
-        surv_mstep <- do.call(cox_cure.mstep, surv_mstep)
-    }
-    if (! inherits(cure_mstep, "cox_cure.mstep")) {
-        cure_mstep <- do.call(cox_cure.mstep, cure_mstep)
-    }
+
+    ## refresh controls
+    control <- do.call(cox_cure.control, control)
+    surv_net <- do.call(cox_cure_net.penalty, surv_net)
+    cure_net <- do.call(cox_cure_net.penalty, cure_net)
+    surv_mstep <- do.call(cox_cure.mstep, surv_mstep)
+    cure_mstep <- do.call(cox_cure.mstep, cure_mstep)
     if (control$save_call) {
         ## record function call
         call0 <- match.call()
@@ -366,12 +457,19 @@ cox_cure_net.penalty <- function(nlambda = 10,
                                  varying_active = TRUE,
                                  ...)
 {
+    dot_list <- list(...)
+    ## for backward compatibility
+    if (missing(penalty_factor) && !is.null(dot_list$l1_penalty_factor)) {
+        penalty_factor <- dot_list$l1_penalty_factor
+    }
+    ## end
     structure(
         list(nlambda = nlambda,
              lambda_min_ratio = lambda_min_ratio,
              alpha = alpha,
              lambda = null2num0(lambda),
-             penalty_factor = null2num0(penalty_factor)),
+             penalty_factor = null2num0(penalty_factor),
+             varying_active = varying_active),
         class = "cox_cure_net.penalty"
     )
 }
