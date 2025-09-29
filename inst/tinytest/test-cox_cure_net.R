@@ -41,3 +41,16 @@ BIC(fit2)
 ## list of coefficient estimates based on BIC
 coef(fit1)
 coef(fit2)
+
+## check backward compatibility
+expect_warning(
+    old_fit <- cox_cure_net(
+        surv_fm, cure_fm, data = sim_dat,
+        time = time, event = event,
+        surv_nlambda = 5, cure_nlambda = 5,
+        surv_alpha = 0.5, cure_alpha = 0.5
+    ),
+    pattern = "cox_cure_net()"
+)
+expect_equal(old_fit$penalty$surv_alpha, 0.5)
+expect_equal(old_fit$penalty$cure_alpha, 0.5)
