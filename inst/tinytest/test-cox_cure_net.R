@@ -45,8 +45,8 @@ coef(fit2)
 ## check backward compatibility
 expect_warning(
     old_fit <- cox_cure_net(
-        surv_fm, cure_fm, data = sim_dat,
-        time = time, event = event,
+        surv_fm, cure_fm, data = dat,
+        time = obs_time, event = obs_event,
         surv_nlambda = 5, cure_nlambda = 5,
         surv_alpha = 0.5, cure_alpha = 0.5
     ),
