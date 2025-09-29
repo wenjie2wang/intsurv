@@ -92,9 +92,12 @@ cox_cure_net <- function(surv_formula,
         for (old_a in old_args) {
             old_a2 <- paste0(prefix, old_a)
             if (!is.null(dot_list[[old_a2]])) {
-                warning(wrapMessages(sprintf("The argument '%s'", old_a2),
-                                     "is deprecated for cox_cure_net()."),
-                        call. = FALSE)
+                warning(wrapMessages(
+                    sprintf("The argument '%s'", old_a2),
+                    "is deprecated for cox_cure_net().",
+                    "Please use the helper functions cox_cure.mstep(),",
+                    "cox_cure.control(), or cox_cure_net.penalty()."
+                ), call. = FALSE)
                 ctrl[[old_a]] <- dot_list[[old_a2]]
             }
         }
@@ -289,9 +292,12 @@ cox_cure_net.fit <- function(surv_x,
         for (old_a in old_args) {
             old_a2 <- paste0(prefix, old_a)
             if (!is.null(dot_list[[old_a2]])) {
-                warning(wrapMessages(sprintf("The argument '%s'", old_a2),
-                                     "is deprecated for cox_cure_net.fit()."),
-                        call. = FALSE)
+                warning(wrapMessages(
+                    sprintf("The argument '%s'", old_a2),
+                    "is deprecated for cox_cure_net.fit().",
+                    "Please use the helper functions cox_cure.mstep(),",
+                    "cox_cure.control(), or cox_cure_net.penalty()."
+                ), call. = FALSE)
                 ctrl[[old_a]] <- dot_list[[old_a2]]
             }
         }

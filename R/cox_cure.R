@@ -104,9 +104,12 @@ cox_cure <- function(surv_formula,
         for (old_a in old_args) {
             old_a2 <- paste0(prefix, old_a)
             if (!is.null(dot_list[[old_a2]])) {
-                warning(wrapMessages(sprintf("The argument '%s'", old_a2),
-                                     "is deprecated for cox_cure()."),
-                        call. = FALSE)
+                warning(wrapMessages(
+                    sprintf("The argument '%s'", old_a2),
+                    "is deprecated for cox_cure().",
+                    "Please use the helper functions cox_cure.mstep() or",
+                    "cox_cure.control()."
+                ), call. = FALSE)
                 ctrl[[old_a]] <- dot_list[[old_a2]]
             }
         }
@@ -307,9 +310,12 @@ cox_cure.fit <- function(surv_x,
         for (old_a in old_args) {
             old_a2 <- paste0(prefix, old_a)
             if (!is.null(dot_list[[old_a2]])) {
-                warning(wrapMessages(sprintf("The argument '%s'", old_a2),
-                                     "is deprecated for cox_cure.fit()."),
-                        call. = FALSE)
+                warning(wrapMessages(
+                    sprintf("The argument '%s'", old_a2),
+                    "is deprecated for cox_cure.fit().",
+                    "Please use the helper functions cox_cure.mstep() or",
+                    "cox_cure.control()."
+                ), call. = FALSE)
                 ctrl[[old_a]] <- dot_list[[old_a2]]
             }
         }
@@ -491,8 +497,8 @@ cox_cure.control <- function(tail_completion = c("zero", "exp", "tau-zero"),
         !is.null(dot_list$rel_tol)) {
         epsilon <- dot_list$rel_tol
     }
-    if (is.integer(tail_completion)) {
-        int_tail_completion <- tail_completion
+    if (is.numeric(tail_completion)) {
+        int_tail_completion <- as.integer(tail_completion)
     } else {
         tail_completion <- match.arg(tail_completion)
         tail_comps <- c("zero", "exp", "tau-zero")
