@@ -4,7 +4,7 @@
 [![Build Status][gha-icon]][gha-url]
 [![Code Coverage][codecov-main]][codecov]
 
-The R package **intsurv** contains implementations of
+The {intsurv} R package contains implementations of
 
 - integrative Cox model with uncertain event times (Wang et al., 2020)
 - regularized Cox cure rate model with uncertain event status (Wang et al., 2023)
@@ -13,41 +13,21 @@ and other survival analysis routines, including
 
 - Cox cure rate model
 - regularized Cox cure rate model with elastic net penalty
-- weighted concordance index
-
 
 ## Installation
 
-You may install the latest released version on CRAN by
+Install from CRAN by running:
 
 ```R
 install.packages("intsurv")
 ```
 
+## Usage
 
-## Get Started
+For examples and detailed documentation, check:
 
-Examples are provided for the main functions for model-fitting in the package.
-One may get started from those examples and the function documentation.
-
-```R
-library(intsurv)
-?iCoxph # integrative Cox model
-?cox_cure # Cox cure rate model
-?cox_cure_net # regularized Cox cure rate model
-```
-
-
-## Development
-
-If the version under development is able to pass the automated package checks,
-one may consider installing it with the help of **remotes** by
-
-```R
-if (! require(remotes)) install.packages("remotes")
-remotes::install_github("wenjie2wang/intsurv")
-```
-
+- CRAN reference manual: https://cran.r-project.org/web/packages/intsurv/refman/intsurv.html
+- Package site: https://wwenjie.org/intsurv/
 
 ## References
 
